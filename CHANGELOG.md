@@ -3,6 +3,28 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 5 — Project workspace
+
+### Changed
+- `/company/projects/:pid` (`features/company/CompanyProjectDetailPage.tsx`): rebuilt on `Page`, `PageHeader` (back link, id, type, company, brands), `Tabs`, `MetricGrid`, `Panel`, `DataTable`, `Pagination`, `BulkBar`, `Field`, `Checkbox`. All five tabs keep their requests, payloads, filters, page sizes and the default tab. Tables become record cards below 900 px (two of them scrolled sideways at a fixed 900 px width before). Candidate selection uses the table's selection and a bulk bar. "批量执行" now asks for confirmation before it queues the whole inventory. A first-load failure shows the error or permission state with retry; a failed refresh keeps the data and shows a stale notice. The "快捷入口" card is removed because it repeated the tabs.
+- `/pentest/project/:pid` (`features/pentest/PentestPages.tsx`): sessions as a `DataTable` under a page header with a back link; states for loading, empty, error and permission. Closing an idle session uses `ConfirmDialog` instead of `window.confirm`; the DELETE and the reload after it are the same calls. The row no longer nests a button inside a button.
+- `NewProjectWizard`: drawer shell on surface with the dialog shadow, a real heading that names the mode (new project or new session), close as an icon button, focus trap and Escape. Steps, polling and the create payload are untouched.
+- Session workbench (`features/pentest/workbench/*`): the 31 local `--wb-*` aliases are gone; `workbench.css` and 12 views read the `jz` tokens directly. Inline font sizes and radii in the views use the type and radius tokens. Two references to variables that were never defined (`--wb-text-1`, `--wb-text-2`) now resolve to ink and ink-2. Layout and behavior are unchanged; the session screenshot is pixel-identical to phase 3 at 1440 px.
+- `layout/EnvBar.tsx`: pills share the quiet outline style, state is carried by text color and label; the tone key `cyan` is renamed `brand`. Measuring and folding logic is untouched.
+- `features/pentest/SessionOverview.tsx`: 40 classes on an `accent-*` palette that no longer exists (so they rendered without color) now use the token colors.
+
+### Verified
+- `tsc --noEmit` and `npm run build` pass. Main chunk 974.3 kB, CSS 161.4 kB.
+- 14 routes at five widths: no overflow, no error boundary; request log identical to baseline; shell checks pass.
+- Both workspace routes captured in the empty, error, forbidden and slow variants; all five company tabs captured at 1440 and 760 px in light and at 1440 px in dark with no overflow; bulk bar, run confirmation, close-session confirmation and the wizard exercised. Neither confirmation sends a request before it is confirmed.
+- Token lint 184 (was 833). Contrast check: no failing pair.
+
+### Remaining gaps
+- The inside of `NewProjectWizard` (asset picker, strategy step, device step) is still on phase 1 styling and its own controls.
+- The session workbench keeps its own layout, class names and density by design; it was restyled through tokens only. `SessionWorkspace.tsx`, `AiAssistantPage.tsx` and two v3 files still contain 22 `accent-*` classes that emit no CSS; they are cleaned up in phases 8 and 9.
+- Neither workspace page polls, so progress of a running batch appears only after "刷新". Adding polling would add requests, so it is left as is.
+- The company project tabs are not in the URL (they were not before either), so a reload returns to the reports tab.
+
 ## Phase 4 — Project index
 
 ### Changed

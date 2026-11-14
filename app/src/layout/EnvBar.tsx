@@ -131,20 +131,20 @@ export const EnvBar: React.FC<{ hide?: string[] }> = ({ hide = [] }) => {
 
  // 遥测胶囊(26px,铁律②胶囊化 rounded-pill,语义色仅显示层)
  const pill = (id: string, opts: {
- icon?: React.ReactNode; text: React.ReactNode; title: string; tone: 'neutral' | 'gray' | 'orange' | 'emerald' | 'cyan';
+ icon?: React.ReactNode; text: React.ReactNode; title: string; tone: 'neutral' | 'gray' | 'orange' | 'emerald' | 'brand';
  onClick?: () => void; extra?: React.ReactNode; maxW?: string; measAttr?: string;
  }) => {
     const toneCls: Record<string, string> = {
-      neutral: 'border-jz-border bg-jz-surface-2/40 text-jz-ink-2',
-      gray: 'border-jz-border bg-jz-surface-2/40 text-jz-muted',
-      orange: 'border-jz-sev-medium/40 bg-jz-sev-medium/10 text-jz-sev-medium',
-      emerald: 'border-jz-teal/40 bg-jz-teal/10 text-jz-teal',
-      cyan: 'border-jz-brand/40 bg-jz-brand/10 text-jz-brand',
+      neutral: 'border-jz-border bg-jz-surface text-jz-ink-2',
+      gray: 'border-jz-border bg-jz-surface text-jz-muted',
+      orange: 'border-jz-border bg-jz-surface text-jz-amber',
+      emerald: 'border-jz-border bg-jz-surface text-jz-teal',
+      brand: 'border-jz-border bg-jz-surface text-jz-brand',
     };
     return (
       <span key={id} {...(opts.measAttr ? { [opts.measAttr]: id } : { 'data-env-pill': id })}
  title={opts.title} onClick={opts.onClick}
- className={`flex-none h-[26px] px-1.5 rounded-pill border text-meta flex items-center gap-1 whitespace-nowrap ${toneCls[opts.tone]} ${opts.onClick ? 'cursor-pointer hover:border-jz-brand transition-colors' : ''} ${opts.maxW || ''}`}>
+ className={`flex-none h-[26px] px-2 rounded-pill border text-meta flex items-center gap-1 whitespace-nowrap ${toneCls[opts.tone]} ${opts.onClick ? 'cursor-pointer hover:border-jz-border-strong transition-colors' : ''} ${opts.maxW || ''}`}>
         {opts.icon}
         <span className={id === 'app' || id === 'device' ? 'font-mono truncate' : 'truncate'}>{opts.text}</span>
         {opts.extra}
@@ -154,34 +154,34 @@ export const EnvBar: React.FC<{ hide?: string[] }> = ({ hide = [] }) => {
 
  const appPill = (measAttr?: string) => pill('app', {
     measAttr, tone: 'neutral', maxW: 'max-w-[220px]', onClick: copyPkg,
-    title: `目标应用: ${env.pkg}(点击复制包名)`,
+    title: `应用：${env.pkg}（点击复制包名）`,
     icon: <AppWindow className="w-3.5 h-3.5 flex-none text-jz-brand" />,
     text: env.pkg,
     extra: copied ? <span data-env-copied className="flex-none text-jz-teal">已复制</span> : undefined,
  });
  const devicePill = (measAttr?: string) => pill('device', {
     measAttr, tone: 'neutral', maxW: 'max-w-[190px]',
-    title: `设备节点: ${env.device}(会话绑定)`,
-    icon: <span className={`w-1.5 h-1.5 rounded-pill flex-none ${deviceBound ? 'bg-jz-teal' : 'bg-jz-muted'}`} />,
+    title: `设备：${env.device}`,
+    icon: <span className={`w-1.5 h-1.5 rounded-pill flex-none ${deviceBound ? 'bg-jz-teal' : 'bg-jz-border-strong'}`} />,
  text: env.device,
  });
  const packerPill = (measAttr?: string) => pill('packer', {
     measAttr, tone: isBare ? 'gray' : 'orange',
-    title: isBare ? `脱壳防护: 无壳/未检出(原始值: ${env.packer || '—'})` : `脱壳防护: ${packerLabel}(原始值: ${env.packer})`,
+    title: isBare ? `加固：未检出（原始值 ${env.packer || '—'}）` : `加固：${packerLabel}（原始值 ${env.packer}）`,
     icon: isBare ? <ShieldCheck className="w-3.5 h-3.5 flex-none" /> : <ShieldAlert className="w-3.5 h-3.5 flex-none" />,
  text: packerLabel,
  });
  const fridaPill = (measAttr?: string) => pill('frida', {
-    measAttr, tone: env.frida ? 'emerald' : 'gray', title: `Frida: ${env.frida ? '已注入' : '未驻留'}`,
+    measAttr, tone: env.frida ? 'emerald' : 'gray', title: `Frida：${env.frida ? '已注入' : '未注入'}`,
     icon: <Syringe className="w-3.5 h-3.5 flex-none" />,
- text: env.frida ? '已注入' : '未驻留',
+ text: env.frida ? 'Frida 已注入' : 'Frida 未注入',
  });
  const bridgePill = (measAttr?: string) => pill('bridge', {
-    measAttr, tone: bridgeOn ? 'cyan' : 'gray', title: `Oracle 桥: ${env.bridge}`,
+    measAttr, tone: bridgeOn ? 'brand' : 'gray', title: `Oracle 桥：${env.bridge}`,
     icon: <Network className="w-3.5 h-3.5 flex-none" />, text: env.bridge,
  });
  const rolePill = (measAttr?: string) => pill('role', {
-    measAttr, tone: 'neutral', maxW: 'max-w-[140px]', title: `阶段角色: ${env.role}`, text: env.role,
+    measAttr, tone: 'neutral', maxW: 'max-w-[140px]', title: `阶段角色：${env.role}`, text: env.role,
   });
 
   return (
@@ -194,16 +194,16 @@ export const EnvBar: React.FC<{ hide?: string[] }> = ({ hide = [] }) => {
       {!hide.includes('bridge') && (fold < 1) && bridgePill()}
       {!hide.includes('role') && (fold < 1) && rolePill()}
  {fold > 0 && (
-        <button data-env-more ref={moreRef} onClick={togglePop} title={`更多遥测(收纳 ${fold === 1 ? 'Oracle 桥/阶段角色' : '脱壳防护/Frida/Oracle 桥/阶段角色'})`}
- className="flex-none w-7 h-[26px] rounded-pill border border-jz-border text-jz-muted grid place-items-center hover:text-jz-ink hover:bg-jz-surface-2/40 transition-colors">
+        <button data-env-more ref={moreRef} onClick={togglePop} aria-label="更多环境信息" title={`更多环境信息：${fold === 1 ? 'Oracle 桥、阶段角色' : '加固、Frida、Oracle 桥、阶段角色'}`}
+ className="flex-none w-7 h-[26px] rounded-pill border border-jz-border text-jz-muted grid place-items-center hover:text-jz-ink hover:bg-jz-surface-2 transition-colors">
           <MoreHorizontal className="w-3.5 h-3.5" />
         </button>
  )}
  {/* 收纳 Popover(fixed 定位;内容=被收纳胶囊全量真值,零编造) */}
  {popOpen && fold > 0 && (
         <div data-env-pop style={{ position: 'fixed', top: popPos.top, left: popPos.left }}
- className="z-50 flex flex-col items-start gap-1 p-2 rounded-control border border-jz-border bg-jz-surface-2 shadow-card">
-          <div className="text-meta font-semibold text-jz-ink px-0.5">收纳的次要遥测</div>
+ className="z-50 flex flex-col items-start gap-1 p-2 rounded-card border border-jz-border bg-jz-surface shadow-dialog">
+          <div className="text-meta font-semibold text-jz-ink px-0.5">更多环境信息</div>
  {!hide.includes('packer') && fold >= 2 && packerPill()}
  {!hide.includes('frida') && fold >= 2 && fridaPill()}
           {!hide.includes('bridge') && bridgePill()}
