@@ -24,6 +24,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SessionShell } from '@/features/pentest/v3/SessionShell';
 import { CmdPalette } from '@/components/CmdPalette';
 import { RefreshCw } from 'lucide-react';
+import { Button, Skeleton } from '@/components/ui';
 import { useNotifications } from '@/stores/notifications';
 // R104-7 收口: R104-1 临时组件展示路由 /dev/ui-kit 已删除(四组件以业务页消费点为验收载体)。
 // R108-4 收口: R108-1 临时组件三态展示页 /dev/ui-kit2 已删除(三件套以业务页消费点为验收载体)。
@@ -70,13 +71,23 @@ function BuildVersionGuard() {
   }, []);
   if (!stale) return null;
   return (
-    <div data-app-stale className="fixed bottom-4 right-4 z-[100] flex items-center gap-2.5 px-3.5 py-2.5 rounded-card bg-jz-surface shadow-card border border-jz-border/60">
-      <RefreshCw className="w-4 h-4 text-jz-brand flex-none" />
-      <span className="text-meta text-jz-ink-2">平台已发布新版本,当前页面运行的是旧代码</span>
-      <button onClick={() => { const sep = location.search ? '&' : '?'; const h = location.hash; location.href = location.pathname + sep + '_v=' + Date.now() + h; }}
-        className="px-2.5 py-1 rounded-control bg-jz-brand/10 text-jz-brand text-meta font-semibold hover:bg-jz-brand/20 transition-colors">
-        一键刷新
-      </button>
+    <div data-app-stale role="status" className="fixed bottom-4 right-4 z-[100] flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-3 rounded-card border border-jz-border bg-jz-surface px-4 py-3 shadow-dialog">
+      <RefreshCw className="h-4 w-4 flex-none text-jz-brand" aria-hidden />
+      <span className="min-w-0 flex-1 basis-48 text-label text-jz-ink">工作区已发布新版本，此页面仍在运行旧版本。</span>
+      <Button size="sm" onClick={() => { const sep = location.search ? '&' : '?'; const h = location.hash; location.href = location.pathname + sep + '_v=' + Date.now() + h; }}>
+        刷新页面
+      </Button>
+    </div>
+  );
+}
+
+/** Placeholder while a lazy route or the session check loads. */
+function PageFallback() {
+  return (
+    <div className="space-y-4 p-jz-page" role="status" aria-label="正在加载">
+      <Skeleton className="h-8 w-56" />
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-64 w-full" />
     </div>
   );
 }
@@ -94,18 +105,23 @@ function Shell() {
     if (token) connectNotif();
     return () => disconnectNotif();
   }, [token]);
+  const [navOpen, setNavOpen] = React.useState(false);
   return (
-    <div className="h-full flex flex-col">
-      <TopBar />
-      <CmdPalette />
-      <BuildVersionGuard />
-      <div className="flex-1 flex min-h-0">
-        <Sidebar />
-        <main className="flex-1 min-w-0 flex flex-col">
+    <div className="flex h-full">
+      <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }}
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[110] focus:rounded-control focus:bg-jz-surface focus:px-3 focus:py-2 focus:text-label focus:text-jz-ink focus:shadow-dialog">
+        跳到主要内容
+      </a>
+      <Sidebar mobileOpen={navOpen} onMobileClose={() => setNavOpen(false)} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar onOpenNav={() => setNavOpen(true)} />
+        <CmdPalette />
+        <BuildVersionGuard />
+        <main id="main" tabIndex={-1} className="flex min-h-0 min-w-0 flex-1 flex-col outline-none">
           <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Suspense fallback={<div className="p-4 text-meta text-jz-muted">加载中…</div>}><DashboardPage /></Suspense>} />
+            <Route path="/dashboard" element={<Suspense fallback={<PageFallback />}><DashboardPage /></Suspense>} />
             <Route path="/pentest" element={<ProjectsPage />} />
             <Route path="/pentest/project/:pid" element={<ProjectSessionsPage />} />
             <Route path="/pentest/project/:pid/session/:sid" element={<PentestFlow />} />
@@ -124,11 +140,9 @@ function Shell() {
           </Routes>
           </ErrorBoundary>
         </main>
-        {/* R105-5: 会话页 AI 栏由工作台右抽屉 AiInspectorDrawer 接管(双 Tab=决策助手+对象检查器,
-            380↔36 双态=R101 契约载体迁移;防双右栏叠加)。完整对话助手入口保留 /ai-assistant 页
-            (R100 身份行/R103-12 会话分组/R80 Token 契约在该页零回归)。 */}
-        {false && onSessionPage && <AiSidebar />}
       </div>
+      {/* Session pages show the assistant in the workspace's own right drawer; the global side panel stays off. */}
+      {false && onSessionPage && <AiSidebar />}
     </div>
   );
 }
@@ -140,7 +154,7 @@ export default function App() {
   const token = useAuth((s) => s.token);
   const bootstrap = useAuth((s) => s.bootstrap);
   useEffect(() => { bootstrap(); }, []);
-  if (!ready) return <div />;
+  if (!ready) return <PageFallback />;
   if (!token) return <LoginGate />;
   return <Shell />;
 }

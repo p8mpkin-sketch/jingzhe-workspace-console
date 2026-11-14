@@ -1,56 +1,53 @@
 import React from 'react';
-import { Smartphone, Syringe, Usb } from 'lucide-react';
+import { Smartphone, Syringe } from 'lucide-react';
+import { cx, useOverlay, StatusBadge, EmptyState } from '@/components/ui';
 
 /**
- * DeviceFridaFlyout — 「设备+Frida 状态浮层」(本轮壳层升级新增,全平台升级 Step2①)。
- * 数据源=既有 /api/pentest/devices(TopBar 8s 单点轮询写入 usePentest.devices,Sidebar/TopBar 共享,零二次轮询);
- * 纯展示浮层: 设备序列/型号/Android 版本/root/Frida 就绪;无数据=诚实空态(不编造设备)。
- * 消费方: Sidebar 目标设备卡 + TopBar 目标硬件胶囊(各自本地 open 态,浮层自身无全局状态)。
+ * Device and Frida status popover. Presentation only: the list is the shared `usePentest.devices` value that the
+ * top bar's single 8 s poll writes, so opening it issues no request. Used by the rail's device card and the
+ * top bar's device pill; each owner keeps its own open state.
  */
-
 export const DeviceFridaFlyout: React.FC<{
- open: boolean;
- onClose: () => void;
+  open: boolean;
+  onClose: () => void;
   devices: Array<any>;
-}> = ({ open, onClose, devices }) => {
- if (!open) return null;
- const fridaOn = devices.filter((d) => d.frida).length;
+  /** Where the panel opens relative to its trigger: above the rail card, or below the top bar pill. */
+  placement?: 'above-start' | 'below-end';
+}> = ({ open, onClose, devices, placement = 'above-start' }) => {
+  const ref = useOverlay(open, onClose);
+  if (!open) return null;
+  const fridaOn = devices.filter((d) => d.frida).length;
   return (
     <>
-      <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div data-device-flyout role="dialog" aria-label="设备与 Frida 状态"
- className="absolute left-0 bottom-full mb-2 z-50 w-[340px] max-w-[90vw] rounded-card bg-jz-surface
- border border-jz-border shadow-card p-3 space-y-2">
-        <div className="flex items-center gap-2 text-meta">
-          <Usb size={13} className="text-jz-brand flex-none" />
-          <span className="font-semibold text-jz-ink">设备与 Frida 状态</span>
-          <span className="flex-1" />
+      <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden />
+      <div ref={ref} tabIndex={-1} data-device-flyout role="dialog" aria-label="设备与 Frida 状态"
+        className={cx('absolute z-50 w-[340px] max-w-[calc(100vw-1.5rem)] space-y-2 rounded-card border border-jz-border bg-jz-surface p-3 shadow-dialog outline-none',
+          placement === 'above-start' ? 'bottom-full left-0 mb-2' : 'right-0 top-full mt-3')}>
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-label font-semibold text-jz-ink">设备与 Frida 状态</span>
           <span className="font-mono tnum text-meta text-jz-muted" data-flyout-count>
             {devices.length} 台 · Frida 就绪 {fridaOn}
           </span>
         </div>
-        <div className="text-meta text-jz-muted">数据源 /api/pentest/devices(8s 轮询真值)</div>
-        <div className="max-h-56 overflow-auto space-y-1.5" data-flyout-list>
+        <div className="max-h-56 space-y-1.5 overflow-auto" data-flyout-list>
           {devices.length === 0 && (
-            <div className="rounded-control bg-jz-surface-2/50 px-2.5 py-3 text-center text-meta text-jz-muted" data-flyout-empty>
-              无设备在册——adb 未连接或设备离线(如实空态)
+            <div data-flyout-empty>
+              <EmptyState compact icon={Smartphone} title="没有已连接的设备" cause="adb 未连接，或设备处于离线状态。连接后约 8 秒内出现在这里。" />
             </div>
- )}
- {devices.map((d: any) => (
-            <div key={d.serial} data-flyout-device={d.serial}
- className="rounded-control bg-jz-surface-2/50 px-2.5 py-1.5 space-y-1">
-              <div className="flex items-center gap-2 text-meta">
-                <Smartphone size={12} className={`flex-none ${d.frida ? 'text-jz-teal' : 'text-jz-muted'}`} />
-                <span className="font-mono text-jz-ink truncate flex-1" title={d.serial}>{d.model || d.serial}</span>
-                {d.root ? <span className="flex-none px-1.5 py-0.5 rounded-control text-meta bg-jz-sev-medium/10 text-jz-sev-medium">Root</span>
-                  : <span className="flex-none px-1.5 py-0.5 rounded-control text-meta bg-jz-surface-2 text-jz-muted">未越权</span>}
+          )}
+          {devices.map((d: any) => (
+            <div key={d.serial} data-flyout-device={d.serial} className="space-y-1 rounded-control border border-jz-border px-2.5 py-2">
+              <div className="flex items-center gap-2">
+                <Smartphone size={14} className="flex-none text-jz-muted" aria-hidden />
+                <span className="min-w-0 flex-1 truncate text-label font-medium text-jz-ink" title={d.serial}>{d.model || d.serial}</span>
+                <StatusBadge tone={d.root ? 'attention' : 'neutral'}>{d.root ? '已 Root' : '未 Root'}</StatusBadge>
               </div>
-              <div className="flex items-center gap-2 text-meta font-mono text-jz-muted">
-                <span className="truncate" title={d.serial}>{d.serial}</span>
+              <div className="flex items-center gap-2 text-meta text-jz-muted">
+                <span className="min-w-0 truncate font-mono" title={d.serial}>{d.serial}</span>
                 <span className="flex-none">Android {d.android || '—'}</span>
                 <span className="flex-1" />
-                <span className={`flex-none inline-flex items-center gap-1 ${d.frida ? 'text-jz-teal' : 'text-jz-muted'}`}>
-                  <Syringe size={11} /> {d.frida ? 'Frida 就绪' : 'Frida 未装'}
+                <span className={cx('inline-flex flex-none items-center gap-1', d.frida ? 'text-jz-teal' : 'text-jz-muted')}>
+                  <Syringe size={12} aria-hidden /> {d.frida ? 'Frida 就绪' : 'Frida 未安装'}
                 </span>
               </div>
             </div>

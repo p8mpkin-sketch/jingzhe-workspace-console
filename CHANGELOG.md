@@ -3,6 +3,38 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 3 — Shell
+
+### Changed
+- Layout (`app/src/app/App.tsx`): the rail runs the full height on the left and the top bar sits over the page column. Routes, the route table, the session wiring, the notification stream connect / disconnect and the build-version check are untouched. Added a skip link and a `main` landmark; the lazy-route and session-check fallbacks are skeletons.
+- Rail (`layout/Sidebar.tsx`): 232 px expanded, 68 px collapsed, quiet right border, active item on `brand-soft`. Starts collapsed between 761 and 1023 px, and is a focus-trapped drawer at 760 px and below, opened from the top bar and closed by Escape, the backdrop or a navigation. Device and queue cards keep their data sources, polling and `data-*` hooks; collapsed, they stay reachable as icon buttons.
+- Top bar (`layout/TopBar.tsx`): 52 px, surface with a bottom border (no blur, no shadow). Context pills share one outline style; the account menu uses `Popover` and `MenuItem`; icon controls use `IconButton` with names.
+- Navigation names come from one list (`layout/navigation.ts`) used by the rail, the breadcrumb and the command palette: 新建评估, 公司项目, 评估项目, 任务, 概览, 报告, 发现, 知识, Agent, 系统; groups 工作区 and 分析. Route paths are unchanged. The breadcrumb now names `/company` and `/discovery` (it fell back to the dashboard name before).
+- Notifications (`layout/NotificationBell.tsx`): panel and arrival cards on surface with a border; unread count and unread dots use the brand color, red only for failed items; read items are no longer dimmed by opacity; empty states state the cause; a full-width sheet on mobile. Store calls, deep links and local "clear view" behave as before.
+- Device popover (`layout/DeviceFridaFlyout.tsx`): opens below the top bar pill and above the rail card (the top bar one opened off-screen before); focus trap and Escape.
+- Command palette (`components/CmdPalette.tsx`): same shortcut and local matching; arrow keys and Enter, listbox semantics, every route listed.
+- Sign-in (`app/LoginGate.tsx`): two columns from 1024 px, one below; labelled fields in a form, error as an alert. The login call is unchanged.
+- Theme (`theme/ThemeContext.tsx`, `app/index.html`): the first visit follows the system preference and keeps following it; the stored choice under `apksec-theme` wins; only the toggle writes it. Before, the default was dark and it was stored on load.
+- `features/agent/components_agent/AgentWorkspace.tsx`: three fixed offsets that assumed a 48 px top bar and a 56 px rail now use the shell tokens.
+- Document title is "惊蛰 Jingzhe Workspace".
+
+### Added
+- `scripts/capture-shell.mjs`: overlay screenshots and interaction checks for the shell.
+
+### Verified
+- `tsc --noEmit` and `npm run build` pass. Main chunk 979.6 kB, CSS 162.8 kB.
+- 14 routes at 760 / 1024 / 1280 / 1440 / 1680: no overflow, no error boundary; request log identical to baseline.
+- Shell checks: rail 232 / 68 px and top bar 52 px measured; drawer opens, traps focus, closes on Escape and on navigation; rail collapsed at 900 px and expands; both device popovers stay in the viewport; palette navigates by keyboard; skip link is the first tab stop and the next 14 stops show the 2 px ring; theme follows the system with no stored choice, stored choice wins, toggle stores.
+- Contrast check: no failing text pair.
+
+### Remaining gaps
+- Sign-out exists in the rail footer and in the account menu, and system settings as an icon and as a menu item. `docs/page-matrix.md` lists each of them, so they are kept; one of each pair should go.
+- Command palette has no recents, and the top bar has no visible entry to it.
+- Session-expired handling is whatever the auth store does; the sign-in page shows no separate "session expired" message.
+- `EnvBar` and `AiSidebar` (the latter is switched off in code) belong to the session workspace and are restyled in phase 5.
+- Page content inside the shell is not migrated yet, so page titles still differ from the navigation names.
+- Token lint unchanged at 835; the shell files had no violations left after phase 1.
+
 ## Phase 2 — Shared primitives
 
 ### Added (`app/src/components/ui`)

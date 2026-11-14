@@ -61,7 +61,7 @@ export const routes = [
   ['GET', /^\/api\/tasks\/\d+\/artifacts$/, { files: [] }],
   ['GET', /^\/api\/org$/, { usage: { running: 2, quota_concurrent: 4 } }],
   ['GET', /^\/api\/nodes$/, { items: [{ id: 'n1', name: 'worker-1', status: 'online', running: 2, capacity: 4 }] }],
-  ['GET', /^\/api\/notifications$/, { unread: 2, items: [{ id: 1, kind: 'task_done', title: '任务已完成', body: 'Compass 评估完成', ts: now - 300, read: false, link: '/tasks' }, { id: 2, kind: 'report_ready', title: '报告已就绪', body: '#32 项目总报告', ts: now - 900, read: false, link: '/reports' }] }],
+  ['GET', /^\/api\/notifications$/, { unread: 2, items: [{ id: 1, kind: 'task', level: 'success', title: '任务已完成', body: 'Compass 评估完成', created_at: now - 300, read_at: null, link: '/tasks' }, { id: 2, kind: 'system', level: 'info', title: '报告已就绪', body: '#32 项目总报告', created_at: now - 900, read_at: null, link: '/reports' }, { id: 3, kind: 'task', level: 'danger', title: '任务失败', body: 'Wallet 评估在静态分析阶段停止', created_at: now - 4000, read_at: now - 3000, link: '/tasks?focus=103' }] }],
   ['GET', /^\/api\/models\/providers$/, providers],
   ['GET', /^\/api\/models\/routing$/, { routing: { default: 'p1', chat: 'p1', audit: 'p1' } }],
   ['GET', /^\/api\/models\/catalog$/, { models: [] }],

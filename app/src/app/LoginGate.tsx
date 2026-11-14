@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/stores/auth';
-import { Button } from '@/components/ui';
+import { Button, Field, Input, InlineAlert } from '@/components/ui';
 
+/** Sign-in. Two columns from 1024 px: workspace statement on the canvas, form on the surface. One column below. */
 export const LoginGate: React.FC = () => {
   const login = useAuth((s) => s.login);
   const [u, setU] = useState('');
@@ -14,32 +15,36 @@ export const LoginGate: React.FC = () => {
     setBusy(false);
   };
   return (
-    <div className="h-full grid place-items-center relative overflow-hidden">
-      {/* 品牌氛围光: 中央 accent 径向弥散(与 v3-card-ai 氛围光同语言,纯装饰 aria-hidden) */}
-      <div aria-hidden className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(640px 420px at 50% 38%, rgb(var(--jz-brand) / 0.07), transparent 70%)' }} />
-      <div className="relative w-96 space-y-5 rounded-dialog bg-jz-surface p-8 shadow-card">
-        {/* 惊蛰品牌锁定: 主图标(惊雷劈壳+虫眼) + 中英文名,资产走 /v2/brand 显式挂载路径 */}
+    <div className="grid h-full overflow-auto bg-jz-canvas lg:grid-cols-[minmax(0,1fr)_minmax(420px,520px)]" data-login>
+      <div className="flex flex-col justify-between gap-8 px-jz-page py-8 lg:px-12 lg:py-12">
         <div className="flex items-center gap-3">
-          <img src="/v2/brand/icon.svg" alt="惊蛰" className="w-11 h-11 rounded-panel" />
+          <img src="/v2/brand/icon.svg" alt="" className="h-9 w-9 rounded-control" />
           <div className="leading-tight">
-            <div className="font-display text-section font-semibold text-jz-ink">
-              惊蛰 <span className="font-mono text-meta font-medium text-jz-muted align-middle">JINGZHE</span>
-            </div>
-            <div className="text-meta text-jz-muted mt-0.5">APK 自动化 AI 安全测试平台</div>
+            <div className="font-display text-section font-semibold text-jz-ink">惊蛰</div>
+            <div className="font-mono text-meta text-jz-muted">JINGZHE WORKSPACE</div>
           </div>
         </div>
-        <input value={u} onChange={(e) => setU(e.target.value)} placeholder="用户名"
-          className="w-full px-3 py-2 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink focus:ring-2 focus:ring-jz-brand/40 outline-none" />
-        <input value={p} onChange={(e) => setP(e.target.value)} type="password" placeholder="密码"
-          onKeyDown={(e) => e.key === 'Enter' && submit()}
-          className="w-full px-3 py-2 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink focus:ring-2 focus:ring-jz-brand/40 outline-none" />
-        {err && <div className="text-meta text-jz-sev-critical">{err}</div>}
-        <Button className="w-full justify-center" disabled={busy} onClick={submit}>{busy ? '登录中…' : '登录'}</Button>
-        <div className="text-meta leading-relaxed text-jz-muted">
-          登录态存于浏览器 localStorage(有效期 24h),刷新页面自动经 /api/me 校验免登;
-          127.0.0.1 与 localhost 属不同源,各需分别登录。
+        <div className="max-w-jz-prose space-y-3">
+          <h1 className="font-display text-page font-semibold text-jz-ink max-[760px]:text-title">移动应用安全评估工作区</h1>
+          <p className="text-body text-jz-ink-2">在一个工作区里管理评估项目、跟踪任务、核验发现并生成报告。</p>
         </div>
+        <p className="hidden text-meta text-jz-muted lg:block">仅限授权范围内的评估使用。</p>
+      </div>
+      <div className="flex items-center border-t border-jz-border bg-jz-surface px-jz-page py-8 lg:border-l lg:border-t-0 lg:px-12">
+        <form className="w-full space-y-4" onSubmit={(e) => { e.preventDefault(); if (!busy) submit(); }} noValidate>
+          <h2 className="text-title font-semibold text-jz-ink">登录</h2>
+          <Field label="用户名">
+            {(ids) => <Input ids={ids} value={u} onChange={(e) => setU(e.target.value)} autoComplete="username" autoFocus className="h-jz-control-lg" />}
+          </Field>
+          <Field label="密码">
+            {(ids) => <Input ids={ids} value={p} onChange={(e) => setP(e.target.value)} type="password" autoComplete="current-password" className="h-jz-control-lg" />}
+          </Field>
+          {err && <InlineAlert tone="danger" title="无法登录" data-login-error>{err}</InlineAlert>}
+          <Button type="submit" size="lg" className="w-full" loading={busy}>{busy ? '正在登录' : '登录'}</Button>
+          <p className="text-meta text-jz-muted">
+            登录状态保存在此浏览器中，24 小时内有效。127.0.0.1 与 localhost 是不同的站点，需要分别登录。
+          </p>
+        </form>
       </div>
     </div>
   );

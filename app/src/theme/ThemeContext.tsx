@@ -1,14 +1,25 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-/** R95-UI: 全局主题上下文——dark/light 双模,class 策略(darkMode:'class'),持久化 localStorage。
- *  默认 dark(平台基底);切换时在 <html> 上挂/摘 'dark' 类,Tailwind dark: 变体全量生效。 */
+/** Light / dark theme, class strategy on <html>. A stored choice wins; with none, the system preference decides
+ *  and keeps being followed. Only an explicit toggle writes the choice to localStorage. */
 
 type Theme = 'dark' | 'light';
 const KEY = 'apksec-theme';
+const SYSTEM_DARK = '(prefers-color-scheme: dark)';
 
 const ThemeCtx = createContext<{ theme: Theme; toggle: () => void }>({
   theme: 'dark', toggle: () => {},
 });
+
+function stored(): Theme | null {
+  try {
+    const v = localStorage.getItem(KEY);
+    return v === 'dark' || v === 'light' ? v : null;
+  } catch { return null; }
+}
+function system(): Theme {
+  try { return window.matchMedia(SYSTEM_DARK).matches ? 'dark' : 'light'; } catch { return 'dark'; }
+}
 
 function apply(theme: Theme) {
   const root = document.documentElement;
@@ -21,14 +32,20 @@ function apply(theme: Theme) {
 }
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    try { return (localStorage.getItem(KEY) as Theme) || 'dark'; } catch { return 'dark'; }
-  });
+  const [theme, setTheme] = useState<Theme>(() => stored() || system());
+  useEffect(() => { apply(theme); }, [theme]);
   useEffect(() => {
-    apply(theme);
-    try { localStorage.setItem(KEY, theme); } catch { /* ignore */ }
-  }, [theme]);
-  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+    let m: MediaQueryList;
+    try { m = window.matchMedia(SYSTEM_DARK); } catch { return; }
+    const follow = () => { if (!stored()) setTheme(m.matches ? 'dark' : 'light'); };
+    m.addEventListener('change', follow);
+    return () => m.removeEventListener('change', follow);
+  }, []);
+  const toggle = () => setTheme((t) => {
+    const next: Theme = t === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, next); } catch { /* ignore */ }
+    return next;
+  });
   return <ThemeCtx.Provider value={{ theme, toggle }}>{children}</ThemeCtx.Provider>;
 };
 
