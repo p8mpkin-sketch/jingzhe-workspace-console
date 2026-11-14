@@ -1,0 +1,45 @@
+/* Jingzhe Workspace tokens — neutral namespace only. */
+:root {
+  --jz-canvas: 245 246 248;
+  --jz-surface: 255 255 255;
+  --jz-surface-2: 240 242 245;
+  --jz-ink: 22 24 29;
+  --jz-ink-2: 67 74 86;
+  --jz-muted: 107 114 128;
+  --jz-border: 227 230 235;
+  --jz-brand: 54 87 214;
+  --jz-brand-soft: 233 237 255;
+  --jz-teal: 14 143 126;
+  --jz-amber: 178 106 0;
+  --jz-red: 180 35 24;
+  --jz-radius-control: 8px;
+  --jz-radius-card: 12px;
+  --jz-radius-panel: 16px;
+  --jz-radius-dialog: 20px;
+  --jz-font-display: "Instrument Sans", "Noto Sans SC", sans-serif;
+  --jz-font-body: "Inter", "Noto Sans SC", sans-serif;
+  --jz-font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
+  --jz-shadow-card: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px -18px rgba(16,24,40,.18);
+  --jz-shadow-dialog: 0 20px 60px -24px rgba(16,24,40,.30);
+}
+.dark {
+  --jz-canvas: 14 17 22;
+  --jz-surface: 21 26 33;
+  --jz-surface-2: 27 34 44;
+  --jz-ink: 242 244 247;
+  --jz-ink-2: 196 203 214;
+  --jz-muted: 139 149 165;
+  --jz-border: 40 49 61;
+  --jz-brand: 142 162 255;
+  --jz-brand-soft: 27 37 74;
+  --jz-teal: 79 209 197;
+  --jz-amber: 245 184 75;
+  --jz-red: 255 138 128;
+}
+html, body { background: rgb(var(--jz-canvas)); color: rgb(var(--jz-ink)); }
+body { font-family: var(--jz-font-body); font-size: 14px; line-height: 1.6; }
+.jz-display { font-family: var(--jz-font-display); font-size: 36px; line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; }
+.jz-page-title { font-family: var(--jz-font-display); font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.015em; }
+.jz-section { font-size: 17px; line-height: 1.35; font-weight: 600; }
+.jz-meta { font-size: 12px; line-height: 1.45; color: rgb(var(--jz-muted)); }
+.jz-mono { font-family: var(--jz-font-mono); font-variant-numeric: tabular-nums; }

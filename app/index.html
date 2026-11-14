@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN" class="dark">
+  <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>惊蛰 JINGZHE · APK 自动化 AI 安全测试平台</title>
+    <link rel="icon" type="image/svg+xml" href="/v2/brand/icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/v2/brand/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/v2/brand/favicon-16.png" />
+    <link rel="shortcut icon" href="/v2/brand/favicon.ico" />
+    <link rel="apple-touch-icon" href="/v2/brand/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0A0F20" />
+    <style>html,body{background:#090D16}</style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // R50 P0-4: v1 退役深链兼容 —— /#pentest 经 302 保留 fragment 到 /v2/#pentest,规范化为 #/pentest
+      (function () {
+        var h = location.hash || '';
+        if (h && h !== '#' && h.indexOf('#/') !== 0) {
+          location.replace('/v2/#/' + h.replace(/^#\/?/, ''));
+        }
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

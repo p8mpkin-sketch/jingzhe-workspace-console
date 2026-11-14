@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- 惊蛰 · 单色版(标题栏/水印/favicon),透明背景,可用 currentColor 替换 -->
+  <path d="M310 34 L226 252 L292 252 L242 470 L378 216 L308 216 L362 34 Z"
+        fill="#38BDF8"/>
+</svg>

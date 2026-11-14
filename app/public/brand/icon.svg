@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- 惊蛰 · 主图标:春雷劈开APK之壳,蛰虫初醒 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B2444"/>
+      <stop offset="0.55" stop-color="#111830"/>
+      <stop offset="1" stop-color="#0A0F20"/>
+    </linearGradient>
+    <linearGradient id="boltg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9BE8FF"/>
+      <stop offset="0.5" stop-color="#5B8CFF"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="seamg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#67E8F9"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.53" cy="0.42" r="0.6">
+      <stop offset="0" stop-color="#3B82F6" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#3B82F6" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="soft2" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <clipPath id="tile"><rect x="0" y="0" width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="url(#bg)"/>
+    <rect width="512" height="512" fill="url(#halo)"/>
+    <!-- 裂缝辉光 -->
+    <path d="M300 -20 L268 92 L318 150 L282 236 L338 318 L300 410 L322 540"
+          fill="none" stroke="url(#seamg)" stroke-width="24" stroke-linejoin="round"
+          opacity="0.45" filter="url(#soft)"/>
+    <!-- 壳裂缝隙 -->
+    <path d="M300 -20 L268 92 L318 150 L282 236 L338 318 L300 410 L322 540"
+          fill="none" stroke="#04070F" stroke-width="10" stroke-linejoin="round" opacity="0.95"/>
+    <!-- 蛰虫初醒:双眼藏在雷后,只露出半个头(画在雷之下) -->
+    <g>
+      <circle cx="322" cy="331" r="17" fill="#FBBF24" opacity="0.3" filter="url(#soft2)"/>
+      <circle cx="306" cy="363" r="13" fill="#FBBF24" opacity="0.26" filter="url(#soft2)"/>
+      <circle cx="322" cy="331" r="11" fill="#FCD34D"/>
+      <circle cx="306" cy="363" r="9" fill="#FCD34D"/>
+      <circle cx="326" cy="327" r="2.6" fill="#FFFBE8"/>
+      <circle cx="310" cy="359" r="2.2" fill="#FFFBE8"/>
+    </g>
+    <!-- 碎裂的壳片 -->
+    <g fill="#232F55" stroke="#4C5F94" stroke-width="2.5" stroke-linejoin="round">
+      <path d="M356 78 L394 60 L386 106 Z"/>
+      <path d="M398 196 L434 186 L420 228 Z"/>
+      <path d="M216 392 L184 414 L224 424 Z"/>
+    </g>
+    <!-- 惊雷 -->
+    <path d="M310 34 L226 252 L292 252 L242 470 L378 216 L308 216 L362 34 Z"
+          fill="url(#boltg)" stroke="#DDEBFF" stroke-opacity="0.35" stroke-width="3"/>
+  </g>
+  <rect x="1" y="1" width="510" height="510" rx="111" fill="none" stroke="#8FA3C8" stroke-opacity="0.18" stroke-width="2"/>
+</svg>

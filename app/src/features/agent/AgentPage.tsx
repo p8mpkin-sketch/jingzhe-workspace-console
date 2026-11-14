@@ -1,0 +1,273 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowUpRight, Bot, Bug, CircleAlert, DoorOpen, Download, GitBranch, Globe, KeyRound, MoreHorizontal, PanelLeft, PanelRight, Radio, ShieldAlert, Sparkles } from 'lucide-react';
+import { AgentSidebar } from './components_agent/AgentSidebar';
+import { AgentComposer } from './components_agent/AgentComposer';
+import { AgentInspector } from './components_agent/AgentInspector';
+import { AgentWorkspace } from './components_agent/AgentWorkspace';
+import { AnswerCard } from './components_agent/AnswerCard';
+import { TurnView } from './components_agent/TurnView';
+import { useAgentSession } from './useAgentSession';
+import { api } from '@/services/api';
+import { projectTurns } from './model/turnProjection';
+import type { EvidenceView } from './content/types';
+
+const SUGGESTS_AGENT = [
+  { icon: ShieldAlert, tint: 'text-vuln-critical', tile: 'from-vuln-critical/20 to-vuln-critical/5', label: '高危漏洞清单', desc: '按任务聚合高危发现，给出文件位置和修复优先级', q: '任务 #100367 有哪些高危发现？给出文件位置和修复优先级' },
+  { icon: KeyRound, tint: 'text-vuln-medium', tile: 'from-vuln-medium/20 to-vuln-medium/5', label: '硬编码密钥提取', desc: '汇总密钥、证书与凭据，标注文件、置信度和用途', q: '汇总任务 #100367 中的硬编码密钥/证书，列出文件与置信度' },
+  { icon: DoorOpen, tint: 'text-neon-accent', tile: 'from-neon-accent/20 to-neon-accent/5', label: '导出组件审计', desc: '检查 exported 组件及其权限保护状态', q: '列出任务 #100367 的 exported 组件，标出未加权限保护的' },
+  { icon: Bug, tint: 'text-vuln-safe', tile: 'from-vuln-safe/20 to-vuln-safe/5', label: '危险 API 清单', desc: '按风险等级整理危险调用与高危权限', q: '汇总任务 #100367 中危险 API 调用，按风险等级排序' },
+];
+const SUGGESTS_QUICK = [
+  { icon: ShieldAlert, tint: 'text-vuln-critical', tile: 'from-vuln-critical/20 to-vuln-critical/5', label: '证书锁定结论', desc: '检索本地知识库中的 SSL Pinning 结论与出处', q: '检索本地知识库里关于证书锁定（SSL Pinning）的结论与出处' },
+  { icon: KeyRound, tint: 'text-vuln-medium', tile: 'from-vuln-medium/20 to-vuln-medium/5', label: '硬编码密钥', desc: '查看历史密钥/凭据发现与出处', q: '检索本地知识库中硬编码密钥/凭据的历史发现与出处' },
+  { icon: Sparkles, tint: 'text-neon-accent', tile: 'from-neon-accent/20 to-neon-accent/5', label: '会话要点小结', desc: '总结结论、证据和未验证项', q: '总结当前会话的结论、证据和未验证项' },
+];
+
+export const AgentPage: React.FC = () => {
+  const a = useAgentSession();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const atBottomRef = useRef(true);
+  const [showJump, setShowJump] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [sessionOpen, setSessionOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [webStatus, setWebStatus] = useState<any>(null);
+  useEffect(() => {
+    api<any>('/api/agent/web/status').then(setWebStatus).catch(() => setWebStatus(null));
+  }, []);
+  const currentSession = a.sessions.find((s) => s.id === a.current);
+  const turns = useMemo(() => projectTurns(a.nodes), [a.nodes]);
+  const showHero = !a.current || (turns.length === 0 && !a.liveText && !a.liveReasoning && !a.loading);
+  const tools = useMemo(() => a.nodes.filter((n) => n.kind === 'tool'), [a.nodes]);
+  const evidenceIndex = useMemo<EvidenceView[]>(() => {
+    const seen = new Set<string>();
+    const out: EvidenceView[] = [];
+    for (const t of tools) {
+      for (const c of t.citations || []) {
+        const key = JSON.stringify(c);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({
+          key,
+          kind: c.url ? 'link' : c.path ? 'source' : 'task',
+          label: c.url || [c.task_id ? `task#${c.task_id}` : '', c.ref || '', c.path || ''].filter(Boolean).join(' · '),
+          path: c.path || undefined,
+          url: c.url || undefined,
+        });
+      }
+    }
+    return out;
+  }, [tools]);
+  const lastFinalId = useMemo(() => {
+    const finals = turns.filter((t) => t.final);
+    return finals.length ? finals[finals.length - 1].final?.id : undefined;
+  }, [turns]);
+  const goal = useMemo(() => {
+    const rows = a.nodes.filter((n) => n.kind === 'goal');
+    return rows.length ? rows[rows.length - 1] : null;
+  }, [a.nodes]);
+  const todos = useMemo(() => {
+    const rows = a.nodes.filter((n) => n.kind === 'todo');
+    return (rows[rows.length - 1]?.items || []) as Array<{ text: string; status: string }>;
+  }, [a.nodes]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el && atBottomRef.current) el.scrollTop = el.scrollHeight;
+  }, [a.nodes.length, a.liveText, a.liveReasoning]);
+
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    atBottomRef.current = near;
+    setShowJump(!near);
+  };
+  const jumpBottom = () => {
+    const el = scrollRef.current;
+    if (el) { el.scrollTop = el.scrollHeight; atBottomRef.current = true; setShowJump(false); }
+  };
+
+  const onNew = async () => {
+    try { await a.createSession(undefined, undefined, a.mode); } catch { /* surfaced */ }
+  };
+  const deepLinkRef = useRef(false);
+  useEffect(() => {
+    if (deepLinkRef.current) return;
+    const raw = window.location.hash.split('?')[1] || '';
+    const task = Number(new URLSearchParams(raw).get('task') || 0);
+    if (!task) return;
+    deepLinkRef.current = true;
+    a.createSession(task, `任务 #${task} 追问`, 'agent').catch(() => {});
+  }, [a.createSession]);
+  const onDelete = async (id: string) => {
+    if (!window.confirm('删除这个 Agent 会话？事件日志会软删除，不物理销毁。')) return;
+    await a.remove(id);
+  };
+  const onBatchDelete = async (ids: string[]) => {
+    if (!ids.length) return;
+    if (!window.confirm(`删除选中的 ${ids.length} 个 Agent 会话？事件日志会软删除，不物理销毁。`)) return;
+    for (const id of ids) await a.remove(id);
+  };
+  const ask = async (q: string, model = '') => {
+    try { await a.send(q, model); } catch { /* surfaced */ }
+  };
+
+  const composerNode = (
+    <AgentComposer running={a.running} disabled={a.loading}
+      mode={a.mode} modeLocked={!!a.current}
+      onModeChange={a.setMode}
+      onSend={(text, model) => { ask(text, model).catch(() => {}); }}
+      onStop={() => { a.stop(); }} />
+  );
+  const composerHint = (
+    <div className="mt-1 text-[11px] text-jz-text-muted/60 text-center">
+      审计 Agent：任务/发现/报告/源码/KB + 审批写；快速问答：只查本地 KB。
+    </div>
+  );
+
+  return (
+    <div className="h-full" data-agent-page>
+      <AgentWorkspace
+        sessionOpen={sessionOpen}
+        onCloseSession={() => setSessionOpen(false)}
+        sessionRail={<AgentSidebar sessions={a.sessions} current={a.current} onNew={onNew}
+          onSelect={(id) => { a.setCurrent(id); setSessionOpen(false); }} onDelete={onDelete} onBatchDelete={onBatchDelete}
+          className="h-full" />}
+        inspectorOpen={inspectorOpen}
+        onCloseInspector={() => setInspectorOpen(false)}
+        inspector={<AgentInspector nodes={a.nodes} tools={tools} events={a.events}
+          lastSeq={a.lastSeq} lastEvent={a.lastEvent}
+          goal={goal} todos={todos} metrics={a.metrics}
+          onClose={() => setInspectorOpen(false)} />}
+      >
+      <div className="flex-1 min-w-0 flex flex-col relative">
+        <div className="flex items-center gap-2 px-3 sm:px-5 py-2 border-b border-jz-border/40">
+          <button onClick={() => setSessionOpen(true)} data-agent-session-toggle
+            className="lg:hidden w-7 h-7 rounded-lg grid place-items-center text-jz-text-muted hover:text-jz-text-primary hover:bg-jz-elevated/60">
+            <PanelLeft size={15} />
+          </button>
+          <Bot size={15} className="text-neon-accent flex-none" />
+          <span className="text-[13px] font-semibold text-jz-text-primary truncate max-w-[180px] sm:max-w-[360px]">
+            {currentSession?.title || 'Agent 工作台'}
+          </span>
+          <span className={`hidden sm:inline px-1.5 py-0.5 rounded text-[11px] font-semibold ${a.mode === 'quick' ? 'bg-vuln-safe/10 text-vuln-safe' : 'bg-neon-accent/10 text-neon-accent'}`} data-agent-mode-badge>
+            {a.mode === 'quick' ? '快速问答' : '审计 Agent'}
+          </span>
+          {currentSession?.task_id != null && (
+            <span className="hidden md:inline px-1.5 py-0.5 rounded bg-jz-elevated/70 text-[11px] font-mono text-jz-text-muted">task #{currentSession.task_id}</span>
+          )}
+          <span className="flex-1" />
+          <span data-agent-status className={`hidden md:flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] ${a.running ? 'bg-neon-accent/10 text-neon-accent' : 'bg-jz-elevated/60 text-jz-text-muted'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${a.running ? 'bg-neon-accent animate-pulse' : 'bg-jz-text-muted/50'}`} />
+            {a.running ? 'running' : (currentSession?.status || 'idle')}
+          </span>
+          <span data-agent-connected className={`hidden md:flex items-center gap-1 text-[11px] ${a.connected ? 'text-vuln-safe' : 'text-jz-text-muted'}`}>
+            <Radio size={10} /> {a.connected ? '已连接' : '回放'}
+          </span>
+          <button onClick={() => setInspectorOpen(true)} data-agent-inspector-toggle
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-jz-text-muted hover:text-neon-accent hover:bg-jz-elevated/60">
+            <PanelRight size={12} /> <span className="hidden sm:inline">运行详情</span>
+          </button>
+          <div className="relative">
+            <button onClick={() => setMenuOpen((v) => !v)} data-agent-more
+              className="w-7 h-7 rounded-lg grid place-items-center text-jz-text-muted hover:text-jz-text-primary hover:bg-jz-elevated/60">
+              <MoreHorizontal size={15} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-jz-surface shadow-jz-card border border-jz-border/50 p-1 z-30" data-agent-more-menu>
+                <button onClick={() => { a.toggleWeb(); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-jz-text-secondary hover:bg-jz-elevated text-left"
+                  title={webStatus ? `搜索源：${webStatus.provider === 'tavily' ? 'Tavily' : 'DuckDuckGo（免 Key）'}` : '联网搜索'}>
+                  <Globe size={12} /> 联网 {a.webEnabled ? '开' : '关'}
+                  {webStatus && <span className="ml-auto font-mono text-[10px] text-jz-text-muted">{webStatus.provider === 'tavily' ? 'Tavily' : 'DDG'}</span>}
+                </button>
+                <button onClick={() => { a.forkSession().catch(() => {}); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-jz-text-secondary hover:bg-jz-elevated text-left">
+                  <GitBranch size={12} /> Fork 分支
+                </button>
+                <button onClick={() => { a.exportTrajectory().catch(() => {}); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-jz-text-secondary hover:bg-jz-elevated text-left">
+                  <Download size={12} /> 导出轨迹
+                </button>
+                <div className="px-2 py-1 text-[11px] font-mono text-jz-text-muted/60">seq {a.lastSeq}</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {a.error && (
+          <div className="mx-5 mt-2 px-2.5 py-2 rounded-lg bg-vuln-critical/10 text-xs text-vuln-critical flex items-center gap-1.5" data-agent-error>
+            <CircleAlert size={12} /> {a.error}
+          </div>
+        )}
+
+        <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto" data-agent-transcript>
+          <div className="max-w-[1040px] mx-auto px-5 py-5 pb-6">
+            {showHero && (
+              <div className="min-h-[55vh] flex flex-col justify-center" data-agent-empty>
+                <div className="text-center mb-6">
+                  <div className="mx-auto mb-3 w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-400 grid place-items-center text-white shadow-[0_10px_30px_-10px_rgba(99,102,241,0.7)]">
+                    <Sparkles size={21} />
+                  </div>
+                  <h1 className="text-[24px] leading-8 font-semibold tracking-tight text-jz-text-primary">APK 安全审计 Agent</h1>
+                  <p className="mt-1.5 text-[12px] text-jz-text-muted">读取任务、发现、报告和源码；结论带证据，未知项单独标注。</p>
+                </div>
+                <div className="max-w-[780px] mx-auto w-full mb-4" data-agent-hero-composer>
+                  {composerNode}
+                  {composerHint}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-[780px] mx-auto w-full">
+                  {(a.mode === 'quick' ? SUGGESTS_QUICK : SUGGESTS_AGENT).map((s) => (
+                    <button key={s.q} onClick={() => ask(s.q)} data-agent-suggest
+                      className="group text-left px-4 py-3.5 rounded-2xl bg-jz-surface border border-jz-border/40 shadow-jz-card hover:-translate-y-0.5 hover:border-neon-accent/40 hover:shadow-[0_14px_40px_-14px_rgba(0,0,0,0.35)] transition-all duration-150">
+                      <div className="flex items-start gap-3">
+                        <span className={`w-8 h-8 rounded-xl bg-gradient-to-br ${s.tile} ${s.tint} grid place-items-center flex-none`}>
+                          <s.icon size={16} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-jz-text-primary">
+                            {s.label}
+                            <ArrowUpRight size={12} className="opacity-0 -translate-y-0.5 group-hover:opacity-50 transition-opacity" />
+                          </span>
+                          <span className="mt-1 block text-[11px] leading-5 text-jz-text-muted">{s.desc}</span>
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="text-[11px] text-jz-text-muted/60 text-center mt-4">{a.current ? '发送后进入当前会话' : '首次发送会自动创建 Agent 会话'} · 结论以 citations 为准</div>
+              </div>
+            )}
+            {a.loading && <div className="text-xs text-jz-text-muted py-4" data-agent-loading>加载事件中…</div>}
+            {turns.map((turn) => (
+              <TurnView key={turn.key} turn={turn} sessionId={a.current || undefined}
+                evidenceIndex={evidenceIndex}
+                allowFeedback={!!turn.final && turn.final.id === lastFinalId}
+                onFeedback={(r) => a.submitFeedback(r)}
+                onDecide={(id, d) => a.decideApproval(id, d)} />
+            ))}
+            {(a.liveText || a.liveReasoning) && (
+              <AnswerCard live sessionId={a.current || undefined} node={{ id: 'live', kind: 'assistant', text: a.liveText,
+                reasoning: a.liveReasoning, model: '流式', usage: null }} />
+            )}
+          </div>
+          {showJump && (
+            <button onClick={jumpBottom} data-agent-jump-bottom
+              className="absolute right-6 bottom-28 z-20 px-3 py-1.5 rounded-full bg-jz-surface shadow-jz-card text-[11px] text-jz-text-secondary border border-jz-border/50 hover:text-neon-accent">
+              回到最新 ↓
+            </button>
+          )}
+        </div>
+
+        {!showHero && (
+          <div className="max-w-[1040px] mx-auto px-5 py-3 w-full">
+            {composerNode}
+            {composerHint}
+          </div>
+        )}
+      </div>
+
+      </AgentWorkspace>
+    </div>
+  );
+};
+
+export default AgentPage;
