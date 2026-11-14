@@ -12,15 +12,15 @@ import { projectTurns } from './model/turnProjection';
 import type { EvidenceView } from './content/types';
 
 const SUGGESTS_AGENT = [
-  { icon: ShieldAlert, tint: 'text-vuln-critical', tile: 'from-vuln-critical/20 to-vuln-critical/5', label: '高危漏洞清单', desc: '按任务聚合高危发现，给出文件位置和修复优先级', q: '任务 #100367 有哪些高危发现？给出文件位置和修复优先级' },
-  { icon: KeyRound, tint: 'text-vuln-medium', tile: 'from-vuln-medium/20 to-vuln-medium/5', label: '硬编码密钥提取', desc: '汇总密钥、证书与凭据，标注文件、置信度和用途', q: '汇总任务 #100367 中的硬编码密钥/证书，列出文件与置信度' },
-  { icon: DoorOpen, tint: 'text-neon-accent', tile: 'from-neon-accent/20 to-neon-accent/5', label: '导出组件审计', desc: '检查 exported 组件及其权限保护状态', q: '列出任务 #100367 的 exported 组件，标出未加权限保护的' },
-  { icon: Bug, tint: 'text-vuln-safe', tile: 'from-vuln-safe/20 to-vuln-safe/5', label: '危险 API 清单', desc: '按风险等级整理危险调用与高危权限', q: '汇总任务 #100367 中危险 API 调用，按风险等级排序' },
+  { icon: ShieldAlert, tint: 'text-jz-sev-critical', tile: 'from-jz-sev-critical/20 to-jz-sev-critical/5', label: '高危漏洞清单', desc: '按任务聚合高危发现，给出文件位置和修复优先级', q: '任务 #100367 有哪些高危发现？给出文件位置和修复优先级' },
+  { icon: KeyRound, tint: 'text-jz-sev-medium', tile: 'from-jz-sev-medium/20 to-jz-sev-medium/5', label: '硬编码密钥提取', desc: '汇总密钥、证书与凭据，标注文件、置信度和用途', q: '汇总任务 #100367 中的硬编码密钥/证书，列出文件与置信度' },
+  { icon: DoorOpen, tint: 'text-jz-brand', tile: 'from-jz-brand/20 to-jz-brand/5', label: '导出组件审计', desc: '检查 exported 组件及其权限保护状态', q: '列出任务 #100367 的 exported 组件，标出未加权限保护的' },
+  { icon: Bug, tint: 'text-jz-teal', tile: 'from-jz-teal/20 to-jz-teal/5', label: '危险 API 清单', desc: '按风险等级整理危险调用与高危权限', q: '汇总任务 #100367 中危险 API 调用，按风险等级排序' },
 ];
 const SUGGESTS_QUICK = [
-  { icon: ShieldAlert, tint: 'text-vuln-critical', tile: 'from-vuln-critical/20 to-vuln-critical/5', label: '证书锁定结论', desc: '检索本地知识库中的 SSL Pinning 结论与出处', q: '检索本地知识库里关于证书锁定（SSL Pinning）的结论与出处' },
-  { icon: KeyRound, tint: 'text-vuln-medium', tile: 'from-vuln-medium/20 to-vuln-medium/5', label: '硬编码密钥', desc: '查看历史密钥/凭据发现与出处', q: '检索本地知识库中硬编码密钥/凭据的历史发现与出处' },
-  { icon: Sparkles, tint: 'text-neon-accent', tile: 'from-neon-accent/20 to-neon-accent/5', label: '会话要点小结', desc: '总结结论、证据和未验证项', q: '总结当前会话的结论、证据和未验证项' },
+  { icon: ShieldAlert, tint: 'text-jz-sev-critical', tile: 'from-jz-sev-critical/20 to-jz-sev-critical/5', label: '证书锁定结论', desc: '检索本地知识库中的 SSL Pinning 结论与出处', q: '检索本地知识库里关于证书锁定（SSL Pinning）的结论与出处' },
+  { icon: KeyRound, tint: 'text-jz-sev-medium', tile: 'from-jz-sev-medium/20 to-jz-sev-medium/5', label: '硬编码密钥', desc: '查看历史密钥/凭据发现与出处', q: '检索本地知识库中硬编码密钥/凭据的历史发现与出处' },
+  { icon: Sparkles, tint: 'text-jz-brand', tile: 'from-jz-brand/20 to-jz-brand/5', label: '会话要点小结', desc: '总结结论、证据和未验证项', q: '总结当前会话的结论、证据和未验证项' },
 ];
 
 export const AgentPage: React.FC = () => {
@@ -121,7 +121,7 @@ export const AgentPage: React.FC = () => {
       onStop={() => { a.stop(); }} />
   );
   const composerHint = (
-    <div className="mt-1 text-[11px] text-jz-text-muted/60 text-center">
+    <div className="mt-1 text-meta text-jz-muted text-center">
       审计 Agent：任务/发现/报告/源码/KB + 审批写；快速问答：只查本地 KB。
     </div>
   );
@@ -144,57 +144,57 @@ export const AgentPage: React.FC = () => {
       <div className="flex-1 min-w-0 flex flex-col relative">
         <div className="flex items-center gap-2 px-3 sm:px-5 py-2 border-b border-jz-border/40">
           <button onClick={() => setSessionOpen(true)} data-agent-session-toggle
-            className="lg:hidden w-7 h-7 rounded-lg grid place-items-center text-jz-text-muted hover:text-jz-text-primary hover:bg-jz-elevated/60">
+            className="lg:hidden w-7 h-7 rounded-control grid place-items-center text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/60">
             <PanelLeft size={15} />
           </button>
-          <Bot size={15} className="text-neon-accent flex-none" />
-          <span className="text-[13px] font-semibold text-jz-text-primary truncate max-w-[180px] sm:max-w-[360px]">
+          <Bot size={15} className="text-jz-brand flex-none" />
+          <span className="text-label font-semibold text-jz-ink truncate max-w-[180px] sm:max-w-[360px]">
             {currentSession?.title || 'Agent 工作台'}
           </span>
-          <span className={`hidden sm:inline px-1.5 py-0.5 rounded text-[11px] font-semibold ${a.mode === 'quick' ? 'bg-vuln-safe/10 text-vuln-safe' : 'bg-neon-accent/10 text-neon-accent'}`} data-agent-mode-badge>
+          <span className={`hidden sm:inline px-1.5 py-0.5 rounded-control text-meta font-semibold ${a.mode === 'quick' ? 'bg-jz-teal/10 text-jz-teal' : 'bg-jz-brand/10 text-jz-brand'}`} data-agent-mode-badge>
             {a.mode === 'quick' ? '快速问答' : '审计 Agent'}
           </span>
           {currentSession?.task_id != null && (
-            <span className="hidden md:inline px-1.5 py-0.5 rounded bg-jz-elevated/70 text-[11px] font-mono text-jz-text-muted">task #{currentSession.task_id}</span>
+            <span className="hidden md:inline px-1.5 py-0.5 rounded-control bg-jz-surface-2/70 text-meta font-mono text-jz-muted">task #{currentSession.task_id}</span>
           )}
           <span className="flex-1" />
-          <span data-agent-status className={`hidden md:flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] ${a.running ? 'bg-neon-accent/10 text-neon-accent' : 'bg-jz-elevated/60 text-jz-text-muted'}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${a.running ? 'bg-neon-accent animate-pulse' : 'bg-jz-text-muted/50'}`} />
+          <span data-agent-status className={`hidden md:flex items-center gap-1 px-2 py-0.5 rounded-pill text-meta ${a.running ? 'bg-jz-brand/10 text-jz-brand' : 'bg-jz-surface-2/60 text-jz-muted'}`}>
+            <span className={`w-1.5 h-1.5 rounded-pill ${a.running ? 'bg-jz-brand animate-pulse' : 'bg-jz-muted/50'}`} />
             {a.running ? 'running' : (currentSession?.status || 'idle')}
           </span>
-          <span data-agent-connected className={`hidden md:flex items-center gap-1 text-[11px] ${a.connected ? 'text-vuln-safe' : 'text-jz-text-muted'}`}>
+          <span data-agent-connected className={`hidden md:flex items-center gap-1 text-meta ${a.connected ? 'text-jz-teal' : 'text-jz-muted'}`}>
             <Radio size={10} /> {a.connected ? '已连接' : '回放'}
           </span>
           <button onClick={() => setInspectorOpen(true)} data-agent-inspector-toggle
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-jz-text-muted hover:text-neon-accent hover:bg-jz-elevated/60">
+            className="flex items-center gap-1 px-2 py-1 rounded-control text-meta text-jz-muted hover:text-jz-brand hover:bg-jz-surface-2/60">
             <PanelRight size={12} /> <span className="hidden sm:inline">运行详情</span>
           </button>
           <div className="relative">
             <button onClick={() => setMenuOpen((v) => !v)} data-agent-more
-              className="w-7 h-7 rounded-lg grid place-items-center text-jz-text-muted hover:text-jz-text-primary hover:bg-jz-elevated/60">
+              className="w-7 h-7 rounded-control grid place-items-center text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/60">
               <MoreHorizontal size={15} />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-jz-surface shadow-jz-card border border-jz-border/50 p-1 z-30" data-agent-more-menu>
-                <button onClick={() => { a.toggleWeb(); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-jz-text-secondary hover:bg-jz-elevated text-left"
+              <div className="absolute right-0 top-full mt-1 w-44 rounded-card bg-jz-surface shadow-card border border-jz-border/50 p-1 z-30" data-agent-more-menu>
+                <button onClick={() => { a.toggleWeb(); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-control text-meta text-jz-ink-2 hover:bg-jz-surface-2 text-left"
                   title={webStatus ? `搜索源：${webStatus.provider === 'tavily' ? 'Tavily' : 'DuckDuckGo（免 Key）'}` : '联网搜索'}>
                   <Globe size={12} /> 联网 {a.webEnabled ? '开' : '关'}
-                  {webStatus && <span className="ml-auto font-mono text-[10px] text-jz-text-muted">{webStatus.provider === 'tavily' ? 'Tavily' : 'DDG'}</span>}
+                  {webStatus && <span className="ml-auto font-mono text-meta text-jz-muted">{webStatus.provider === 'tavily' ? 'Tavily' : 'DDG'}</span>}
                 </button>
-                <button onClick={() => { a.forkSession().catch(() => {}); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-jz-text-secondary hover:bg-jz-elevated text-left">
+                <button onClick={() => { a.forkSession().catch(() => {}); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-control text-meta text-jz-ink-2 hover:bg-jz-surface-2 text-left">
                   <GitBranch size={12} /> Fork 分支
                 </button>
-                <button onClick={() => { a.exportTrajectory().catch(() => {}); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-jz-text-secondary hover:bg-jz-elevated text-left">
+                <button onClick={() => { a.exportTrajectory().catch(() => {}); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-control text-meta text-jz-ink-2 hover:bg-jz-surface-2 text-left">
                   <Download size={12} /> 导出轨迹
                 </button>
-                <div className="px-2 py-1 text-[11px] font-mono text-jz-text-muted/60">seq {a.lastSeq}</div>
+                <div className="px-2 py-1 text-meta font-mono text-jz-muted">seq {a.lastSeq}</div>
               </div>
             )}
           </div>
         </div>
 
         {a.error && (
-          <div className="mx-5 mt-2 px-2.5 py-2 rounded-lg bg-vuln-critical/10 text-xs text-vuln-critical flex items-center gap-1.5" data-agent-error>
+          <div className="mx-5 mt-2 px-2.5 py-2 rounded-control bg-jz-sev-critical/10 text-meta text-jz-sev-critical flex items-center gap-1.5" data-agent-error>
             <CircleAlert size={12} /> {a.error}
           </div>
         )}
@@ -204,11 +204,11 @@ export const AgentPage: React.FC = () => {
             {showHero && (
               <div className="min-h-[55vh] flex flex-col justify-center" data-agent-empty>
                 <div className="text-center mb-6">
-                  <div className="mx-auto mb-3 w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-400 grid place-items-center text-white shadow-[0_10px_30px_-10px_rgba(99,102,241,0.7)]">
+                  <div className="mx-auto mb-3 w-11 h-11 rounded-panel bg-jz-brand grid place-items-center text-jz-on-brand shadow-card">
                     <Sparkles size={21} />
                   </div>
-                  <h1 className="text-[24px] leading-8 font-semibold tracking-tight text-jz-text-primary">APK 安全审计 Agent</h1>
-                  <p className="mt-1.5 text-[12px] text-jz-text-muted">读取任务、发现、报告和源码；结论带证据，未知项单独标注。</p>
+                  <h1 className="text-title leading-8 font-semibold tracking-tight text-jz-ink">APK 安全审计 Agent</h1>
+                  <p className="mt-1.5 text-meta text-jz-muted">读取任务、发现、报告和源码；结论带证据，未知项单独标注。</p>
                 </div>
                 <div className="max-w-[780px] mx-auto w-full mb-4" data-agent-hero-composer>
                   {composerNode}
@@ -217,26 +217,26 @@ export const AgentPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-[780px] mx-auto w-full">
                   {(a.mode === 'quick' ? SUGGESTS_QUICK : SUGGESTS_AGENT).map((s) => (
                     <button key={s.q} onClick={() => ask(s.q)} data-agent-suggest
-                      className="group text-left px-4 py-3.5 rounded-2xl bg-jz-surface border border-jz-border/40 shadow-jz-card hover:-translate-y-0.5 hover:border-neon-accent/40 hover:shadow-[0_14px_40px_-14px_rgba(0,0,0,0.35)] transition-all duration-150">
+                      className="group text-left px-4 py-3.5 rounded-panel bg-jz-surface border border-jz-border/40 shadow-card hover:-translate-y-0.5 hover:border-jz-brand/40 hover:shadow-card transition-all duration-150">
                       <div className="flex items-start gap-3">
-                        <span className={`w-8 h-8 rounded-xl bg-gradient-to-br ${s.tile} ${s.tint} grid place-items-center flex-none`}>
+                        <span className={`w-8 h-8 rounded-card bg-gradient-to-br ${s.tile} ${s.tint} grid place-items-center flex-none`}>
                           <s.icon size={16} />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-jz-text-primary">
+                          <span className="flex items-center gap-1.5 text-label font-semibold text-jz-ink">
                             {s.label}
                             <ArrowUpRight size={12} className="opacity-0 -translate-y-0.5 group-hover:opacity-50 transition-opacity" />
                           </span>
-                          <span className="mt-1 block text-[11px] leading-5 text-jz-text-muted">{s.desc}</span>
+                          <span className="mt-1 block text-meta leading-5 text-jz-muted">{s.desc}</span>
                         </span>
                       </div>
                     </button>
                   ))}
                 </div>
-                <div className="text-[11px] text-jz-text-muted/60 text-center mt-4">{a.current ? '发送后进入当前会话' : '首次发送会自动创建 Agent 会话'} · 结论以 citations 为准</div>
+                <div className="text-meta text-jz-muted text-center mt-4">{a.current ? '发送后进入当前会话' : '首次发送会自动创建 Agent 会话'} · 结论以 citations 为准</div>
               </div>
             )}
-            {a.loading && <div className="text-xs text-jz-text-muted py-4" data-agent-loading>加载事件中…</div>}
+            {a.loading && <div className="text-meta text-jz-muted py-4" data-agent-loading>加载事件中…</div>}
             {turns.map((turn) => (
               <TurnView key={turn.key} turn={turn} sessionId={a.current || undefined}
                 evidenceIndex={evidenceIndex}
@@ -251,7 +251,7 @@ export const AgentPage: React.FC = () => {
           </div>
           {showJump && (
             <button onClick={jumpBottom} data-agent-jump-bottom
-              className="absolute right-6 bottom-28 z-20 px-3 py-1.5 rounded-full bg-jz-surface shadow-jz-card text-[11px] text-jz-text-secondary border border-jz-border/50 hover:text-neon-accent">
+              className="absolute right-6 bottom-28 z-20 px-3 py-1.5 rounded-pill bg-jz-surface shadow-card text-meta text-jz-ink-2 border border-jz-border/50 hover:text-jz-brand">
               回到最新 ↓
             </button>
           )}

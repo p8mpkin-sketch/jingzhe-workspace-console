@@ -49,12 +49,12 @@ export const EmptyStatePlaceholder: React.FC<{
  } ${className}`}
  >
       {Icon && (
-        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-jz-elevated/60 text-jz-text-muted shrink-0">
+        <div className="flex items-center justify-center w-10 h-10 rounded-control bg-jz-surface-2/60 text-jz-muted shrink-0">
           <Icon className={compact ? 'w-4 h-4' : 'w-5 h-5'} />
         </div>
       )}
-      <div className="text-sm font-medium text-jz-text-primary">{t}</div>
-      {s && <div className="text-[11px] text-jz-text-muted max-w-[220px] leading-relaxed">{s}</div>}
+      <div className="text-body font-medium text-jz-ink">{t}</div>
+      {s && <div className="text-meta text-jz-muted max-w-[220px] leading-relaxed">{s}</div>}
       {action && <div className="pt-1.5">{action}</div>}
     </div>
   );

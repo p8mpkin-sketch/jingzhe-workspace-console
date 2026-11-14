@@ -506,8 +506,8 @@ export const ReportCenterPage: React.FC = () => {
         {viewMode === 'hub' || !detailTask ? (
           <>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base font-semibold text-jz-text-primary">报告中心 · 项目大厅</h2>
-              <span className="text-xs text-jz-text-muted">已完成审计任务的全景检索与批量导出;点卡片进详情(鉴权矩阵/MASVS 图谱/漏洞明细/报告导出)</span>
+              <h2 className="text-section font-semibold text-jz-ink">报告中心 · 项目大厅</h2>
+              <span className="text-meta text-jz-muted">已完成审计任务的全景检索与批量导出;点卡片进详情(鉴权矩阵/MASVS 图谱/漏洞明细/报告导出)</span>
             </div>
             <HubView
  loading={!tasksLoaded}
@@ -516,9 +516,9 @@ export const ReportCenterPage: React.FC = () => {
  onOpen={openTask} onExportOne={onExportOne} onExportBatch={onExportBatch} batchBusy={batchBusy}
  />
             {tasksLoaded && hubTasks.length === 0 && (
-              <div className="rounded-2xl bg-jz-surface shadow-jz-card p-6 text-center">
-                <div className="text-2xl opacity-30 mb-2"></div>
-                <div className="text-sm text-jz-text-muted mb-3">暂无已完成审计任务</div>
+              <div className="rounded-panel bg-jz-surface shadow-card p-6 text-center">
+                <div className="text-title opacity-30 mb-2"></div>
+                <div className="text-body text-jz-muted mb-3">暂无已完成审计任务</div>
                 <Button variant="primary" onClick={() => nav('/new-audit')}>去新建审计</Button>
               </div>
             )}
@@ -548,15 +548,15 @@ export const ReportCenterPage: React.FC = () => {
 
       {/* 打印 / PDF 视图(完整审计报告;window.print 走既有 report-print-container 打印隔离) */}
       {printMode && (
-        <div className="fixed inset-0 z-[70] overflow-auto bg-black/70 p-6 print:static print:overflow-visible print:bg-transparent print:p-0" data-print-view>
+        <div className="fixed inset-0 z-[70] overflow-auto bg-jz-scrim/70 p-6 print:static print:overflow-visible print:bg-transparent print:p-0" data-print-view>
           <div className="mx-auto w-[860px] max-w-[94vw] print:max-w-none print:w-auto">
             <div className="no-print flex items-center justify-end gap-2 mb-3">
-              <span className="text-xs text-jz-text-primary/80 mr-auto">打印预览 — 完整审计报告(浏览器「另存为 PDF」即得文档)</span>
+              <span className="text-meta text-jz-ink mr-auto">打印预览 — 完整审计报告(浏览器「另存为 PDF」即得文档)</span>
               <Button variant="subtle" onClick={() => setPrintMode(false)}><X size={13} />关闭</Button>
               <Button variant="primary" onClick={() => window.print()} data-print-go><Printer size={13} />打印 / 保存为 PDF</Button>
             </div>
-            <div className="report-print-container rounded-xl bg-jz-surface shadow-jz-card p-6 print:rounded-none print:shadow-none print:p-0">
-              <pre className="whitespace-pre-wrap break-words font-mono text-[13px] leading-5 text-jz-text-primary">{printMd}</pre>
+            <div className="report-print-container rounded-card bg-jz-surface shadow-card p-6 print:rounded-none print:shadow-none print:p-0">
+              <pre className="whitespace-pre-wrap break-words font-mono text-label leading-5 text-jz-ink">{printMd}</pre>
             </div>
           </div>
         </div>
@@ -564,8 +564,8 @@ export const ReportCenterPage: React.FC = () => {
 
       {/* 聚合后台进行中的悬浮提示(hub;零打断) */}
       {viewMode === 'hub' && kpi.aggDone < kpi.aggTotal && kpi.aggTotal > 0 && (
-        <div className="fixed bottom-4 left-4 z-40 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-jz-surface/95 shadow-jz-card text-xs text-jz-text-secondary" data-agg-progress>
-          <Loader2 size={12} className="animate-spin text-neon-accent" />
+        <div className="fixed bottom-4 left-4 z-40 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill bg-jz-surface/95 shadow-card text-meta text-jz-ink-2" data-agg-progress>
+          <Loader2 size={12} className="animate-spin text-jz-brand" />
           会话指标聚合中 {kpi.aggDone}/{kpi.aggTotal}(纯前端拉取既有端点)
         </div>
       )}

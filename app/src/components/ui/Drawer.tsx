@@ -5,13 +5,13 @@ export const Drawer: React.FC<{ open: boolean; title: string; onClose: () => voi
  ({ open, title, onClose, width, children }) => {
     if (!open) return null;
     return (
-      <div className="fixed inset-0 z-40 flex justify-end bg-black/50" onMouseDown={onClose}>
+      <div className="fixed inset-0 z-40 flex justify-end bg-jz-scrim/50" onMouseDown={onClose}>
         <div style={width ? { width } : undefined}
- className="w-[440px] max-w-[92vw] h-full bg-jz-surface border-l border-jz-border shadow-jz-card p-4 overflow-auto space-y-3"
+ className="w-[440px] max-w-[92vw] h-full bg-jz-surface border-l border-jz-border shadow-card p-4 overflow-auto space-y-3"
  onMouseDown={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-jz-text-primary">{title}</h3>
-            <button onClick={onClose} className="p-1 rounded hover:bg-jz-elevated text-jz-text-muted">
+            <h3 className="text-body font-semibold text-jz-ink">{title}</h3>
+            <button onClick={onClose} className="p-1 rounded-control hover:bg-jz-surface-2 text-jz-muted">
               <X className="w-4 h-4" />
             </button>
           </div>

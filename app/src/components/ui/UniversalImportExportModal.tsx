@@ -285,13 +285,13 @@ export const UniversalImportModal: React.FC<{
     <UnifiedModal open={open} onClose={onClose} title={title} widthClass="w-[620px]"
       footer={(
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-jz-text-muted" data-uie-note>
+          <span className="text-meta text-jz-muted" data-uie-note>
             解析/合并在前端本地完成,经回调交由调用方落位(不直写后端)
           </span>
           <span className="flex-1" />
-          <button onClick={onClose} className="px-3 py-1.5 rounded-lg bg-jz-elevated/60 text-jz-text-secondary text-xs hover:bg-jz-elevated">取消</button>
+          <button onClick={onClose} className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:bg-jz-surface-2">取消</button>
           <button onClick={doImport} disabled={!rows.length || rows.length === invalid} data-uie-import-btn
- className="px-3 py-1.5 rounded-lg bg-neon-accent/15 text-neon-accent text-xs font-semibold hover:bg-neon-accent/25 disabled:opacity-40 disabled:cursor-not-allowed">
+ className="px-3 py-1.5 rounded-control bg-jz-brand/15 text-jz-brand text-meta font-semibold hover:bg-jz-brand/25 disabled:opacity-40 disabled:cursor-not-allowed">
             导入 {rows.length - invalid} 行
           </button>
         </div>
@@ -301,18 +301,18 @@ export const UniversalImportModal: React.FC<{
  onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
  onDragLeave={() => setDrag(false)}
  onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) ingest(f); }}
- className={`block border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors
- ${drag ? 'border-neon-accent/70 bg-neon-accent/5' : 'border-jz-border/60 bg-jz-elevated/40 hover:border-neon-accent/40'}`}>
+ className={`block border-2 border-dashed rounded-card p-5 text-center cursor-pointer transition-colors
+ ${drag ? 'border-jz-brand/70 bg-jz-brand/5' : 'border-jz-border/60 bg-jz-surface-2/40 hover:border-jz-brand/40'}`}>
         <input ref={inputRef} type="file" accept=".json,.csv,.sarif,.har,.yaml,.yml,.md,.markdown" className="hidden"
  onChange={(e) => { const f = e.target.files?.[0]; if (f) ingest(f); }} data-uie-file-input />
-        <Upload size={18} className={`mx-auto ${drag ? 'text-neon-accent' : 'text-jz-text-muted'}`} />
-        <div className="text-xs text-jz-text-secondary mt-1.5">拖入或点击选择文件(json / csv / sarif / har / yaml / md)</div>
-        <div className="text-[11px] text-jz-text-muted mt-1">{hint || '全部前端本地解析预览,确认后经回调合并'}</div>
-        {fileName && <div className="text-[11px] font-mono text-jz-text-secondary mt-1.5" data-uie-file-name>{fileName}</div>}
+        <Upload size={18} className={`mx-auto ${drag ? 'text-jz-brand' : 'text-jz-muted'}`} />
+        <div className="text-meta text-jz-ink-2 mt-1.5">拖入或点击选择文件(json / csv / sarif / har / yaml / md)</div>
+        <div className="text-meta text-jz-muted mt-1">{hint || '全部前端本地解析预览,确认后经回调合并'}</div>
+        {fileName && <div className="text-meta font-mono text-jz-ink-2 mt-1.5" data-uie-file-name>{fileName}</div>}
       </label>
 
  {errors.length > 0 && (
-        <div className="rounded-lg bg-vuln-critical/10 px-2.5 py-1.5 text-xs text-vuln-critical space-y-0.5" data-uie-errors>
+        <div className="rounded-control bg-jz-sev-critical/10 px-2.5 py-1.5 text-meta text-jz-sev-critical space-y-0.5" data-uie-errors>
  {errors.map((e, i) => <div key={i} className="break-all">{e}</div>)}
         </div>
  )}
@@ -320,23 +320,23 @@ export const UniversalImportModal: React.FC<{
  {/* 预览: 条数/字段/危级分布 */}
  {rows.length > 0 && (
         <div className="space-y-2" data-uie-preview>
-          <div className="flex items-center gap-2 flex-wrap text-xs">
+          <div className="flex items-center gap-2 flex-wrap text-meta">
             <StatusBadge tone="info" title={`解析格式: ${fmt}`}>{rows.length} 行 · {fmt.toUpperCase()}</StatusBadge>
  {invalid > 0 && <StatusBadge tone="critical" title="未通过字段校验的行数(导入时跳过)">{invalid} 行无效</StatusBadge>}
  {sevDist && Object.entries(sevDist).map(([k, n]) => (
-              <span key={k} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-mono text-[11px] tnum ${
- k === 'critical' || k === 'error' ? 'bg-vuln-critical/10 text-vuln-critical'
- : k === 'high' || k === 'warning' ? 'bg-vuln-high/10 text-vuln-high'
- : k === 'medium' ? 'bg-vuln-medium/10 text-vuln-medium'
- : k === 'low' || k === 'note' ? 'bg-vuln-low/10 text-vuln-low'
- : 'bg-jz-elevated text-jz-text-muted'}`}>{k}: {n}</span>
+              <span key={k} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-control font-mono text-meta tnum ${
+ k === 'critical' || k === 'error' ? 'bg-jz-sev-critical/10 text-jz-sev-critical'
+ : k === 'high' || k === 'warning' ? 'bg-jz-sev-high/10 text-jz-sev-high'
+ : k === 'medium' ? 'bg-jz-sev-medium/10 text-jz-sev-medium'
+ : k === 'low' || k === 'note' ? 'bg-jz-sev-low/10 text-jz-sev-low'
+ : 'bg-jz-surface-2 text-jz-muted'}`}>{k}: {n}</span>
             ))}
             <span className="flex-1" />
-            <span className="text-jz-text-muted font-mono text-[11px] tnum">{columns.length} 字段</span>
+            <span className="text-jz-muted font-mono text-meta tnum">{columns.length} 字段</span>
           </div>
-          <div className="rounded-lg bg-jz-elevated/50 p-2 max-h-40 overflow-auto">
-            <table className="w-full text-[11px] font-mono text-jz-text-secondary">
-              <thead><tr className="text-jz-text-muted">
+          <div className="rounded-control bg-jz-surface-2/50 p-2 max-h-40 overflow-auto">
+            <table className="w-full text-meta font-mono text-jz-ink-2">
+              <thead><tr className="text-jz-muted">
  {columns.slice(0, 6).map((c) => <th key={c} className="text-left py-0.5 pr-2 font-medium truncate max-w-[140px]">{c}</th>)}
               </tr></thead>
               <tbody>
@@ -349,15 +349,15 @@ export const UniversalImportModal: React.FC<{
                 ))}
               </tbody>
             </table>
- {rows.length > 8 && <div className="text-[11px] text-jz-text-muted pt-1">…(仅预览前 8 行,共 {rows.length} 行)</div>}
+ {rows.length > 8 && <div className="text-meta text-jz-muted pt-1">…(仅预览前 8 行,共 {rows.length} 行)</div>}
           </div>
           {/* 合并策略 */}
-          <div className="flex items-center gap-3 text-xs" data-uie-strategy>
-            <span className="text-jz-text-muted">合并策略:</span>
-            <label className="flex items-center gap-1 cursor-pointer text-jz-text-secondary">
+          <div className="flex items-center gap-3 text-meta" data-uie-strategy>
+            <span className="text-jz-muted">合并策略:</span>
+            <label className="flex items-center gap-1 cursor-pointer text-jz-ink-2">
               <input type="radio" checked={strategy === 'dedupe'} onChange={() => setStrategy('dedupe')} data-uie-strategy-dedupe /> 追加(按全字段去重)
             </label>
-            <label className="flex items-center gap-1 cursor-pointer text-jz-text-secondary">
+            <label className="flex items-center gap-1 cursor-pointer text-jz-ink-2">
               <input type="radio" checked={strategy === 'override'} onChange={() => setStrategy('override')} data-uie-strategy-override /> 覆盖同键行
             </label>
           </div>
@@ -394,16 +394,16 @@ export const ExportMenu: React.FC<{
     <div className="relative" ref={ref} {...(probe ? { 'data-export-menu': probe } : {})}>
       <button onClick={() => setOpen((v) => !v)} disabled={!rows.length} data-export-toggle={probe || ''}
  title={rows.length ? `导出 ${rows.length} 行` : '无数据可导出'}
- className="inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-jz-elevated/60 text-xs
- text-jz-text-secondary hover:text-neon-accent disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+ className="inline-flex items-center gap-1 px-2.5 h-8 rounded-control bg-jz-surface-2/60 text-meta
+ text-jz-ink-2 hover:text-jz-brand disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
         <FileUp size={12} /> {label} ▾
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-xl bg-jz-surface border border-jz-border shadow-jz-card py-1" data-export-panel>
+        <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-card bg-jz-surface border border-jz-border shadow-card py-1" data-export-panel>
  {ITEMS.map(([fmt, lbl, Icon]) => (
             <button key={fmt} onClick={() => { exportDataFile(baseName, fmt, rows, { columns, title }); setOpen(false); }}
  data-export-item={fmt}
- className="w-full text-left px-2.5 py-1.5 text-xs text-jz-text-secondary hover:bg-jz-elevated/60 flex items-center gap-1.5">
+ className="w-full text-left px-2.5 py-1.5 text-meta text-jz-ink-2 hover:bg-jz-surface-2/60 flex items-center gap-1.5">
               <Icon size={12} className="flex-none" /> {lbl}
             </button>
           ))}

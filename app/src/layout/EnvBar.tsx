@@ -129,22 +129,22 @@ export const EnvBar: React.FC<{ hide?: string[] }> = ({ hide = [] }) => {
  const deviceBound = Boolean(env.device) && env.device !== '未绑定';
  const bridgeOn = env.bridge.startsWith('oracle:');
 
- // 遥测胶囊(26px,铁律②胶囊化 rounded-full,语义色仅显示层)
+ // 遥测胶囊(26px,铁律②胶囊化 rounded-pill,语义色仅显示层)
  const pill = (id: string, opts: {
  icon?: React.ReactNode; text: React.ReactNode; title: string; tone: 'neutral' | 'gray' | 'orange' | 'emerald' | 'cyan';
  onClick?: () => void; extra?: React.ReactNode; maxW?: string; measAttr?: string;
  }) => {
     const toneCls: Record<string, string> = {
-      neutral: 'border-jz-border bg-jz-elevated/40 text-jz-text-secondary',
-      gray: 'border-jz-border bg-jz-elevated/40 text-jz-text-muted',
-      orange: 'border-vuln-medium/40 bg-vuln-medium/10 text-vuln-medium',
-      emerald: 'border-jz-accent-emerald/40 bg-jz-accent-emerald/10 text-jz-accent-emerald',
-      cyan: 'border-jz-accent-cyan/40 bg-jz-accent-cyan/10 text-jz-accent-cyan',
+      neutral: 'border-jz-border bg-jz-surface-2/40 text-jz-ink-2',
+      gray: 'border-jz-border bg-jz-surface-2/40 text-jz-muted',
+      orange: 'border-jz-sev-medium/40 bg-jz-sev-medium/10 text-jz-sev-medium',
+      emerald: 'border-jz-teal/40 bg-jz-teal/10 text-jz-teal',
+      cyan: 'border-jz-brand/40 bg-jz-brand/10 text-jz-brand',
     };
     return (
       <span key={id} {...(opts.measAttr ? { [opts.measAttr]: id } : { 'data-env-pill': id })}
  title={opts.title} onClick={opts.onClick}
- className={`flex-none h-[26px] px-1.5 rounded-full border text-[11px] flex items-center gap-1 whitespace-nowrap ${toneCls[opts.tone]} ${opts.onClick ? 'cursor-pointer hover:border-jz-active transition-colors' : ''} ${opts.maxW || ''}`}>
+ className={`flex-none h-[26px] px-1.5 rounded-pill border text-meta flex items-center gap-1 whitespace-nowrap ${toneCls[opts.tone]} ${opts.onClick ? 'cursor-pointer hover:border-jz-brand transition-colors' : ''} ${opts.maxW || ''}`}>
         {opts.icon}
         <span className={id === 'app' || id === 'device' ? 'font-mono truncate' : 'truncate'}>{opts.text}</span>
         {opts.extra}
@@ -155,14 +155,14 @@ export const EnvBar: React.FC<{ hide?: string[] }> = ({ hide = [] }) => {
  const appPill = (measAttr?: string) => pill('app', {
     measAttr, tone: 'neutral', maxW: 'max-w-[220px]', onClick: copyPkg,
     title: `目标应用: ${env.pkg}(点击复制包名)`,
-    icon: <AppWindow className="w-3.5 h-3.5 flex-none text-jz-accent-cyan" />,
+    icon: <AppWindow className="w-3.5 h-3.5 flex-none text-jz-brand" />,
     text: env.pkg,
-    extra: copied ? <span data-env-copied className="flex-none text-jz-accent-emerald">已复制</span> : undefined,
+    extra: copied ? <span data-env-copied className="flex-none text-jz-teal">已复制</span> : undefined,
  });
  const devicePill = (measAttr?: string) => pill('device', {
     measAttr, tone: 'neutral', maxW: 'max-w-[190px]',
     title: `设备节点: ${env.device}(会话绑定)`,
-    icon: <span className={`w-1.5 h-1.5 rounded-full flex-none ${deviceBound ? 'bg-vuln-safe animate-breathe' : 'bg-jz-text-muted'}`} />,
+    icon: <span className={`w-1.5 h-1.5 rounded-pill flex-none ${deviceBound ? 'bg-jz-teal' : 'bg-jz-muted'}`} />,
  text: env.device,
  });
  const packerPill = (measAttr?: string) => pill('packer', {
@@ -195,15 +195,15 @@ export const EnvBar: React.FC<{ hide?: string[] }> = ({ hide = [] }) => {
       {!hide.includes('role') && (fold < 1) && rolePill()}
  {fold > 0 && (
         <button data-env-more ref={moreRef} onClick={togglePop} title={`更多遥测(收纳 ${fold === 1 ? 'Oracle 桥/阶段角色' : '脱壳防护/Frida/Oracle 桥/阶段角色'})`}
- className="flex-none w-7 h-[26px] rounded-full border border-jz-border text-jz-text-muted grid place-items-center hover:text-jz-text-primary hover:bg-jz-elevated/40 transition-colors">
+ className="flex-none w-7 h-[26px] rounded-pill border border-jz-border text-jz-muted grid place-items-center hover:text-jz-ink hover:bg-jz-surface-2/40 transition-colors">
           <MoreHorizontal className="w-3.5 h-3.5" />
         </button>
  )}
  {/* 收纳 Popover(fixed 定位;内容=被收纳胶囊全量真值,零编造) */}
  {popOpen && fold > 0 && (
         <div data-env-pop style={{ position: 'fixed', top: popPos.top, left: popPos.left }}
- className="z-50 flex flex-col items-start gap-1 p-2 rounded-md border border-jz-border bg-jz-elevated shadow-jz-card">
-          <div className="text-[11px] font-semibold text-jz-text-primary px-0.5">收纳的次要遥测</div>
+ className="z-50 flex flex-col items-start gap-1 p-2 rounded-control border border-jz-border bg-jz-surface-2 shadow-card">
+          <div className="text-meta font-semibold text-jz-ink px-0.5">收纳的次要遥测</div>
  {!hide.includes('packer') && fold >= 2 && packerPill()}
  {!hide.includes('frida') && fold >= 2 && fridaPill()}
           {!hide.includes('bridge') && bridgePill()}

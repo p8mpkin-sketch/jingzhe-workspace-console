@@ -22,12 +22,12 @@ export const SystemPage: React.FC = () => {
   if (!isAdmin) {
     return (
       <div className="p-4 h-full overflow-auto grid place-items-center" data-system-noauth>
-        <div className="w-full max-w-sm rounded-2xl bg-jz-surface shadow-jz-card p-8 text-center">
-          <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-jz-elevated grid place-items-center">
-            <LockKeyhole className="w-5 h-5 text-jz-text-muted" />
+        <div className="w-full max-w-sm rounded-panel bg-jz-surface shadow-card p-8 text-center">
+          <div className="w-10 h-10 mx-auto mb-3 rounded-card bg-jz-surface-2 grid place-items-center">
+            <LockKeyhole className="w-5 h-5 text-jz-muted" />
           </div>
-          <div className="text-sm font-semibold text-jz-text-primary mb-1.5">需要管理员权限</div>
-          <div className="text-xs text-jz-text-muted leading-relaxed">系统管理(模型服务/用户与权限/审计日志)仅管理员可见——当前角色 <span className="font-mono">{role || '未知'}</span> 无权限访问。</div>
+          <div className="text-body font-semibold text-jz-ink mb-1.5">需要管理员权限</div>
+          <div className="text-meta text-jz-muted leading-relaxed">系统管理(模型服务/用户与权限/审计日志)仅管理员可见——当前角色 <span className="font-mono">{role || '未知'}</span> 无权限访问。</div>
         </div>
       </div>
     );
@@ -37,8 +37,8 @@ export const SystemPage: React.FC = () => {
       <div className="flex gap-1 pb-1">
         {TABS.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-3 py-1 rounded text-xs font-medium transition-colors
-              ${tab === t.key ? 'bg-neon-accent/20 text-neon-accent' : 'text-jz-text-muted hover:text-jz-text-primary'}`}>{t.label}</button>
+            className={`px-3 py-1 rounded-control text-meta font-medium transition-colors
+              ${tab === t.key ? 'bg-jz-brand/20 text-jz-brand' : 'text-jz-muted hover:text-jz-ink'}`}>{t.label}</button>
         ))}
       </div>
       {tab === 'models' && <ModelsTab />}
@@ -59,7 +59,7 @@ function ResourceStatsTab() {
   useEffect(() => {
     api<any>('/api/system/resource-stats').then(setStats).catch((e) => setErr(e.message || String(e)));
   }, []);
-  if (err) return <div className="text-xs text-vuln-critical p-3">加载失败: {err}</div>;
+  if (err) return <div className="text-meta text-jz-sev-critical p-3">加载失败: {err}</div>;
   if (!stats) return <div className="p-3"><Skeleton className="h-24" /></div>;
   const fmtTok = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n));
   const diskTotalMb = stats.disk.runs_mb + stats.disk.apk_pool_mb + stats.disk.db_mb;
@@ -68,24 +68,24 @@ function ResourceStatsTab() {
     <div className="space-y-3" data-resource-stats>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* LLM Token 月度计量(方案9.4 字面) */}
-        <div className="rounded-2xl bg-jz-surface shadow-jz-card p-4">
+        <div className="rounded-panel bg-jz-surface shadow-card p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-jz-text-muted">已用 Token(近 30 天)</span>
+            <span className="text-meta text-jz-muted">已用 Token(近 30 天)</span>
             <StatusBadge
               tone="info"
               title="统计口径: 本自然滚动月(近30天)平台全部已集成大模型任务经 task_llm_usage 计量的 Prompt 与 Completion Token 累计真值;模型未回传 usage 的调用不计量,如实呈现计数而非估算">
               真值计量
             </StatusBadge>
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-jz-text-primary tnum">{fmtTok(stats.llm.prompt_tokens_30d + stats.llm.completion_tokens_30d)}</div>
-          <div className="mt-1 text-xs text-jz-text-muted font-mono tnum">
+          <div className="mt-2 text-title font-semibold font-mono text-jz-ink tnum">{fmtTok(stats.llm.prompt_tokens_30d + stats.llm.completion_tokens_30d)}</div>
+          <div className="mt-1 text-meta text-jz-muted font-mono tnum">
             prompt {fmtTok(stats.llm.prompt_tokens_30d)} · completion {fmtTok(stats.llm.completion_tokens_30d)} · {stats.llm.calls_30d} 次调用
           </div>
         </div>
         {/* 磁盘占用 */}
-        <div className="rounded-2xl bg-jz-surface shadow-jz-card p-4">
+        <div className="rounded-panel bg-jz-surface shadow-card p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-jz-text-muted">磁盘占用</span>
+            <span className="text-meta text-jz-muted">磁盘占用</span>
             <StatusBadge
               tone="info"
               title={`统计口径: 任务产物池(data/runs)+ APK 下载池(output/apk_pool)+ 数据库文件三处逐字节 du 真算;runs 池文件量巨大(450万+),后台线程低频重算(10 分钟)返回缓存真值${stats.disk.computed_at ? `,数据时点 ${stats.disk.computed_at}` : ''}${quotaMb >= 0 ? `;组织存储配额 ${quotaMb}MB` : ';组织未配置存储配额(-1=不限)'}`}>
@@ -93,37 +93,37 @@ function ResourceStatsTab() {
             </StatusBadge>
           </div>
           {stats.disk.computing ? (
-            <div className="mt-2 text-xs text-jz-text-muted" data-disk-computing>磁盘点算中(runs 池文件量大,后台进行,约 1-2 分钟后刷新呈现)…</div>
+            <div className="mt-2 text-meta text-jz-muted" data-disk-computing>磁盘点算中(runs 池文件量大,后台进行,约 1-2 分钟后刷新呈现)…</div>
           ) : (
             <>
-              <div className="mt-2 text-2xl font-bold font-mono text-jz-text-primary tnum">{diskTotalMb} MB</div>
-              <div className="mt-1 text-xs text-jz-text-muted font-mono tnum">
+              <div className="mt-2 text-title font-semibold font-mono text-jz-ink tnum">{diskTotalMb} MB</div>
+              <div className="mt-1 text-meta text-jz-muted font-mono tnum">
                 runs {stats.disk.runs_mb} · pool {stats.disk.apk_pool_mb} · db {stats.disk.db_mb}{quotaMb >= 0 ? ` / 配额 ${quotaMb}MB` : ''}
               </div>
             </>
           )}
         </div>
         {/* 并发槽位 */}
-        <div className="rounded-2xl bg-jz-surface shadow-jz-card p-4">
+        <div className="rounded-panel bg-jz-surface shadow-card p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-jz-text-muted">并发执行槽位</span>
+            <span className="text-meta text-jz-muted">并发执行槽位</span>
             <StatusBadge
               tone="info"
               title="统计口径: 当前正在执行或排队的审计任务数(running+queued 真值) / 组织套餐允许的最大并发审计数(quota_concurrent)。达到上限时新建任务被后端 429 拒绝(M4 配额闸)">
               真值闸口
             </StatusBadge>
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-jz-text-primary tnum">
+          <div className="mt-2 text-title font-semibold font-mono text-jz-ink tnum">
             {stats.slots.running}/{stats.slots.quota_concurrent}
           </div>
-          <div className="mt-1 text-xs text-jz-text-muted">
+          <div className="mt-1 text-meta text-jz-muted">
             {stats.slots.running >= stats.slots.quota_concurrent
               ? '⚠ 已达并发上限——新建任务将被 429 拒绝'
               : '运行中+排队任务数 / 最大并发审计容量'}
           </div>
         </div>
       </div>
-      <div className="text-xs text-jz-text-muted">
+      <div className="text-meta text-jz-muted">
         口径注: Token 与并发槽位为请求时现算真值;磁盘为后台线程低频重算(10 分钟)的缓存真值,数据时点见卡片角标;Token 仅计量模型回传 usage 的调用,未回传者如实不计量、零估算。
       </div>
     </div>
@@ -151,25 +151,25 @@ function FeedbackStats() {
   const up = items.filter((i) => i.verdict === 'up').length;
   const down = items.filter((i) => i.verdict === 'down').length;
   return (
-    <div data-feedback-stats className="rounded-2xl bg-jz-surface shadow-jz-card p-3 text-xs space-y-1">
-      <div className="font-semibold text-jz-text-primary">AI 建议反馈统计</div>
-      <div className="font-mono text-jz-text-muted">👍 {up} · 👎 {down} · 近期备注:</div>
+    <div data-feedback-stats className="rounded-panel bg-jz-surface shadow-card p-3 text-meta space-y-1">
+      <div className="font-semibold text-jz-ink">AI 建议反馈统计</div>
+      <div className="font-mono text-jz-muted">👍 {up} · 👎 {down} · 近期备注:</div>
       {items.slice(-3).map((i, k) => (
-        <div key={k} className="text-jz-text-muted truncate">{i.card_id} → {i.verdict} ({i.note || '无备注'})</div>
+        <div key={k} className="text-jz-muted truncate">{i.card_id} → {i.verdict} ({i.note || '无备注'})</div>
       ))}
-      {!items.length && <div className="text-jz-text-muted">暂无反馈记录</div>}
+      {!items.length && <div className="text-jz-muted">暂无反馈记录</div>}
     </div>
   );
 }
 
 // R55 G9: 用户权限 CRUD;R103-3: 高密表格(头像/金紫蓝徽章/最后登录/状态开关)+创建抽屉+静态能力矩阵+重置密码 Modal
 const ROLE_BADGE: Record<string, string> = {
-  super_admin: 'bg-vuln-medium/15 text-vuln-medium',                 // 金
-  org_admin: 'bg-neon-accent/15 text-neon-accent',                   // 紫
-  analyst: 'bg-jz-accent-cyan/15 text-jz-accent-cyan',         // 蓝
-  service: 'bg-jz-elevated/60 text-jz-text-muted',
-  viewer: 'bg-jz-elevated/60 text-jz-text-muted',
-  disabled: 'bg-vuln-critical/15 text-vuln-critical',
+  super_admin: 'bg-jz-sev-medium/15 text-jz-sev-medium',                 // 金
+  org_admin: 'bg-jz-brand/15 text-jz-brand',                   // 紫
+  analyst: 'bg-jz-brand/15 text-jz-brand',         // 蓝
+  service: 'bg-jz-surface-2/60 text-jz-muted',
+  viewer: 'bg-jz-surface-2/60 text-jz-muted',
+  disabled: 'bg-jz-sev-critical/15 text-jz-sev-critical',
 };
 // R103-3③: 静态能力矩阵——按后端真实闸(require_admin/require_role/current_user,亲核 app.py)如实呈现,不造后端矩阵端点
 const CAP_MATRIX: Array<{ cap: string; allow: string[]; note?: string }> = [
@@ -237,37 +237,37 @@ function UsersTab() {
     <div className="space-y-2">
       {/* R103-3①: 角色统计卡(按 users 列表真算,不造端点) */}
       <div className="grid grid-cols-3 gap-2" data-user-stats>
-        <div className="rounded-2xl bg-jz-elevated p-3"><div className="text-xs text-jz-text-muted">总用户</div><div className="text-lg font-semibold text-jz-text-primary tnum">{users.length}</div></div>
-        <div className="rounded-2xl bg-jz-elevated p-3"><div className="text-xs text-jz-text-muted">活跃/禁用</div><div className="text-lg font-semibold text-vuln-safe tnum">{activeCnt}<span className="text-jz-text-muted text-xs"> / {users.length - activeCnt}</span></div></div>
-        <div className="rounded-2xl bg-jz-elevated p-3"><div className="text-xs text-jz-text-muted">管理员</div><div className="text-lg font-semibold text-vuln-medium tnum">{adminCnt}</div></div>
+        <div className="rounded-panel bg-jz-surface-2 p-3"><div className="text-meta text-jz-muted">总用户</div><div className="text-section font-semibold text-jz-ink tnum">{users.length}</div></div>
+        <div className="rounded-panel bg-jz-surface-2 p-3"><div className="text-meta text-jz-muted">活跃/禁用</div><div className="text-section font-semibold text-jz-teal tnum">{activeCnt}<span className="text-jz-muted text-meta"> / {users.length - activeCnt}</span></div></div>
+        <div className="rounded-panel bg-jz-surface-2 p-3"><div className="text-meta text-jz-muted">管理员</div><div className="text-section font-semibold text-jz-sev-medium tnum">{adminCnt}</div></div>
       </div>
       <div className="flex items-center gap-2">
         <Button onClick={() => setDrawer(true)} data-create-user-btn>+ 创建用户</Button>
         <Button variant="ghost" onClick={() => setMatrixOpen(!matrixOpen)} data-matrix-toggle>角色能力矩阵</Button>
-        {msg && <span className="text-xs text-vuln-critical">{msg}</span>}
+        {msg && <span className="text-meta text-jz-sev-critical">{msg}</span>}
       </div>
       {/* R103-3③: 静态能力矩阵(前端呈现后端真实闸;细粒度 RBAC=挂账) */}
       {matrixOpen && (
-        <div className="rounded-2xl bg-jz-surface shadow-jz-card p-3 space-y-1.5" data-cap-matrix>
-          <div className="grid grid-cols-6 gap-1 text-xs font-semibold text-jz-text-muted">
+        <div className="rounded-panel bg-jz-surface shadow-card p-3 space-y-1.5" data-cap-matrix>
+          <div className="grid grid-cols-6 gap-1 text-meta font-semibold text-jz-muted">
             <span>能力项</span>{ALL_ROLES.map((r) => <span key={r} className="text-center font-mono">{r}</span>)}
           </div>
           {CAP_MATRIX.map(({ cap, allow, note }) => (
-            <div key={cap} className="grid grid-cols-6 gap-1 items-center text-xs pt-1">
-              <span className="text-jz-text-secondary truncate" title={note || cap}>{cap}{note ? ' *' : ''}</span>
+            <div key={cap} className="grid grid-cols-6 gap-1 items-center text-meta pt-1">
+              <span className="text-jz-ink-2 truncate" title={note || cap}>{cap}{note ? ' *' : ''}</span>
               {ALL_ROLES.map((r) => (
-                <span key={r} className={`text-center font-mono ${allow.includes(r) ? 'text-vuln-safe' : 'text-jz-text-muted/40'}`}>{allow.includes(r) ? '✓' : '—'}</span>
+                <span key={r} className={`text-center font-mono ${allow.includes(r) ? 'text-jz-teal' : 'text-jz-muted'}`}>{allow.includes(r) ? '✓' : '—'}</span>
               ))}
             </div>
           ))}
-          <div className="text-xs text-jz-text-muted pt-1">按后端真实闸如实呈现(require_admin/require_role/current_user);细粒度 RBAC=挂账。与渗透 Agent 角色(roles_meta)无关。* 组织设置: super_admin 持全组织视角。</div>
+          <div className="text-meta text-jz-muted pt-1">按后端真实闸如实呈现(require_admin/require_role/current_user);细粒度 RBAC=挂账。与渗透 Agent 角色(roles_meta)无关。* 组织设置: super_admin 持全组织视角。</div>
         </div>
       )}
       {/* R103-3②: 高密用户表 */}
-      <div className="rounded-2xl bg-jz-surface shadow-jz-card overflow-hidden">
-        <table className="w-full text-xs" data-user-table>
+      <div className="rounded-panel bg-jz-surface shadow-card overflow-hidden">
+        <table className="w-full text-meta" data-user-table>
           <thead>
-            <tr className="bg-jz-surface text-xs text-jz-text-muted text-left">
+            <tr className="bg-jz-surface text-meta text-jz-muted text-left">
               <th className="px-2.5 py-1.5 font-medium">用户</th>
               <th className="px-2.5 py-1.5 font-medium">角色</th>
               <th className="px-2.5 py-1.5 font-medium">最后登录(IP · 时间)</th>
@@ -277,36 +277,36 @@ function UsersTab() {
           </thead>
           <tbody>
             {users.map((u: any) => (
-              <tr key={u.id} data-user-row={u.id} className="hover:bg-jz-elevated/30">
+              <tr key={u.id} data-user-row={u.id} className="hover:bg-jz-surface-2/30">
                 <td className="px-2.5 py-1.5">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-6 h-6 rounded-full bg-gradient-to-br from-neon-accent to-vuln-safe flex items-center justify-center text-xs font-bold text-white flex-none">
+                    <span className="w-6 h-6 rounded-pill bg-jz-brand flex items-center justify-center text-meta font-semibold text-jz-on-brand flex-none">
                       {(u.username || 'U').slice(0, 1).toUpperCase()}
                     </span>
-                    <span className="text-jz-text-primary truncate">{u.username}</span>
+                    <span className="text-jz-ink truncate">{u.username}</span>
                   </div>
                 </td>
                 <td className="px-2.5 py-1.5">
-                  <span className={`px-1.5 py-0.5 rounded text-xs font-mono ${ROLE_BADGE[u.role] || ROLE_BADGE.viewer}`}>{u.role}</span>
+                  <span className={`px-1.5 py-0.5 rounded-control text-meta font-mono ${ROLE_BADGE[u.role] || ROLE_BADGE.viewer}`}>{u.role}</span>
                 </td>
-                <td className="px-2.5 py-1.5 font-mono text-xs text-jz-text-muted tnum">{fmtLast(u)}</td>
+                <td className="px-2.5 py-1.5 font-mono text-meta text-jz-muted tnum">{fmtLast(u)}</td>
                 <td className="px-2.5 py-1.5">
                   <button onClick={() => toggleActive(u)}
                     title="禁用=吊销全部 token 并拒登录;启用后默认 analyst 角色可再调;不能操作自己/不能禁用 super_admin"
                     data-user-toggle={u.role === 'disabled' ? 'off' : 'on'}
-                    className={`relative w-9 h-[18px] rounded-full transition-colors ${u.role === 'disabled' ? 'bg-jz-elevated' : 'bg-vuln-safe/60'}`}>
-                    <span className={`absolute top-[2px] w-3.5 h-3.5 rounded-full bg-white shadow transition-all ${u.role === 'disabled' ? 'left-[2px]' : 'left-[18px]'}`} />
+                    className={`relative w-9 h-[18px] rounded-pill transition-colors ${u.role === 'disabled' ? 'bg-jz-surface-2' : 'bg-jz-teal/60'}`}>
+                    <span className={`absolute top-[2px] w-3.5 h-3.5 rounded-pill bg-jz-surface shadow-card transition-all ${u.role === 'disabled' ? 'left-[2px]' : 'left-[18px]'}`} />
                   </button>
                 </td>
                 <td className="px-2.5 py-1.5 text-right space-x-2 whitespace-nowrap">
                   <select value={ALL_ROLES.includes(u.role) ? u.role : ''} onChange={(e) => setRole(u.id, e.target.value)}
                     title="调整角色(disabled 状态请先用左侧开关启用)"
-                    className="bg-jz-elevated/60 rounded-lg px-1 py-0.5 text-xs text-jz-text-primary">
+                    className="bg-jz-surface-2/60 rounded-control px-1 py-0.5 text-meta text-jz-ink">
                     <option value="">(禁用中)</option>
                     {ALL_ROLES.map((r) => <option key={r}>{r}</option>)}
                   </select>
-                  <button onClick={() => { setResetTarget(u); setResetPw(''); }} className="text-xs text-neon-accent hover:underline" data-reset-btn>重置密码</button>
-                  <button onClick={() => remove(u.id)} className="text-xs text-vuln-critical hover:underline">删除</button>
+                  <button onClick={() => { setResetTarget(u); setResetPw(''); }} className="text-meta text-jz-brand hover:underline" data-reset-btn>重置密码</button>
+                  <button onClick={() => remove(u.id)} className="text-meta text-jz-sev-critical hover:underline">删除</button>
                 </td>
               </tr>
             ))}
@@ -315,25 +315,25 @@ function UsersTab() {
       </div>
       {/* R103-3③: 创建用户抽屉(原内联表单抽屉化) */}
       {drawer && (
-        <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={() => setDrawer(false)} data-create-drawer>
+        <div className="fixed inset-0 z-40 flex justify-end bg-jz-scrim/40" onClick={() => setDrawer(false)} data-create-drawer>
           <div className="w-[340px] h-full bg-jz-surface p-4 space-y-3 overflow-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-jz-text-primary">创建用户</span>
-              <button onClick={() => setDrawer(false)} className="text-jz-text-muted hover:text-jz-text-primary text-xs">关闭</button>
+              <span className="text-body font-semibold text-jz-ink">创建用户</span>
+              <button onClick={() => setDrawer(false)} className="text-jz-muted hover:text-jz-ink text-meta">关闭</button>
             </div>
-            <label className="block text-xs text-jz-text-muted space-y-1">用户名
+            <label className="block text-meta text-jz-muted space-y-1">用户名
               <input value={nu.username} onChange={(e) => setNu({ ...nu, username: e.target.value })}
-                className="w-full bg-jz-elevated/60 rounded-lg px-2 py-1.5 text-xs text-jz-text-primary" data-nu-username /></label>
-            <label className="block text-xs text-jz-text-muted space-y-1">初始密码(≥6 位)
+                className="w-full bg-jz-surface-2/60 rounded-control px-2 py-1.5 text-meta text-jz-ink" data-nu-username /></label>
+            <label className="block text-meta text-jz-muted space-y-1">初始密码(≥6 位)
               <input type="password" value={nu.password} onChange={(e) => setNu({ ...nu, password: e.target.value })}
-                className="w-full bg-jz-elevated/60 rounded-lg px-2 py-1.5 text-xs text-jz-text-primary font-mono" data-nu-password /></label>
-            <label className="block text-xs text-jz-text-muted space-y-1">角色
+                className="w-full bg-jz-surface-2/60 rounded-control px-2 py-1.5 text-meta text-jz-ink font-mono" data-nu-password /></label>
+            <label className="block text-meta text-jz-muted space-y-1">角色
               <select value={nu.role} onChange={(e) => setNu({ ...nu, role: e.target.value })}
-                className="w-full bg-jz-elevated/60 rounded-lg px-2 py-1.5 text-xs text-jz-text-primary">
+                className="w-full bg-jz-surface-2/60 rounded-control px-2 py-1.5 text-meta text-jz-ink">
                 {ALL_ROLES.map((r) => <option key={r}>{r}</option>)}
               </select></label>
             <Button className="w-full" onClick={create} data-nu-submit>创建</Button>
-            <div className="text-xs text-jz-text-muted leading-4">org_admin 只能加入自己组织;仅 super_admin 可授予 super_admin 角色。</div>
+            <div className="text-meta text-jz-muted leading-4">org_admin 只能加入自己组织;仅 super_admin 可授予 super_admin 角色。</div>
           </div>
         </div>
       )}
@@ -341,8 +341,8 @@ function UsersTab() {
       <Modal open={!!resetTarget} title={`重置密码 — ${resetTarget?.username || ''} (#${resetTarget?.id ?? ''})`} onClose={() => setResetTarget(null)}>
         <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="新密码(≥6 位,非弱口令)"
           autoComplete="new-password" data-reset-pw-input
-          className="w-full bg-jz-elevated/60 rounded-lg px-2 py-1.5 text-xs text-jz-text-primary font-mono" />
-        <div className="text-xs text-jz-text-muted">仅本次使用;密码不落日志(后端 R96 守卫: 弱口令拒/防锁死/越权拒)。</div>
+          className="w-full bg-jz-surface-2/60 rounded-control px-2 py-1.5 text-meta text-jz-ink font-mono" />
+        <div className="text-meta text-jz-muted">仅本次使用;密码不落日志(后端 R96 守卫: 弱口令拒/防锁死/越权拒)。</div>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setResetTarget(null)}>取消</Button>
           <Button onClick={submitReset} data-reset-submit>确认重置</Button>
@@ -368,12 +368,12 @@ function AuditTab() {
   const PAGE = 50;
   // R103-4①: 动作四色前缀映射(login 绿/pentest* 天蓝/vuln_export 紫/delete* 红,其余灰;双模 accent token)
   const ACT_COL: Array<[string, string]> = [
-    ['login', 'text-jz-accent-emerald bg-jz-accent-emerald/10'],
-    ['pentest', 'text-jz-accent-cyan bg-jz-accent-cyan/10'],
-    ['vuln_export', 'bg-neon-accent/10 text-neon-accent'],
-    ['delete', 'text-vuln-critical bg-vuln-critical/10'],
+    ['login', 'text-jz-teal bg-jz-teal/10'],
+    ['pentest', 'text-jz-brand bg-jz-brand/10'],
+    ['vuln_export', 'bg-jz-brand/10 text-jz-brand'],
+    ['delete', 'text-jz-sev-critical bg-jz-sev-critical/10'],
   ];
-  const actClass = (a: string) => (ACT_COL.find(([p]) => a.startsWith(p))?.[1] || 'text-jz-text-muted bg-jz-elevated/50');
+  const actClass = (a: string) => (ACT_COL.find(([p]) => a.startsWith(p))?.[1] || 'text-jz-muted bg-jz-surface-2/50');
   // R103-4④: 动作快选 chips(单选快选=既有单前缀语义零后端改动;真多选需 action 参数扩展=挂账)
   const ACTION_CHIPS = ['login', 'user_', 'task_', 'model_', 'chat_', 'pentest_', 'feedback_', 'delete_'];
   // R103-4④: 时间预设(今日/近7天;自定义=清空预设走手输)
@@ -411,74 +411,74 @@ function AuditTab() {
   const fmtTs = (ts: number) => new Date(ts * 1000).toLocaleString('zh-CN', { hour12: false });
   return (
     <div className="space-y-2" data-audit-tab>
-      <div className="flex gap-2 items-center flex-wrap rounded-2xl bg-jz-elevated p-2">
+      <div className="flex gap-2 items-center flex-wrap rounded-panel bg-jz-surface-2 p-2">
         <span className="flex gap-1" data-audit-presets>
           <button onClick={() => applyPreset('today')}
-            className={`px-3 py-1 rounded-full text-xs transition-colors ${preset === 'today' ? 'bg-neon-accent/10 text-neon-accent font-semibold' : 'text-jz-text-muted hover:bg-jz-elevated/50'}`}>今日</button>
+            className={`px-3 py-1 rounded-pill text-meta transition-colors ${preset === 'today' ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface-2/50'}`}>今日</button>
           <button onClick={() => applyPreset('7d')}
-            className={`px-3 py-1 rounded-full text-xs transition-colors ${preset === '7d' ? 'bg-neon-accent/10 text-neon-accent font-semibold' : 'text-jz-text-muted hover:bg-jz-elevated/50'}`}>近7天</button>
+            className={`px-3 py-1 rounded-pill text-meta transition-colors ${preset === '7d' ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface-2/50'}`}>近7天</button>
           <button onClick={clearPreset}
-            className={`px-3 py-1 rounded-full text-xs transition-colors ${preset === '' ? 'bg-neon-accent/10 text-neon-accent font-semibold' : 'text-jz-text-muted hover:bg-jz-elevated/50'}`}>自定义</button>
+            className={`px-3 py-1 rounded-pill text-meta transition-colors ${preset === '' ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface-2/50'}`}>自定义</button>
         </span>
         <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { setPage(0); load(0); } }}
-          placeholder="关键字(detail)…" className="w-40 bg-jz-elevated/60 rounded-lg px-2 py-1 text-xs text-jz-text-primary" data-audit-q />
+          placeholder="关键字(detail)…" className="w-40 bg-jz-surface-2/60 rounded-control px-2 py-1 text-meta text-jz-ink" data-audit-q />
         <input value={action} onChange={(e) => { setAction(e.target.value); setPreset(''); setPage(0); }}
-          placeholder="action(前缀)" className="w-28 bg-jz-elevated/60 rounded-lg px-2 py-1 text-xs text-jz-text-primary font-mono" data-audit-action />
+          placeholder="action(前缀)" className="w-28 bg-jz-surface-2/60 rounded-control px-2 py-1 text-meta text-jz-ink font-mono" data-audit-action />
         <input value={username} onChange={(e) => { setUsername(e.target.value); setPage(0); }}
-          placeholder="用户名" className="w-24 bg-jz-elevated/60 rounded-lg px-2 py-1 text-xs text-jz-text-primary" data-audit-user />
+          placeholder="用户名" className="w-24 bg-jz-surface-2/60 rounded-control px-2 py-1 text-meta text-jz-ink" data-audit-user />
         <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPreset(''); setPage(0); }}
-          className="bg-jz-elevated/60 rounded-lg px-2 py-1 text-xs text-jz-text-primary" data-audit-from />
-        <span className="text-xs text-jz-text-muted">→</span>
+          className="bg-jz-surface-2/60 rounded-control px-2 py-1 text-meta text-jz-ink" data-audit-from />
+        <span className="text-meta text-jz-muted">→</span>
         <input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPreset(''); setPage(0); }}
-          className="bg-jz-elevated/60 rounded-lg px-2 py-1 text-xs text-jz-text-primary" data-audit-to />
+          className="bg-jz-surface-2/60 rounded-control px-2 py-1 text-meta text-jz-ink" data-audit-to />
         <Button variant="ghost" onClick={() => { setPage(0); }}>搜索</Button>
         <span className="flex-1" />
         {/* R117-9④(方案9.4 功能等价落位): 方案所述「已用 Token/磁盘占用」资源面板在本平台不存在
             (系统页 Tab=模型/用户/审计),映射到本页核心计数器=审计命中总数,补三段式口径注 */}
-        <span className="text-xs text-jz-text-muted"
+        <span className="text-meta text-jz-muted"
           title="统计口径: 满足当前过滤条件(关键字/动作前缀/用户/时间范围)的 audit_log 追加流条目总数,分页 50 条/页——审计留痕为追加流不清零">共 {total} 条 · 第 {page + 1}/{pages} 页</span>
       </div>
       <div className="flex gap-1.5 flex-wrap items-center" data-audit-chips>
-        <span className="text-xs text-jz-text-muted">动作快选:</span>
+        <span className="text-meta text-jz-muted">动作快选:</span>
         {ACTION_CHIPS.map((c) => (
           <button key={c} onClick={() => { setAction(action === c ? '' : c); setPage(0); }}
             data-audit-chip={c}
-            className={`px-2.5 py-0.5 rounded-full text-xs font-mono transition-colors ${action === c ? 'bg-neon-accent/10 text-neon-accent font-semibold' : 'text-jz-text-muted hover:bg-jz-elevated/50'}`}>{c}*</button>
+            className={`px-2.5 py-0.5 rounded-pill text-meta font-mono transition-colors ${action === c ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface-2/50'}`}>{c}*</button>
         ))}
       </div>
-      {logs.length === 0 && <div className="text-xs text-jz-text-muted p-3">无匹配审计记录(调整过滤条件)</div>}
+      {logs.length === 0 && <div className="text-meta text-jz-muted p-3">无匹配审计记录(调整过滤条件)</div>}
       <div className="space-y-0.5">
         {logs.map((l: any) => (
           <div key={l.id} onClick={() => setDetailRow(l)} data-audit-row={l.id}
-            className="h-[30px] flex items-center gap-2 px-2 text-xs hover:bg-jz-elevated/30 rounded cursor-pointer">
-            <span className="font-mono text-jz-text-muted flex-none w-40">{fmtTs(l.ts)}</span>
-            <span className={`px-1.5 py-0.5 rounded font-mono flex-none ${actClass(l.action)}`}>{l.action}</span>
-            <span className="w-20 flex-none text-jz-text-muted">{l.username}</span>
-            <span className="w-28 flex-none font-mono text-jz-text-muted">{l.ip || '—'}</span>
-            <span className="flex-1 truncate text-jz-text-secondary">{l.detail || ''}</span>
+            className="h-[30px] flex items-center gap-2 px-2 text-meta hover:bg-jz-surface-2/30 rounded-control cursor-pointer">
+            <span className="font-mono text-jz-muted flex-none w-40">{fmtTs(l.ts)}</span>
+            <span className={`px-1.5 py-0.5 rounded-control font-mono flex-none ${actClass(l.action)}`}>{l.action}</span>
+            <span className="w-20 flex-none text-jz-muted">{l.username}</span>
+            <span className="w-28 flex-none font-mono text-jz-muted">{l.ip || '—'}</span>
+            <span className="flex-1 truncate text-jz-ink-2">{l.detail || ''}</span>
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex items-center gap-2 text-meta">
         <button disabled={page <= 0} onClick={() => setPage(page - 1)}
-          className="px-2 py-1 rounded-md bg-jz-elevated/60 text-jz-text-muted disabled:opacity-30" data-audit-prev>‹ 上一页</button>
+          className="px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-muted disabled:opacity-30" data-audit-prev>‹ 上一页</button>
         <button disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}
-          className="px-2 py-1 rounded-md bg-jz-elevated/60 text-jz-text-muted disabled:opacity-30" data-audit-next>下一页 ›</button>
-        <span className="text-jz-text-muted">点击行查看完整 detail</span>
+          className="px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-muted disabled:opacity-30" data-audit-next>下一页 ›</button>
+        <span className="text-jz-muted">点击行查看完整 detail</span>
       </div>
       {/* R103-4③: 行右滑抽屉(detail 美化;载荷不留存如实标注) */}
       <Drawer open={!!detailRow} title={`审计详情 #${detailRow?.id ?? ''}`} onClose={() => setDetailRow(null)}>
         {detailRow && (
-          <div className="text-xs space-y-2 font-mono" data-audit-drawer>
-            <div className="grid grid-cols-[64px_1fr] gap-1 text-jz-text-muted">
-              <span>动作</span><span><span className={`px-1.5 py-0.5 rounded ${actClass(detailRow.action)}`}>{detailRow.action}</span></span>
-              <span>用户</span><span className="text-jz-text-secondary">{detailRow.username || '—'}</span>
-              <span>来源 IP</span><span className="text-jz-text-secondary">{detailRow.ip || '—'}</span>
-              <span>时间</span><span className="text-jz-text-secondary">{fmtTs(detailRow.ts)}</span>
+          <div className="text-meta space-y-2 font-mono" data-audit-drawer>
+            <div className="grid grid-cols-[64px_1fr] gap-1 text-jz-muted">
+              <span>动作</span><span><span className={`px-1.5 py-0.5 rounded-control ${actClass(detailRow.action)}`}>{detailRow.action}</span></span>
+              <span>用户</span><span className="text-jz-ink-2">{detailRow.username || '—'}</span>
+              <span>来源 IP</span><span className="text-jz-ink-2">{detailRow.ip || '—'}</span>
+              <span>时间</span><span className="text-jz-ink-2">{fmtTs(detailRow.ts)}</span>
             </div>
-            <div className="text-jz-text-muted">detail:</div>
-            <pre data-detail-pre className="whitespace-pre-wrap break-all bg-jz-elevated/60 rounded-lg p-2 text-xs text-jz-text-secondary max-h-[52vh] overflow-auto">{pretty(detailRow.detail)}</pre>
-            <div className="text-xs text-vuln-critical/80 leading-4">注: 审计仅存元数据与 detail 摘要,请求/响应载荷不留存(载荷级存储=挂账)。</div>
+            <div className="text-jz-muted">detail:</div>
+            <pre data-detail-pre className="whitespace-pre-wrap break-all bg-jz-surface-2/60 rounded-control p-2 text-meta text-jz-ink-2 max-h-[52vh] overflow-auto">{pretty(detailRow.detail)}</pre>
+            <div className="text-meta text-jz-sev-critical/80 leading-4">注: 审计仅存元数据与 detail 摘要,请求/响应载荷不留存(载荷级存储=挂账)。</div>
           </div>
         )}
       </Drawer>
@@ -516,33 +516,33 @@ function TokensTab() {
   };
   if (!canManage) {
     return (
-      <div className="rounded-2xl bg-jz-surface shadow-jz-card p-6 text-center" data-tokens-noauth>
-        <div className="text-xs text-jz-text-muted">API Token 管理仅 admin/super_admin 可用——当前角色 {role || '未知'}(后端三端点对该角色 403,此为权限语义非故障)。</div>
+      <div className="rounded-panel bg-jz-surface shadow-card p-6 text-center" data-tokens-noauth>
+        <div className="text-meta text-jz-muted">API Token 管理仅 admin/super_admin 可用——当前角色 {role || '未知'}(后端三端点对该角色 403,此为权限语义非故障)。</div>
       </div>
     );
   }
   return (
     <div className="space-y-3" data-tokens-panel>
-      <div className="rounded-2xl bg-jz-surface shadow-jz-card p-3">
-        <div className="text-xs text-jz-text-muted mb-2">
+      <div className="rounded-panel bg-jz-surface shadow-card p-3">
+        <div className="text-meta text-jz-muted mb-2">
           开放 API 凭据(V2 开放 API 化):read=只读查询;write=可驱动 onekey 全流程(建审计→发渗透→启动 autopilot→收报告)。
-          签发后 token 明文<b className="text-neon-accent">仅显示一次</b>(GitHub PAT 同款语义),吊销立即生效。
+          签发后 token 明文<b className="text-jz-brand">仅显示一次</b>(GitHub PAT 同款语义),吊销立即生效。
         </div>
         <div className="flex items-center gap-2">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="名称(如 ci-pipeline)"
-            className="px-2 py-1 text-xs rounded bg-jz-elevated/60 text-jz-text-primary w-44" data-probe="token-name" />
+            className="px-2 py-1 text-meta rounded-control bg-jz-surface-2/60 text-jz-ink w-44" data-probe="token-name" />
           <select value={scope} onChange={(e) => setScope(e.target.value as 'read' | 'write')}
-            className="px-2 py-1 text-xs rounded bg-jz-elevated/60 text-jz-text-primary" data-probe="token-scope">
+            className="px-2 py-1 text-meta rounded-control bg-jz-surface-2/60 text-jz-ink" data-probe="token-scope">
             <option value="read">read(只读)</option>
             <option value="write">write(可驱动全流程)</option>
           </select>
           <Button onClick={issue} disabled={busy} data-probe="token-issue">{busy ? '签发中…' : '签发 Token'}</Button>
-          {msg && <span className="text-xs text-red-400">{msg}</span>}
+          {msg && <span className="text-meta text-jz-red">{msg}</span>}
         </div>
       </div>
-      <div className="rounded-2xl bg-jz-surface shadow-jz-card overflow-hidden">
-        <table className="w-full text-xs">
-          <thead className="bg-jz-elevated text-jz-text-muted">
+      <div className="rounded-panel bg-jz-surface shadow-card overflow-hidden">
+        <table className="w-full text-meta">
+          <thead className="bg-jz-surface-2 text-jz-muted">
             <tr>
               <th className="text-left px-3 py-2">#</th>
               <th className="text-left px-3 py-2">名称</th>
@@ -561,27 +561,27 @@ function TokensTab() {
                   <StatusBadge tone={t.scope === 'write' ? 'high' : 'medium'} title="R351: read=GET only;write=GET+写操作(外部系统驱动 onekey 全流程)">{t.scope}</StatusBadge>
                 </td>
                 <td className="px-3 py-2">{t.revoked_at ? <StatusBadge tone="critical">已吊销</StatusBadge> : <StatusBadge tone="info">active</StatusBadge>}</td>
-                <td className="px-3 py-2 text-jz-text-muted">{t.created_at ? new Date(t.created_at * 1000).toLocaleString() : '—'}</td>
+                <td className="px-3 py-2 text-jz-muted">{t.created_at ? new Date(t.created_at * 1000).toLocaleString() : '—'}</td>
                 <td className="px-3 py-2 text-right">
                   {!t.revoked_at && <button onClick={() => setRevokeTarget(t)} data-probe={`token-revoke-${t.id}`}
-                    className="px-2 py-0.5 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">吊销</button>}
+                    className="px-2 py-0.5 rounded-control bg-jz-red/10 text-jz-red hover:bg-jz-red/20 transition-colors">吊销</button>}
                 </td>
               </tr>
             ))}
-            {!items.length && <tr><td colSpan={6} className="px-3 py-6 text-center text-jz-text-muted">暂无 Token</td></tr>}
+            {!items.length && <tr><td colSpan={6} className="px-3 py-6 text-center text-jz-muted">暂无 Token</td></tr>}
           </tbody>
         </table>
       </div>
       <Modal open={!!issued} title={`Token 已签发 — ${issued?.name || ''}(${issued?.scope || ''})`} onClose={() => setIssued(null)}>
         <div className="space-y-3 w-[520px]">
-          <div className="text-xs text-jz-text-muted">请立即复制保存——关闭后将<b className="text-neon-accent">无法再次查看</b>(服务端只存哈希,此为安全设计)。</div>
-          <div className="px-3 py-2 rounded bg-jz-elevated/60 font-mono text-xs break-all select-all" data-probe="token-once">{issued?.token}</div>
+          <div className="text-meta text-jz-muted">请立即复制保存——关闭后将<b className="text-jz-brand">无法再次查看</b>(服务端只存哈希,此为安全设计)。</div>
+          <div className="px-3 py-2 rounded-control bg-jz-surface-2/60 font-mono text-meta break-all select-all" data-probe="token-once">{issued?.token}</div>
           <div className="text-right"><Button onClick={() => setIssued(null)}>我已保存</Button></div>
         </div>
       </Modal>
       <Modal open={!!revokeTarget} title={`吊销 Token — ${revokeTarget?.name || ''}(#${revokeTarget?.id ?? ''})`} onClose={() => setRevokeTarget(null)}>
         <div className="space-y-3 w-[420px]">
-          <div className="text-xs text-jz-text-secondary">吊销后该 Token 的所有请求立即 401(scope={revokeTarget?.scope});使用方需重新签发。确定吊销?</div>
+          <div className="text-meta text-jz-ink-2">吊销后该 Token 的所有请求立即 401(scope={revokeTarget?.scope});使用方需重新签发。确定吊销?</div>
           <div className="flex justify-end gap-2">
             <Button onClick={() => setRevokeTarget(null)}>取消</Button>
             <Button onClick={() => revoke(revokeTarget?.id)} data-probe="token-revoke-confirm">确认吊销</Button>
@@ -626,28 +626,28 @@ function WebhookPanel() {
   };
   return (
     <div className="space-y-2" data-webhook-panel>
-      <div className="flex items-center gap-2 text-xs text-jz-text-muted">
-        <span className="font-medium text-jz-text-primary">Webhook 外推</span>
+      <div className="flex items-center gap-2 text-meta text-jz-muted">
+        <span className="font-medium text-jz-ink">Webhook 外推</span>
         <span title="R180: 通知异步 POST+HMAC-SHA256 签验;R221: kinds/levels 订阅白名单(未配置=全推)">事件外推到外部系统(CI/IM)</span>
       </div>
-      <div className="rounded-2xl bg-jz-surface shadow-jz-card p-3 space-y-2">
+      <div className="rounded-panel bg-jz-surface shadow-card p-3 space-y-2">
         <div className="flex items-center gap-2">
           <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://ci.example.com/hook(http(s):// 开头)"
-            className="px-2 py-1 text-xs rounded bg-jz-elevated/60 text-jz-text-primary flex-1" data-probe="wh-url" />
+            className="px-2 py-1 text-meta rounded-control bg-jz-surface-2/60 text-jz-ink flex-1" data-probe="wh-url" />
           <input value={secret} onChange={(e) => setSecret(e.target.value)} placeholder="签名 secret(可空=不签)"
-            className="px-2 py-1 text-xs rounded bg-jz-elevated/60 text-jz-text-primary w-40" data-probe="wh-secret" type="password" />
+            className="px-2 py-1 text-meta rounded-control bg-jz-surface-2/60 text-jz-ink w-40" data-probe="wh-secret" type="password" />
         </div>
         <div className="flex items-center gap-2">
           <input value={kinds} onChange={(e) => setKinds(e.target.value)} placeholder="订阅 kinds 白名单(逗号分隔,空=全推;如 task,ai)"
-            className="px-2 py-1 text-xs rounded bg-jz-elevated/60 text-jz-text-primary flex-1" data-probe="wh-kinds" />
+            className="px-2 py-1 text-meta rounded-control bg-jz-surface-2/60 text-jz-ink flex-1" data-probe="wh-kinds" />
           <Button onClick={add} disabled={busy || !url.trim()} data-probe="wh-add">{busy ? '添加中…' : '添加'}</Button>
         </div>
-        {msg && <div className="text-xs text-jz-accent-cyan" data-probe="wh-msg">{msg}</div>}
+        {msg && <div className="text-meta text-jz-brand" data-probe="wh-msg">{msg}</div>}
       </div>
       {hooks.length > 0 && (
-        <div className="rounded-2xl bg-jz-surface shadow-jz-card overflow-hidden">
-          <table className="w-full text-xs">
-            <thead className="bg-jz-elevated text-jz-text-muted">
+        <div className="rounded-panel bg-jz-surface shadow-card overflow-hidden">
+          <table className="w-full text-meta">
+            <thead className="bg-jz-surface-2 text-jz-muted">
               <tr>
                 <th className="text-left px-3 py-2">#</th>
                 <th className="text-left px-3 py-2">URL</th>
@@ -661,13 +661,13 @@ function WebhookPanel() {
                 <tr key={h.idx} className="" data-probe={`wh-row-${h.idx}`}>
                   <td className="px-3 py-2 font-mono">{h.idx}</td>
                   <td className="px-3 py-2 break-all" title={h.url}>{h.url.length > 46 ? h.url.slice(0, 46) + '…' : h.url}</td>
-                  <td className="px-3 py-2 text-jz-text-muted">{h.secret_masked || '未配置'}</td>
+                  <td className="px-3 py-2 text-jz-muted">{h.secret_masked || '未配置'}</td>
                   <td className="px-3 py-2">{(h.kinds || []).length ? h.kinds.join(', ') : '全推'}</td>
                   <td className="px-3 py-2 text-right">
                     <button onClick={() => setDelTarget(h)} data-probe={`wh-del-${h.idx}`}
-                      className="px-2 py-0.5 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors mr-1">删除</button>
+                      className="px-2 py-0.5 rounded-control bg-jz-red/10 text-jz-red hover:bg-jz-red/20 transition-colors mr-1">删除</button>
                     <button onClick={test} data-probe={`wh-test-${h.idx}`}
-                      className="px-2 py-0.5 rounded-md bg-jz-elevated/60 text-jz-text-secondary hover:text-neon-accent transition-colors">测试推送</button>
+                      className="px-2 py-0.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 hover:text-jz-brand transition-colors">测试推送</button>
                   </td>
                 </tr>
               ))}
@@ -677,8 +677,8 @@ function WebhookPanel() {
       )}
       <Modal open={!!delTarget} title={`删除 Webhook — #${delTarget?.idx ?? ''}`} onClose={() => setDelTarget(null)}>
         <div className="space-y-3 w-[420px]">
-          <div className="text-xs text-jz-text-secondary break-all">{delTarget?.url}</div>
-          <div className="text-xs text-jz-text-muted">删除后该接收端不再收到任何事件外推。确定?</div>
+          <div className="text-meta text-jz-ink-2 break-all">{delTarget?.url}</div>
+          <div className="text-meta text-jz-muted">删除后该接收端不再收到任何事件外推。确定?</div>
           <div className="flex justify-end gap-2">
             <Button onClick={() => setDelTarget(null)}>取消</Button>
             <Button onClick={() => del(delTarget?.idx)} data-probe="wh-del-confirm">确认删除</Button>

@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Download, FileUp, Plus, Search } from 'lucid
 
 /**
  * DataToolbar — 全平台统一数据工具条(本轮全平台升级 Step1 三公共组件之一)。
- * 规格: h-11 text-sm 搜索框 + 状态计数过滤胶囊组(props 配置)+ 排序下拉 +
+ * 规格: h-11 text-body 搜索框 + 状态计数过滤胶囊组(props 配置)+ 排序下拉 +
  * [导入][导出▾][新增] 按钮组插槽 + 底部分页器(12/24/50/100 + 页码跳转)。
  * 全部受控 props(零内部数据源);不渲染时传 undefined 即隐藏对应槽位。
  * 字号纪律: 全部八档内(11/12/14);分页器作为组件第二行渲染(消费方置于表格下方即「底部分页器」)。
@@ -94,13 +94,13 @@ export const DataToolbar: React.FC<{
       <div className="min-h-11 flex items-center gap-2 flex-wrap" data-toolbar-main>
         {onSearch && (
         <div className="relative flex-none">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-jz-text-muted pointer-events-none" />
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-jz-muted pointer-events-none" />
           <input value={search ?? ''} onChange={(e) => onSearch(e.target.value)} placeholder={searchPlaceholder}
  {...(searchDataAttrs || {})}
  data-toolbar-search className={searchClassName ||
- `h-11 w-64 pl-8 pr-3 rounded-xl bg-jz-elevated/60 text-sm
- text-jz-text-primary placeholder:text-jz-text-muted outline-none
- focus:ring-2 focus:ring-neon-accent/30`} />
+ `h-11 w-64 pl-8 pr-3 rounded-card bg-jz-surface-2/60 text-body
+ text-jz-ink placeholder:text-jz-muted outline-none
+ focus:ring-2 focus:ring-jz-brand/30`} />
         </div>
  )}
  {filters && filters.length > 0 && (
@@ -110,12 +110,12 @@ export const DataToolbar: React.FC<{
               return (
                 <button key={f.key} onClick={() => onFilter?.(f.key)} title={f.title}
  data-toolbar-filter={f.key} data-active={on ? '1' : ''}
- className={`flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium transition-colors whitespace-nowrap
- ${on ? 'bg-neon-accent/10 text-neon-accent font-semibold' : 'text-jz-text-muted hover:text-jz-text-primary hover:bg-jz-elevated/50'}`}>
-                  {f.dot && <span className="inline-block h-1.5 w-1.5 rounded-full bg-jz-accent-cyan animate-pulse" data-toolbar-dot />}
+ className={`flex items-center gap-1.5 h-8 px-3 rounded-pill text-meta font-medium transition-colors whitespace-nowrap
+ ${on ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/50'}`}>
+                  {f.dot && <span className="inline-block h-1.5 w-1.5 rounded-pill bg-jz-brand animate-pulse" data-toolbar-dot />}
                   {f.label}
                   {f.count != null && (
-                    <span className={`px-1.5 rounded-full font-mono tnum text-[11px] ${on ? 'bg-neon-accent/15 text-neon-accent' : 'bg-jz-elevated text-jz-text-muted'}`}>{f.count}</span>
+                    <span className={`px-1.5 rounded-pill font-mono tnum text-meta ${on ? 'bg-jz-brand/15 text-jz-brand' : 'bg-jz-surface-2 text-jz-muted'}`}>{f.count}</span>
                   )}
                 </button>
               );
@@ -125,8 +125,8 @@ export const DataToolbar: React.FC<{
  {sortOptions && sortOptions.length > 0 && (
           <select value={sort ?? sortOptions[0].id} onChange={(e) => onSort?.(e.target.value)}
  data-toolbar-sort title="排序" {...(sortDataAttrs || {})}
- className="h-8 px-2 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-secondary outline-none
- focus:ring-2 focus:ring-neon-accent/30 cursor-pointer">
+ className="h-8 px-2 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink-2 outline-none
+ focus:ring-2 focus:ring-jz-brand/30 cursor-pointer">
  {sortOptions.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
         )}
@@ -136,24 +136,24 @@ export const DataToolbar: React.FC<{
           {extraActions}
           {onImport && (
             <button onClick={onImport} data-toolbar-import
- className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-jz-elevated/60 text-xs
- text-jz-text-secondary hover:text-neon-accent transition-colors">
+ className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control bg-jz-surface-2/60 text-meta
+ text-jz-ink-2 hover:text-jz-brand transition-colors">
               <FileUp size={12} /> {importLabel}
             </button>
  )}
  {exportItems && exportItems.length > 0 && onExport && (
             <div className="relative" ref={expRef} data-toolbar-export>
               <button onClick={() => setExpOpen((v) => !v)} data-toolbar-export-toggle
- className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-jz-elevated/60 text-xs
- text-jz-text-secondary hover:text-neon-accent transition-colors">
+ className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control bg-jz-surface-2/60 text-meta
+ text-jz-ink-2 hover:text-jz-brand transition-colors">
                 <Download size={12} /> 导出 ▾
               </button>
               {expOpen && (
-                <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-xl bg-jz-surface border border-jz-border shadow-jz-card py-1" data-toolbar-export-panel>
+                <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-card bg-jz-surface border border-jz-border shadow-card py-1" data-toolbar-export-panel>
  {exportItems.map((it) => (
                     <button key={it.id} onClick={() => { onExport(it.id); setExpOpen(false); }}
  data-toolbar-export-item={it.id}
- className="w-full text-left px-2.5 py-1.5 text-xs text-jz-text-secondary hover:bg-jz-elevated/60">
+ className="w-full text-left px-2.5 py-1.5 text-meta text-jz-ink-2 hover:bg-jz-surface-2/60">
                       {it.label}
                     </button>
                   ))}
@@ -163,8 +163,8 @@ export const DataToolbar: React.FC<{
           )}
           {onCreate && (
             <button onClick={onCreate} data-toolbar-create
- className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-neon-accent/15 text-xs
- text-neon-accent font-semibold hover:bg-neon-accent/25 transition-colors">
+ className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control bg-jz-brand/15 text-meta
+ text-jz-brand font-semibold hover:bg-jz-brand/25 transition-colors">
               <Plus size={12} /> {createLabel}
             </button>
           )}
@@ -174,21 +174,21 @@ export const DataToolbar: React.FC<{
 
       {/* 分页行(12/24/50/100 + 页码 + 跳页) */}
       {pager && (
-        <div className="flex items-center justify-between gap-2 flex-wrap text-xs" data-toolbar-pager {...(pagerDataAttrs || {})}>
-          <div className="flex items-center gap-2 text-jz-text-muted">
-            <span>共 <strong className="text-jz-text-primary font-semibold tnum">{pager.total}</strong> 项</span>
-            <span className="text-jz-text-muted/50">·</span>
-            <span>第 <strong className="text-jz-text-primary font-semibold tnum">{safePage}</strong>/{pages} 页</span>
+        <div className="flex items-center justify-between gap-2 flex-wrap text-meta" data-toolbar-pager {...(pagerDataAttrs || {})}>
+          <div className="flex items-center gap-2 text-jz-muted">
+            <span>共 <strong className="text-jz-ink font-semibold tnum">{pager.total}</strong> 项</span>
+            <span className="text-jz-muted">·</span>
+            <span>第 <strong className="text-jz-ink font-semibold tnum">{safePage}</strong>/{pages} 页</span>
             <select value={pager.pageSize} onChange={(e) => { pager.onPageSize(Number(e.target.value)); }}
  data-toolbar-page-size title="每页条数"
- className="h-7 px-1.5 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-secondary outline-none cursor-pointer">
+ className="h-7 px-1.5 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink-2 outline-none cursor-pointer">
  {sizeOptions.map((n) => <option key={n} value={n}>{n} 条/页</option>)}
             </select>
           </div>
           <div className="flex items-center gap-1">
             <button disabled={safePage <= 1} onClick={() => pager.onPage(safePage - 1)} title="上一页"
- className="w-7 h-7 rounded-lg border border-jz-border/60 bg-jz-surface text-jz-text-secondary
- hover:bg-jz-elevated disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+ className="w-7 h-7 rounded-control border border-jz-border/60 bg-jz-surface text-jz-ink-2
+ hover:bg-jz-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
               <ChevronLeft size={13} className="mx-auto" />
             </button>
             <div className="flex items-center gap-1 px-0.5">
@@ -197,33 +197,33 @@ export const DataToolbar: React.FC<{
  if (p > pages) return null;
                 return (
                   <button key={p} onClick={() => pager.onPage(p)} data-toolbar-page={p}
- className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${p === safePage
- ? 'bg-neon-accent text-white shadow-jz-card'
- : 'text-jz-text-secondary hover:bg-jz-elevated hover:text-jz-text-primary'}`}>{p}</button>
+ className={`w-7 h-7 rounded-control text-meta font-medium transition-colors ${p === safePage
+ ? 'bg-jz-brand text-jz-on-brand shadow-card'
+ : 'text-jz-ink-2 hover:bg-jz-surface-2 hover:text-jz-ink'}`}>{p}</button>
  );
  })}
- {pages > 5 && <span className="px-0.5 text-jz-text-muted/50">…</span>}
+ {pages > 5 && <span className="px-0.5 text-jz-muted">…</span>}
  {pages > 5 && (
                 <button onClick={() => pager.onPage(pages)} data-toolbar-page-last
- className="w-7 h-7 rounded-lg text-xs text-jz-text-secondary hover:bg-jz-elevated hover:text-jz-text-primary transition-colors">{pages}</button>
+ className="w-7 h-7 rounded-control text-meta text-jz-ink-2 hover:bg-jz-surface-2 hover:text-jz-ink transition-colors">{pages}</button>
               )}
             </div>
             <button disabled={safePage >= pages} onClick={() => pager.onPage(safePage + 1)} title="下一页"
- className="w-7 h-7 rounded-lg border border-jz-border/60 bg-jz-surface text-jz-text-secondary
- hover:bg-jz-elevated disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+ className="w-7 h-7 rounded-control border border-jz-border/60 bg-jz-surface text-jz-ink-2
+ hover:bg-jz-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
               <ChevronRight size={13} className="mx-auto" />
             </button>
-            <span className="flex items-center gap-1.5 ml-2 pl-2 border-l border-jz-border/40 text-jz-text-muted font-mono">
+            <span className="flex items-center gap-1.5 ml-2 pl-2 border-l border-jz-border/40 text-jz-muted font-mono">
               <span>跳至</span>
               <input value={jump} onChange={(e) => setJump(e.target.value.replace(/[^0-9]/g, ''))}
  onKeyDown={(e) => { if (e.key === 'Enter') doJump(); }}
  placeholder="页" data-toolbar-jump inputMode="numeric"
- className="w-10 h-7 text-center bg-jz-surface border border-jz-border/60 rounded-lg
- text-jz-text-primary outline-none focus:border-jz-accent-cyan/60 focus:ring-1 focus:ring-jz-accent-cyan/30
+ className="w-10 h-7 text-center bg-jz-surface border border-jz-border/60 rounded-control
+ text-jz-ink outline-none focus:border-jz-brand/60 focus:ring-1 focus:ring-jz-brand/30
  [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
               <button onClick={doJump} data-toolbar-jump-go
- className="px-2.5 h-7 rounded-lg border border-jz-border/60 bg-jz-surface text-jz-text-secondary
- hover:bg-jz-elevated text-xs font-medium transition-colors active:scale-95">确定</button>
+ className="px-2.5 h-7 rounded-control border border-jz-border/60 bg-jz-surface text-jz-ink-2
+ hover:bg-jz-surface-2 text-meta font-medium transition-colors active:scale-95">确定</button>
             </span>
           </div>
         </div>

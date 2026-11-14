@@ -15,6 +15,9 @@ function apply(theme: Theme) {
   if (theme === 'dark') root.classList.add('dark');
   else root.classList.remove('dark');
   root.style.colorScheme = theme;
+  // Browser chrome color follows the canvas token (a meta tag cannot reference a CSS variable).
+  const canvas = getComputedStyle(root).getPropertyValue('--jz-canvas').trim();
+  if (canvas) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', `rgb(${canvas.split(/\s+/).join(', ')})`);
 }
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

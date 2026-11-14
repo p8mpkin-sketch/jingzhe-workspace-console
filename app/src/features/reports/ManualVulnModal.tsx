@@ -12,7 +12,7 @@ const SEV_OPTIONS: Array<{ v: string; label: string }> = [
   { v: 'info', label: 'info 信息' },
 ];
 
-const inputCls = 'w-full rounded-lg bg-jz-elevated/60 border border-transparent px-3 py-2 text-sm text-jz-text-primary outline-none focus:border-jz-active/50 placeholder:text-jz-text-muted';
+const inputCls = 'w-full rounded-control bg-jz-surface-2/60 border border-transparent px-3 py-2 text-body text-jz-ink outline-none focus:border-jz-brand/50 placeholder:text-jz-muted';
 
 export const ManualVulnModal: React.FC<{
  open: boolean;
@@ -46,40 +46,40 @@ export const ManualVulnModal: React.FC<{
   };
 
   return (
-    <UnifiedModal open={open} title={<>＋ 手动新增漏洞<span className="text-xs text-jz-text-muted font-normal ml-2">纯前端暂存(本地合并层),可随 CSV/JSON 导出持久</span></>}
+    <UnifiedModal open={open} title={<>＋ 手动新增漏洞<span className="text-meta text-jz-muted font-normal ml-2">纯前端暂存(本地合并层),可随 CSV/JSON 导出持久</span></>}
  onClose={onClose} widthClass="w-[560px]">
       <div className="space-y-2.5">
         <div>
-          <div className="text-xs text-jz-text-muted mb-1">标题 *</div>
+          <div className="text-meta text-jz-muted mb-1">标题 *</div>
           <input value={title} onChange={(e) => setTitle(e.target.value)} data-manual-title
  placeholder="漏洞标题" className={inputCls} />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <div className="text-xs text-jz-text-muted mb-1">等级</div>
+            <div className="text-meta text-jz-muted mb-1">等级</div>
             <select value={severity} onChange={(e) => setSeverity(e.target.value)} data-manual-severity
  className={inputCls}>
  {SEV_OPTIONS.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
             </select>
           </div>
           <div>
-            <div className="text-xs text-jz-text-muted mb-1">MASVS / CWE</div>
+            <div className="text-meta text-jz-muted mb-1">MASVS / CWE</div>
             <input value={masvs} onChange={(e) => setMasvs(e.target.value)} data-manual-masvs
  placeholder="如 MASVS-CRYPTO-1" className={inputCls} />
           </div>
         </div>
         <div>
-          <div className="text-xs text-jz-text-muted mb-1">组件路径</div>
+          <div className="text-meta text-jz-muted mb-1">组件路径</div>
           <input value={component} onChange={(e) => setComponent(e.target.value)} data-manual-component
  placeholder="如 com/demo/HashUtil.java:88" className={inputCls} />
         </div>
         <div>
-          <div className="text-xs text-jz-text-muted mb-1">证据</div>
+          <div className="text-meta text-jz-muted mb-1">证据</div>
           <textarea value={evidence} onChange={(e) => setEvidence(e.target.value)} data-manual-evidence rows={4}
  placeholder="证据原文(支持 文件:行号 / HTTP 报文行,证据链面板会按三段式分桶)" className={`${inputCls} font-mono`} />
         </div>
         <div>
-          <div className="text-xs text-jz-text-muted mb-1">修复建议</div>
+          <div className="text-meta text-jz-muted mb-1">修复建议</div>
           <textarea value={repro} onChange={(e) => setRepro(e.target.value)} data-manual-repro rows={2}
  placeholder="修复建议(可选)" className={inputCls} />
         </div>

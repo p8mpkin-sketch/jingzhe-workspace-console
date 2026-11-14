@@ -11,32 +11,32 @@ import { useNotifications, NotifItem } from '@/stores/notifications';
  *  (任务→/tasks?focus=N 复用 R94-1 高亮定位,AI 会话→工作台路由)。 */
 
 const KIND_ICON: Record<string, { I: React.ComponentType<any>; cls: string }> = {
-  task:     { I: CheckCircle2,  cls: 'text-vuln-safe' },
-  security: { I: ShieldAlert,   cls: 'text-vuln-critical' },
-  danger:   { I: AlertTriangle, cls: 'text-vuln-critical' },
-  ai:       { I: Bot,           cls: 'text-neon-accent' },
-  system:   { I: Info,          cls: 'text-jz-text-secondary' },
+  task:     { I: CheckCircle2,  cls: 'text-jz-teal' },
+  security: { I: ShieldAlert,   cls: 'text-jz-sev-critical' },
+  danger:   { I: AlertTriangle, cls: 'text-jz-sev-critical' },
+  ai:       { I: Bot,           cls: 'text-jz-brand' },
+  system:   { I: Info,          cls: 'text-jz-ink-2' },
 };
 
 function itemVisual(n: NotifItem): { I: React.ComponentType<any>; cls: string } {
   const base = KIND_ICON[n.kind] || KIND_ICON.system;
-  if (n.level === 'danger') return { I: XCircle, cls: 'text-vuln-critical' };
+  if (n.level === 'danger') return { I: XCircle, cls: 'text-jz-sev-critical' };
   if (n.kind === 'task' && n.level === 'success') return base;
   return base;
 }
 
 const LEVEL_BORDER: Record<string, string> = {
-  success: 'border-l-vuln-safe',
-  warning: 'border-l-vuln-medium',
-  danger: 'border-l-vuln-critical',
-  info: 'border-l-neon-accent',
+  success: 'border-l-jz-teal',
+  warning: 'border-l-jz-sev-medium',
+  danger: 'border-l-jz-sev-critical',
+  info: 'border-l-jz-brand',
 };
 /* 回访轮: 严重级=染底不用 border-l 线(规范#3);弹层卡与内联行两处统一 */
 const LEVEL_BG: Record<string, string> = {
-  success: 'bg-vuln-safe/8',
-  warning: 'bg-vuln-medium/8',
-  danger: 'bg-vuln-critical/8',
-  info: 'bg-jz-elevated',
+  success: 'bg-jz-teal/8',
+  warning: 'bg-jz-sev-medium/8',
+  danger: 'bg-jz-sev-critical/8',
+  info: 'bg-jz-surface-2',
 };
 
 function fmtRel(ts: number): string {
@@ -89,15 +89,15 @@ export const NotificationBell: React.FC = () => {
       <div className="relative" ref={ref} data-notif-bell>
         <button onClick={() => setOpen(!open)} data-notif-toggle
  title={live ? '通知中心(实时)' : '通知中心(未连接)'}
- className="relative w-8 h-8 rounded-lg flex items-center justify-center text-jz-text-secondary hover:text-neon-accent hover:bg-jz-elevated/60 transition-colors"
+ className="relative w-8 h-8 rounded-control flex items-center justify-center text-jz-ink-2 hover:text-jz-brand hover:bg-jz-surface-2/60 transition-colors"
  aria-label="通知中心">
-          <Bell size={16} className={open ? 'text-neon-accent' : ''} />
+          <Bell size={16} className={open ? 'text-jz-brand' : ''} />
           {/* 连接态小点: SSE live=翡翠 / 断线=灰 */}
-          <span className={`absolute bottom-1.5 right-1.5 w-1.5 h-1.5 rounded-full ${live ? 'bg-vuln-safe' : 'bg-jz-text-muted'}`}
+          <span className={`absolute bottom-1.5 right-1.5 w-1.5 h-1.5 rounded-pill ${live ? 'bg-jz-teal' : 'bg-jz-muted'}`}
  title={live ? '实时推送已连接' : '实时推送未连接(自动重连)'} />
  {unread > 0 && (
             <span data-notif-unread
- className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-vuln-critical text-white text-[11px] font-bold flex items-center justify-center">
+ className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-pill bg-jz-sev-critical text-jz-on-brand text-meta font-semibold flex items-center justify-center">
  {unread > 99 ? '99+' : unread}
             </span>
           )}
@@ -105,23 +105,23 @@ export const NotificationBell: React.FC = () => {
 
         {open && (
           <div data-notif-panel
- className="absolute right-0 top-full mt-2 w-[360px] rounded-xl bg-jz-surface shadow-jz-card z-50 overflow-hidden">
+ className="absolute right-0 top-full mt-2 w-[360px] rounded-card bg-jz-surface shadow-card z-50 overflow-hidden">
             <div className="flex items-center justify-between px-3 py-2 border-b border-jz-border">
-              <span className="text-[12px] font-semibold text-jz-text-primary flex items-center gap-1.5">
+              <span className="text-meta font-semibold text-jz-ink flex items-center gap-1.5">
                 通知中心
                 <span title={live ? 'SSE 实时推送已连接' : '未连接(自动重连中)'}>
-                  {live ? <Wifi size={11} className="text-vuln-safe" /> : <WifiOff size={11} className="text-jz-text-muted" />}
+                  {live ? <Wifi size={11} className="text-jz-teal" /> : <WifiOff size={11} className="text-jz-muted" />}
                 </span>
               </span>
               <button onClick={() => markAllRead()} data-notif-readall
  disabled={unread === 0}
- className="flex items-center gap-1 text-[11px] text-jz-text-secondary hover:text-neon-accent disabled:opacity-40 disabled:hover:text-jz-text-secondary">
+ className="flex items-center gap-1 text-meta text-jz-ink-2 hover:text-jz-brand disabled:opacity-40 disabled:hover:text-jz-ink-2">
                 <CheckCheck size={12} /> 全部已读
               </button>
               <button onClick={clearLocal} data-notif-clear-local
  disabled={items.length === 0}
  title="后端无通知清空/删除端点——本地视图清空(隐藏当前列表并全部已读),新通知到达或刷新后如实恢复"
- className="ml-1.5 flex items-center gap-1 text-[11px] text-jz-text-secondary hover:text-vuln-critical disabled:opacity-40">
+ className="ml-1.5 flex items-center gap-1 text-meta text-jz-ink-2 hover:text-jz-sev-critical disabled:opacity-40">
                 <Trash2 size={11} /> 清空(本地)
               </button>
             </div>
@@ -132,9 +132,9 @@ export const NotificationBell: React.FC = () => {
                 if (k && n === 0) return null;
                 return (
                   <button key={k || 'all'} onClick={() => setKindF(k)} data-notif-filter-tab={k || 'all'}
- className={`px-2 py-0.5 rounded-full text-[11px] transition-colors ${kindF === k
- ? 'bg-neon-accent/10 text-neon-accent font-semibold'
- : 'text-jz-text-muted hover:text-jz-text-secondary hover:bg-jz-elevated/60'}`}>
+ className={`px-2 py-0.5 rounded-pill text-meta transition-colors ${kindF === k
+ ? 'bg-jz-brand/10 text-jz-brand font-semibold'
+ : 'text-jz-muted hover:text-jz-ink-2 hover:bg-jz-surface-2/60'}`}>
                     {label} <span className="tnum font-mono opacity-70">{n}</span>
                   </button>
                 );
@@ -142,7 +142,7 @@ export const NotificationBell: React.FC = () => {
             </div>
             <div className="max-h-[420px] overflow-y-auto">
               {shown.length === 0 && (
-                <div className="px-3 py-8 text-center text-[12px] text-jz-text-muted" data-notif-empty>
+                <div className="px-3 py-8 text-center text-meta text-jz-muted" data-notif-empty>
  {items.length > 0 && shown.length === 0 && clearedIds.size > 0
                     ? '本地视图已清空——新通知到达后此处恢复(数据仍在服务端,刷新页面可见)'
                     : '暂无通知 — 任务完成 / 安全事件 / AI 编排进展会实时推送到这里'}
@@ -152,21 +152,21 @@ export const NotificationBell: React.FC = () => {
                 const { I, cls } = itemVisual(n);
                 return (
                   <button key={n.id} onClick={() => go(n)} data-notif-item data-notif-level={n.level}
- className={`w-full text-left flex gap-2.5 px-3 py-2.5 ${LEVEL_BG[n.level] || LEVEL_BG.info} hover:shadow-[inset_0_0_0_1px_rgb(var(--c-border))] transition-all ${n.read_at ? 'opacity-60' : ''}`}>
+ className={`w-full text-left flex gap-2.5 px-3 py-2.5 ${LEVEL_BG[n.level] || LEVEL_BG.info} hover:shadow-card transition-all ${n.read_at ? 'opacity-60' : ''}`}>
                     <I size={15} className={`flex-none mt-0.5 ${cls}`} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        {!n.read_at && <span className="w-1.5 h-1.5 rounded-full bg-vuln-critical flex-none" />}
-                        <span className="text-[12px] font-medium text-jz-text-primary truncate">{n.title}</span>
+                        {!n.read_at && <span className="w-1.5 h-1.5 rounded-pill bg-jz-sev-critical flex-none" />}
+                        <span className="text-meta font-medium text-jz-ink truncate">{n.title}</span>
                       </div>
-                      {n.body && <div className="text-[11px] text-jz-text-secondary mt-0.5 line-clamp-2">{n.body}</div>}
-                      <div className="text-[11px] text-jz-text-muted mt-1 font-mono">{fmtRel(n.created_at)}</div>
+                      {n.body && <div className="text-meta text-jz-ink-2 mt-0.5 line-clamp-2">{n.body}</div>}
+                      <div className="text-meta text-jz-muted mt-1 font-mono">{fmtRel(n.created_at)}</div>
                     </div>
                   </button>
                 );
               })}
             </div>
-            <div className="px-3 py-1.5 border-t border-jz-border text-[11px] text-jz-text-muted">
+            <div className="px-3 py-1.5 border-t border-jz-border text-meta text-jz-muted">
               实时推送 · 最近 50 条 · 点击通知跳转对应页面
             </div>
           </div>
@@ -189,13 +189,13 @@ const NotifToast: React.FC<{ n: NotifItem; onGo: (n: NotifItem) => void; onDismi
   }, [n.id]);
   return (
     <button onClick={() => onGo(n)} data-notif-toast data-notif-level={n.level}
- className={`w-full text-left flex gap-2.5 rounded-xl ${LEVEL_BG[n.level] || LEVEL_BG.info} shadow-jz-card px-3 py-2.5 hover:shadow-[0_8px_24px_-10px_rgba(15,23,42,0.25)] transition-all`}>
+ className={`w-full text-left flex gap-2.5 rounded-card ${LEVEL_BG[n.level] || LEVEL_BG.info} shadow-card px-3 py-2.5 hover:shadow-card transition-all`}>
       <I size={15} className={`flex-none mt-0.5 ${cls}`} />
       <div className="min-w-0 flex-1">
-        <div className="text-[12px] font-medium text-jz-text-primary truncate">{n.title}</div>
-        {n.body && <div className="text-[11px] text-jz-text-secondary mt-0.5 line-clamp-2">{n.body}</div>}
+        <div className="text-meta font-medium text-jz-ink truncate">{n.title}</div>
+        {n.body && <div className="text-meta text-jz-ink-2 mt-0.5 line-clamp-2">{n.body}</div>}
       </div>
-      <span className="flex-none text-[11px] text-jz-text-muted font-mono">刚到</span>
+      <span className="flex-none text-meta text-jz-muted font-mono">刚到</span>
     </button>
   );
 };

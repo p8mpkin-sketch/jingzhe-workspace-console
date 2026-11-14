@@ -4,17 +4,17 @@ import React from 'react';
  * R104-1 ①: 状态/危险级微胶囊(V3 三铁律②「调试标签一律封装微型状态胶囊」的标准载体)。
  * 五档危险/状态级 + custom 自由档(消费方经 className 自带配色, 本组件不预设)。
  * 全 token 化零裸 hex: 面色/字符色均消费主题 token(vuln-* 危险级色板 / jz-* 中性档),
- * 微光背景 + 同色系深色字符; 无边框(杜绝生硬黑线框), 柔和边缘光晕由 .status-glow
+ * 微光背景 + 同色系深色字符; 无边框(杜绝生硬黑线框), 柔和边缘光晕由 .
  * 以 currentColor 派生(styles/index.css), 暗色光晕更明显、亮色自动衰减。
  */
 export type StatusTone = 'critical' | 'high' | 'medium' | 'low' | 'info' | 'custom';
 
 const TONE: Record<Exclude<StatusTone, 'custom'>, string> = {
-  critical: 'bg-vuln-critical/10 text-vuln-critical',
-  high: 'bg-vuln-high/10 text-vuln-high',
-  medium: 'bg-vuln-medium/10 text-vuln-medium',
-  low: 'bg-vuln-low/10 text-vuln-low',
-  info: 'bg-jz-elevated text-jz-text-secondary',
+  critical: 'bg-jz-sev-critical/10 text-jz-sev-critical',
+  high: 'bg-jz-sev-high/10 text-jz-sev-high',
+  medium: 'bg-jz-sev-medium/10 text-jz-sev-medium',
+  low: 'bg-jz-sev-low/10 text-jz-sev-low',
+  info: 'bg-jz-surface-2 text-jz-ink-2',
 };
 
 export const StatusBadge: React.FC<{
@@ -26,7 +26,7 @@ export const StatusBadge: React.FC<{
   <span
  title={title}
  data-status-badge={tone}
- className={`status-glow inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold whitespace-nowrap ${tone === 'custom' ? '' : TONE[tone]} ${className}`}
+ className={` inline-flex items-center gap-1 px-2 py-0.5 rounded-pill text-meta font-mono font-semibold whitespace-nowrap ${tone === 'custom' ? '' : TONE[tone]} ${className}`}
  >
     {children}
   </span>

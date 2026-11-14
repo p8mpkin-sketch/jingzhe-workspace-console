@@ -25,16 +25,16 @@ export const CmdPalette: React.FC = () => {
   const list = useMemo(() => CMDS.filter((c) => c.label.includes(q)), [q]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[100] bg-black/50 flex items-start justify-center pt-24" onClick={() => setOpen(false)} data-cmdk>
-      <div className="w-[460px] rounded-lg border border-jz-border bg-jz-bg shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[100] bg-jz-scrim/50 flex items-start justify-center pt-24" onClick={() => setOpen(false)} data-cmdk>
+      <div className="w-[460px] rounded-control border border-jz-border bg-jz-canvas shadow-dialog overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="输入命令或页面名…"
-          className="w-full px-4 py-3 bg-jz-bg text-xs text-jz-text-primary outline-none border-b border-jz-border" />
+          className="w-full px-4 py-3 bg-jz-canvas text-meta text-jz-ink outline-none border-b border-jz-border" />
         <div className="max-h-64 overflow-auto">
           {list.map((c) => (
             <button key={c.to} onClick={() => { nav(c.to); setOpen(false); }}
-              className="w-full text-left px-4 py-2 text-xs text-jz-text-secondary hover:bg-jz-elevated/60">{c.label}</button>
+              className="w-full text-left px-4 py-2 text-meta text-jz-ink-2 hover:bg-jz-surface-2/60">{c.label}</button>
           ))}
-          {!list.length && <div className="px-4 py-3 text-[11px] text-jz-text-muted">无匹配(LLM 兜底待 key)</div>}
+          {!list.length && <div className="px-4 py-3 text-meta text-jz-muted">无匹配(LLM 兜底待 key)</div>}
         </div>
       </div>
     </div>

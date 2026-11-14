@@ -70,11 +70,11 @@ function BuildVersionGuard() {
   }, []);
   if (!stale) return null;
   return (
-    <div data-app-stale className="fixed bottom-4 right-4 z-[100] flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-jz-surface shadow-jz-card border border-jz-border/60">
-      <RefreshCw className="w-4 h-4 text-jz-accent-cyan flex-none" />
-      <span className="text-xs text-jz-text-secondary">平台已发布新版本,当前页面运行的是旧代码</span>
+    <div data-app-stale className="fixed bottom-4 right-4 z-[100] flex items-center gap-2.5 px-3.5 py-2.5 rounded-card bg-jz-surface shadow-card border border-jz-border/60">
+      <RefreshCw className="w-4 h-4 text-jz-brand flex-none" />
+      <span className="text-meta text-jz-ink-2">平台已发布新版本,当前页面运行的是旧代码</span>
       <button onClick={() => { const sep = location.search ? '&' : '?'; const h = location.hash; location.href = location.pathname + sep + '_v=' + Date.now() + h; }}
-        className="px-2.5 py-1 rounded-lg bg-jz-accent-cyan/10 text-jz-accent-cyan text-xs font-semibold hover:bg-jz-accent-cyan/20 transition-colors">
+        className="px-2.5 py-1 rounded-control bg-jz-brand/10 text-jz-brand text-meta font-semibold hover:bg-jz-brand/20 transition-colors">
         一键刷新
       </button>
     </div>
@@ -105,7 +105,7 @@ function Shell() {
           <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Suspense fallback={<div className="p-4 text-xs text-jz-text-muted">加载中…</div>}><DashboardPage /></Suspense>} />
+            <Route path="/dashboard" element={<Suspense fallback={<div className="p-4 text-meta text-jz-muted">加载中…</div>}><DashboardPage /></Suspense>} />
             <Route path="/pentest" element={<ProjectsPage />} />
             <Route path="/pentest/project/:pid" element={<ProjectSessionsPage />} />
             <Route path="/pentest/project/:pid/session/:sid" element={<PentestFlow />} />

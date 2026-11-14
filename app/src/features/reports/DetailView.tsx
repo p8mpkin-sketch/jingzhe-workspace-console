@@ -105,20 +105,20 @@ export const DetailView: React.FC<{
   return (
     <div className="space-y-4" data-reports-detail>
       {/* 吸顶头 */}
-      <div className="sticky top-0 z-30 -mx-1 px-6 py-3.5 rounded-2xl bg-jz-surface/95 backdrop-blur-sm shadow-jz-card space-y-2.5" data-detail-header>
+      <div className="sticky top-0 z-30 -mx-1 px-6 py-3.5 rounded-panel bg-jz-surface/95 backdrop-blur-sm shadow-card space-y-2.5" data-detail-header>
         <div className="flex items-center gap-2.5 flex-wrap">
           <button type="button" onClick={p.onBack} data-detail-back
- className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-jz-elevated/60 hover:bg-jz-elevated text-sm text-jz-text-secondary hover:text-jz-text-primary transition-colors flex-none">
+ className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-jz-surface-2/60 hover:bg-jz-surface-2 text-body text-jz-ink-2 hover:text-jz-ink transition-colors flex-none">
             <ArrowLeft size={14} />返回报告大厅
           </button>
           {t ? (
             <>
-              <h2 className="text-base md:text-xl font-bold text-jz-text-primary truncate max-w-[380px]" data-detail-title
+              <h2 className="text-section md:text-title font-semibold text-jz-ink truncate max-w-[380px]" data-detail-title
  title={t.app_name || t.package || `任务 #${t.id}`}>
                 {t.app_name || t.package || `任务 #${t.id}`}
               </h2>
-              <span className="font-mono text-sm text-neon-accent tnum flex-none">#{t.id}</span>
-              <CodePill value={t.package || '未返回包名'} textCls="text-sm" maxW="max-w-[240px]" />
+              <span className="font-mono text-body text-jz-brand tnum flex-none">#{t.id}</span>
+              <CodePill value={t.package || '未返回包名'} textCls="text-body" maxW="max-w-[240px]" />
               {t.packer && t.packer !== 'none' && <StatusBadge tone="medium">壳 {t.packer}</StatusBadge>}
             </>
           ) : (
@@ -129,39 +129,39 @@ export const DetailView: React.FC<{
  onPick={p.onPickTask} />
           {multiSess && (
             <div className="flex items-center gap-1 flex-wrap" data-session-pills>
-              <span className="text-[11px] text-jz-text-muted">会话</span>
+              <span className="text-meta text-jz-muted">会话</span>
  {p.taskSessions.slice(0, 8).map((s) => (
                 <button key={s.id} type="button" data-session-pill={s.id} onClick={() => p.onPickSession(s.id)}
  title={`切换到会话 #${s.id}${s.id === p.selected ? '(当前)' : ''}`}
- className={`px-2 py-0.5 rounded-full font-mono text-[11px] tnum transition-colors ${s.id === p.selected ? 'bg-neon-accent/15 text-neon-accent ring-1 ring-jz-active/40' : 'text-jz-text-muted hover:text-jz-text-primary hover:bg-jz-elevated/60'}`}>
+ className={`px-2 py-0.5 rounded-pill font-mono text-meta tnum transition-colors ${s.id === p.selected ? 'bg-jz-brand/15 text-jz-brand ring-1 ring-jz-brand/40' : 'text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/60'}`}>
                   #{s.id}
                 </button>
  ))}
- {p.taskSessions.length > 8 && <span className="text-[11px] text-jz-text-muted tnum">+{p.taskSessions.length - 8}</span>}
+ {p.taskSessions.length > 8 && <span className="text-meta text-jz-muted tnum">+{p.taskSessions.length - 8}</span>}
             </div>
           )}
           <span className="flex-1" />
           <button type="button" onClick={() => setImportOpen(true)} data-detail-import
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-jz-elevated/60 hover:bg-neon-accent/10 text-sm text-jz-text-primary transition-colors">
-            <Upload size={14} className="text-neon-accent" />导入数据
+ className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-jz-surface-2/60 hover:bg-jz-brand/10 text-body text-jz-ink transition-colors">
+            <Upload size={14} className="text-jz-brand" />导入数据
           </button>
           <Menu
-            label={<span className="inline-flex items-center gap-1.5"><Download size={14} className="text-neon-accent" />导出报告</span>}
- btnCls="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon-accent/15 hover:bg-neon-accent/25 text-sm font-medium text-neon-accent"
+            label={<span className="inline-flex items-center gap-1.5"><Download size={14} className="text-jz-brand" />导出报告</span>}
+ btnCls="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-jz-brand/15 hover:bg-jz-brand/25 text-body font-medium text-jz-brand"
  widthCls="w-60">
  {(close) => (
               <>
-                <button type="button" className={menuItemCls} data-detail-export="vulns-csv" onClick={() => { close(); p.onExportVulnsCsv(); }}><Table2 size={13} className="text-neon-accent" />漏洞明细 CSV</button>
-                <button type="button" className={menuItemCls} data-detail-export="matrix-csv" onClick={() => { close(); p.onExportMatrixCsv(); }}><Table2 size={13} className="text-neon-accent" />鉴权矩阵 CSV</button>
-                <button type="button" className={menuItemCls} data-detail-export="matrix-json" onClick={() => { close(); p.onExportMatrixJson(); }}><FileJson size={13} className="text-neon-accent" />鉴权矩阵 JSON</button>
-                <button type="button" className={menuItemCls} data-detail-export="full-json" onClick={() => { close(); p.onExportFullJson(); }}><Braces size={13} className="text-neon-accent" />完整审计报告 JSON</button>
-                <button type="button" className={menuItemCls} data-detail-export="full-md" onClick={() => { close(); p.onExportFullMd(); }}><FileText size={13} className="text-neon-accent" />完整审计报告 Markdown</button>
-                <button type="button" className={menuItemCls} data-detail-export="print" onClick={() => { close(); p.onPrint(); }}><Printer size={13} className="text-neon-accent" />打印 / PDF 视图</button>
+                <button type="button" className={menuItemCls} data-detail-export="vulns-csv" onClick={() => { close(); p.onExportVulnsCsv(); }}><Table2 size={13} className="text-jz-brand" />漏洞明细 CSV</button>
+                <button type="button" className={menuItemCls} data-detail-export="matrix-csv" onClick={() => { close(); p.onExportMatrixCsv(); }}><Table2 size={13} className="text-jz-brand" />鉴权矩阵 CSV</button>
+                <button type="button" className={menuItemCls} data-detail-export="matrix-json" onClick={() => { close(); p.onExportMatrixJson(); }}><FileJson size={13} className="text-jz-brand" />鉴权矩阵 JSON</button>
+                <button type="button" className={menuItemCls} data-detail-export="full-json" onClick={() => { close(); p.onExportFullJson(); }}><Braces size={13} className="text-jz-brand" />完整审计报告 JSON</button>
+                <button type="button" className={menuItemCls} data-detail-export="full-md" onClick={() => { close(); p.onExportFullMd(); }}><FileText size={13} className="text-jz-brand" />完整审计报告 Markdown</button>
+                <button type="button" className={menuItemCls} data-detail-export="print" onClick={() => { close(); p.onPrint(); }}><Printer size={13} className="text-jz-brand" />打印 / PDF 视图</button>
                 <div className="h-px bg-jz-border my-1 mx-1" />
-                <button type="button" className={menuItemCls} data-detail-export="pdf" onClick={() => { close(); p.onDl('pdf'); }}><FileText size={13} className="text-jz-text-muted" />报告 PDF(端点)</button>
-                <button type="button" className={menuItemCls} data-detail-export="exec" onClick={() => { close(); p.onDlExec(); }}><ScrollText size={13} className="text-jz-text-muted" />高管摘要 PDF(端点)</button>
-                <button type="button" className={menuItemCls} data-detail-export="evidence" onClick={() => { close(); p.onExportEvidenceJson(); }}><Braces size={13} className="text-jz-text-muted" />JSON 证据包(端点口径)</button>
-                <button type="button" className={menuItemCls} data-detail-export="zip" onClick={() => { close(); p.onDl('package'); }}><FileDown size={13} className="text-jz-text-muted" />报告包 zip(端点)</button>
+                <button type="button" className={menuItemCls} data-detail-export="pdf" onClick={() => { close(); p.onDl('pdf'); }}><FileText size={13} className="text-jz-muted" />报告 PDF(端点)</button>
+                <button type="button" className={menuItemCls} data-detail-export="exec" onClick={() => { close(); p.onDlExec(); }}><ScrollText size={13} className="text-jz-muted" />高管摘要 PDF(端点)</button>
+                <button type="button" className={menuItemCls} data-detail-export="evidence" onClick={() => { close(); p.onExportEvidenceJson(); }}><Braces size={13} className="text-jz-muted" />JSON 证据包(端点口径)</button>
+                <button type="button" className={menuItemCls} data-detail-export="zip" onClick={() => { close(); p.onDl('package'); }}><FileDown size={13} className="text-jz-muted" />报告包 zip(端点)</button>
               </>
             )}
           </Menu>
@@ -171,20 +171,20 @@ export const DetailView: React.FC<{
  {TABS.map((s) => (
             <button key={s.key} type="button" onClick={() => goSec(s.ref)} data-toc-item={s.key}
  title={`跳到「${s.label}」章节`}
- className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${s.n != null
- ? 'text-jz-text-secondary hover:text-jz-text-primary hover:bg-jz-elevated/60 bg-jz-elevated/30'
- : 'text-jz-text-muted hover:text-jz-text-primary bg-jz-elevated/20'}`}>
-              <s.icon size={13} className="text-neon-accent" />
+ className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-control text-body font-medium transition-colors ${s.n != null
+ ? 'text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2/60 bg-jz-surface-2/30'
+ : 'text-jz-muted hover:text-jz-ink bg-jz-surface-2/20'}`}>
+              <s.icon size={13} className="text-jz-brand" />
               {s.label}
               {s.n != null && (
-                <span data-toc-count={s.key} className="px-1.5 py-0.5 rounded-full bg-jz-elevated text-[11px] font-mono tnum text-jz-text-secondary">{s.n}</span>
+                <span data-toc-count={s.key} className="px-1.5 py-0.5 rounded-pill bg-jz-surface-2 text-meta font-mono tnum text-jz-ink-2">{s.n}</span>
               )}
             </button>
           ))}
         </div>
       </div>
 
-      {p.aggLoading && !t && <Skeleton className="h-40 rounded-2xl" />}
+      {p.aggLoading && !t && <Skeleton className="h-40 rounded-panel" />}
 
       {/* ① 鉴权矩阵 */}
       <MatrixSection mx={p.mx} state={p.mxState} reload={p.reloadMatrix} secRef={mxSecRef}
@@ -210,20 +210,20 @@ export const DetailView: React.FC<{
  secRef={sessReportRef} />
 
       {/* ⑤ 审计报告(pipeline,锚定当前任务) */}
-      <section className="rounded-2xl bg-jz-surface shadow-jz-card p-3 space-y-2" data-pipeline-reports ref={pipelineSecRef}>
+      <section className="rounded-panel bg-jz-surface shadow-card p-3 space-y-2" data-pipeline-reports ref={pipelineSecRef}>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-semibold text-jz-text-primary">审计报告(pipeline)</span>
-          <span className="text-xs text-jz-text-muted">锚定当前任务 #{t?.id ?? '—'}</span>
+          <span className="text-body font-semibold text-jz-ink">审计报告(pipeline)</span>
+          <span className="text-meta text-jz-muted">锚定当前任务 #{t?.id ?? '—'}</span>
           <span className="flex-1" />
  {AUDIT_REPORT_FILES.map((f) => (
             <button key={f} type="button" onClick={() => p.setFileName(f)} data-pipeline-file={f}
- className={`px-2.5 py-1 rounded-full text-sm font-mono transition-colors ${p.fileName === f ? 'bg-neon-accent/10 text-neon-accent font-semibold' : 'text-jz-text-muted hover:bg-jz-elevated/50'}`}>
+ className={`px-2.5 py-1 rounded-pill text-body font-mono transition-colors ${p.fileName === f ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface-2/50'}`}>
               {FILE_LABEL[f]}
             </button>
           ))}
         </div>
         {t && (
-          <pre data-report-preview className="max-h-96 overflow-auto rounded-lg bg-jz-elevated/50 p-3 text-[13px] leading-5 text-jz-text-secondary whitespace-pre-wrap">{p.preview || '(空)'}</pre>
+          <pre data-report-preview className="max-h-96 overflow-auto rounded-control bg-jz-surface-2/50 p-3 text-label leading-5 text-jz-ink-2 whitespace-pre-wrap">{p.preview || '(空)'}</pre>
         )}
       </section>
 

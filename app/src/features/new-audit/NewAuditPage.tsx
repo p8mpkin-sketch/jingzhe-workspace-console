@@ -428,24 +428,24 @@ export const NewAuditPage: React.FC = () => {
       {/* 页头: 标题 + 实时就绪状态指示条(① 资产就绪 → ② 策略已配 → ③ 设备就绪,按完成度点亮) */}
       <header className="space-y-2.5">
         <div className="flex items-end gap-3 flex-wrap">
-          <h2 className="text-xl md:text-2xl font-bold text-jz-text-primary">新建安全审计任务</h2>
-          <p className="text-sm text-jz-text-muted">多源 APK 样本接入 · 静态秒级预检 · AI 自动化渗透编排</p>
+          <h2 className="text-title md:text-title font-semibold text-jz-ink">新建安全审计任务</h2>
+          <p className="text-body text-jz-muted">多源 APK 样本接入 · 静态秒级预检 · AI 自动化渗透编排</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap" data-wizard-steps data-readiness-bar>
  {readiness.map((r, i) => (
             <React.Fragment key={r.key}>
               <button onClick={() => jumpTo(r.target)} data-ready-item={r.key} data-ready-state={r.state}
  title="点击定位到对应模块"
- className={`inline-flex items-center gap-1.5 px-3 h-8 rounded-full border text-sm transition-colors
- ${r.state === 'ok' ? 'bg-vuln-safe/10 text-vuln-safe border-vuln-safe/40'
- : r.state === 'static' ? 'bg-jz-accent-cyan/10 text-jz-accent-cyan border-jz-accent-cyan/40'
- : r.state === 'busy' ? 'bg-neon-accent/10 text-neon-accent border-neon-accent/50'
- : 'text-jz-text-muted border-jz-border hover:border-neon-accent/30'}`}>
-                <span className="w-[18px] h-[18px] rounded-full border border-current grid place-items-center text-[11px] font-mono flex-none">
+ className={`inline-flex items-center gap-1.5 px-3 h-8 rounded-pill border text-body transition-colors
+ ${r.state === 'ok' ? 'bg-jz-teal/10 text-jz-teal border-jz-teal/40'
+ : r.state === 'static' ? 'bg-jz-brand/10 text-jz-brand border-jz-brand/40'
+ : r.state === 'busy' ? 'bg-jz-brand/10 text-jz-brand border-jz-brand/50'
+ : 'text-jz-muted border-jz-border hover:border-jz-brand/30'}`}>
+                <span className="w-[18px] h-[18px] rounded-pill border border-current grid place-items-center text-meta font-mono flex-none">
                   {r.state === 'ok' ? '✓' : r.no}
                 </span>
                 {r.label}
-                <span className={`text-xs max-w-[140px] truncate ${r.state === 'ok' ? 'text-vuln-safe/80' : 'opacity-70'}`}>· {r.sub}</span>
+                <span className={`text-meta max-w-[140px] truncate ${r.state === 'ok' ? 'text-jz-teal/80' : 'opacity-70'}`}>· {r.sub}</span>
               </button>
               {i < readiness.length - 1 && <span className="w-5 h-px bg-jz-border" aria-hidden />}
             </React.Fragment>

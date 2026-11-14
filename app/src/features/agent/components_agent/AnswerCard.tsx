@@ -88,8 +88,8 @@ export const AnswerCard: React.FC<{
       if (!el) return false;
       openAncestors(el);
       if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('ring-2', 'ring-neon-accent');
-      window.setTimeout(() => el.classList.remove('ring-2', 'ring-neon-accent'), 1600);
+      el.classList.add('ring-2', 'ring-jz-brand');
+      window.setTimeout(() => el.classList.remove('ring-2', 'ring-jz-brand'), 1600);
       return true;
     };
     let found = false;
@@ -126,28 +126,28 @@ export const AnswerCard: React.FC<{
   return (
     <div className="mb-4 last:mb-0" data-agent-assistant-card data-live={live ? '1' : '0'}>
       <div className="flex items-center gap-2 mb-1.5">
-        <span className="flex-none w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-400 grid place-items-center text-white text-[11px] font-bold shadow-sm">AI</span>
-        <span className="text-[11px] text-jz-text-muted">审计 Agent{node.model ? <span className="font-mono text-jz-text-muted/60"> · {node.model}</span> : null}</span>
-        {!!toolsCount && <span className="text-[11px] text-jz-text-muted/60">· {toolsCount} 工具</span>}
-        {!!tokenCount && <span className="text-[11px] font-mono text-jz-text-muted/60">· {tokenCount.toLocaleString()} tokens</span>}
-        {node.interrupted && <span className="px-1.5 py-0.5 rounded bg-vuln-medium/15 text-vuln-medium text-[11px]">已中断</span>}
-        {live && <span className="px-1.5 py-0.5 rounded bg-neon-accent/10 text-neon-accent text-[11px] animate-pulse">生成中</span>}
+        <span className="flex-none w-6 h-6 rounded-pill bg-jz-brand grid place-items-center text-jz-on-brand text-meta font-semibold shadow-card">AI</span>
+        <span className="text-meta text-jz-muted">审计 Agent{node.model ? <span className="font-mono text-jz-muted"> · {node.model}</span> : null}</span>
+        {!!toolsCount && <span className="text-meta text-jz-muted">· {toolsCount} 工具</span>}
+        {!!tokenCount && <span className="text-meta font-mono text-jz-muted">· {tokenCount.toLocaleString()} tokens</span>}
+        {node.interrupted && <span className="px-1.5 py-0.5 rounded-control bg-jz-sev-medium/15 text-jz-sev-medium text-meta">已中断</span>}
+        {live && <span className="px-1.5 py-0.5 rounded-control bg-jz-brand/10 text-jz-brand text-meta animate-pulse">生成中</span>}
       </div>
-      <div className="rounded-xl border border-jz-border/45 bg-jz-surface/55 px-4 py-3" data-agent-content>
+      <div className="rounded-card border border-jz-border/45 bg-jz-surface/55 px-4 py-3" data-agent-content>
         {node.text ? <ContentRenderer blocks={blocks} sessionId={sessionId} evidence={evidenceIndex || evidence} /> : (
-          <div className="text-xs text-jz-text-muted flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-neon-accent animate-pulse" /> 正在整理工具结果…
+          <div className="text-meta text-jz-muted flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-pill bg-jz-brand animate-pulse" /> 正在整理工具结果…
           </div>
         )}
         {!!node.reasoning && (
-          <details className="mt-2 rounded-lg bg-jz-elevated/40 px-2 py-1" data-agent-reasoning-panel>
-            <summary className="cursor-pointer text-[11px] text-jz-text-muted">思考过程（{node.reasoning.length} 字）</summary>
-            <pre className="max-h-40 overflow-auto text-[11px] whitespace-pre-wrap text-jz-text-muted">{node.reasoning}</pre>
+          <details className="mt-2 rounded-control bg-jz-surface-2/40 px-2 py-1" data-agent-reasoning-panel>
+            <summary className="cursor-pointer text-meta text-jz-muted">思考过程（{node.reasoning.length} 字）</summary>
+            <pre className="max-h-40 overflow-auto text-meta whitespace-pre-wrap text-jz-muted">{node.reasoning}</pre>
           </details>
         )}
         {!!evidence.length && (
-          <details className="mt-2 rounded-lg border border-jz-border/35 bg-jz-elevated/25 px-2 py-1" data-agent-evidence>
-            <summary className="cursor-pointer select-none flex items-center gap-1 text-[11px] text-jz-text-muted hover:text-jz-text-secondary">
+          <details className="mt-2 rounded-control border border-jz-border/35 bg-jz-surface-2/25 px-2 py-1" data-agent-evidence>
+            <summary className="cursor-pointer select-none flex items-center gap-1 text-meta text-jz-muted hover:text-jz-ink-2">
               <ShieldCheck size={11} /> 证据 · {evidence.length}
             </summary>
             <div className="mt-1 flex items-center gap-1 flex-wrap" data-evidence-filters>
@@ -155,7 +155,7 @@ export const AnswerCard: React.FC<{
                 const label = k === 'all' ? '全部' : k === 'source' ? '源码' : k === 'link' ? '链接' : k === 'task' ? '任务' : '验证';
                 return (
                   <button key={k} onClick={() => setEvidenceFilter(k)} data-evidence-filter={k}
-                    className={`px-1.5 py-0.5 rounded text-[11px] ${evidenceFilter === k ? 'bg-jz-surface text-jz-text-primary' : 'text-jz-text-muted/70 hover:text-jz-text-secondary'}`}>
+                    className={`px-1.5 py-0.5 rounded-control text-meta ${evidenceFilter === k ? 'bg-jz-surface text-jz-ink' : 'text-jz-muted hover:text-jz-ink-2'}`}>
                     {label}
                   </button>
                 );
@@ -168,16 +168,16 @@ export const AnswerCard: React.FC<{
                 const body = (
                   <>
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <Icon size={11} className="flex-none text-jz-text-muted" />
-                      <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-jz-text-secondary" title={e.label}>{e.label}</span>
-                      <span className="flex-none text-[11px] text-jz-text-muted/50">{kindLabel}</span>
+                      <Icon size={11} className="flex-none text-jz-muted" />
+                      <span className="min-w-0 flex-1 truncate font-mono text-meta text-jz-ink-2" title={e.label}>{e.label}</span>
+                      <span className="flex-none text-meta text-jz-muted">{kindLabel}</span>
                     </div>
-                    {!!e.detail && <div className="mt-0.5 text-[11px] leading-4 text-jz-text-muted/70 line-clamp-2">{e.detail}</div>}
+                    {!!e.detail && <div className="mt-0.5 text-meta leading-4 text-jz-muted line-clamp-2">{e.detail}</div>}
                   </>
                 );
                 return (
                   <div key={e.key} data-evidence-key={e.key} data-evidence-kind={e.kind} data-evidence-path={e.path || ''} data-evidence-tool={e.toolId || ''}
-                    className={`min-w-0 rounded-lg bg-jz-surface/55 border border-jz-border/30 px-2 py-1.5 ${!e.url ? 'cursor-pointer hover:border-neon-accent/40' : ''}`}
+                    className={`min-w-0 rounded-control bg-jz-surface/55 border border-jz-border/30 px-2 py-1.5 ${!e.url ? 'cursor-pointer hover:border-jz-brand/40' : ''}`}
                     onClick={() => { if (!e.url) focusEvidence(e); }}
                     title={!e.url ? '定位到对应 finding / tool' : '预览链接证据'}>
                     {e.url ? (
@@ -192,9 +192,9 @@ export const AnswerCard: React.FC<{
             </div>
           </details>
         )}
-        <div className="mt-2 flex items-center gap-3 text-[11px] text-jz-text-muted/70">
+        <div className="mt-2 flex items-center gap-3 text-meta text-jz-muted">
           {!!node.text && (
-            <button onClick={copy} className="flex items-center gap-1 hover:text-neon-accent" data-agent-copy>
+            <button onClick={copy} className="flex items-center gap-1 hover:text-jz-brand" data-agent-copy>
               <Copy size={11} /> {copied ? '已复制' : '复制'}
             </button>
           )}
@@ -202,11 +202,11 @@ export const AnswerCard: React.FC<{
             <>
               <span className="flex-1" />
               <button onClick={() => { setFb('up'); onFeedback?.('up'); }}
-                className={`flex items-center gap-1 ${fb === 'up' ? 'text-vuln-safe' : 'hover:text-vuln-safe'}`}>
+                className={`flex items-center gap-1 ${fb === 'up' ? 'text-jz-teal' : 'hover:text-jz-teal'}`}>
                 <ThumbsUp size={11} /> 有帮助
               </button>
               <button onClick={() => { setFb('down'); onFeedback?.('down'); }}
-                className={`flex items-center gap-1 ${fb === 'down' ? 'text-vuln-critical' : 'hover:text-vuln-critical'}`}>
+                className={`flex items-center gap-1 ${fb === 'down' ? 'text-jz-sev-critical' : 'hover:text-jz-sev-critical'}`}>
                 <ThumbsDown size={11} /> 没帮助
               </button>
               {fb && <span>已记录</span>}
@@ -215,22 +215,22 @@ export const AnswerCard: React.FC<{
         </div>
       </div>
       {!!previewUrl && (
-        <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-[1px] flex items-center justify-center p-4" onClick={() => setPreviewUrl('')} data-evidence-preview>
-          <div className="w-full max-w-lg rounded-2xl bg-jz-surface border border-jz-border/50 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] bg-jz-scrim/40 backdrop-blur-[1px] flex items-center justify-center p-4" onClick={() => setPreviewUrl('')} data-evidence-preview>
+          <div className="w-full max-w-lg rounded-panel bg-jz-surface border border-jz-border/50 shadow-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 px-4 py-3 border-b border-jz-border/35">
-              <Link2 size={13} className="text-neon-accent" />
-              <span className="text-[13px] font-semibold text-jz-text-primary">链接证据</span>
+              <Link2 size={13} className="text-jz-brand" />
+              <span className="text-label font-semibold text-jz-ink">链接证据</span>
               <span className="flex-1" />
-              <button onClick={() => setPreviewUrl('')} data-evidence-preview-close className="w-6 h-6 rounded-md grid place-items-center text-jz-text-muted hover:text-jz-text-primary hover:bg-jz-elevated/60"><X size={14} /></button>
+              <button onClick={() => setPreviewUrl('')} data-evidence-preview-close className="w-6 h-6 rounded-control grid place-items-center text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/60"><X size={14} /></button>
             </div>
             <div className="px-4 py-3">
-              <div className="rounded-xl bg-jz-bg/50 border border-jz-border/35 px-3 py-2 font-mono text-[12px] leading-5 text-jz-text-secondary break-all">{previewUrl}</div>
+              <div className="rounded-card bg-jz-canvas/50 border border-jz-border/35 px-3 py-2 font-mono text-meta leading-5 text-jz-ink-2 break-all">{previewUrl}</div>
               <div className="mt-3 flex items-center gap-2">
-                <span className="text-[11px] text-jz-text-muted/70">不自动跳转；需要时在新标签打开</span>
+                <span className="text-meta text-jz-muted">不自动跳转；需要时在新标签打开</span>
                 <span className="flex-1" />
                 {/^https?:\/\//.test(previewUrl) && (
                   <a href={previewUrl} target="_blank" rel="noreferrer" data-evidence-preview-external
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neon-accent/10 text-neon-accent text-[11px] font-semibold hover:bg-neon-accent/15">
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-jz-brand/10 text-jz-brand text-meta font-semibold hover:bg-jz-brand/15">
                     <ExternalLink size={11} /> 在新标签打开
                   </a>
                 )}

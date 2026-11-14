@@ -2,14 +2,14 @@ import React from 'react';
 
 type Variant = 'primary' | 'ghost' | 'danger' | 'subtle';
 const V: Record<Variant, string> = {
-  primary: 'bg-neon-accent hover:bg-neon-accent/85 text-white shadow-neon-glow',
-  ghost: 'bg-jz-elevated/70 border border-transparent text-jz-text-secondary hover:text-jz-text-primary hover:bg-jz-elevated',
-  danger: 'bg-vuln-critical/90 hover:bg-vuln-critical text-white',
-  subtle: 'bg-jz-elevated text-jz-text-primary border border-transparent hover:bg-jz-border/40',
+  primary: 'bg-jz-brand hover:bg-jz-brand/85 text-jz-on-brand ',
+  ghost: 'bg-jz-surface-2/70 border border-transparent text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2',
+  danger: 'bg-jz-sev-critical/90 hover:bg-jz-sev-critical text-jz-on-brand',
+  subtle: 'bg-jz-surface-2 text-jz-ink border border-transparent hover:bg-jz-border/40',
 };
 
 export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }> =
  ({ variant = 'primary', className = '', ...rest }) => (
-    <button {...rest} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+    <button {...rest} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control text-meta font-medium
  transition-colors disabled:opacity-40 disabled:pointer-events-none ${V[variant]} ${className}`} />
 );

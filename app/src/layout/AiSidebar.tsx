@@ -150,8 +150,8 @@ export const AiSidebar: React.FC = () => {
     return (
       <aside className="w-11 flex-none bg-jz-surface flex flex-col items-center py-2 gap-2" data-ai-rail="collapsed">
         <button onClick={() => setCollapsed(false)} data-ai-rail-expand title="展开 AI 决策助手"
- className="w-7 h-7 rounded-md bg-neon-accent/10 border border-neon-accent/30 grid place-items-center hover:bg-neon-accent/20 transition-colors">
-          <Bot className="w-4 h-4 text-neon-accent" />
+ className="w-7 h-7 rounded-control bg-jz-brand/10 border border-jz-brand/30 grid place-items-center hover:bg-jz-brand/20 transition-colors">
+          <Bot className="w-4 h-4 text-jz-brand" />
         </button>
       </aside>
     );
@@ -159,39 +159,39 @@ export const AiSidebar: React.FC = () => {
   return (
     <aside className="w-72 flex-none bg-jz-surface flex flex-col" data-ai-rail="expanded">
       <div className="flex items-center gap-2 px-3 h-11">
-        <div className="w-6 h-6 rounded-md bg-neon-accent/10 border border-neon-accent/30 grid place-items-center">
-          <Bot className="w-3.5 h-3.5 text-neon-accent" />
+        <div className="w-6 h-6 rounded-control bg-jz-brand/10 border border-jz-brand/30 grid place-items-center">
+          <Bot className="w-3.5 h-3.5 text-jz-brand" />
         </div>
-        <span className="text-xs font-semibold text-jz-text-primary">AI 决策助手</span>
-        <span className={`ml-auto text-[11px] font-mono ${connected ? 'text-vuln-safe' : 'text-jz-text-muted'}`}>
+        <span className="text-meta font-semibold text-jz-ink">AI 决策助手</span>
+        <span className={`ml-auto text-meta font-mono ${connected ? 'text-jz-teal' : 'text-jz-muted'}`}>
           {connected ? 'STREAM ACTIVE' : 'IDLE'}
         </span>
         <button onClick={() => setCollapsed(true)} data-ai-rail-collapse title="收起 AI 决策助手"
- className="flex-none w-6 h-6 rounded grid place-items-center text-jz-text-muted hover:text-jz-text-primary hover:bg-jz-elevated/40 transition-colors text-[11px]">»</button>
+ className="flex-none w-6 h-6 rounded-control grid place-items-center text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/40 transition-colors text-meta">»</button>
       </div>
       <div className="px-3 py-2 border-b border-jz-border space-y-2">
-        <div className="flex items-center gap-1.5 text-[11px] font-mono">
-          <Cpu className="w-3 h-3 text-neon-accent" />
-          <button data-llm-insight-btn onClick={genInsight} className="text-neon-accent hover:underline">生成 LLM 洞察</button>
- {insTokens > 0 && <span className="text-jz-text-muted ml-auto" data-insight-tokens>tokens: {insTokens}</span>}
+        <div className="flex items-center gap-1.5 text-meta font-mono">
+          <Cpu className="w-3 h-3 text-jz-brand" />
+          <button data-llm-insight-btn onClick={genInsight} className="text-jz-brand hover:underline">生成 LLM 洞察</button>
+ {insTokens > 0 && <span className="text-jz-muted ml-auto" data-insight-tokens>tokens: {insTokens}</span>}
         </div>
-        {insErr && <div className="text-[11px] text-vuln-medium" data-insight-fallback>已降级规则卡(LLM 失败: {insErr.slice(0, 60)})</div>}
-        {insText && <div data-insight-text className="rounded-lg bg-jz-elevated p-2 text-[11px] whitespace-pre-wrap text-jz-text-secondary max-h-56 overflow-auto">{insText}</div>}
+        {insErr && <div className="text-meta text-jz-sev-medium" data-insight-fallback>已降级规则卡(LLM 失败: {insErr.slice(0, 60)})</div>}
+        {insText && <div data-insight-text className="rounded-control bg-jz-surface-2 p-2 text-meta whitespace-pre-wrap text-jz-ink-2 max-h-56 overflow-auto">{insText}</div>}
       </div>
-      <div className="px-3 py-2 border-b border-jz-border flex items-center gap-1.5 text-[11px] font-mono">
-        <Cpu className="w-3 h-3 text-neon-accent" />
+      <div className="px-3 py-2 border-b border-jz-border flex items-center gap-1.5 text-meta font-mono">
+        <Cpu className="w-3 h-3 text-jz-brand" />
         {llm
-          ? <span className="text-vuln-safe" data-llm-status="active">LLM: {llm.vendor} · {llm.model}(推理流已接)</span>
-          : <span className="text-jz-text-muted" data-llm-status="unconfigured">
+          ? <span className="text-jz-teal" data-llm-status="active">LLM: {llm.vendor} · {llm.model}(推理流已接)</span>
+          : <span className="text-jz-muted" data-llm-status="unconfigured">
               {routing
                 ? `模型路由: 推理→${routing.inference || '未配置'} · 兜底→${routing.fallback || '未配置'} · 系统设置-模型服务可配`
                 : '本地规则摘要 · LLM 待 key'}
             </span>}
       </div>
       <div className="flex-1 overflow-auto p-3 space-y-2">
-        {!checked && <div className="text-[11px] text-jz-text-muted">检测模型配置中…</div>}
+        {!checked && <div className="text-meta text-jz-muted">检测模型配置中…</div>}
         {checked && cards.length === 0 && (
-          <div className="text-[11px] text-jz-text-muted leading-5">
+          <div className="text-meta text-jz-muted leading-5">
             选择渗透会话后,这里按时间线聚合 Agent 决策(阶段推进/发现/审批阻断)。
             {llm ? '推理流已接入。' : '当前为本地规则摘要态,LLM key 配置后自动切换真实推理流。'}
           </div>
@@ -236,13 +236,13 @@ export const AiSidebar: React.FC = () => {
  }));
  location.hash = '/ai-assistant';
  }}
- className="rounded-md border border-neon-accent/40 bg-neon-accent/10 p-2 text-[11px] leading-4 text-neon-accent cursor-pointer hover:bg-neon-accent/20">
+ className="rounded-control border border-jz-brand/40 bg-jz-brand/10 p-2 text-meta leading-4 text-jz-brand cursor-pointer hover:bg-jz-brand/20">
               <div className="flex items-center gap-1">
                 <span className="flex-1">R59 {c.rule}({c.sev}) — {c.action}</span>
                 <button data-fb-up={i} onClick={(e) => { e.stopPropagation(); sendFb('suggest-' + i, 'up'); }}
- className="text-[11px] px-1 rounded hover:bg-white/10" title="有用">👍</button>
+ className="text-meta px-1 rounded-control hover:bg-jz-surface/10" title="有用">👍</button>
                 <button data-fb-down={i} onClick={(e) => { e.stopPropagation(); sendFb('suggest-' + i, 'down'); }}
- className="text-[11px] px-1 rounded hover:bg-white/10" title="没用">👎</button>
+ className="text-meta px-1 rounded-control hover:bg-jz-surface/10" title="没用">👎</button>
               </div>
             </div>
  ));
@@ -253,15 +253,15 @@ export const AiSidebar: React.FC = () => {
  const api = (window as any).__dvApi;
  const t = api && api.getPanel('terminal');
  if (t) t.api.setActive();
- }} className="rounded-lg bg-jz-elevated p-2 cursor-pointer hover:ring-1 hover:ring-neon-accent/50 transition-all">
-            <div className="flex items-center justify-between text-[11px] font-mono text-jz-text-muted">
-              <span className={c.kind === '阻断' ? 'text-vuln-critical font-semibold'
- : c.kind === '发现' ? 'text-vuln-medium font-semibold' : 'text-neon-accent font-semibold'}>
+ }} className="rounded-control bg-jz-surface-2 p-2 cursor-pointer hover:ring-1 hover:ring-jz-brand/50 transition-all">
+            <div className="flex items-center justify-between text-meta font-mono text-jz-muted">
+              <span className={c.kind === '阻断' ? 'text-jz-sev-critical font-semibold'
+ : c.kind === '发现' ? 'text-jz-sev-medium font-semibold' : 'text-jz-brand font-semibold'}>
                 #{c.seq} [{c.kind}]
               </span>
               {c.ts && <span>{String(c.ts).slice(5, 19)}</span>}
             </div>
-            <p className="mt-1 text-[11px] text-jz-text-secondary break-all">{c.title}</p>
+            <p className="mt-1 text-meta text-jz-ink-2 break-all">{c.title}</p>
           </div>
         ))}
       </div>

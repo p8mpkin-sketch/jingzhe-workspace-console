@@ -16,7 +16,7 @@ export interface AnswerMeta {
 }
 
 const PhaseDot: React.FC<{ phase: StreamPhase }> = ({ phase }) => (
-  <span aria-hidden className={`w-1.5 h-1.5 rounded-full flex-none ${phase === 'generating' ? 'bg-vuln-safe animate-pulse' : 'bg-neon-accent animate-pulse'}`} />
+  <span aria-hidden className={`w-1.5 h-1.5 rounded-pill flex-none ${phase === 'generating' ? 'bg-jz-teal animate-pulse' : 'bg-jz-brand animate-pulse'}`} />
 );
 
 /** 流式进行中的观测卡(phase !== idle 时渲染);facts 全部来自后端步事件真值,缺省不显示 */
@@ -39,14 +39,14 @@ export const LiveStreamCard: React.FC<{
   if (routeModel) facts.push(`路由 ${routeModel}`);
   return (
     <div className="mb-2" data-live-stream-card-wrap>
-      <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-jz-elevated/50 text-xs text-jz-text-muted" data-live-stream-card data-stream-phase={phase}>
+      <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-control bg-jz-surface-2/50 text-meta text-jz-muted" data-live-stream-card data-stream-phase={phase}>
         <PhaseDot phase={phase} />
         <span className="tabular-nums">{label}</span>
       </div>
       {facts.length > 0 && (
         <div className="flex items-center gap-1 mt-1 flex-wrap" data-stream-facts>
           {facts.map((f) => (
-            <span key={f} className="px-1.5 py-0.5 rounded-md bg-jz-elevated/40 text-[11px] font-mono text-jz-text-muted/80 tabular-nums">{f}</span>
+            <span key={f} className="px-1.5 py-0.5 rounded-control bg-jz-surface-2/40 text-meta font-mono text-jz-muted tabular-nums">{f}</span>
           ))}
         </div>
       )}
@@ -65,11 +65,11 @@ export const AnswerMetaLine: React.FC<{ meta: AnswerMeta }> = ({ meta }) => {
   return (
     <div className="mt-1" data-answer-meta>
       <button onClick={() => setOpen((v) => !v)} data-answer-meta-toggle
-        className="inline-flex items-center gap-1 text-[11px] font-mono text-jz-text-muted/80 hover:text-neon-accent tabular-nums">
-        ⚡ {parts.join(' · ')} <span className="text-jz-text-muted/60">{open ? '▲' : '▼'}</span>
+        className="inline-flex items-center gap-1 text-meta font-mono text-jz-muted hover:text-jz-brand tabular-nums">
+        ⚡ {parts.join(' · ')} <span className="text-jz-muted">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
-        <div className="mt-1 px-2 py-1.5 rounded-lg bg-jz-elevated/40 text-[11px] text-jz-text-muted leading-relaxed" data-answer-meta-detail>
+        <div className="mt-1 px-2 py-1.5 rounded-control bg-jz-surface-2/40 text-meta text-jz-muted leading-relaxed" data-answer-meta-detail>
           <div>观测口径:回答为检索增强流式输出;tokens={meta.tokens != null ? 'SSE done 帧 usage 真值' : '模型未回报 usage,如实省略'};时延=前端请求发出到 done 帧的端到端墙钟实测。</div>
           {meta.reasoningLen != null && meta.reasoningLen > 0 && <div className="tabular-nums">本次收到思维链 {meta.reasoningLen} 字;正文输出 {meta.genChars ?? '—'} 字。</div>}
         </div>

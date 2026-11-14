@@ -13,9 +13,9 @@ export const CodePill: React.FC<{
  className?: string;
  /** 截断宽度类, 缺省 max-w-[220px] */
  maxW?: string;
- /** 字号档(报告中心大厅卡用 text-sm;八档闸白名单内自选), 缺省沿用 text-[11px] */
+ /** 字号档(报告中心大厅卡用 text-body;八档闸白名单内自选), 缺省沿用 text-meta */
  textCls?: string;
-}> = ({ value, label, className = '', maxW = 'max-w-[220px]', textCls = 'text-[11px]' }) => {
+}> = ({ value, label, className = '', maxW = 'max-w-[220px]', textCls = 'text-meta' }) => {
  const [copied, setCopied] = useState(false);
  const copy = async () => {
  try {
@@ -30,11 +30,11 @@ export const CodePill: React.FC<{
  onClick={copy}
  title={`复制: ${value}`}
  data-code-pill={copied ? 'copied' : ''}
- className={`group inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-jz-elevated/70 border border-transparent font-mono ${textCls} text-jz-text-secondary hover:border-neon-accent/50 transition-colors min-w-0 ${maxW} ${className}`}
+ className={`group inline-flex items-center gap-1 px-2 py-0.5 rounded-pill bg-jz-surface-2/70 border border-transparent font-mono ${textCls} text-jz-ink-2 hover:border-jz-brand/50 transition-colors min-w-0 ${maxW} ${className}`}
  >
       <span className="truncate">{label ?? value}</span>
       {copied
-        ? <Check size={11} className="text-vuln-safe flex-none" />
+        ? <Check size={11} className="text-jz-teal flex-none" />
         : <Copy size={11} className="flex-none opacity-0 group-hover:opacity-60 transition-opacity" />}
     </button>
   );

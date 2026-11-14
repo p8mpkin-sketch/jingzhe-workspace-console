@@ -11,7 +11,7 @@ import { ScoreRing, Menu, menuItemCls } from './shared';
 import type { HubEntry } from './types';
 import { complianceScoreOf } from './types';
 
-// 字号八档口径: 本文件 font 一律 11/12/13/14/16/20/24/28(text-[11px]/text-xs/text-[13px]/text-sm/text-base/text-xl/text-2xl/text-[28px])
+// 字号八档口径: 本文件 font 一律 11/12/13/14/16/20/24/28(text-meta/text-meta/text-label/text-body/text-section/text-title/text-title/text-page)
 const RISK_LABEL: Record<string, string> = { all: '全部', highrisk: '有高危', lowscore: '合规分<60' };
 const SORT_LABEL: Record<string, string> = { new: '最新', risk: '风险最高', score: '合规分升序' };
 
@@ -26,9 +26,9 @@ export type HubState = {
 };
 
 const MxChip: React.FC<{ tone: StatusTone; label: string; n: number | null | 'error' }> = ({ tone, label, n }) => (
-  <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md font-mono text-[11px] tnum ${
- n === 'error' ? 'bg-jz-elevated/60 text-jz-text-muted' : tone === 'critical' ? 'bg-vuln-critical/10 text-vuln-critical'
- : tone === 'medium' ? 'bg-vuln-medium/10 text-vuln-medium' : tone === 'low' ? 'bg-vuln-low/10 text-vuln-low' : 'bg-jz-elevated/60 text-jz-text-secondary'
+  <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-control font-mono text-meta tnum ${
+ n === 'error' ? 'bg-jz-surface-2/60 text-jz-muted' : tone === 'critical' ? 'bg-jz-sev-critical/10 text-jz-sev-critical'
+ : tone === 'medium' ? 'bg-jz-sev-medium/10 text-jz-sev-medium' : tone === 'low' ? 'bg-jz-sev-low/10 text-jz-sev-low' : 'bg-jz-surface-2/60 text-jz-ink-2'
  }`} title={`${label}: ${n === 'error' ? '无矩阵(未完成网关推导或未生成)' : n ?? '统计中'}`}>
     {n === 'error' ? '—' : n ?? '·'}{label}
   </span>
@@ -36,13 +36,13 @@ const MxChip: React.FC<{ tone: StatusTone; label: string; n: number | null | 'er
 
 const KpiCard: React.FC<{ icon: React.ElementType; label: string; value: React.ReactNode; sub: React.ReactNode; title?: string }> =
  ({ icon: Icon, label, value, sub, title }) => (
-    <div className="rounded-2xl bg-jz-surface shadow-jz-card p-5 space-y-1.5" data-hub-kpi={label}>
-      <div className="flex items-center gap-2 text-sm text-jz-text-muted" title={title}>
-        <Icon size={15} className="text-neon-accent flex-none" />
+    <div className="rounded-panel bg-jz-surface shadow-card p-5 space-y-1.5" data-hub-kpi={label}>
+      <div className="flex items-center gap-2 text-body text-jz-muted" title={title}>
+        <Icon size={15} className="text-jz-brand flex-none" />
         <span>{label}</span>
       </div>
-      <div className="text-2xl md:text-[28px] font-bold font-mono tnum text-jz-text-primary leading-none">{value}</div>
-      <div className="text-xs text-jz-text-muted min-h-[16px]">{sub}</div>
+      <div className="text-title md:text-page font-semibold font-mono tnum text-jz-ink leading-none">{value}</div>
+      <div className="text-meta text-jz-muted min-h-[16px]">{sub}</div>
     </div>
   );
 
@@ -85,76 +85,76 @@ export const HubView: React.FC<{
           sub={<span>口径: kind=audit 且 status=done</span>} />
         <KpiCard icon={ShieldAlert} label="累计高危" value={kpi.highRisk == null ? '—' : kpi.highRisk}
           title="口径: 各任务代表会话 report/summary.confirmed_high 之和(确认的 critical+high)"
-          sub={aggRunning ? <span className="inline-flex items-center gap-1 text-neon-accent"><Loader2 size={11} className="animate-spin" />聚合中 {kpi.aggDone}/{kpi.aggTotal}</span> : <span>{kpi.aggTotal ? '关联会话任务聚合完成' : '暂无关联会话任务'}</span>} />
+          sub={aggRunning ? <span className="inline-flex items-center gap-1 text-jz-brand"><Loader2 size={11} className="animate-spin" />聚合中 {kpi.aggDone}/{kpi.aggTotal}</span> : <span>{kpi.aggTotal ? '关联会话任务聚合完成' : '暂无关联会话任务'}</span>} />
         <KpiCard icon={Gauge} label="平均 MASVS 分" value={kpi.avgScore == null ? '—' : kpi.avgScore}
           title="口径: 各任务合规分均值;合规分=100−risk_score 截断 0-100(平台无 MASVS 绝对分,挂账)"
-          sub={aggRunning ? <span className="inline-flex items-center gap-1 text-neon-accent"><Loader2 size={11} className="animate-spin" />聚合中 {kpi.aggDone}/{kpi.aggTotal}</span> : <span>合规分=100−risk_score(挂账口径)</span>} />
+          sub={aggRunning ? <span className="inline-flex items-center gap-1 text-jz-brand"><Loader2 size={11} className="animate-spin" />聚合中 {kpi.aggDone}/{kpi.aggTotal}</span> : <span>合规分=100−risk_score(挂账口径)</span>} />
         <KpiCard icon={FileOutput} label="可导出完整报告" value={kpi.exportable}
           title="口径: 关联活跃渗透会话的审计任务数(可一键导出 PDF/zip/CSV 全套);其余任务仍可导审计报告 md"
           sub={<span>关联活跃会话 · 全部任务仍可导报告文件</span>} />
       </div>
 
       {/* 检索工具栏 */}
-      <div className="rounded-2xl bg-jz-surface shadow-jz-card p-3 space-y-3" data-hub-toolbar>
+      <div className="rounded-panel bg-jz-surface shadow-card p-3 space-y-3" data-hub-toolbar>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex-1 min-w-[240px]">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-jz-text-muted" />
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-jz-muted" />
             <input
  value={hub.q}
  onChange={(e) => patch({ q: e.target.value, page: 1 })}
  placeholder="搜索包名 / #任务ID / 应用名…"
  data-hub-search
- className="w-full h-11 pl-11 pr-4 rounded-xl bg-jz-elevated/60 border border-transparent text-base text-jz-text-primary placeholder:text-jz-text-muted focus:border-jz-active/50 outline-none"
+ className="w-full h-11 pl-11 pr-4 rounded-card bg-jz-surface-2/60 border border-transparent text-section text-jz-ink placeholder:text-jz-muted focus:border-jz-brand/50 outline-none"
  />
           </div>
-          <div className="flex items-center rounded-xl bg-jz-elevated/50 p-1" data-hub-risk>
+          <div className="flex items-center rounded-card bg-jz-surface-2/50 p-1" data-hub-risk>
  {(['all', 'highrisk', 'lowscore'] as const).map((k) => (
               <button key={k} type="button" data-hub-risk-btn={k}
  title={k === 'highrisk' ? '有确认高危(confirmed_high>0)' : k === 'lowscore' ? '合规分<60(需聚合完成)' : '不过滤'}
  onClick={() => patch({ risk: k, page: 1 })}
- className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${hub.risk === k ? 'bg-neon-accent text-white shadow-neon-glow' : 'text-jz-text-muted hover:text-jz-text-primary'}`}>
+ className={`px-3 py-1.5 rounded-control text-body font-medium transition-colors ${hub.risk === k ? 'bg-jz-brand text-jz-on-brand ' : 'text-jz-muted hover:text-jz-ink'}`}>
                 {RISK_LABEL[k]}
               </button>
             ))}
           </div>
           <Menu
-            label={<span className="text-sm font-medium">{SORT_LABEL[hub.sort]}</span>}
- btnCls="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-jz-elevated/60 text-jz-text-primary hover:bg-jz-elevated"
+            label={<span className="text-body font-medium">{SORT_LABEL[hub.sort]}</span>}
+ btnCls="inline-flex items-center gap-1.5 h-11 px-4 rounded-card bg-jz-surface-2/60 text-jz-ink hover:bg-jz-surface-2"
  align="left" widthCls="w-44">
  {(close) => (
               <>
  {(['new', 'risk', 'score'] as const).map((k) => (
                   <button key={k} type="button" className={menuItemCls} data-hub-sort={k}
  onClick={() => { patch({ sort: k, page: 1 }); close(); }}>
-                    {SORT_LABEL[k]}{hub.sort === k && <span className="ml-auto text-neon-accent">✓</span>}
+                    {SORT_LABEL[k]}{hub.sort === k && <span className="ml-auto text-jz-brand">✓</span>}
                   </button>
                 ))}
               </>
             )}
           </Menu>
-          <div className="flex items-center rounded-xl bg-jz-elevated/50 p-1" data-hub-view-toggle>
+          <div className="flex items-center rounded-card bg-jz-surface-2/50 p-1" data-hub-view-toggle>
  {(['cards', 'table'] as const).map((k) => (
               <button key={k} type="button" data-hub-view-btn={k} title={k === 'cards' ? '卡片网格' : '高密表格'}
  onClick={() => patch({ view: k })}
- className={`px-2.5 py-1.5 rounded-lg transition-colors ${hub.view === k ? 'bg-jz-surface shadow-jz-card text-neon-accent' : 'text-jz-text-muted hover:text-jz-text-primary'}`}>
+ className={`px-2.5 py-1.5 rounded-control transition-colors ${hub.view === k ? 'bg-jz-surface shadow-card text-jz-brand' : 'text-jz-muted hover:text-jz-ink'}`}>
                 {k === 'cards' ? <LayoutGrid size={15} /> : <Table2 size={15} />}
               </button>
             ))}
           </div>
         </div>
         {/* 批量条 */}
-        <div className="flex items-center gap-2 flex-wrap text-xs text-jz-text-muted">
+        <div className="flex items-center gap-2 flex-wrap text-meta text-jz-muted">
           <span className="tnum">共 {entries.length} 个审计任务 · 命中 {filtered.length}</span>
-          <button type="button" onClick={toggleAll} data-hub-check-all className="text-neon-accent hover:underline">
+          <button type="button" onClick={toggleAll} data-hub-check-all className="text-jz-brand hover:underline">
             {allChecked ? '取消本页全选' : '本页全选'}
           </button>
  {hub.checked.size > 0 && (
             <>
-              <span className="tnum text-jz-text-primary">已选 {hub.checked.size}</span>
+              <span className="tnum text-jz-ink">已选 {hub.checked.size}</span>
               <Button variant="primary" onClick={onExportBatch} disabled={batchBusy} data-hub-batch-export>
                 <FileDown size={13} />{batchBusy ? '聚合导出中…' : '导出汇总 CSV'}
               </Button>
-              <button type="button" onClick={() => patch({ checked: new Set() })} className="hover:text-jz-text-primary">清空选择</button>
+              <button type="button" onClick={() => patch({ checked: new Set() })} className="hover:text-jz-ink">清空选择</button>
             </>
           )}
         </div>
@@ -163,12 +163,12 @@ export const HubView: React.FC<{
       {/* 主体: 卡片网格 / 高密表格 */}
       {loading && entries.length === 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
- {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-44 rounded-2xl" />)}
+ {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-44 rounded-panel" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl bg-jz-surface shadow-jz-card p-8 text-center" data-hub-empty>
-          <div className="text-2xl opacity-30 mb-2"></div>
-          <div className="text-sm text-jz-text-muted">{entries.length === 0 ? '暂无已完成审计任务' : '当前检索条件无匹配任务'}</div>
+        <div className="rounded-panel bg-jz-surface shadow-card p-8 text-center" data-hub-empty>
+          <div className="text-title opacity-30 mb-2"></div>
+          <div className="text-body text-jz-muted">{entries.length === 0 ? '暂无已完成审计任务' : '当前检索条件无匹配任务'}</div>
         </div>
       ) : hub.view === 'cards' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4" data-hub-cards>
@@ -182,30 +182,30 @@ export const HubView: React.FC<{
               : agg?.sid ? '无违规实例' : '无关联会话';
             return (
               <div key={t.id} data-hub-card={t.id}
- className="rounded-2xl bg-jz-surface shadow-jz-card p-4 space-y-2.5 transition-transform hover:-translate-y-0.5">
+ className="rounded-panel bg-jz-surface shadow-card p-4 space-y-2.5 transition-transform hover:-translate-y-0.5">
                 <div className="flex items-center gap-2">
                   <input type="checkbox" checked={hub.checked.has(t.id)} onChange={() => toggleOne(t.id)}
  data-hub-check={t.id} title="选择(批量导出)"
- className="w-3.5 h-3.5 rounded accent-neon-accent cursor-pointer flex-none" />
-                  <span className="font-mono text-sm font-bold text-neon-accent tnum">#{t.id}</span>
+ className="w-3.5 h-3.5 rounded-control accent-jz-brand cursor-pointer flex-none" />
+                  <span className="font-mono text-body font-semibold text-jz-brand tnum">#{t.id}</span>
                   {t.packer && t.packer !== 'none' && <StatusBadge tone="medium" title="壳类型">{t.packer}</StatusBadge>}
                   <span className="flex-1" />
-                  <span className="text-[11px] text-jz-text-muted font-mono tnum" title="任务更新时间">{String(t.updated_at || '').slice(5, 16).replace('T', ' ')}</span>
+                  <span className="text-meta text-jz-muted font-mono tnum" title="任务更新时间">{String(t.updated_at || '').slice(5, 16).replace('T', ' ')}</span>
                 </div>
-                <div className="text-sm font-semibold text-jz-text-primary truncate" title={t.app_name || t.package || ''}>
+                <div className="text-body font-semibold text-jz-ink truncate" title={t.app_name || t.package || ''}>
                   {t.app_name || t.package || `任务 #${t.id}`}
                 </div>
-                <CodePill value={t.package || `任务#${t.id}未返回包名`} textCls="text-sm" maxW="max-w-full" />
+                <CodePill value={t.package || `任务#${t.id}未返回包名`} textCls="text-body" maxW="max-w-full" />
                 <div className="flex items-center gap-3">
                   <ScoreRing rate={score ?? 0} size={48} stroke={4.5}>
-                    <span className={`font-mono font-bold tnum text-sm ${score == null ? 'text-jz-text-muted' : 'text-jz-text-primary'}`}>
+                    <span className={`font-mono font-semibold tnum text-body ${score == null ? 'text-jz-muted' : 'text-jz-ink'}`}>
                       {score ?? '—'}
                     </span>
                   </ScoreRing>
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {s ? <StatusBadge tone={s.risk_level === '严重' || s.risk_level === '高' ? 'critical' : s.risk_level === '中' ? 'medium' : 'low'}>风险{s.risk_level}</StatusBadge> : <StatusBadge tone="info">{agg?.loading ? '统计中…' : '无会话数据'}</StatusBadge>}
-                      <span className="font-mono text-[11px] tnum text-jz-text-muted">高危 {s ? s.confirmed_high : '—'}</span>
+                      <span className="font-mono text-meta tnum text-jz-muted">高危 {s ? s.confirmed_high : '—'}</span>
                     </div>
                     <div className="flex items-center gap-1 flex-wrap">
                       <MxChip tone="critical" label="红" n={mc == null ? null : mc === 'error' ? 'error' : mc.red} />
@@ -215,17 +215,17 @@ export const HubView: React.FC<{
                     </div>
                   </div>
                 </div>
-                <div className="text-xs text-jz-text-secondary truncate" title={`域违规摘要: ${domTxt}`} data-hub-domains={t.id}>
+                <div className="text-meta text-jz-ink-2 truncate" title={`域违规摘要: ${domTxt}`} data-hub-domains={t.id}>
                   域违规: {domTxt}
                 </div>
                 <div className="flex items-center gap-2 pt-0.5">
                   <button type="button" onClick={() => onExportOne(t.id)} data-hub-export-one={t.id}
  title="快速导出该任务汇总 CSV(实时聚合代表会话数据)"
- className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-jz-elevated/60 hover:bg-neon-accent/10 text-xs text-jz-text-primary transition-colors">
-                    <FileDown size={12} className="text-neon-accent" />快速导出 CSV
+ className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-jz-surface-2/60 hover:bg-jz-brand/10 text-meta text-jz-ink transition-colors">
+                    <FileDown size={12} className="text-jz-brand" />快速导出 CSV
                   </button>
                   <button type="button" onClick={() => onOpen(t.id)} data-hub-open={t.id}
- className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-neon-accent/15 hover:bg-neon-accent/25 text-xs text-neon-accent font-medium transition-colors">
+ className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-jz-brand/15 hover:bg-jz-brand/25 text-meta text-jz-brand font-medium transition-colors">
                     <Eye size={12} />查看详细报告
                   </button>
                 </div>
@@ -235,10 +235,10 @@ export const HubView: React.FC<{
         </div>
       ) : (
         <div className="divided-card-list overflow-x-auto" data-hub-table>
-          <table className="w-full text-xs">
+          <table className="w-full text-meta">
             <thead>
-              <tr className="text-jz-text-muted">
-                <th className="px-3 py-2.5 text-left w-8"><input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-3.5 h-3.5 accent-neon-accent cursor-pointer" /></th>
+              <tr className="text-jz-muted">
+                <th className="px-3 py-2.5 text-left w-8"><input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-3.5 h-3.5 accent-jz-brand cursor-pointer" /></th>
                 <th className="px-2 py-2.5 text-left">任务</th>
                 <th className="px-2 py-2.5 text-left">应用 / 包名</th>
                 <th className="px-2 py-2.5 text-left">壳</th>
@@ -258,34 +258,34 @@ export const HubView: React.FC<{
  const counts = mc && mc !== 'error' ? mc : null;
  const topDom = (agg?.domains?.rows || []).filter((d) => d.count > 0).sort((a, b) => b.count - a.count);
                 return (
-                  <tr key={t.id} data-hub-row={t.id} className="hover:bg-jz-elevated/30 transition-colors">
+                  <tr key={t.id} data-hub-row={t.id} className="hover:bg-jz-surface-2/30 transition-colors">
                     <td className="px-3 py-2">
-                      <input type="checkbox" checked={hub.checked.has(t.id)} onChange={() => toggleOne(t.id)} className="w-3.5 h-3.5 accent-neon-accent cursor-pointer" />
+                      <input type="checkbox" checked={hub.checked.has(t.id)} onChange={() => toggleOne(t.id)} className="w-3.5 h-3.5 accent-jz-brand cursor-pointer" />
                     </td>
-                    <td className="px-2 py-2 font-mono text-neon-accent tnum whitespace-nowrap">#{t.id}</td>
+                    <td className="px-2 py-2 font-mono text-jz-brand tnum whitespace-nowrap">#{t.id}</td>
                     <td className="px-2 py-2 max-w-[260px]">
-                      <div className="truncate text-jz-text-primary" title={t.app_name || ''}>{t.app_name || '—'}</div>
-                      <div className="font-mono text-[11px] text-jz-text-muted truncate" title={t.package}>{t.package || '—'}</div>
+                      <div className="truncate text-jz-ink" title={t.app_name || ''}>{t.app_name || '—'}</div>
+                      <div className="font-mono text-meta text-jz-muted truncate" title={t.package}>{t.package || '—'}</div>
                     </td>
-                    <td className="px-2 py-2 text-jz-text-secondary whitespace-nowrap">{t.packer && t.packer !== 'none' ? t.packer : '无'}</td>
-                    <td className={`px-2 py-2 text-right font-mono tnum ${score == null ? 'text-jz-text-muted' : score < 60 ? 'text-vuln-critical' : score < 85 ? 'text-vuln-medium' : 'text-vuln-safe'}`}>
+                    <td className="px-2 py-2 text-jz-ink-2 whitespace-nowrap">{t.packer && t.packer !== 'none' ? t.packer : '无'}</td>
+                    <td className={`px-2 py-2 text-right font-mono tnum ${score == null ? 'text-jz-muted' : score < 60 ? 'text-jz-sev-critical' : score < 85 ? 'text-jz-sev-medium' : 'text-jz-teal'}`}>
                       {score ?? '—'}
                     </td>
-                    <td className={`px-2 py-2 text-right font-mono tnum ${s?.confirmed_high ? 'text-vuln-critical font-semibold' : 'text-jz-text-muted'}`}>{s ? s.confirmed_high : '—'}</td>
-                    <td className="px-2 py-2 text-right font-mono tnum text-jz-text-secondary whitespace-nowrap">
+                    <td className={`px-2 py-2 text-right font-mono tnum ${s?.confirmed_high ? 'text-jz-sev-critical font-semibold' : 'text-jz-muted'}`}>{s ? s.confirmed_high : '—'}</td>
+                    <td className="px-2 py-2 text-right font-mono tnum text-jz-ink-2 whitespace-nowrap">
                       {s ? `${s.counts?.confirmed ?? 0} / ${s.counts?.pending ?? 0} / ${s.counts?.excluded ?? 0}` : '—'}
                     </td>
                     <td className="px-2 py-2 text-center font-mono tnum whitespace-nowrap">
                       {counts ? (
-                        <><span className="text-vuln-critical">{counts.red}</span>/<span className="text-vuln-medium">{counts.yellow}</span>/<span className="text-vuln-safe">{counts.green}</span>/<span className="text-jz-text-muted">{counts.gray}</span></>
-                      ) : mc === 'error' ? <span className="text-jz-text-muted">无矩阵</span> : <span className="text-jz-text-muted">…</span>}
+                        <><span className="text-jz-sev-critical">{counts.red}</span>/<span className="text-jz-sev-medium">{counts.yellow}</span>/<span className="text-jz-teal">{counts.green}</span>/<span className="text-jz-muted">{counts.gray}</span></>
+                      ) : mc === 'error' ? <span className="text-jz-muted">无矩阵</span> : <span className="text-jz-muted">…</span>}
                     </td>
-                    <td className="px-2 py-2 max-w-[180px] truncate text-jz-text-secondary" title={topDom.map((d) => `${d.name}×${d.count}`).join(' · ')}>
+                    <td className="px-2 py-2 max-w-[180px] truncate text-jz-ink-2" title={topDom.map((d) => `${d.name}×${d.count}`).join(' · ')}>
  {topDom.length ? topDom.slice(0, 3).map((d) => `${d.name}×${d.count}`).join(' ') : agg?.sid ? '无违规' : '—'}
                     </td>
                     <td className="px-2 py-2 text-right whitespace-nowrap">
-                      <button type="button" onClick={() => onExportOne(t.id)} title="快速导出该任务汇总 CSV" className="p-1 rounded hover:bg-jz-elevated text-jz-text-muted hover:text-neon-accent"><FileDown size={13} /></button>
-                      <button type="button" onClick={() => onOpen(t.id)} title="查看详细报告" className="p-1 rounded hover:bg-jz-elevated text-jz-text-muted hover:text-neon-accent"><Eye size={13} /></button>
+                      <button type="button" onClick={() => onExportOne(t.id)} title="快速导出该任务汇总 CSV" className="p-1 rounded-control hover:bg-jz-surface-2 text-jz-muted hover:text-jz-brand"><FileDown size={13} /></button>
+                      <button type="button" onClick={() => onOpen(t.id)} title="查看详细报告" className="p-1 rounded-control hover:bg-jz-surface-2 text-jz-muted hover:text-jz-brand"><Eye size={13} /></button>
                     </td>
                   </tr>
                 );
@@ -297,33 +297,33 @@ export const HubView: React.FC<{
 
  {/* 分页器 */}
  {filtered.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap text-xs text-jz-text-muted" data-hub-pager>
+        <div className="flex items-center gap-2 flex-wrap text-meta text-jz-muted" data-hub-pager>
           <span className="tnum">第 {page}/{pages} 页 · 共 {filtered.length} 条</span>
           <Menu
             label={<span className="font-mono tnum">{hub.pageSize}/页</span>}
- btnCls="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-jz-elevated/60 text-jz-text-primary hover:bg-jz-elevated"
+ btnCls="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink hover:bg-jz-surface-2"
  align="left" widthCls="w-32">
  {(close) => (
               <> {[12, 24, 48].map((n) => (
                 <button key={n} type="button" className={menuItemCls} data-hub-pagesize={n}
  onClick={() => { patch({ pageSize: n, page: 1 }); close(); }}>
-                  每页 {n}{hub.pageSize === n && <span className="ml-auto text-neon-accent">✓</span>}
+                  每页 {n}{hub.pageSize === n && <span className="ml-auto text-jz-brand">✓</span>}
                 </button>))}</>
             )}
           </Menu>
           <div className="flex items-center gap-1">
             <button type="button" disabled={page <= 1} onClick={() => patch({ page: page - 1 })} data-hub-page-prev
- className="p-1.5 rounded-lg bg-jz-elevated/60 disabled:opacity-40 hover:bg-jz-elevated"><ChevronLeft size={13} /></button>
+ className="p-1.5 rounded-control bg-jz-surface-2/60 disabled:opacity-40 hover:bg-jz-surface-2"><ChevronLeft size={13} /></button>
             <span className="px-1 font-mono tnum">{page}</span>
             <button type="button" disabled={page >= pages} onClick={() => patch({ page: page + 1 })} data-hub-page-next
- className="p-1.5 rounded-lg bg-jz-elevated/60 disabled:opacity-40 hover:bg-jz-elevated"><ChevronRight size={13} /></button>
+ className="p-1.5 rounded-control bg-jz-surface-2/60 disabled:opacity-40 hover:bg-jz-surface-2"><ChevronRight size={13} /></button>
           </div>
           <span className="inline-flex items-center gap-1">
             跳至
             <input value={jump} onChange={(e) => setJump(e.target.value.replace(/\D/g, ''))}
  onKeyDown={(e) => { if (e.key === 'Enter') { const p = Number(jump); if (p >= 1 && p <= pages) patch({ page: p }); setJump(''); } }}
  placeholder="页码" data-hub-page-jump
- className="w-14 h-7 px-2 rounded-lg bg-jz-elevated/60 text-center font-mono tnum text-jz-text-primary outline-none focus:border-jz-active/50 border border-transparent" />
+ className="w-14 h-7 px-2 rounded-control bg-jz-surface-2/60 text-center font-mono tnum text-jz-ink outline-none focus:border-jz-brand/50 border border-transparent" />
             页
           </span>
         </div>

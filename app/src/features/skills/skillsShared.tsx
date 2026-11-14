@@ -1,5 +1,5 @@
 // skillsShared.tsx — 技能知识库页共享类型/纯函数/常量(审核台结构化解析器 + 技能卡路径精简)。
-// 字号八档口径: 本目录 font 一律 11/12/13/14/16/20/24/28(text-[11px]/text-xs/text-[13px]/text-sm/text-base/text-xl/text-2xl/text-[28px])
+// 字号八档口径: 本目录 font 一律 11/12/13/14/16/20/24/28(text-meta/text-meta/text-label/text-body/text-section/text-title/text-title/text-page)
 import React from 'react';
 import { Puzzle, FileArchive, FileCode2, ScrollText, Download, FlaskConical, Braces } from 'lucide-react';
 
@@ -52,22 +52,22 @@ export const iconOf = (s: SkillRow) => KIND_ICON[kindOf(s).tab] || Braces;
 /** 色彩分层: 类别→顶部 h-1 渐变指示条(规格锚定: Claude 技能 indigo→purple / 平台模块 emerald→sky;
  *  标准色 500 系双主题可读,带 dark: 400 变体补亮主题差)。 */
 export const KIND_GRADIENT: Record<string, string> = {
- 'Claude 技能': 'from-indigo-500 to-purple-500 dark:from-indigo-400 dark:to-purple-400',
- 'Claude 归档': 'from-violet-500 to-fuchsia-500 dark:from-violet-400 dark:to-fuchsia-400',
- '平台模块': 'from-emerald-500 to-sky-500 dark:from-emerald-400 dark:to-sky-400',
- '项目 rules': 'from-amber-500 to-orange-500 dark:from-amber-400 dark:to-orange-400',
- '导入': 'from-cyan-500 to-blue-500 dark:from-cyan-400 dark:to-blue-400',
- '蒸馏草案': 'from-rose-500 to-orange-500 dark:from-rose-400 dark:to-orange-400',
+ 'Claude 技能': 'from-jz-brand to-jz-brand dark:from-jz-brand dark:to-jz-brand',
+ 'Claude 归档': 'from-jz-brand to-jz-brand dark:from-jz-brand dark:to-jz-brand',
+ '平台模块': 'from-jz-teal to-jz-brand dark:from-jz-teal dark:to-jz-brand',
+ '项目 rules': 'from-jz-amber to-jz-orange dark:from-jz-amber dark:to-jz-orange',
+ '导入': 'from-jz-brand to-jz-brand dark:from-jz-brand dark:to-jz-brand',
+ '蒸馏草案': 'from-jz-red to-jz-orange dark:from-jz-red dark:to-jz-orange',
 };
 
 /** 候选分类彩色徽章(壳档案紫/解密套路青;其余按 vuln token 分色,双主题)。 */
 export const catBadgeCls = (c: KBCandidate): string => {
- if (c.category === '壳档案') return 'bg-purple-500/10 dark:bg-purple-400/15 text-purple-700 dark:text-purple-300 ring-1 ring-inset ring-purple-500/25';
- if (c.category === 'decrypt_recipe') return 'bg-vuln-low/10 text-vuln-low ring-1 ring-inset ring-vuln-low/25';
- if (c.category === 'burp_capture') return 'bg-vuln-high/10 text-vuln-high ring-1 ring-inset ring-vuln-high/25';
- if (c.category === 'waf_bypass') return 'bg-vuln-critical/10 text-vuln-critical ring-1 ring-inset ring-vuln-critical/25';
- if (c.category === 'biz_extract') return 'bg-vuln-safe/10 text-vuln-safe ring-1 ring-inset ring-vuln-safe/25';
- return 'bg-neon-accent/10 text-neon-accent ring-1 ring-inset ring-neon-accent/25';
+ if (c.category === '壳档案') return 'bg-jz-brand/10 dark:bg-jz-brand/15 text-jz-brand dark:text-jz-brand ring-1 ring-inset ring-jz-brand/25';
+ if (c.category === 'decrypt_recipe') return 'bg-jz-sev-low/10 text-jz-sev-low ring-1 ring-inset ring-jz-sev-low/25';
+ if (c.category === 'burp_capture') return 'bg-jz-sev-high/10 text-jz-sev-high ring-1 ring-inset ring-jz-sev-high/25';
+ if (c.category === 'waf_bypass') return 'bg-jz-sev-critical/10 text-jz-sev-critical ring-1 ring-inset ring-jz-sev-critical/25';
+ if (c.category === 'biz_extract') return 'bg-jz-teal/10 text-jz-teal ring-1 ring-inset ring-jz-teal/25';
+ return 'bg-jz-brand/10 text-jz-brand ring-1 ring-inset ring-jz-brand/25';
 };
 
 /** 绝对路径缩短(来源行/任务目录防裸奔): 保留末 3 段,前缀 …/ 标记截断。 */
@@ -241,13 +241,13 @@ export const renderSourceCode = (code: string): React.ReactNode => {
         const isComment = /^\s*#/.test(ln);
         return (
           <div key={i} className="flex">
-            <span className="w-9 shrink-0 select-none pr-2 text-right text-jz-text-muted/70 tnum">{i + 1}</span>
-            <span className={`whitespace-pre flex-1 ${isComment ? 'text-jz-text-muted italic' : ''}`}>{ln || ' '}</span>
+            <span className="w-9 shrink-0 select-none pr-2 text-right text-jz-muted tnum">{i + 1}</span>
+            <span className={`whitespace-pre flex-1 ${isComment ? 'text-jz-muted italic' : ''}`}>{ln || ' '}</span>
           </div>
  );
  })}
  {lines.length > SRC_RENDER_MAX_LINES && (
-        <div className="pl-11 text-jz-text-muted">…(共 {lines.length} 行,展示层截断;复制按钮取全量原文)</div>
+        <div className="pl-11 text-jz-muted">…(共 {lines.length} 行,展示层截断;复制按钮取全量原文)</div>
       )}
     </>
   );

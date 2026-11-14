@@ -15,38 +15,38 @@ export const CitationGrid: React.FC<{
   if (!citations.length && !sources.length) return null;
   return (
     <div className="mt-2" data-citation-grid>
-      <div className="text-[11px] text-jz-text-muted mb-1">📚 报告溯源出处{citations.length > 0 && `(命中 ${citations.length} 处)`}</div>
+      <div className="text-meta text-jz-muted mb-1">📚 报告溯源出处{citations.length > 0 && `(命中 ${citations.length} 处)`}</div>
       <div className="grid sm:grid-cols-2 gap-1.5">
         {citations.map((c, j) => (
           <div key={j} role="button" tabIndex={0} onClick={() => { window.location.hash = `/tasks?focus=${c.task_id}`; }}
             onKeyDown={(e) => { if (e.key === 'Enter') window.location.hash = `/tasks?focus=${c.task_id}`; }}
-            className="text-left px-2 py-1.5 rounded-lg bg-jz-elevated/60 hover:ring-1 hover:ring-neon-accent/50 transition-all cursor-pointer" data-citation-card
+            className="text-left px-2 py-1.5 rounded-control bg-jz-surface-2/60 hover:ring-1 hover:ring-jz-brand/50 transition-all cursor-pointer" data-citation-card
             title={`task${c.task_id} ${c.ref}——点击跳转任务`}>
             <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="flex-none w-4 h-4 rounded bg-neon-accent/15 text-neon-accent text-[11px] font-bold grid place-items-center tabular-nums">{j + 1}</span>
-              <span className="text-[11px] font-mono text-jz-text-secondary truncate flex-1">task{c.task_id} · {c.ref}</span>
+              <span className="flex-none w-4 h-4 rounded-control bg-jz-brand/15 text-jz-brand text-meta font-semibold grid place-items-center tabular-nums">{j + 1}</span>
+              <span className="text-meta font-mono text-jz-ink-2 truncate flex-1">task{c.task_id} · {c.ref}</span>
               {c.score != null && (
                 <span data-citation-score title="bm25 相对相关度(同查询组内归一,榜首=1.00;FTS5 关键词检索,非向量相似度)"
-                  className={`flex-none px-1 rounded text-[11px] font-mono tabular-nums ${c.score >= 0.85 ? 'bg-vuln-safe/15 text-vuln-safe' : 'bg-vuln-medium/15 text-vuln-medium'}`}>
+                  className={`flex-none px-1 rounded-control text-meta font-mono tabular-nums ${c.score >= 0.85 ? 'bg-jz-teal/15 text-jz-teal' : 'bg-jz-sev-medium/15 text-jz-sev-medium'}`}>
                   {Number(c.score).toFixed(2)}
                 </span>
               )}
             </div>
-            {c.snippet && <div className="text-[11px] text-jz-text-muted leading-snug line-clamp-2">{String(c.snippet).slice(0, 120)}</div>}
+            {c.snippet && <div className="text-meta text-jz-muted leading-snug line-clamp-2">{String(c.snippet).slice(0, 120)}</div>}
             {onInspect && (
               <button onClick={(e) => { e.stopPropagation(); onInspect(c); }} data-citation-inspect
                 title="展开原文对照(双栏阅读)"
-                className="mt-1 text-[11px] text-neon-accent hover:underline">⤢ 原文对照</button>
+                className="mt-1 text-meta text-jz-brand hover:underline">⤢ 原文对照</button>
             )}
           </div>
         ))}
         {sources.map((p2) => (
           <button key={p2} onClick={() => onOpenSource(sourceTaskId, p2)}
-            className="text-left px-2 py-1.5 rounded-lg bg-jz-elevated/40 hover:ring-1 hover:ring-neon-accent/50 transition-all" data-source-chip
+            className="text-left px-2 py-1.5 rounded-control bg-jz-surface-2/40 hover:ring-1 hover:ring-jz-brand/50 transition-all" data-source-chip
             title={`代码出处: ${p2}——点击加载片段`}>
             <div className="flex items-center gap-1.5">
-              <span className="flex-none text-[11px] text-neon-accent font-bold">‹/›</span>
-              <span className="text-[11px] font-mono text-jz-text-secondary truncate">{p2}</span>
+              <span className="flex-none text-meta text-jz-brand font-semibold">‹/›</span>
+              <span className="text-meta font-mono text-jz-ink-2 truncate">{p2}</span>
             </div>
           </button>
         ))}

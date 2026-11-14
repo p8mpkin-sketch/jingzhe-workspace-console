@@ -13,7 +13,7 @@ import { downloadJson } from '@/features/reports/reportIo';
  *  左栏 = 扁平文件清单(文件名搜索 + 语义类型分类胶囊[全部|DEX脱壳|Manifest配置|审计报告|日志] +
  *        扩展名分类过滤;树遍历=既有 GET /api/tasks/{tid}/artifacts
  *        ?prefix= 逐目录循环,零新端点,深度 3/请求 60 封顶防呆);
- *  右栏 = 等宽大字号(text-sm mono)预览 + 一键复制 + 单文件下载;
+ *  右栏 = 等宽大字号(text-body mono)预览 + 一键复制 + 单文件下载;
  *  顶栏 = 上传补充(既有 POST /api/upload→审计池;后端无「写入 run_dir」端点=如实标注挂账)+
  *        导出产物清单 JSON(本地 Blob,exportDataFile 同族)。
  * 数据=既有产物清单端点 /api/tasks/{tid}/artifacts(app.py:1051, 实时列目录+防穿越);
@@ -42,10 +42,10 @@ const FLATTEN_MAX_DEPTH = 3;
 
 // 分类彩色文件夹图标(四类;其余真实目录走 FolderOpen 兜底)
 const CAT: Record<string, { Icon: React.ElementType; cls: string }> = {
-  analysis: { Icon: FlaskConical, cls: 'text-jz-accent-cyan' },
-  decompiled: { Icon: FileCode2, cls: 'text-neon-accent' },
-  report: { Icon: ScrollText, cls: 'text-jz-accent-amber' },
-  unpacked: { Icon: PackageOpen, cls: 'text-vuln-safe' },
+  analysis: { Icon: FlaskConical, cls: 'text-jz-brand' },
+  decompiled: { Icon: FileCode2, cls: 'text-jz-brand' },
+  report: { Icon: ScrollText, cls: 'text-jz-amber' },
+  unpacked: { Icon: PackageOpen, cls: 'text-jz-teal' },
 };
 
 // 扩展名分类过滤(动态由清单真实扩展名派生,不假造分组)
@@ -290,7 +290,7 @@ export const ArtifactsModal: React.FC<{
       onClose={onClose}
       title={(
         <span className="inline-flex items-center gap-2 min-w-0" data-art-header>
-          <StatusBadge tone="custom" className="bg-jz-elevated text-jz-text-primary">#{taskId}</StatusBadge>
+          <StatusBadge tone="custom" className="bg-jz-surface-2 text-jz-ink">#{taskId}</StatusBadge>
           <span className="truncate" title={taskName}>{taskName || '产物'}</span>
           <StatusBadge tone="info">双栏资源管理器 · {flat ? `${flat.length} 文件` : '清点中…'}</StatusBadge>
         </span>
@@ -301,40 +301,40 @@ export const ArtifactsModal: React.FC<{
  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadSupplement(f); e.target.value = ''; }} data-art-upload-input />
           <button onClick={() => upRef.current?.click()} disabled={busy === 'upload'} data-art-upload-btn
  title="上传补充走既有 POST /api/upload(落点=审计池,新审计可直接用);后端无「写入本任务产物目录」端点——如实标注,不假造落点"
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-jz-elevated text-jz-text-secondary border border-jz-border/60 hover:text-neon-accent hover:border-neon-accent/40 disabled:opacity-50 transition-colors">
+ className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-surface-2 text-jz-ink-2 border border-jz-border/60 hover:text-jz-brand hover:border-jz-brand/40 disabled:opacity-50 transition-colors">
             <Upload size={13} /> {busy === 'upload' ? '上传中…' : '上传补充(→审计池)'}
           </button>
           <button onClick={dlSourceApk} disabled={busy === 'source-apk'} data-art-source-apk
  title="下载本任务原始 APK（独立 source-apk 端点）"
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-jz-elevated text-jz-text-secondary border border-jz-border/60 hover:text-neon-accent hover:border-neon-accent/40 disabled:opacity-50 transition-colors">
+ className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-surface-2 text-jz-ink-2 border border-jz-border/60 hover:text-jz-brand hover:border-jz-brand/40 disabled:opacity-50 transition-colors">
             <Download size={13} /> {busy === 'source-apk' ? '下载中…' : '下载原始 APK'}
           </button>
           <button onClick={dlDexBundle} disabled={busy === 'dex-package'} data-art-dex-package
  title="打包下载本任务脱壳后的 DEX（unpacked + decompiled/fixed_dex）"
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-neon-accent/15 text-neon-accent border border-neon-accent/40 hover:bg-neon-accent/25 disabled:opacity-50 transition-colors">
+ className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-brand/15 text-jz-brand border border-jz-brand/40 hover:bg-jz-brand/25 disabled:opacity-50 transition-colors">
             <FileArchive size={13} /> {busy === 'dex-package' ? '打包中…' : '下载脱壳 DEX ZIP'}
           </button>
           <button onClick={exportList} disabled={!flat?.length} data-art-export-list
  title="导出产物清单 JSON(数据=扁平遍历真值,本地 Blob 下载)"
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-jz-elevated text-jz-text-secondary border border-jz-border/60 hover:text-neon-accent hover:border-neon-accent/40 disabled:opacity-50 transition-colors">
+ className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-surface-2 text-jz-ink-2 border border-jz-border/60 hover:text-jz-brand hover:border-jz-brand/40 disabled:opacity-50 transition-colors">
             <FileText size={13} /> 导出清单 JSON
           </button>
           {linked ? (
             <button onClick={dlZip} disabled={busy === 'zip'} data-art-zip="ready"
  title={`一键打包下载会话 #${linked.sid} 报告包 zip(既有端点 /api/pentest/sessions/${linked.sid}/report/package,R60)`}
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-neon-accent/15 text-neon-accent border border-neon-accent/40 hover:bg-neon-accent/25 disabled:opacity-50 transition-colors">
+ className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-brand/15 text-jz-brand border border-jz-brand/40 hover:bg-jz-brand/25 disabled:opacity-50 transition-colors">
               <FileArchive size={13} /> 一键打包下载 ZIP
             </button>
           ) : (
             <button disabled data-art-zip="disabled"
  title="该任务无关联渗透会话——报告包端点为会话域(/api/pentest/sessions/{sid}/report/package),一键打包置灰=挂账,不假造"
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-jz-elevated text-jz-text-muted border border-transparent opacity-60 cursor-not-allowed">
+ className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-surface-2 text-jz-muted border border-transparent opacity-60 cursor-not-allowed">
               <FileArchive size={13} /> 一键打包下载 ZIP(无打包端点)
             </button>
           )}
           <span className="flex-1" />
           {/* 数据真实性红线1 选项②: 通用 /api/download 未接通=挂账照记;单文件下载走既有真实端点 */}
-          <span className="text-xs text-jz-text-muted"
+          <span className="text-meta text-jz-muted"
  title="通用 /api/download 端点后端不存在(A-4 同族外部依赖)=挂账;本弹窗单文件下载走既有 /api/tasks/{tid}/artifact">
             /api/download 未接通=挂账
           </span>
@@ -344,69 +344,69 @@ export const ArtifactsModal: React.FC<{
       <div className="flex flex-col h-[76vh]">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-0">
           {/* ── 左栏: 文件资源浏览器(搜索+扩展名分类+扁平清单;保留既有目录导航) ── */}
-          <div className="flex flex-col min-h-0 rounded-xl bg-jz-elevated/30 border border-jz-border/50" data-art-explorer>
+          <div className="flex flex-col min-h-0 rounded-card bg-jz-surface-2/30 border border-jz-border/50" data-art-explorer>
             <div className="flex-none p-2 space-y-1.5 border-b border-jz-border/60">
               <div className="relative">
-                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-jz-text-muted pointer-events-none" />
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-jz-muted pointer-events-none" />
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索文件名 / 相对路径…"
  data-art-search
- className="w-full pl-8 pr-2 h-8 rounded-lg bg-jz-surface text-xs text-jz-text-primary
- placeholder:text-jz-text-muted outline-none focus:ring-2 focus:ring-neon-accent/30" />
+ className="w-full pl-8 pr-2 h-8 rounded-control bg-jz-surface text-meta text-jz-ink
+ placeholder:text-jz-muted outline-none focus:ring-2 focus:ring-jz-brand/30" />
               </div>
               {/* 语义类型分类胶囊(规格: 全部|DEX脱壳|Manifest配置|审计报告|日志;计数=全量清单真值) */}
               <div className="flex items-center gap-1 flex-wrap" data-art-cat-filter>
                 <button onClick={() => setCatF('all')} data-art-cat-chip="all"
- className={`px-2 py-0.5 rounded-full text-[11px] transition-colors ${catF === 'all' ? 'bg-jz-accent-cyan/10 text-jz-accent-cyan font-semibold' : 'text-jz-text-muted hover:bg-jz-surface'}`}>
+ className={`px-2 py-0.5 rounded-pill text-meta transition-colors ${catF === 'all' ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface'}`}>
                   全部 {flat?.length ?? 0}
                 </button>
                 {ART_CATS.map((c) => (
                   <button key={c.key} onClick={() => setCatF(catF === c.key ? 'all' : c.key)} data-art-cat-chip={c.key}
  title={`谓词: ${c.key === 'dex' ? 'unpacked/ 目录或 .dex' : c.key === 'manifest' ? 'manifest 路径或 .xml' : c.key === 'report' ? 'report/ 目录或 .md/.html' : '.log/.txt'};不归类文件仅在「全部」可见`}
- className={`px-2 py-0.5 rounded-full text-[11px] transition-colors ${catF === c.key ? 'bg-jz-accent-cyan/10 text-jz-accent-cyan font-semibold' : 'text-jz-text-muted hover:bg-jz-surface'}`}>
+ className={`px-2 py-0.5 rounded-pill text-meta transition-colors ${catF === c.key ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface'}`}>
                     {c.label} {catCounts[c.key] || 0}
                   </button>
                 ))}
               </div>
               <div className="flex items-center gap-1 flex-wrap" data-art-ext-filter>
                 <button onClick={() => setExtF('all')} data-art-ext-chip="all"
- className={`px-2 py-0.5 rounded-full text-[11px] transition-colors ${extF === 'all' ? 'bg-neon-accent/10 text-neon-accent font-semibold' : 'text-jz-text-muted hover:bg-jz-surface'}`}>
+ className={`px-2 py-0.5 rounded-pill text-meta transition-colors ${extF === 'all' ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface'}`}>
                   全部 {flat?.length ?? 0}
                 </button>
  {extOptions.map(([k, label]) => (
                   <button key={k} onClick={() => setExtF(extF === k ? 'all' : k)} data-art-ext-chip={k}
- className={`px-2 py-0.5 rounded-full text-[11px] transition-colors ${extF === k ? 'bg-neon-accent/10 text-neon-accent font-semibold' : 'text-jz-text-muted hover:bg-jz-surface'}`}>
+ className={`px-2 py-0.5 rounded-pill text-meta transition-colors ${extF === k ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface'}`}>
                     {label}
                   </button>
                 ))}
-                {flatBusy && <span className="text-[11px] text-jz-text-muted">清点中…</span>}
+                {flatBusy && <span className="text-meta text-jz-muted">清点中…</span>}
               </div>
               {/* 既有目录导航(面包屑/上级)保留 */}
-              <div className="flex items-center gap-2 text-xs min-h-[20px]">
+              <div className="flex items-center gap-2 text-meta min-h-[20px]">
                 {prefix ? (
-                  <button onClick={goUp} data-art-up className="inline-flex items-center gap-0.5 text-neon-accent hover:underline">
+                  <button onClick={goUp} data-art-up className="inline-flex items-center gap-0.5 text-jz-brand hover:underline">
                     <ChevronLeft size={12} /> 上级
                   </button>
                 ) : (
-                  <span className="text-jz-text-muted">run_dir 根目录</span>
+                  <span className="text-jz-muted">run_dir 根目录</span>
                 )}
-                {prefix && <span className="font-mono text-jz-text-muted truncate" title={prefix}>{prefix}</span>}
+                {prefix && <span className="font-mono text-jz-muted truncate" title={prefix}>{prefix}</span>}
               </div>
             </div>
             <div className="flex-1 min-h-0 overflow-auto divided-card-list" data-art-tree>
-              {err && <div className="text-xs text-vuln-critical p-2">加载失败: {err}</div>}
-              {data?.empty_reason && !prefix && <div className="text-xs text-jz-text-muted p-2">{data.empty_reason}</div>}
+              {err && <div className="text-meta text-jz-sev-critical p-2">加载失败: {err}</div>}
+              {data?.empty_reason && !prefix && <div className="text-meta text-jz-muted p-2">{data.empty_reason}</div>}
  {/* 目录(树浏览;真实存在才渲染,不假造分类) */}
  {entries.filter((e: any) => e.type === 'dir').map((e: any) => {
                 const cat = CAT[e.name];
                 return (
                   <button key={e.rel} onClick={() => enter(e.rel)} data-art-dir={e.name}
  title={`进入 ${e.rel}(${e.files} 文件)`}
- className="w-full flex items-center gap-2 px-2 py-1.5 text-xs min-h-[32px] text-left hover:bg-jz-surface/60">
+ className="w-full flex items-center gap-2 px-2 py-1.5 text-meta min-h-[32px] text-left hover:bg-jz-surface/60">
                     {cat
                       ? <cat.Icon size={14} className={`flex-none ${cat.cls}`} />
-                      : <FolderOpen size={14} className="flex-none text-jz-text-muted" />}
-                    <span className="truncate text-jz-text-primary">{e.name}</span>
-                    <span className="flex-none font-mono text-jz-text-muted tnum">{e.files} 文件</span>
+                      : <FolderOpen size={14} className="flex-none text-jz-muted" />}
+                    <span className="truncate text-jz-ink">{e.name}</span>
+                    <span className="flex-none font-mono text-jz-muted tnum">{e.files} 文件</span>
                   </button>
  );
  })}
@@ -421,32 +421,32 @@ export const ArtifactsModal: React.FC<{
                 const active = preview?.rel === f.rel;
                 return (
                   <div key={f.rel} data-art-file={f.rel}
- className={`flex items-center gap-2 px-2 py-1.5 text-xs min-h-[32px] ${active ? 'bg-neon-accent/10' : 'hover:bg-jz-surface/60'}`}>
-                    <FileText size={13} className="flex-none text-jz-text-muted" />
+ className={`flex items-center gap-2 px-2 py-1.5 text-meta min-h-[32px] ${active ? 'bg-jz-brand/10' : 'hover:bg-jz-surface/60'}`}>
+                    <FileText size={13} className="flex-none text-jz-muted" />
                     <button onClick={() => openPreview(f.name, f.rel, f.size_kb)} disabled={!canPreview || busy === f.name}
  data-art-file-name={f.name}
  title={`${f.rel} · ${f.size_kb}KB${canPreview ? '(点击预览)' : ''}`}
- className="flex-1 min-w-0 truncate text-left text-jz-text-secondary disabled:cursor-default disabled:text-jz-text-muted hover:text-neon-accent transition-colors">
+ className="flex-1 min-w-0 truncate text-left text-jz-ink-2 disabled:cursor-default disabled:text-jz-muted hover:text-jz-brand transition-colors">
                       {f.rel}
                     </button>
-                    <span className="flex-none font-mono tnum text-jz-text-muted" data-art-size>{f.size_kb}KB</span>
+                    <span className="flex-none font-mono tnum text-jz-muted" data-art-size>{f.size_kb}KB</span>
                     <button onClick={() => openPreview(f.name, f.rel, f.size_kb)} disabled={!canPreview || busy === f.name}
  data-art-preview-btn={f.name}
  title={previewTip}
- className="p-1 rounded text-jz-accent-cyan hover:bg-jz-surface/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+ className="p-1 rounded-control text-jz-brand hover:bg-jz-surface/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                       <Eye size={13} />
                     </button>
                     <button onClick={() => dlFile(f.rel, f.name)} disabled={busy === f.rel}
  data-art-dl-btn={f.name}
  title={`下载 ${f.name}(经既有单文件产物端点 /api/tasks/{tid}/artifact,携带 Authorization 头;通用 /api/download 未接通=挂账)`}
- className="p-1 rounded text-neon-accent hover:bg-jz-surface/80 disabled:opacity-30 transition-colors">
+ className="p-1 rounded-control text-jz-brand hover:bg-jz-surface/80 disabled:opacity-30 transition-colors">
                       <Download size={13} className={busy === f.rel ? 'animate-spin' : ''} />
                     </button>
                   </div>
                 );
               })}
               {!shownFlat.length && !flatBusy && !err && (
-                <div className="px-3 py-6 text-center text-xs text-jz-text-muted" data-art-empty>
+                <div className="px-3 py-6 text-center text-meta text-jz-muted" data-art-empty>
                   {flat && flat.length ? '无匹配文件(调整搜索词/分类过滤)' : '产物目录为空(如实空态)'}
                 </div>
               )}
@@ -454,49 +454,49 @@ export const ArtifactsModal: React.FC<{
           </div>
 
           {/* ── 右栏: 等宽大字号预览/复制/下载 ── */}
-          <div className="flex flex-col min-h-0 rounded-xl bg-jz-elevated/30 border border-jz-border/50" data-art-preview>
+          <div className="flex flex-col min-h-0 rounded-card bg-jz-surface-2/30 border border-jz-border/50" data-art-preview>
             {!preview ? (
               <div className="flex-1 grid place-items-center p-4 text-center">
                 <div className="space-y-1.5">
-                  <Eye size={20} className="mx-auto text-jz-text-muted/60" />
-                  <div className="text-xs text-jz-text-muted">点击左侧文件名 / 预览钮查看内容</div>
-                  <div className="text-[11px] text-jz-text-muted/70">报告白名单走报告端点;其余文本类 ≤{PREVIEW_MAX_KB}KB 走产物端点(真值闸)</div>
+                  <Eye size={20} className="mx-auto text-jz-muted" />
+                  <div className="text-meta text-jz-muted">点击左侧文件名 / 预览钮查看内容</div>
+                  <div className="text-meta text-jz-muted">报告白名单走报告端点;其余文本类 ≤{PREVIEW_MAX_KB}KB 走产物端点(真值闸)</div>
                 </div>
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-2 text-xs flex-none p-2 border-b border-jz-border/60">
-                  <Eye size={12} className="text-jz-accent-cyan flex-none" />
-                  <span className="font-mono text-jz-text-secondary truncate flex-1" title={preview.rel}>{preview.rel}</span>
+                <div className="flex items-center gap-2 text-meta flex-none p-2 border-b border-jz-border/60">
+                  <Eye size={12} className="text-jz-brand flex-none" />
+                  <span className="font-mono text-jz-ink-2 truncate flex-1" title={preview.rel}>{preview.rel}</span>
                   <StatusBadge tone="info" title={preview.via === 'report'
  ? '预览源=既有报告预览端点 /api/tasks/{tid}/report-file(白名单恒等)'
  : '预览源=既有单文件产物端点 /api/tasks/{tid}/artifact(文本类 ≤512KB 真值闸)'}>
                     {preview.via === 'report' ? '报告端点' : '产物端点'}
                   </StatusBadge>
                   <button onClick={copyPreview} data-art-copy title="复制全文到剪贴板"
- className="p-1 rounded text-jz-text-secondary hover:text-neon-accent transition-colors">
-                    {copied ? <Check size={13} className="text-vuln-safe" /> : <Copy size={13} />}
+ className="p-1 rounded-control text-jz-ink-2 hover:text-jz-brand transition-colors">
+                    {copied ? <Check size={13} className="text-jz-teal" /> : <Copy size={13} />}
                   </button>
                   <button onClick={() => dlFile(preview.rel, preview.name)} disabled={busy === preview.rel} data-art-preview-dl
- title="下载当前预览文件" className="p-1 rounded text-neon-accent hover:bg-jz-surface/80 transition-colors">
+ title="下载当前预览文件" className="p-1 rounded-control text-jz-brand hover:bg-jz-surface/80 transition-colors">
                     <Download size={13} />
                   </button>
-                  <button onClick={() => setPreview(null)} aria-label="关闭预览" className="text-jz-text-muted hover:text-jz-text-primary"><X size={12} /></button>
+                  <button onClick={() => setPreview(null)} aria-label="关闭预览" className="text-jz-muted hover:text-jz-ink"><X size={12} /></button>
                 </div>
-                {/* 等宽大字号预览(text-sm=14px mono,行高 6) */}
-                <pre className="flex-1 min-h-0 overflow-auto m-0 p-3 text-sm leading-6 text-jz-text-secondary whitespace-pre-wrap break-all font-mono" data-art-preview-body>{preview.text}</pre>
+                {/* 等宽大字号预览(text-body=14px mono,行高 6) */}
+                <pre className="flex-1 min-h-0 overflow-auto m-0 p-3 text-body leading-6 text-jz-ink-2 whitespace-pre-wrap break-all font-mono" data-art-preview-body>{preview.text}</pre>
               </>
             )}
           </div>
         </div>
 
         {note && (
-          <div className="flex-none mt-1.5 text-xs text-jz-text-secondary" data-art-note>
-            {note}<button onClick={() => setNote(null)} className="ml-1.5 text-jz-text-muted hover:text-jz-text-primary">✕</button>
+          <div className="flex-none mt-1.5 text-meta text-jz-ink-2" data-art-note>
+            {note}<button onClick={() => setNote(null)} className="ml-1.5 text-jz-muted hover:text-jz-ink">✕</button>
           </div>
         )}
 
-        <div className="flex-none mt-1 text-xs text-jz-text-muted truncate font-mono" title={data?.run_dir || ''}>
+        <div className="flex-none mt-1 text-meta text-jz-muted truncate font-mono" title={data?.run_dir || ''}>
           {data?.run_dir || ''}
         </div>
       </div>

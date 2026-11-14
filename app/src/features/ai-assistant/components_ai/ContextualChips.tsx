@@ -62,10 +62,10 @@ export const ContextualChips: React.FC<{
 
   return (
     <div className="relative">
-      {overflow && <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-jz-surface to-transparent z-10" data-intent-chips-fade />}
+      {overflow && <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-jz-surface z-10" data-intent-chips-fade />}
       <div ref={chipsRef} className="flex items-center gap-1.5 mb-1.5 flex-nowrap overflow-x-auto pb-1" data-intent-chips>
         {boundTask && (
-          <span className="flex-none whitespace-nowrap px-1.5 py-1 text-[11px] font-semibold text-neon-accent" data-chips-task-tag
+          <span className="flex-none whitespace-nowrap px-1.5 py-1 text-meta font-semibold text-jz-brand" data-chips-task-tag
             title={`已关联任务 #${boundTask.id}${boundTask.pkg ? ' · ' + boundTask.pkg : ''}——推荐词已切换为该 APK 专属`}>
             🎯 #{boundTask.id}
           </span>
@@ -73,14 +73,14 @@ export const ContextualChips: React.FC<{
         {visible.map((it) => (
           <button key={it.label} data-intent-chip={it.label} onClick={() => onPick(it.q)}
             title={it.q}
-            className="flex-none whitespace-nowrap px-2.5 py-1 rounded-full bg-jz-elevated/70 text-xs text-jz-text-muted hover:text-neon-accent hover:bg-jz-elevated active:scale-95 transition-all">
+            className="flex-none whitespace-nowrap px-2.5 py-1 rounded-pill bg-jz-surface-2/70 text-meta text-jz-muted hover:text-jz-brand hover:bg-jz-surface-2 active:scale-95 transition-all">
             {it.label}
           </button>
         ))}
         {pool.length > WINDOW && (
           <button onClick={() => setPage((p) => p + 1)} data-chips-rotate
             title={`换一批(${safePage + 1}/${pages} 页,共 ${pool.length} 条)`}
-            className="flex-none whitespace-nowrap px-2 py-1 rounded-full text-xs text-neon-accent hover:bg-neon-accent/10 transition-all">
+            className="flex-none whitespace-nowrap px-2 py-1 rounded-pill text-meta text-jz-brand hover:bg-jz-brand/10 transition-all">
             ↻ 换一批
           </button>
         )}

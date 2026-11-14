@@ -75,22 +75,22 @@ const KbGraph: React.FC<{ graph: any }> = ({ graph }) => {
 
 // R117-7②(方案7.2): 源码抽屉行号对齐+零依赖注释着色(renderSourceCode 迁 skillsShared,口径不变)。
 
-/** KPI 大卡: 语义图标+大号等宽数字(text-2xl md:text-[28px])+微光边框;点击=快速过滤列表。 */
+/** KPI 大卡: 语义图标+大号等宽数字(text-title md:text-page)+微光边框;点击=快速过滤列表。 */
 const KpiCard: React.FC<{
   icon: React.ComponentType<{ className?: string }>;
  label: string; value: React.ReactNode; sub: string; title?: string;
  active?: boolean; onClick: () => void;
 }> = ({ icon: Icon, label, value, sub, title, active, onClick }) => (
   <button onClick={onClick} title={title} data-skills-kpi={label}
- className={`rounded-2xl bg-jz-surface shadow-jz-card p-4 text-left border transition-all ${active
- ? 'border-neon-accent/50 shadow-neon-glow'
- : 'border-neon-accent/10 hover:border-neon-accent/40 hover:shadow-neon-glow'}`}>
-    <div className="flex items-center gap-1.5 text-xs text-jz-text-muted">
-      <Icon className="w-3.5 h-3.5 text-neon-accent shrink-0" />
+ className={`rounded-panel bg-jz-surface shadow-card p-4 text-left border transition-all ${active
+ ? 'border-jz-brand/50 '
+ : 'border-jz-brand/10 hover:border-jz-brand/40 hover:'}`}>
+    <div className="flex items-center gap-1.5 text-meta text-jz-muted">
+      <Icon className="w-3.5 h-3.5 text-jz-brand shrink-0" />
       <span className="truncate">{label}</span>
     </div>
-    <div className="mt-1.5 text-2xl md:text-[28px] font-bold font-mono tabular-nums text-jz-text-primary leading-none">{value}</div>
-    <div className="mt-1.5 text-[11px] text-jz-text-muted truncate">{sub}</div>
+    <div className="mt-1.5 text-title md:text-page font-semibold font-mono tabular-nums text-jz-ink leading-none">{value}</div>
+    <div className="mt-1.5 text-meta text-jz-muted truncate">{sub}</div>
   </button>
 );
 
@@ -383,19 +383,19 @@ export const SkillsPage: React.FC = () => {
     <div className="p-4 md:p-6 h-full overflow-auto" data-skills-page>
       {/* 页头: 标题 + 理念徽章 + 手动模式/重扫(全局动作,双工作台共享) */}
       <div className="flex items-center gap-2 flex-wrap mb-4">
-        <h2 className="text-base font-semibold text-jz-text-primary">技能知识库</h2>
+        <h2 className="text-section font-semibold text-jz-ink">技能知识库</h2>
         <Badge level="safe">AI+技能库+实战三驱动: 选技/挂载/回流/缺口蒸馏已自动化</Badge>
         <span className="flex-1" />
         <button onClick={() => setManualOpen(!manualOpen)} data-manual-toggle
  title="AI 主路径之外的人工兜底: 给历史任务补挂/覆盖 AI 选择;从成功任务手动蒸馏——日常流程零依赖"
- className={`px-2.5 py-1 rounded-full text-xs transition-colors ${manualOpen
- ? 'bg-neon-accent/10 text-neon-accent font-semibold'
- : 'bg-jz-elevated/50 text-jz-text-muted hover:text-jz-text-secondary'}`}>
+ className={`px-2.5 py-1 rounded-pill text-meta transition-colors ${manualOpen
+ ? 'bg-jz-brand/10 text-jz-brand font-semibold'
+ : 'bg-jz-surface-2/50 text-jz-muted hover:text-jz-ink-2'}`}>
           {manualOpen ? '▾' : '▸'} 手动模式(兜底)
         </button>
         <button onClick={rescan} disabled={scanning} data-skills-rescan
  title="一键热重载语义=存量重扫(POST /api/skills/scan,幂等)"
- className="px-2 py-1 rounded bg-neon-accent/10 text-neon-accent text-xs hover:bg-neon-accent/20 disabled:opacity-40">
+ className="px-2 py-1 rounded-control bg-jz-brand/10 text-jz-brand text-meta hover:bg-jz-brand/20 disabled:opacity-40">
           {scanning ? '扫描中…' : '↻ 重新扫描(幂等)'}
         </button>
       </div>
@@ -425,26 +425,26 @@ export const SkillsPage: React.FC = () => {
       </div>
 
       {/* ② 一级分段导航(h-12 mb-6): 已入库技能资产库 / 自学习候选审核台(琥珀脉冲徽章) */}
-      <div className="flex items-center gap-1.5 h-12 mb-6 rounded-2xl bg-jz-surface shadow-jz-card ring-1 ring-jz-border/40 p-1.5"
+      <div className="flex items-center gap-1.5 h-12 mb-6 rounded-panel bg-jz-surface shadow-card ring-1 ring-jz-border/40 p-1.5"
  data-skills-primary-tabs>
         <button onClick={() => setWorkbench('library')} data-skills-primary-tab="library"
- className={`h-full px-3 md:px-4 rounded-xl text-sm font-semibold transition-colors truncate ${effectiveWb === 'library'
- ? 'bg-neon-accent/15 text-neon-accent shadow-jz-card' : 'text-jz-text-muted hover:text-jz-text-secondary'}`}>
+ className={`h-full px-3 md:px-4 rounded-card text-body font-semibold transition-colors truncate ${effectiveWb === 'library'
+ ? 'bg-jz-brand/15 text-jz-brand shadow-card' : 'text-jz-muted hover:text-jz-ink-2'}`}>
            已入库技能资产库
           <span className="ml-1 font-mono tnum">({allRows.length})</span>
         </button>
         {isAdmin && (
           <button onClick={() => setWorkbench('review')} data-skills-primary-tab="review"
- className={`h-full px-3 md:px-4 rounded-xl text-sm font-semibold transition-colors truncate ${effectiveWb === 'review'
- ? 'bg-neon-accent/15 text-neon-accent shadow-jz-card' : 'text-jz-text-muted hover:text-jz-text-secondary'}`}>
+ className={`h-full px-3 md:px-4 rounded-card text-body font-semibold transition-colors truncate ${effectiveWb === 'review'
+ ? 'bg-jz-brand/15 text-jz-brand shadow-card' : 'text-jz-muted hover:text-jz-ink-2'}`}>
              自学习候选审核台
             <span className="ml-1 font-mono tnum hidden lg:inline">
               (待审 {pendingCands.length} · 已通过 {decidedCounts.approved} · 已拒绝 {decidedCounts.rejected})
             </span>
  {pendingCands.length > 0 && (
               <span className="relative ml-1.5 inline-flex h-2 w-2 align-middle" title={`待审 ${pendingCands.length}`}>
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-jz-accent-amber opacity-60" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-jz-accent-amber" />
+                <span className=" absolute inline-flex h-full w-full rounded-pill bg-jz-amber opacity-60" />
+                <span className="relative inline-flex rounded-pill h-2 w-2 bg-jz-amber" />
               </span>
             )}
           </button>
@@ -454,7 +454,7 @@ export const SkillsPage: React.FC = () => {
  {isAdmin && effectiveWb === 'library' && pendingCands.length > 0 && (
           <button onClick={() => setWorkbench('review')} data-skills-cand-pill
  title="跳转自学习候选审核台(post_mortem 复盘产出,零自动转正)"
- className="hidden sm:inline-flex items-center gap-1 h-8 px-3 mr-0.5 rounded-full bg-vuln-medium/10 text-vuln-medium text-xs font-semibold hover:bg-vuln-medium/20 transition-colors">
+ className="hidden sm:inline-flex items-center gap-1 h-8 px-3 mr-0.5 rounded-pill bg-jz-sev-medium/10 text-jz-sev-medium text-meta font-semibold hover:bg-jz-sev-medium/20 transition-colors">
             <Bell className="w-3.5 h-3.5" /> 有 {pendingCands.length} 条候选待审 →
           </button>
         )}
@@ -464,51 +464,51 @@ export const SkillsPage: React.FC = () => {
         <div className="space-y-4">
           {/* R127: 手动模式折叠区——AI 自动编排(R125)后的降级归宿: 人工兜底/覆盖/历史任务补挂/成功任务蒸馏 */}
           {manualOpen && (
-            <div className="rounded-2xl bg-jz-elevated p-3 flex items-center gap-2 flex-wrap" data-manual-panel>
-              <span className="text-xs text-jz-text-muted"
+            <div className="rounded-panel bg-jz-surface-2 p-3 flex items-center gap-2 flex-wrap" data-manual-panel>
+              <span className="text-meta text-jz-muted"
  title="新任务由 AI 编排器自动选技挂载(R125),此处仅兜底: R125 前历史任务补挂 / 人工覆盖 AI 选择">手动补挂:</span>
               <select value={mountTid ?? ''} onChange={(e) => setMountTid(Number(e.target.value) || null)} data-mount-task-select
- className="bg-jz-elevated/60 rounded-lg px-1.5 py-1 text-xs text-jz-text-primary max-w-[220px] outline-none">
+ className="bg-jz-surface-2/60 rounded-control px-1.5 py-1 text-meta text-jz-ink max-w-[220px] outline-none">
                 <option value="">选择目标任务(历史/覆盖)…</option>
  {tasks.map((t) => <option key={t.id} value={t.id}>#{t.id} {t.app_name || t.package || '审计'}</option>)}
               </select>
-              <span className="text-xs text-jz-text-muted"
+              <span className="text-meta text-jz-muted"
  title="失败缺口已自动蒸馏(R125);此处从成功任务手动提炼新技能">手动蒸馏:</span>
               <select value={distillTid ?? ''} onChange={(e) => setDistillTid(Number(e.target.value) || null)} data-distill-task-select
- className="bg-jz-elevated/60 rounded-lg px-1.5 py-1 text-xs text-jz-text-primary max-w-[200px] outline-none">
+ className="bg-jz-surface-2/60 rounded-control px-1.5 py-1 text-meta text-jz-ink max-w-[200px] outline-none">
                 <option value="">选成功任务提炼…</option>
  {tasks.map((t) => <option key={t.id} value={t.id}>#{t.id} {t.app_name || t.package || '审计'}</option>)}
               </select>
               <button onClick={doDistill} disabled={distilling} data-distill-btn
- className="px-2 py-1 rounded bg-vuln-medium/10 text-vuln-medium text-xs hover:bg-vuln-medium/20 disabled:opacity-40">
+ className="px-2 py-1 rounded-control bg-jz-sev-medium/10 text-jz-sev-medium text-meta hover:bg-jz-sev-medium/20 disabled:opacity-40">
                 {distilling ? '蒸馏中…' : '⚗️ 蒸馏'}
               </button>
               <button onClick={() => setImpOpen(!impOpen)} data-skills-import-btn
- className="px-2 py-1 rounded bg-neon-accent/10 text-neon-accent text-xs hover:bg-neon-accent/20"> 导入</button>
+ className="px-2 py-1 rounded-control bg-jz-brand/10 text-jz-brand text-meta hover:bg-jz-brand/20"> 导入</button>
             </div>
           )}
-          {scanMsg && <div className="text-xs text-neon-accent" data-scan-msg>{scanMsg}</div>}
+          {scanMsg && <div className="text-meta text-jz-brand" data-scan-msg>{scanMsg}</div>}
           {impOpen && (
-            <div className="rounded-2xl bg-jz-surface shadow-jz-card p-4 space-y-2" data-import-panel>
-              <div className="text-xs font-semibold text-jz-text-primary">导入技能(二选一)</div>
+            <div className="rounded-panel bg-jz-surface shadow-card p-4 space-y-2" data-import-panel>
+              <div className="text-meta font-semibold text-jz-ink">导入技能(二选一)</div>
               <input value={impPath} onChange={(e) => setImpPath(e.target.value)} placeholder="本地路径(目录含 SKILL.md,或 .zip 文件)"
- className="w-full px-2 py-1.5 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-primary outline-none" />
+ className="w-full px-2 py-1.5 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink outline-none" />
               <input value={impUrl} onChange={(e) => setImpUrl(e.target.value)} placeholder="在线 URL(http(s) 指向 SKILL.md 文本)"
- className="w-full px-2 py-1.5 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-primary outline-none" />
+ className="w-full px-2 py-1.5 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink outline-none" />
               <div className="flex gap-2">
                 <button onClick={doImport} disabled={impBusy} data-import-submit
- className="px-2 py-1 rounded-md bg-neon-accent/15 text-neon-accent text-xs disabled:opacity-40">
+ className="px-2 py-1 rounded-control bg-jz-brand/15 text-jz-brand text-meta disabled:opacity-40">
                   {impBusy ? '导入中…' : '导入'}</button>
-                <button onClick={() => setImpOpen(false)} className="px-2 py-1 rounded-md bg-jz-elevated/60 text-jz-text-muted text-xs">取消</button>
+                <button onClick={() => setImpOpen(false)} className="px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-muted text-meta">取消</button>
               </div>
             </div>
           )}
           {mountTid && (
-            <div className="rounded-2xl bg-jz-surface shadow-jz-card p-3 flex items-center gap-2 flex-wrap" data-mounted-panel>
-              <span className="text-xs text-jz-text-muted">任务 #{mountTid} 已挂载:</span>
-              {mounted.length === 0 && <span className="text-xs text-jz-text-muted">(空——在下方卡片点「挂载」)</span>}
+            <div className="rounded-panel bg-jz-surface shadow-card p-3 flex items-center gap-2 flex-wrap" data-mounted-panel>
+              <span className="text-meta text-jz-muted">任务 #{mountTid} 已挂载:</span>
+              {mounted.length === 0 && <span className="text-meta text-jz-muted">(空——在下方卡片点「挂载」)</span>}
  {mounted.map((m) => (
-                <span key={m.skill_id} className="px-1.5 py-0.5 rounded-md bg-neon-accent/10 text-neon-accent text-xs" data-mounted-chip={m.name}>
+                <span key={m.skill_id} className="px-1.5 py-0.5 rounded-control bg-jz-brand/10 text-jz-brand text-meta" data-mounted-chip={m.name}>
                   {m.name}
                   <button onClick={() => doUnmount(m.skill_id, m.name)} className="ml-1 opacity-70 hover:opacity-100">✕</button>
                 </span>
@@ -517,24 +517,24 @@ export const SkillsPage: React.FC = () => {
           )}
           {/* 全平台升级 Step4①: 新建自定义技能表单(本地层) */}
           {newOpen && (
-            <div className="rounded-2xl bg-jz-surface shadow-jz-card p-4 space-y-2" data-skill-new-form>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="font-semibold text-jz-text-primary">新建自定义技能</span>
-                <span className="px-1.5 py-0.5 rounded-md text-[11px] bg-vuln-medium/10 text-vuln-medium">本地层 · 不参与 AI 自动选技</span>
+            <div className="rounded-panel bg-jz-surface shadow-card p-4 space-y-2" data-skill-new-form>
+              <div className="flex items-center gap-2 text-meta">
+                <span className="font-semibold text-jz-ink">新建自定义技能</span>
+                <span className="px-1.5 py-0.5 rounded-control text-meta bg-jz-sev-medium/10 text-jz-sev-medium">本地层 · 不参与 AI 自动选技</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-[1fr_200px] gap-1.5">
                 <input value={newForm.name} onChange={(e) => setNewForm({ ...newForm, name: e.target.value })} placeholder="技能名称(必填,唯一)" data-skill-new-name
- className="px-2.5 py-1.5 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-primary outline-none focus:ring-2 focus:ring-neon-accent/30" />
+ className="px-2.5 py-1.5 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink outline-none focus:ring-2 focus:ring-jz-brand/30" />
                 <input value={newForm.scene} onChange={(e) => setNewForm({ ...newForm, scene: e.target.value })} placeholder="场景标签" data-skill-new-scene
- className="px-2.5 py-1.5 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-primary outline-none focus:ring-2 focus:ring-neon-accent/30" />
+ className="px-2.5 py-1.5 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink outline-none focus:ring-2 focus:ring-jz-brand/30" />
               </div>
               <textarea value={newForm.description} onChange={(e) => setNewForm({ ...newForm, description: e.target.value })} rows={2}
  placeholder="描述/用途(可选)" data-skill-new-desc
- className="w-full px-2.5 py-1.5 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-primary outline-none focus:ring-2 focus:ring-neon-accent/30 resize-y" />
+ className="w-full px-2.5 py-1.5 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink outline-none focus:ring-2 focus:ring-jz-brand/30 resize-y" />
               <div className="flex items-center gap-2">
                 <button onClick={addLocalSkill} disabled={!newForm.name.trim()} data-skill-new-submit
- className="px-2.5 py-1 rounded-lg bg-neon-accent/15 text-neon-accent text-xs font-semibold hover:bg-neon-accent/25 disabled:opacity-40 disabled:cursor-not-allowed">保存(本地)</button>
-                <button onClick={() => setNewOpen(false)} className="px-2.5 py-1 rounded-lg bg-jz-elevated/60 text-jz-text-muted text-xs hover:bg-jz-elevated">取消</button>
+ className="px-2.5 py-1 rounded-control bg-jz-brand/15 text-jz-brand text-meta font-semibold hover:bg-jz-brand/25 disabled:opacity-40 disabled:cursor-not-allowed">保存(本地)</button>
+                <button onClick={() => setNewOpen(false)} className="px-2.5 py-1 rounded-control bg-jz-surface-2/60 text-jz-muted text-meta hover:bg-jz-surface-2">取消</button>
               </div>
             </div>
  )}
@@ -543,9 +543,9 @@ export const SkillsPage: React.FC = () => {
             <div className="flex items-center gap-1.5 flex-wrap" data-scene-tabs>
  {['全部', ...cats.map(([k]) => k)].map((k) => (
                 <button key={k} onClick={() => setTab(k)} data-scene-tab={k}
- className={`px-2.5 py-1 rounded-full text-xs transition-colors ${tab === k
- ? 'bg-neon-accent/10 text-neon-accent font-semibold'
- : 'bg-jz-elevated/50 text-jz-text-muted hover:text-jz-text-secondary'}`}>
+ className={`px-2.5 py-1 rounded-pill text-meta transition-colors ${tab === k
+ ? 'bg-jz-brand/10 text-jz-brand font-semibold'
+ : 'bg-jz-surface-2/50 text-jz-muted hover:text-jz-ink-2'}`}>
                   {k}
                   {/* R117-7③: 计数口径注(列表真算,含草案) */}
                   <span className="ml-1 tnum font-mono opacity-70"
@@ -574,10 +574,10 @@ export const SkillsPage: React.FC = () => {
  onCreate={() => setNewOpen(true)} createLabel="新建自定义技能"
  pager={{ total, page: safePage, pageSize, onPage: setPage, onPageSize: setPageSize }}
  />
-          {err && <div className="text-xs text-vuln-critical p-3">加载失败: {err}</div>}
+          {err && <div className="text-meta text-jz-sev-critical p-3">加载失败: {err}</div>}
           {!rows && !err && <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-16" />)}</div>}
           {rows && rows.length === 0 && (
-            <div className="rounded-2xl bg-jz-surface shadow-jz-card" data-skills-empty>
+            <div className="rounded-panel bg-jz-surface shadow-card" data-skills-empty>
               {/* R117-7④: 空库态接入封版 EmptyStatePlaceholder+快捷扫描动作 */}
               <EmptyStatePlaceholder
                 icon={FolderOpen}
@@ -585,7 +585,7 @@ export const SkillsPage: React.FC = () => {
                 subtitle="技能库为空——收编 ~/.claude/skills、项目 rules/ 与 pentest 模块存量后此处呈现。"
                 action={
                   <button onClick={rescan} data-skills-empty-rescan
- className="px-3 py-1.5 rounded-full bg-neon-accent/15 text-neon-accent text-xs font-medium hover:bg-neon-accent/25 transition-colors">
+ className="px-3 py-1.5 rounded-pill bg-jz-brand/15 text-jz-brand text-meta font-medium hover:bg-jz-brand/25 transition-colors">
                     重新扫描(幂等)
                   </button>
  }
@@ -593,7 +593,7 @@ export const SkillsPage: React.FC = () => {
             </div>
  )}
  {rows && rows.length > 0 && shown.length === 0 && (
-            <div className="rounded-2xl bg-jz-surface shadow-jz-card" data-skills-tab-empty>
+            <div className="rounded-panel bg-jz-surface shadow-card" data-skills-tab-empty>
               {/* R117-7④: 分类过滤无匹配空态+一键清筛选(方案7.4 功能等价: 本页无关键词搜索框,过滤维度=场景分类) */}
               <EmptyStatePlaceholder
                 icon={Braces}
@@ -601,7 +601,7 @@ export const SkillsPage: React.FC = () => {
                 subtitle="该分类下暂无技能(计数随列表实时真算),可切回全量查看。"
                 action={
                   <button onClick={() => { setTab('全部'); setQ(''); }} data-skills-reset-tab
- className="px-3 py-1.5 rounded-full bg-jz-elevated/60 text-jz-text-secondary text-xs hover:text-neon-accent transition-colors">
+ className="px-3 py-1.5 rounded-pill bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:text-jz-brand transition-colors">
                     清空筛选
                   </button>
  }
@@ -611,7 +611,7 @@ export const SkillsPage: React.FC = () => {
           {/* 已入库技能网格(md 2 列 / xl 3 列;卡片大字+色彩分层+路径精简见 SkillCard) */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" data-skill-grid>
  {shown.length === 0 && (allRows).length > 0 && (
-              <div className="col-span-full rounded-2xl bg-jz-elevated p-4 text-center text-xs text-jz-text-muted" data-skill-search-empty>
+              <div className="col-span-full rounded-panel bg-jz-surface-2 p-4 text-center text-meta text-jz-muted" data-skill-search-empty>
                 {q ? `无匹配「${q}」的技能(当前 Tab ${tab} 下 ${allRows.length} 条)` : `Tab「${tab}」下暂无条目`}
               </div>
  )}
@@ -630,51 +630,51 @@ export const SkillsPage: React.FC = () => {
           </div>
           {/* R195(V3 图谱化第2步): 知识图谱查询面板(admin)——壳↔漏洞↔来源 跨维关联人工研判(置于库尾,不占首屏) */}
           {isAdmin && (
-            <div className="rounded-2xl bg-jz-surface shadow-jz-card p-3" data-kb-graph>
+            <div className="rounded-panel bg-jz-surface shadow-card p-3" data-kb-graph>
               <div className="flex items-center gap-2">
-                <GraduationCap className="w-3.5 h-3.5 text-neon-accent" />
-                <span className="text-xs font-semibold text-jz-text-secondary">知识图谱</span>
+                <GraduationCap className="w-3.5 h-3.5 text-jz-brand" />
+                <span className="text-meta font-semibold text-jz-ink-2">知识图谱</span>
                 <input value={gq} onChange={(e) => setGq(e.target.value)}
  onKeyDown={(e) => e.key === 'Enter' && loadGraph()}
  placeholder="关键词(ijiami/未授权/65536…)"
- className="px-2.5 py-1 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-primary w-56 outline-none focus:ring-2 focus:ring-neon-accent/30" />
+ className="px-2.5 py-1 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink w-56 outline-none focus:ring-2 focus:ring-jz-brand/30" />
                 <button onClick={loadGraph} disabled={gBusy} data-kb-graph-query
- className="px-2 py-1 rounded bg-neon-accent/10 text-neon-accent text-xs hover:bg-neon-accent/20 disabled:opacity-40">
+ className="px-2 py-1 rounded-control bg-jz-brand/10 text-jz-brand text-meta hover:bg-jz-brand/20 disabled:opacity-40">
                   {gBusy ? '查询中…' : '查关联'}
                 </button>
                 {graph && (
-                  <span className="text-xs text-jz-text-muted font-mono"
+                  <span className="text-meta text-jz-muted font-mono"
  title="R183 /api/kb/relations 现算轻图谱">{graph.nodes?.length || 0} 节点 / {graph.edges?.length || 0} 边</span>
                 )}
               </div>
  {graph && (graph.nodes?.length > 0) && (
-                <div className="mt-2 rounded-xl bg-jz-elevated overflow-hidden" data-kb-graph-box>
+                <div className="mt-2 rounded-card bg-jz-surface-2 overflow-hidden" data-kb-graph-box>
                   <KbGraph graph={graph} />
                 </div>
  )}
  {graph && (graph.nodes?.length > 0) && (
-                <div className="mt-1.5 grid grid-cols-3 gap-2 text-xs">
+                <div className="mt-1.5 grid grid-cols-3 gap-2 text-meta">
                   <div>
-                    <div className="text-jz-text-muted mb-0.5">壳关联</div>
+                    <div className="text-jz-muted mb-0.5">壳关联</div>
  {(graph.nodes || []).filter((n: any) => n.type === 'packer').map((n: any) => (
-                      <div key={n.id} className="font-mono text-jz-text-secondary">{n.id}</div>))}
+                      <div key={n.id} className="font-mono text-jz-ink-2">{n.id}</div>))}
                   </div>
                   <div>
-                    <div className="text-jz-text-muted mb-0.5">漏洞型</div>
+                    <div className="text-jz-muted mb-0.5">漏洞型</div>
  {(graph.nodes || []).filter((n: any) => n.type === 'vuln').map((n: any) => (
-                      <div key={n.id} className="font-mono text-vuln-medium">{n.id}</div>))}
- {!(graph.nodes || []).some((n: any) => n.type === 'vuln') && <span className="text-jz-text-muted">—</span>}
+                      <div key={n.id} className="font-mono text-jz-sev-medium">{n.id}</div>))}
+ {!(graph.nodes || []).some((n: any) => n.type === 'vuln') && <span className="text-jz-muted">—</span>}
                   </div>
                   <div>
-                    <div className="text-jz-text-muted mb-0.5">强边(×≥2)</div>
+                    <div className="text-jz-muted mb-0.5">强边(×≥2)</div>
  {(graph.edges || []).filter((e: any) => (e.count || 0) >= 2).slice(0, 5).map((e: any, i: number) => (
-                      <div key={i} className="font-mono text-jz-text-secondary truncate" title={`${e.a} → ${e.b} (${e.rel})`}>
+                      <div key={i} className="font-mono text-jz-ink-2 truncate" title={`${e.a} → ${e.b} (${e.rel})`}>
                         {e.a.replace(/^(src|item):/, '')}→{e.b.replace(/^(src|item|packer|vuln|task):/, '')} ×{e.count}</div>))}
                   </div>
                 </div>
               )}
               {graph && (graph.nodes?.length === 0) && (
-                <div className="mt-1 text-xs text-jz-text-muted">无命中(诚实空态)</div>)}
+                <div className="mt-1 text-meta text-jz-muted">无命中(诚实空态)</div>)}
             </div>
           )}
         </div>
@@ -682,20 +682,20 @@ export const SkillsPage: React.FC = () => {
 
       {/* ② 候选审核台(工作台 Tab2,admin): 结构化宽幅卡 2 列(治文字墙);审核端点/探针零回退 */}
       {isAdmin && effectiveWb === 'review' && cands && (
-        <div className="rounded-2xl bg-jz-surface shadow-jz-card p-4 space-y-3" data-kb-candidates-group>
+        <div className="rounded-panel bg-jz-surface shadow-card p-4 space-y-3" data-kb-candidates-group>
           <div className="flex items-center gap-2 flex-wrap">
-            <GraduationCap className="w-3.5 h-3.5 text-neon-accent" />
-            <span className="text-sm font-semibold text-jz-text-primary">待审核候选(自学习)</span>
+            <GraduationCap className="w-3.5 h-3.5 text-jz-brand" />
+            <span className="text-body font-semibold text-jz-ink">待审核候选(自学习)</span>
             <Badge level={pendingCands.length ? 'medium' : 'safe'}>待审 {pendingCands.length}</Badge>
             <Badge level="safe">已通过 {decidedCounts.approved}</Badge>
             <Badge level="info">已拒绝 {decidedCounts.rejected}</Badge>
-            <span className="text-xs text-jz-text-muted">post_mortem 复盘产出 · 零自动转正 · 通过写入知识库 / 拒绝留档</span>
+            <span className="text-meta text-jz-muted">post_mortem 复盘产出 · 零自动转正 · 通过写入知识库 / 拒绝留档</span>
             <span className="flex-1" />
  {(() => {
  const pre = pendingCands.filter((c) => (c.note || '').startsWith('[预审]'));
  const adoptN = pre.filter((c) => (c.note || '').includes('[预审] adopt')).length;
               return <>
-                <span className="text-xs font-mono text-jz-text-muted" data-kb-pre-count>
+                <span className="text-meta font-mono text-jz-muted" data-kb-pre-count>
                   预审 {pre.length}(建议通过 {adoptN}/拒绝 {pre.length - adoptN})
                 </span>
                 <button
@@ -712,7 +712,7 @@ export const SkillsPage: React.FC = () => {
  disabled={prerevBusy}
  data-kb-prereview-btn
  title="LLM 批量预审 pending 候选(建议写 note,不替 admin 决定)"
- className="px-1.5 py-0.5 rounded bg-neon-accent/10 text-neon-accent text-xs hover:bg-neon-accent/20 disabled:opacity-40">
+ className="px-1.5 py-0.5 rounded-control bg-jz-brand/10 text-jz-brand text-meta hover:bg-jz-brand/20 disabled:opacity-40">
                   {prerevBusy ? '预审中…' : ' LLM 预审'}
                 </button>
               </>;
@@ -730,9 +730,9 @@ export const SkillsPage: React.FC = () => {
               <div className="flex items-center gap-1 flex-wrap" data-kb-pre-filter>
  {kinds.map(([k, label]) => (
                   <button key={k} onClick={() => setPreFilter(k)} data-kb-pre-filter-btn={k}
- className={`px-1.5 py-0.5 rounded-md text-xs transition-colors ${preFilter === k
- ? 'bg-neon-accent/10 text-neon-accent font-semibold'
- : 'bg-jz-elevated/50 text-jz-text-muted hover:bg-jz-elevated'}`}>
+ className={`px-1.5 py-0.5 rounded-control text-meta transition-colors ${preFilter === k
+ ? 'bg-jz-brand/10 text-jz-brand font-semibold'
+ : 'bg-jz-surface-2/50 text-jz-muted hover:bg-jz-surface-2'}`}>
                     {label} <span className="tnum">{cnt(k)}</span>
                   </button>
                 ))}
@@ -741,7 +741,7 @@ export const SkillsPage: React.FC = () => {
  })()}
  {selCands.size > 0 && (
             <div className="flex items-center gap-1.5" data-kb-bulk-bar>
-              <span className="text-xs font-mono text-jz-text-muted">已选 <span className="tnum">{selCands.size}</span> 条</span>
+              <span className="text-meta font-mono text-jz-muted">已选 <span className="tnum">{selCands.size}</span> 条</span>
               <button
  onClick={async () => {
                   if (!confirm(`批量通过 ${selCands.size} 条候选写入正式知识库?(每条均由你勾选,零自动)`)) return;
@@ -757,7 +757,7 @@ export const SkillsPage: React.FC = () => {
  setBulkBusy(false);
  }}
  disabled={bulkBusy} data-kb-bulk-approve
- className="px-1.5 py-0.5 rounded bg-vuln-safe/10 text-vuln-safe text-xs hover:bg-vuln-safe/20 disabled:opacity-40">
+ className="px-1.5 py-0.5 rounded-control bg-jz-teal/10 text-jz-teal text-meta hover:bg-jz-teal/20 disabled:opacity-40">
                 ✓ 批量通过选中
               </button>
               <button
@@ -775,15 +775,15 @@ export const SkillsPage: React.FC = () => {
  finally { setBulkBusy(false); }
  }}
  disabled={bulkBusy} data-kb-bulk-reject
- className="px-1.5 py-0.5 rounded bg-vuln-critical/10 text-vuln-critical text-xs hover:bg-vuln-critical/20 disabled:opacity-40">
+ className="px-1.5 py-0.5 rounded-control bg-jz-sev-critical/10 text-jz-sev-critical text-meta hover:bg-jz-sev-critical/20 disabled:opacity-40">
                 ✕ 批量拒绝选中
               </button>
               <button onClick={() => setSelCands(new Set())} data-kb-bulk-clear
- className="px-1.5 py-0.5 rounded-md bg-jz-elevated/60 text-jz-text-muted text-xs hover:bg-jz-elevated">清空选择</button>
+ className="px-1.5 py-0.5 rounded-control bg-jz-surface-2/60 text-jz-muted text-meta hover:bg-jz-surface-2">清空选择</button>
             </div>
           )}
           {pendingCands.length === 0 && (
-            <div className="text-xs text-jz-text-muted" data-kb-candidates-empty>暂无待审核候选(pentest 会话跑 post_mortem 复盘后在此人工审核)</div>
+            <div className="text-meta text-jz-muted" data-kb-candidates-empty>暂无待审核候选(pentest 会话跑 post_mortem 复盘后在此人工审核)</div>
           )}
           {/* 结构化宽幅卡 2 列(治文字墙): 解析/渲染见 CandidateCard(卡高均匀 360px) */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6" data-kb-cand-grid>
@@ -801,7 +801,7 @@ export const SkillsPage: React.FC = () => {
  />
  ))}
  {pendingCands.length > 0 && filteredCands.length === 0 && (
-              <div className="col-span-full text-xs text-jz-text-muted py-6 text-center" data-kb-pre-filter-empty>
+              <div className="col-span-full text-meta text-jz-muted py-6 text-center" data-kb-pre-filter-empty>
                 当前预审过滤下无候选(切回「全部」查看 {pendingCands.length} 条)
               </div>
             )}
@@ -829,42 +829,42 @@ export const SkillsPage: React.FC = () => {
  title={srcFor ? `技能详情 · ${srcFor.name}` : ''} onClose={() => setSrcFor(null)}>
         {srcFor && (
           <>
-            <div className="space-y-1 text-xs">
-              <div className="flex gap-2"><span className="text-jz-text-muted w-16 shrink-0">场景</span>
-                <span className="text-jz-text-secondary font-mono break-all">{srcFor.scene || '—'}</span></div>
-              <div className="flex gap-2"><span className="text-jz-text-muted w-16 shrink-0">状态</span>
-                <span className="text-jz-text-secondary">
+            <div className="space-y-1 text-meta">
+              <div className="flex gap-2"><span className="text-jz-muted w-16 shrink-0">场景</span>
+                <span className="text-jz-ink-2 font-mono break-all">{srcFor.scene || '—'}</span></div>
+              <div className="flex gap-2"><span className="text-jz-muted w-16 shrink-0">状态</span>
+                <span className="text-jz-ink-2">
  {srcFor.status === 'draft' ? 'draft(蒸馏草案,复核后可转正)' : srcFor.status === 'disabled' ? 'disabled(停用,AI 不选)' : 'active(在册,AI 可自动选技)'}
  {(srcFor.uses || 0) > 0 ? ` · 实战 ${srcFor.uses} 次 · 胜 ${srcFor.wins}` : ''}
                 </span></div>
-              <div className="flex gap-2"><span className="text-jz-text-muted w-16 shrink-0">说明</span>
-                <span className="text-jz-text-secondary break-words">{srcFor.description || '—'}</span></div>
-              <div className="flex gap-2"><span className="text-jz-text-muted w-16 shrink-0">注册路径</span>
-                <span className="text-jz-text-secondary font-mono break-all">{srcFor.source_path}</span></div>
+              <div className="flex gap-2"><span className="text-jz-muted w-16 shrink-0">说明</span>
+                <span className="text-jz-ink-2 break-words">{srcFor.description || '—'}</span></div>
+              <div className="flex gap-2"><span className="text-jz-muted w-16 shrink-0">注册路径</span>
+                <span className="text-jz-ink-2 font-mono break-all">{srcFor.source_path}</span></div>
             </div>
             {srcErr && (
-              <div className="rounded-lg bg-vuln-medium/10 p-2 text-xs text-vuln-medium" data-source-error>
+              <div className="rounded-control bg-jz-sev-medium/10 p-2 text-meta text-jz-sev-medium" data-source-error>
                 源码不可读: {srcErr}(端点如实回告,不展示占位内容)
               </div>
             )}
             {!srcData && !srcErr && <Skeleton className="h-40" />}
             {srcData && (
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-xs text-jz-text-muted">
+                <div className="flex items-center gap-2 text-meta text-jz-muted">
                   <span>源文件 <span className="font-mono break-all">{srcData.file}</span>
                     <span className="tnum"> · {srcData.bytes} 字节</span>
-                    {srcData.truncated && <span className="text-vuln-medium"> · 超 256KB 已截断</span>}</span>
+                    {srcData.truncated && <span className="text-jz-sev-medium"> · 超 256KB 已截断</span>}</span>
                   <span className="flex-1" />
                   {/* R117-7②: 一键复制源码(Copy→Check 回弹) */}
                   <button onClick={copySource} data-source-copy
  title="复制源码全文到剪贴板"
- className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-jz-elevated/60 text-jz-text-secondary hover:text-neon-accent transition-colors">
-                    {srcCopied ? <Check className="w-3 h-3 text-vuln-safe" /> : <Copy className="w-3 h-3" />}
+ className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 hover:text-jz-brand transition-colors">
+                    {srcCopied ? <Check className="w-3 h-3 text-jz-teal" /> : <Copy className="w-3 h-3" />}
                     {srcCopied ? '已复制' : '复制'}
                   </button>
                 </div>
                 <pre data-source-pre
- className="text-xs leading-4 font-mono text-jz-text-secondary bg-jz-elevated rounded-lg p-2 overflow-auto max-h-[calc(100vh-320px)] whitespace-pre">
+ className="text-meta leading-4 font-mono text-jz-ink-2 bg-jz-surface-2 rounded-control p-2 overflow-auto max-h-[calc(100vh-320px)] whitespace-pre">
                   <code>{renderSourceCode(srcData.content)}</code>
                 </pre>
               </div>

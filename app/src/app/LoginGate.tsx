@@ -17,26 +17,26 @@ export const LoginGate: React.FC = () => {
     <div className="h-full grid place-items-center relative overflow-hidden">
       {/* 品牌氛围光: 中央 accent 径向弥散(与 v3-card-ai 氛围光同语言,纯装饰 aria-hidden) */}
       <div aria-hidden className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(640px 420px at 50% 38%, rgb(var(--c-accent-cyan) / 0.07), transparent 70%)' }} />
-      <div className="relative w-96 space-y-5 rounded-3xl bg-jz-surface p-8 shadow-jz-card">
+        style={{ background: 'radial-gradient(640px 420px at 50% 38%, rgb(var(--jz-brand) / 0.07), transparent 70%)' }} />
+      <div className="relative w-96 space-y-5 rounded-dialog bg-jz-surface p-8 shadow-card">
         {/* 惊蛰品牌锁定: 主图标(惊雷劈壳+虫眼) + 中英文名,资产走 /v2/brand 显式挂载路径 */}
         <div className="flex items-center gap-3">
-          <img src="/v2/brand/icon.svg" alt="惊蛰" className="w-11 h-11 rounded-2xl" />
+          <img src="/v2/brand/icon.svg" alt="惊蛰" className="w-11 h-11 rounded-panel" />
           <div className="leading-tight">
-            <div className="text-base font-bold text-jz-text-primary" style={{ letterSpacing: '0.18em' }}>
-              惊蛰 <span className="text-[11px] font-semibold text-neon-accent align-middle" style={{ letterSpacing: '0.28em' }}>JINGZHE</span>
+            <div className="font-display text-section font-semibold text-jz-ink">
+              惊蛰 <span className="font-mono text-meta font-medium text-jz-muted align-middle">JINGZHE</span>
             </div>
-            <div className="text-[11px] text-jz-text-muted mt-0.5">APK 自动化 AI 安全测试平台</div>
+            <div className="text-meta text-jz-muted mt-0.5">APK 自动化 AI 安全测试平台</div>
           </div>
         </div>
         <input value={u} onChange={(e) => setU(e.target.value)} placeholder="用户名"
-          className="w-full px-3 py-2 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-primary focus:ring-2 focus:ring-neon-accent/40 outline-none" />
+          className="w-full px-3 py-2 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink focus:ring-2 focus:ring-jz-brand/40 outline-none" />
         <input value={p} onChange={(e) => setP(e.target.value)} type="password" placeholder="密码"
           onKeyDown={(e) => e.key === 'Enter' && submit()}
-          className="w-full px-3 py-2 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-primary focus:ring-2 focus:ring-neon-accent/40 outline-none" />
-        {err && <div className="text-[11px] text-vuln-critical">{err}</div>}
+          className="w-full px-3 py-2 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink focus:ring-2 focus:ring-jz-brand/40 outline-none" />
+        {err && <div className="text-meta text-jz-sev-critical">{err}</div>}
         <Button className="w-full justify-center" disabled={busy} onClick={submit}>{busy ? '登录中…' : '登录'}</Button>
-        <div className="text-[11px] leading-relaxed text-jz-text-muted">
+        <div className="text-meta leading-relaxed text-jz-muted">
           登录态存于浏览器 localStorage(有效期 24h),刷新页面自动经 /api/me 校验免登;
           127.0.0.1 与 localhost 属不同源,各需分别登录。
         </div>

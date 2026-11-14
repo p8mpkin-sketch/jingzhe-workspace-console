@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 /**
  * R104-1 ④: 现代对话框基底(V3 三铁律③「禁纯白方框弹窗」的标准载体)。
  * ESC 退出 / 遮罩平滑淡入 + 入场放大动效(modal-overlay-in / modal-panel-in, styles/index.css)
- * / 标准投影(shadow-jz-card token, 双模变量承载)/ 面色=jz-surface token(非纯白方框)。
+ * / 标准投影(shadow-card token, 双模变量承载)/ 面色=jz-surface token(非纯白方框)。
  * focus trap 基础可达性: 开启时聚焦面板内首个可聚焦元素(缺省面板本身), Tab 循环锁定在
  * 对话框内; role=dialog + aria-modal + aria-label。
  */
@@ -49,7 +49,7 @@ export const UnifiedModal: React.FC<{
   if (!open) return null;
   return (
     <div
- className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 modal-overlay-in p-4"
+ className="fixed inset-0 z-50 flex items-center justify-center bg-jz-scrim/60 modal-overlay-in p-4"
  onMouseDown={onClose}
  data-unified-modal
  >
@@ -61,16 +61,16 @@ export const UnifiedModal: React.FC<{
  tabIndex={-1}
  onMouseDown={(e) => e.stopPropagation()}
  className={`${widthClass} max-w-[92vw] max-h-[86vh] overflow-auto bg-jz-surface border border-jz-border
- rounded-xl shadow-jz-card modal-panel-in outline-none p-4 space-y-3`}
+ rounded-card shadow-card modal-panel-in outline-none p-4 space-y-3`}
  >
         <div className="flex items-center justify-between gap-2">
-          {title && <h3 className="text-sm font-semibold text-jz-text-primary truncate">{title}</h3>}
+          {title && <h3 className="text-body font-semibold text-jz-ink truncate">{title}</h3>}
           <button
  type="button"
  data-modal-close
  onClick={onClose}
  aria-label="关闭"
- className={`p-1 rounded-md hover:bg-jz-elevated text-jz-text-muted transition-colors ${title ? '' : 'ml-auto'}`}
+ className={`p-1 rounded-control hover:bg-jz-surface-2 text-jz-muted transition-colors ${title ? '' : 'ml-auto'}`}
  >
             <X className="w-4 h-4" />
           </button>

@@ -103,17 +103,17 @@ export const ModelConsole: React.FC = () => {
 
   return (
     <div className="space-y-4 relative">
-      {toast && <div data-toast className="fixed top-14 right-6 z-50 px-3 py-1.5 rounded bg-vuln-safe/15 border border-vuln-safe/40 text-vuln-safe text-xs">{toast}</div>}
+      {toast && <div data-toast className="fixed top-14 right-6 z-50 px-3 py-1.5 rounded-control bg-jz-teal/15 border border-jz-teal/40 text-jz-teal text-meta">{toast}</div>}
 
       {/* 分流规则 */}
-      <section className="rounded-2xl bg-jz-surface shadow-jz-card p-4">
-        <div className="text-xs font-semibold text-jz-text-primary mb-2">模型分流规则 <span className="text-jz-text-muted font-normal">主模型 429/超限时自动降级至兜底并在时间线标记回退</span></div>
+      <section className="rounded-panel bg-jz-surface shadow-card p-4">
+        <div className="text-meta font-semibold text-jz-ink mb-2">模型分流规则 <span className="text-jz-muted font-normal">主模型 429/超限时自动降级至兜底并在时间线标记回退</span></div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
           {[['inference', '推理任务(逆向/因果)'], ['cleaning', '清洗任务(流量/日志)'], ['report', '报告生成'], ['fallback', '兜底模型']].map(([k, label]) => (
-            <label key={k} className="text-xs text-jz-text-muted space-y-1 block">
+            <label key={k} className="text-meta text-jz-muted space-y-1 block">
               {label}
               <select value={(routing as any)?.[k] || ''} onChange={(e) => saveRouting(k, e.target.value)}
-                className="w-full bg-jz-elevated border border-transparent rounded px-2 py-1.5 text-xs text-jz-text-primary">
+                className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink">
                 <option value="">未配置</option>
                 {ps.map((p) => <option key={p.id} value={p.id}>{p.label || p.vendor} · {p.model}</option>)}
               </select>
@@ -124,37 +124,37 @@ export const ModelConsole: React.FC = () => {
 
       {/* 供应商卡片 */}
       <section>
-        <div className="text-xs font-semibold text-jz-text-primary mb-2">供应商({ps.length})</div>
-        {ps.length === 0 && <div className="text-xs text-jz-text-muted p-3 rounded-lg border border-dashed border-jz-border/60 bg-jz-elevated">尚未配置供应商——点下方卡片开始</div>}
+        <div className="text-meta font-semibold text-jz-ink mb-2">供应商({ps.length})</div>
+        {ps.length === 0 && <div className="text-meta text-jz-muted p-3 rounded-control border border-dashed border-jz-border/60 bg-jz-surface-2">尚未配置供应商——点下方卡片开始</div>}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
           {ps.map((p) => {
             const pr = probes[p.id];
             return (
               <div key={p.id} data-provider-card={p.id}
-                className={`rounded-xl p-3 bg-jz-surface shadow-jz-card space-y-2 ring-1 ${data.active_id === p.id ? 'ring-neon-accent/60' : 'ring-transparent hover:ring-jz-border'}`}>
+                className={`rounded-card p-3 bg-jz-surface shadow-card space-y-2 ring-1 ${data.active_id === p.id ? 'ring-jz-brand/60' : 'ring-transparent hover:ring-jz-border'}`}>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-jz-text-primary">{p.label || p.vendor}</span>
+                  <span className="text-meta font-semibold text-jz-ink">{p.label || p.vendor}</span>
                   {data.active_id === p.id && <Badge level="safe">主力</Badge>}
                   {p.enabled === false && <Badge level="medium">已停用</Badge>}
-                  <span className="ml-auto text-xs font-mono text-jz-text-muted">并发 {p.concurrency ?? 2}</span>
+                  <span className="ml-auto text-meta font-mono text-jz-muted">并发 {p.concurrency ?? 2}</span>
                 </div>
-                <div className="text-xs font-mono text-jz-text-muted truncate">{p.base_url} · {p.model}</div>
-                <div className="text-[11px] text-jz-text-muted">推理等级: <span className="text-jz-text-secondary">{p.reasoning || 'balanced'}</span></div>
-                <div className="text-xs font-mono text-jz-text-muted">key: {p.key_masked || '未配置'}</div>
+                <div className="text-meta font-mono text-jz-muted truncate">{p.base_url} · {p.model}</div>
+                <div className="text-meta text-jz-muted">推理等级: <span className="text-jz-ink-2">{p.reasoning || 'balanced'}</span></div>
+                <div className="text-meta font-mono text-jz-muted">key: {p.key_masked || '未配置'}</div>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => setDrawer({ mode: 'edit', provider: p })}>配置</Button>
-                  <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => runProbe(p.id)}>
+                  <Button variant="ghost" className="px-2 py-1 text-meta" onClick={() => setDrawer({ mode: 'edit', provider: p })}>配置</Button>
+                  <Button variant="ghost" className="px-2 py-1 text-meta" onClick={() => runProbe(p.id)}>
                     {probing === p.id
                       ? <span data-probe-busy className="inline-flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full border border-current border-t-transparent animate-spin inline-block" />探测中…
+                          <span className="w-2.5 h-2.5 rounded-pill border border-current border-t-transparent animate-spin inline-block" />探测中…
                         </span>
                       : '连通性探针'}
                   </Button>
-                  {data.active_id !== p.id && <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => activate(p.id)}>设为主力</Button>}
-                  <Button variant="ghost" className="px-2 py-1 text-xs text-vuln-critical" onClick={() => remove(p.id)}>删除</Button>
+                  {data.active_id !== p.id && <Button variant="ghost" className="px-2 py-1 text-meta" onClick={() => activate(p.id)}>设为主力</Button>}
+                  <Button variant="ghost" className="px-2 py-1 text-meta text-jz-sev-critical" onClick={() => remove(p.id)}>删除</Button>
                 </div>
                   {pr && (
-                  <div data-probe-result className={`rounded border p-2 text-xs font-mono space-y-0.5 ${pr.error_class === 'OK' ? 'border-vuln-safe/40 bg-vuln-safe/10 text-vuln-safe' : 'border-vuln-critical/40 bg-vuln-critical/10 text-vuln-critical'}`}>
+                  <div data-probe-result className={`rounded-control border p-2 text-meta font-mono space-y-0.5 ${pr.error_class === 'OK' ? 'border-jz-teal/40 bg-jz-teal/10 text-jz-teal' : 'border-jz-sev-critical/40 bg-jz-sev-critical/10 text-jz-sev-critical'}`}>
                     <div>
                       分类: {pr.error_class || '—'}
                       {(() => { const ms = (pr.stages || []).reduce((n: number, s: ProbeStage) => n + (s.rtt_ms || 0), 0); return ms ? ` · 总时延 ${ms}ms` : ''; })()}
@@ -163,8 +163,8 @@ export const ModelConsole: React.FC = () => {
                     {(pr.stages || []).map((s, i) => (
                       <div key={i}>{s.ok ? '✓' : '✗'} {s.stage}{s.rtt_ms != null ? ` · ${s.rtt_ms}ms` : ''}{s.http ? ` · HTTP ${s.http}` : ''}{s.tokens ? ` · ${s.tokens} tokens` : ''}{s.error ? ` · ${s.error}` : ''}</div>
                     ))}
-                    {pr.error_class === 'AUTH_ERROR' && <div className="text-jz-text-muted">API Key 无效/过期——到供应商控制台重新签发后更新</div>}
-                    {pr.error_class === 'NETWORK' && <div className="text-jz-text-muted">网络不可达——检查代理/DNS 配置</div>}
+                    {pr.error_class === 'AUTH_ERROR' && <div className="text-jz-muted">API Key 无效/过期——到供应商控制台重新签发后更新</div>}
+                    {pr.error_class === 'NETWORK' && <div className="text-jz-muted">网络不可达——检查代理/DNS 配置</div>}
                   </div>
                 )}
               </div>
@@ -175,13 +175,13 @@ export const ModelConsole: React.FC = () => {
 
       {/* 新增入口 */}
       <section>
-        <div className="text-xs font-semibold text-jz-text-primary mb-2">添加供应商</div>
+        <div className="text-meta font-semibold text-jz-ink mb-2">添加供应商</div>
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-2">
           {VENDORS.map((v) => (
             <button key={v.key} onClick={() => setDrawer({ mode: 'add', vendor: v.key })}
-              className="rounded-xl bg-jz-elevated p-3 text-left hover:bg-jz-elevated/70 hover:ring-1 hover:ring-neon-accent/50 transition-all">
-              <div className="text-xs font-semibold text-jz-text-primary">{v.label}</div>
-              <div className="text-xs text-jz-text-muted truncate">{v.hint}</div>
+              className="rounded-card bg-jz-surface-2 p-3 text-left hover:bg-jz-surface-2/70 hover:ring-1 hover:ring-jz-brand/50 transition-all">
+              <div className="text-meta font-semibold text-jz-ink">{v.label}</div>
+              <div className="text-meta text-jz-muted truncate">{v.hint}</div>
             </button>
           ))}
         </div>
@@ -232,50 +232,50 @@ function ConfigDrawer({ drawer, onClose, onSaved }: {
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={onClose} data-config-drawer>
-      <div className="w-[380px] h-full bg-jz-surface shadow-jz-card p-4 space-y-3 overflow-auto" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-40 flex justify-end bg-jz-scrim/40" onClick={onClose} data-config-drawer>
+      <div className="w-[380px] h-full bg-jz-surface shadow-card p-4 space-y-3 overflow-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-jz-text-primary">{isEdit ? '编辑供应商' : '新增供应商'}</span>
-          <button onClick={onClose} className="text-jz-text-muted hover:text-jz-text-primary text-xs">关闭</button>
+          <span className="text-body font-semibold text-jz-ink">{isEdit ? '编辑供应商' : '新增供应商'}</span>
+          <button onClick={onClose} className="text-jz-muted hover:text-jz-ink text-meta">关闭</button>
         </div>
-        <label className="block text-xs text-jz-text-muted space-y-1">显示名
+        <label className="block text-meta text-jz-muted space-y-1">显示名
           <input value={label} onChange={(e) => setLabel(e.target.value)}
-            className="w-full bg-jz-elevated border border-transparent rounded px-2 py-1.5 text-xs text-jz-text-primary" /></label>
-        <label className="block text-xs text-jz-text-muted space-y-1">Base URL
+            className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink" /></label>
+        <label className="block text-meta text-jz-muted space-y-1">Base URL
           <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://..."
-            className="w-full bg-jz-elevated border border-transparent rounded px-2 py-1.5 text-xs text-jz-text-primary font-mono" /></label>
-        <label className="block text-xs text-jz-text-muted space-y-1">
+            className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink font-mono" /></label>
+        <label className="block text-meta text-jz-muted space-y-1">
           API Key {isEdit && p?.key_masked ? <span className="font-mono">(当前 {p.key_masked})</span> : ''}
           <div className="relative">
             <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={isEdit && p?.has_key ? '留空保留旧 key' : 'sk-...'}
               autoComplete="off"
-              className="w-full bg-jz-elevated border border-transparent rounded px-2 py-1.5 pr-9 text-xs text-jz-text-primary font-mono" />
+              className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 pr-9 text-meta text-jz-ink font-mono" />
             {/* R117-9②: 纯 SVG 眼睛切换(默认 password 掩码;明文仅点按期间呈现) */}
             <button type="button" onClick={() => setShowKey(!showKey)} data-key-toggle
               title={showKey ? '隐藏 API Key(回到密文)' : '显示 API Key 明文(投屏时请保持隐藏)'}
               aria-label={showKey ? '隐藏 API Key' : '显示 API Key'}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-jz-text-muted hover:text-neon-accent transition-colors">
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-jz-muted hover:text-jz-brand transition-colors">
               {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           </div>
         </label>
-        <label className="block text-xs text-jz-text-muted space-y-1">模型
+        <label className="block text-meta text-jz-muted space-y-1">模型
           <select
             value={[...modelPresets, ...remoteModels].some(m => m.value === model) ? model : '__custom'}
             onChange={(e) => {
               const v = e.target.value;
               if (v !== '__custom') setModel(v);
             }}
-            className="w-full bg-jz-elevated border border-transparent rounded px-2 py-1.5 text-xs text-jz-text-primary">
+            className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink">
             <option value="__custom">自定义模型…</option>
             {[...modelPresets, ...remoteModels].map(m => <option key={m.value} value={m.value}>{m.label}{m.tag ? ` · ${m.tag}` : ''}</option>)}
           </select>
           {![...modelPresets, ...remoteModels].some(m => m.value === model) && (
             <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="deepseek-chat / deepseek-reasoner / glm-4-plus"
-              className="w-full mt-1 bg-jz-elevated border border-transparent rounded px-2 py-1.5 text-xs text-jz-text-primary font-mono" />
+              className="w-full mt-1 bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink font-mono" />
           )}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-jz-text-muted">实际 API model id；切换后下一条审计生效</span>
+            <span className="text-meta text-jz-muted">实际 API model id；切换后下一条审计生效</span>
             {isEdit && <button type="button" disabled={loadingModels}
               onClick={async () => {
                 setLoadingModels(true);
@@ -285,29 +285,29 @@ function ConfigDrawer({ drawer, onClose, onSaved }: {
                   setRemoteModels(ms);
                 } finally { setLoadingModels(false); }
               }}
-              className="ml-auto text-[11px] text-neon-accent hover:underline disabled:opacity-40">
+              className="ml-auto text-meta text-jz-brand hover:underline disabled:opacity-40">
               {loadingModels ? '拉取中…' : '拉取模型列表'}
             </button>}
           </div>
         </label>
-        <label className="block text-xs text-jz-text-muted space-y-1">推理等级
+        <label className="block text-meta text-jz-muted space-y-1">推理等级
           <select value={reasoning} onChange={(e) => setReasoning(e.target.value)}
-            className="w-full bg-jz-elevated border border-transparent rounded px-2 py-1.5 text-xs text-jz-text-primary">
+            className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink">
             {REASONING_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
-          <span className="text-[11px] text-jz-text-muted">Fast 60 / Balanced 120 / Max 240 条 L3 候选预算（不是厂商 API 参数）</span>
+          <span className="text-meta text-jz-muted">Fast 60 / Balanced 120 / Max 240 条 L3 候选预算（不是厂商 API 参数）</span>
         </label>
         <div className="flex gap-3">
-          <label className="block text-xs text-jz-text-muted space-y-1 flex-1">并发上限
+          <label className="block text-meta text-jz-muted space-y-1 flex-1">并发上限
             <input type="number" min={1} max={32} value={concurrency} onChange={(e) => setConcurrency(Number(e.target.value))}
-              className="w-full bg-jz-elevated border border-transparent rounded px-2 py-1.5 text-xs text-jz-text-primary" /></label>
-          <label className="flex items-end gap-1.5 text-xs text-jz-text-muted pb-1.5">
+              className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink" /></label>
+          <label className="flex items-end gap-1.5 text-meta text-jz-muted pb-1.5">
             <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />启用
           </label>
         </div>
-        {err && <div className="text-xs text-vuln-critical">{err}</div>}
+        {err && <div className="text-meta text-jz-sev-critical">{err}</div>}
         <Button className="w-full" onClick={save}>保存</Button>
-        <div className="text-xs text-jz-text-muted leading-4">key 明文仅经请求体传后端 600 权限文件存储;前端不落 localStorage,列表只回显脱敏形。</div>
+        <div className="text-meta text-jz-muted leading-4">key 明文仅经请求体传后端 600 权限文件存储;前端不落 localStorage,列表只回显脱敏形。</div>
       </div>
     </div>
   );

@@ -77,11 +77,11 @@ export const Sidebar: React.FC = () => {
       {/* 顶部: 品牌 Logo + 标题 + JINGZHE 渐变高光 Badge(品牌资产 /v2/brand 显式挂载路径) */}
       <div>
         <div className="flex items-center gap-2 px-3 mb-4">
-          <img src="/v2/brand/icon.svg" alt="惊蛰" className="w-8 h-8 rounded-lg flex-none" />
+          <img src="/v2/brand/icon.svg" alt="惊蛰" className="w-8 h-8 rounded-control flex-none" />
           {!collapsed && (
             <div className="min-w-0 leading-tight">
-              <div className="text-sm font-extrabold text-jz-text-primary whitespace-nowrap" style={{ letterSpacing: '0.16em' }}>惊蛰</div>
-              <span className="text-[11px] font-bold bg-gradient-to-r from-neon-accent via-vuln-safe to-neon-accent bg-clip-text text-transparent" style={{ letterSpacing: '0.24em' }}>JINGZHE</span>
+              <div className="font-display text-section font-semibold text-jz-ink whitespace-nowrap">惊蛰</div>
+              <span className="font-mono text-meta font-medium text-jz-muted">JINGZHE</span>
             </div>
           )}
         </div>
@@ -91,22 +91,22 @@ export const Sidebar: React.FC = () => {
  {groups.map((g) => (
             <div key={g.title}>
               {!collapsed && (
-                <div className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-widest text-jz-text-muted/70">{g.title}</div>
+                <div className="px-3 mb-1 text-meta font-semibold uppercase text-jz-muted">{g.title}</div>
               )}
               <div className="space-y-0.5 px-2">
  {g.items.map(({ to, icon: Icon, label }) => {
                   const active = location.pathname.startsWith(to);
                   return (
                     <NavLink key={to} to={to} title={collapsed ? label : undefined}
- className={({ isActive }) => `relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[14px] font-medium whitespace-nowrap transition-colors
+ className={({ isActive }) => `relative flex items-center gap-2.5 px-3 py-2 rounded-control text-body font-medium whitespace-nowrap transition-colors
  ${isActive
- ? 'text-neon-accent font-semibold bg-neon-accent/10 ring-1 ring-neon-accent/40'
- : 'text-jz-text-secondary hover:text-jz-text-primary hover:bg-jz-elevated'}`}
+ ? 'text-jz-brand font-semibold bg-jz-brand/10 ring-1 ring-jz-brand/40'
+ : 'text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2'}`}
  data-nav-item={to}>
                       <Icon size={18} className="flex-none" />
                       {!collapsed && <span className="truncate">{label}</span>}
                       {BADGES[to] && !collapsed && (
-                        <span className="ml-auto text-[11px] font-mono text-jz-text-muted">{BADGES[to]}</span>
+                        <span className="ml-auto text-meta font-mono text-jz-muted">{BADGES[to]}</span>
                       )}
                     </NavLink>
                   );
@@ -126,15 +126,15 @@ export const Sidebar: React.FC = () => {
             <div className="relative">
               <button type="button" onClick={() => setDevPop((v) => !v)} data-sidebar-devices data-devices-clickable
  title="点击展开设备与 Frida 状态明细(数据源 /api/pentest/devices)"
- className="w-full text-left rounded-xl bg-jz-elevated hover:bg-jz-border/40 transition-colors p-2 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-[13px] uppercase tracking-wider text-jz-text-muted">
+ className="w-full text-left rounded-card bg-jz-surface-2 hover:bg-jz-border/40 transition-colors p-2 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-label uppercase text-jz-muted">
                   <Smartphone size={13} /> 目标设备
                 </div>
-                <div className="flex items-center gap-1.5 text-[13px] text-jz-text-secondary font-mono" data-sidebar-dev-count>
+                <div className="flex items-center gap-1.5 text-label text-jz-ink-2 font-mono" data-sidebar-dev-count>
  {devCount > 0 ? `${devCount} 台已连接` : '无设备在册'}
                 </div>
-                <div className="flex items-center gap-1.5 text-sm text-jz-text-secondary" title="Frida-Server 就绪设备数">
-                  <span className={`w-1.5 h-1.5 rounded-full ${fridaOn > 0 ? 'bg-vuln-safe animate-breathe' : 'bg-jz-text-muted'}`} data-frida-dot />
+                <div className="flex items-center gap-1.5 text-body text-jz-ink-2" title="Frida-Server 就绪设备数">
+                  <span className={`w-1.5 h-1.5 rounded-pill ${fridaOn > 0 ? 'bg-jz-teal' : 'bg-jz-muted'}`} data-frida-dot />
                   Frida 就绪 <span className="flex-1" /> <span className="font-mono tnum" data-sidebar-frida>{fridaOn}/{devCount}</span>
                 </div>
               </button>
@@ -149,49 +149,49 @@ export const Sidebar: React.FC = () => {
  title={(failedCnt ?? 0) > 0
  ? `失败累计 ${failedCnt} 个任务——点击跳转任务中心查看失败明细(数据源 /api/tasks-summary)`
  : '数据源 /api/tasks-summary(30s 轮询);内存指标后端未采集,不显示假值;失败累计为 0 时不可点'}
- className={`w-full text-left rounded-xl p-2 space-y-1 transition-colors
+ className={`w-full text-left rounded-card p-2 space-y-1 transition-colors
  ${(failedCnt ?? 0) > 0
- ? 'bg-vuln-medium/10 ring-1 ring-vuln-medium/40 hover:bg-vuln-medium/20 cursor-pointer'
- : 'bg-jz-elevated cursor-default'}`}>
-              <div className="flex items-center gap-1.5 text-[13px] uppercase tracking-wider text-jz-text-muted">
+ ? 'bg-jz-sev-medium/10 ring-1 ring-jz-sev-medium/40 hover:bg-jz-sev-medium/20 cursor-pointer'
+ : 'bg-jz-surface-2 cursor-default'}`}>
+              <div className="flex items-center gap-1.5 text-label uppercase text-jz-muted">
                 <Activity size={13} /> 引擎负载
- {(failedCnt ?? 0) > 0 && <span className="ml-auto px-1.5 rounded-md text-[11px] font-mono bg-vuln-medium/15 text-vuln-medium" data-engine-fail-badge>⚠ 点击处理</span>}
+ {(failedCnt ?? 0) > 0 && <span className="ml-auto px-1.5 rounded-control text-meta font-mono bg-jz-sev-medium/15 text-jz-sev-medium" data-engine-fail-badge>⚠ 点击处理</span>}
               </div>
-              <div className="flex items-center gap-1.5 text-[13px] text-jz-text-secondary">
+              <div className="flex items-center gap-1.5 text-label text-jz-ink-2">
                 并发任务 <span className="flex-1" />
-                <span className={`font-mono tnum ${running ? 'text-jz-accent-cyan' : 'text-jz-text-muted'}`} data-engine-running>{running ?? '—'}</span>
+                <span className={`font-mono tnum ${running ? 'text-jz-brand' : 'text-jz-muted'}`} data-engine-running>{running ?? '—'}</span>
               </div>
-              <div className={`text-[13px] font-mono ${((failedCnt ?? 0) > 0) ? 'text-vuln-medium font-semibold' : 'text-jz-text-muted'}`}>失败累计 <span className="tnum" data-engine-failed>{failedCnt ?? '—'}</span></div>
+              <div className={`text-label font-mono ${((failedCnt ?? 0) > 0) ? 'text-jz-sev-medium font-semibold' : 'text-jz-muted'}`}>失败累计 <span className="tnum" data-engine-failed>{failedCnt ?? '—'}</span></div>
             </button>
           </>
         )}
         {/* 用户头像信息 + 折叠收缩按钮 */}
-        <div className="rounded-xl bg-jz-elevated p-2 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-neon-accent to-vuln-high flex items-center justify-center text-[11px] font-bold text-white flex-none">
+        <div className="rounded-card bg-jz-surface-2 p-2 flex items-center gap-2">
+          <div className="w-7 h-7 rounded-pill bg-jz-brand flex items-center justify-center text-meta font-semibold text-jz-on-brand flex-none">
             {(me?.username || 'U').slice(0, 1).toUpperCase()}
           </div>
           {!collapsed && (
             <>
               <div className="min-w-0 flex-1">
-                <div className="text-[11px] font-medium text-jz-text-primary truncate">{me?.username || '未登录'}</div>
-                <div className="text-[11px] text-jz-text-muted truncate">{me?.role || ''}</div>
+                <div className="text-meta font-medium text-jz-ink truncate">{me?.username || '未登录'}</div>
+                <div className="text-meta text-jz-muted truncate">{me?.role || ''}</div>
               </div>
               <button onClick={logout}
- title="退出登录" className="text-jz-text-muted hover:text-vuln-critical"><LogOut size={14} /></button>
+ title="退出登录" className="text-jz-muted hover:text-jz-sev-critical"><LogOut size={14} /></button>
             </>
           )}
         </div>
         {/* 折叠收缩按钮(R103-1: 非会话页可手动收/展;会话页保持 R52 自动收折图标轨,不互覆) */}
         {workbench ? (
-          <div className="flex items-center justify-center pt-1 text-jz-text-muted" data-nav-collapse="auto">
+          <div className="flex items-center justify-center pt-1 text-jz-muted" data-nav-collapse="auto">
             <ChevronsRight size={14} />
           </div>
         ) : (
           <button onClick={() => setManual((m) => !m)} data-nav-collapse={manual ? 'expand' : 'collapse'}
  title={manual ? '展开侧边栏' : '收起侧边栏'}
- className="w-full flex items-center justify-center gap-1 py-1 rounded-lg text-jz-text-muted hover:bg-jz-elevated/60 hover:text-jz-text-primary transition-colors">
+ className="w-full flex items-center justify-center gap-1 py-1 rounded-control text-jz-muted hover:bg-jz-surface-2/60 hover:text-jz-ink transition-colors">
             {manual ? <ChevronsRight size={14} /> : <ChevronsLeft size={14} />}
-            {!collapsed && <span className="text-[11px] font-mono ml-1" data-app-version>{__APP_VERSION__}</span>}
+            {!collapsed && <span className="text-meta font-mono ml-1" data-app-version>{__APP_VERSION__}</span>}
           </button>
         )}
       </div>

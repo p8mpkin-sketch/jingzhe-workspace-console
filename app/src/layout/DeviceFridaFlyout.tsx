@@ -19,37 +19,37 @@ export const DeviceFridaFlyout: React.FC<{
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div data-device-flyout role="dialog" aria-label="设备与 Frida 状态"
- className="absolute left-0 bottom-full mb-2 z-50 w-[340px] max-w-[90vw] rounded-xl bg-jz-surface
- border border-jz-border shadow-jz-card p-3 space-y-2">
-        <div className="flex items-center gap-2 text-xs">
-          <Usb size={13} className="text-neon-accent flex-none" />
-          <span className="font-semibold text-jz-text-primary">设备与 Frida 状态</span>
+ className="absolute left-0 bottom-full mb-2 z-50 w-[340px] max-w-[90vw] rounded-card bg-jz-surface
+ border border-jz-border shadow-card p-3 space-y-2">
+        <div className="flex items-center gap-2 text-meta">
+          <Usb size={13} className="text-jz-brand flex-none" />
+          <span className="font-semibold text-jz-ink">设备与 Frida 状态</span>
           <span className="flex-1" />
-          <span className="font-mono tnum text-[11px] text-jz-text-muted" data-flyout-count>
+          <span className="font-mono tnum text-meta text-jz-muted" data-flyout-count>
             {devices.length} 台 · Frida 就绪 {fridaOn}
           </span>
         </div>
-        <div className="text-[11px] text-jz-text-muted">数据源 /api/pentest/devices(8s 轮询真值)</div>
+        <div className="text-meta text-jz-muted">数据源 /api/pentest/devices(8s 轮询真值)</div>
         <div className="max-h-56 overflow-auto space-y-1.5" data-flyout-list>
           {devices.length === 0 && (
-            <div className="rounded-lg bg-jz-elevated/50 px-2.5 py-3 text-center text-xs text-jz-text-muted" data-flyout-empty>
+            <div className="rounded-control bg-jz-surface-2/50 px-2.5 py-3 text-center text-meta text-jz-muted" data-flyout-empty>
               无设备在册——adb 未连接或设备离线(如实空态)
             </div>
  )}
  {devices.map((d: any) => (
             <div key={d.serial} data-flyout-device={d.serial}
- className="rounded-lg bg-jz-elevated/50 px-2.5 py-1.5 space-y-1">
-              <div className="flex items-center gap-2 text-xs">
-                <Smartphone size={12} className={`flex-none ${d.frida ? 'text-vuln-safe' : 'text-jz-text-muted'}`} />
-                <span className="font-mono text-jz-text-primary truncate flex-1" title={d.serial}>{d.model || d.serial}</span>
-                {d.root ? <span className="flex-none px-1.5 py-0.5 rounded-md text-[11px] bg-vuln-medium/10 text-vuln-medium">Root</span>
-                  : <span className="flex-none px-1.5 py-0.5 rounded-md text-[11px] bg-jz-elevated text-jz-text-muted">未越权</span>}
+ className="rounded-control bg-jz-surface-2/50 px-2.5 py-1.5 space-y-1">
+              <div className="flex items-center gap-2 text-meta">
+                <Smartphone size={12} className={`flex-none ${d.frida ? 'text-jz-teal' : 'text-jz-muted'}`} />
+                <span className="font-mono text-jz-ink truncate flex-1" title={d.serial}>{d.model || d.serial}</span>
+                {d.root ? <span className="flex-none px-1.5 py-0.5 rounded-control text-meta bg-jz-sev-medium/10 text-jz-sev-medium">Root</span>
+                  : <span className="flex-none px-1.5 py-0.5 rounded-control text-meta bg-jz-surface-2 text-jz-muted">未越权</span>}
               </div>
-              <div className="flex items-center gap-2 text-[11px] font-mono text-jz-text-muted">
+              <div className="flex items-center gap-2 text-meta font-mono text-jz-muted">
                 <span className="truncate" title={d.serial}>{d.serial}</span>
                 <span className="flex-none">Android {d.android || '—'}</span>
                 <span className="flex-1" />
-                <span className={`flex-none inline-flex items-center gap-1 ${d.frida ? 'text-vuln-safe' : 'text-jz-text-muted'}`}>
+                <span className={`flex-none inline-flex items-center gap-1 ${d.frida ? 'text-jz-teal' : 'text-jz-muted'}`}>
                   <Syringe size={11} /> {d.frida ? 'Frida 就绪' : 'Frida 未装'}
                 </span>
               </div>

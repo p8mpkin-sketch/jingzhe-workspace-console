@@ -31,16 +31,16 @@ export const RerunTaskModal: React.FC<{
   };
   return (
     <Modal open title={`重跑任务 #${task.id}`} onClose={onClose}>
-      <div className="space-y-3 text-xs" data-rerun-modal>
-        <div className="rounded-lg bg-jz-elevated/50 p-2.5 space-y-1">
-          <div className="text-jz-text-muted">目标应用</div>
-          <div className="font-semibold text-jz-text-primary break-all">{task.app_name || task.package || task.apk_path || '—'}</div>
-          <div className="font-mono text-[11px] text-jz-text-muted break-all">{task.apk_path || '原始 APK 路径未记录'}</div>
-          <div className="text-[11px] text-jz-text-muted">新任务会重新执行，原任务及其报告保持不变。</div>
+      <div className="space-y-3 text-meta" data-rerun-modal>
+        <div className="rounded-control bg-jz-surface-2/50 p-2.5 space-y-1">
+          <div className="text-jz-muted">目标应用</div>
+          <div className="font-semibold text-jz-ink break-all">{task.app_name || task.package || task.apk_path || '—'}</div>
+          <div className="font-mono text-meta text-jz-muted break-all">{task.apk_path || '原始 APK 路径未记录'}</div>
+          <div className="text-meta text-jz-muted">新任务会重新执行，原任务及其报告保持不变。</div>
         </div>
-        <label className="block space-y-1 text-jz-text-muted">脱壳设备
+        <label className="block space-y-1 text-jz-muted">脱壳设备
           <select value={device} onChange={(e) => setDevice(e.target.value)} data-rerun-device
-            className="w-full h-8 px-2 rounded-lg bg-jz-elevated border border-jz-border text-xs text-jz-text-primary">
+            className="w-full h-8 px-2 rounded-control bg-jz-surface-2 border border-jz-border text-meta text-jz-ink">
             <option value="">自动选择（优先真机 root / wrap 就绪）</option>
             {devices.map((d) => (
               <option key={d.serial} value={d.serial}>
@@ -48,27 +48,27 @@ export const RerunTaskModal: React.FC<{
               </option>
             ))}
           </select>
-          <span className="text-[11px] text-jz-text-muted">设备列表来自 /api/pentest/devices；未选则沿用引擎自动选机。</span>
+          <span className="text-meta text-jz-muted">设备列表来自 /api/pentest/devices；未选则沿用引擎自动选机。</span>
         </label>
         <div className="grid grid-cols-2 gap-2">
-          <label className="block space-y-1 text-jz-text-muted">执行模式
+          <label className="block space-y-1 text-jz-muted">执行模式
             <select value={mode} onChange={(e) => setMode(e.target.value)} data-rerun-mode
-              className="w-full h-8 px-2 rounded-lg bg-jz-elevated border border-jz-border text-xs text-jz-text-primary">
+              className="w-full h-8 px-2 rounded-control bg-jz-surface-2 border border-jz-border text-meta text-jz-ink">
               <option value="auto">自动（静态+动态可用通道）</option>
               <option value="step">分步</option>
               <option value="online">在线设备</option>
             </select>
           </label>
-          <label className="block space-y-1 text-jz-text-muted">分析深度
+          <label className="block space-y-1 text-jz-muted">分析深度
             <select value={depth} onChange={(e) => setDepth(e.target.value)} data-rerun-depth
-              className="w-full h-8 px-2 rounded-lg bg-jz-elevated border border-jz-border text-xs text-jz-text-primary">
+              className="w-full h-8 px-2 rounded-control bg-jz-surface-2 border border-jz-border text-meta text-jz-ink">
               <option value="deep">深度（默认）</option>
               <option value="shallow">浅层</option>
               <option value="full">全量</option>
             </select>
           </label>
         </div>
-        {err && <div className="text-vuln-critical text-xs" data-rerun-error>{err}</div>}
+        {err && <div className="text-jz-sev-critical text-meta" data-rerun-error>{err}</div>}
         <div className="flex justify-end gap-2 pt-1">
           <Button variant="ghost" onClick={onClose} disabled={busy}>取消</Button>
           <Button onClick={submit} disabled={busy} data-rerun-confirm>

@@ -1,28 +1,106 @@
-/* Jingzhe Workspace tokens — neutral namespace only. */
+/* Jingzhe Workspace tokens — neutral namespace only.
+   Single source of truth: app/src/styles/index.css imports this file; app/tailwind.config.js maps
+   utilities onto these variables. No color, size, radius or shadow literal lives anywhere else. */
 :root {
+  /* ── Color (RGB triplets, used as rgb(var(--jz-x) / alpha)) ── */
   --jz-canvas: 245 246 248;
   --jz-surface: 255 255 255;
   --jz-surface-2: 240 242 245;
   --jz-ink: 22 24 29;
   --jz-ink-2: 67 74 86;
-  --jz-muted: 107 114 128;
+  --jz-muted: 97 104 118;        /* was 107 114 128: 4.47:1 on canvas, below AA; now >= 4.5 on every surface */
   --jz-border: 227 230 235;
+  --jz-border-strong: 139 146 160; /* control outlines that must reach 3:1 (inputs, checkboxes) */
   --jz-brand: 54 87 214;
   --jz-brand-soft: 233 237 255;
+  --jz-on-brand: 255 255 255;    /* text on a brand fill */
   --jz-teal: 14 143 126;
   --jz-amber: 178 106 0;
+  --jz-orange: 184 58 10;        /* added: "high" finding level only */
   --jz-red: 180 35 24;
+  /* Text-safe variants: teal and amber fills are below 4.5:1 as text on light surfaces. */
+  --jz-teal-ink: 9 110 97;
+  --jz-amber-ink: 138 82 0;
+  --jz-on-red: 255 255 255;
+  --jz-scrim: 16 24 40;          /* overlay behind dialogs and drawers */
+  --jz-paper: 255 255 255;       /* print only */
+  --jz-print-ink: 0 0 0;         /* print only */
+  --jz-print-rule: 204 204 204;  /* print only */
+
+  /* Finding severity: always rendered with a text label, never color alone. */
+  --jz-sev-critical: var(--jz-red);
+  --jz-sev-high: var(--jz-orange);
+  --jz-sev-medium: var(--jz-amber-ink);
+  --jz-sev-low: var(--jz-ink-2);
+  --jz-sev-info: var(--jz-muted);
+
+  /* ── Radius ── */
+  --jz-radius-tag: 4px;          /* checkbox, inline tag */
   --jz-radius-control: 8px;
   --jz-radius-card: 12px;
   --jz-radius-panel: 16px;
   --jz-radius-dialog: 20px;
-  --jz-font-display: "Instrument Sans", "Noto Sans SC", sans-serif;
-  --jz-font-body: "Inter", "Noto Sans SC", sans-serif;
-  --jz-font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
+  --jz-radius-pill: 999px;
+
+  /* ── Type ── */
+  --jz-font-display: "Instrument Sans", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --jz-font-body: "Inter", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --jz-font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --jz-text-meta: 12px;      --jz-leading-meta: 1.45;
+  --jz-text-label: 13px;     --jz-leading-label: 1.4;
+  --jz-text-body: 14px;      --jz-leading-body: 1.6;
+  --jz-text-section: 17px;   --jz-leading-section: 1.35;
+  --jz-text-title: 20px;     --jz-leading-title: 1.25;   /* dialog title, compact metric */
+  --jz-text-page: 28px;      --jz-leading-page: 1.2;
+  --jz-text-metric: 30px;    --jz-leading-metric: 1.1;
+  --jz-text-display: 36px;   --jz-leading-display: 1.1;
+  --jz-weight-regular: 400;
+  --jz-weight-medium: 500;
+  --jz-weight-strong: 600;
+  --jz-tracking-display: -0.02em;
+  --jz-tracking-page: -0.015em;
+
+  /* ── Spacing (8px grid) ── */
+  --jz-space-1: 4px;
+  --jz-space-2: 8px;
+  --jz-space-3: 12px;
+  --jz-space-4: 16px;
+  --jz-space-6: 24px;
+  --jz-space-8: 32px;
+  --jz-space-12: 48px;
+
+  /* ── Layout ── */
+  --jz-sidebar-w: 232px;
+  --jz-sidebar-w-collapsed: 68px;
+  --jz-topbar-h: 52px;
+  --jz-content-max: 1680px;
+  --jz-page-pad: 24px;
+  --jz-prose-max: 720px;
+  --jz-dialog-max: 640px;
+  --jz-control-h: 36px;
+  --jz-control-h-lg: 40px;
+  --jz-touch-min: 44px;
+  --jz-table-head-h: 36px;
+  --jz-row-h: 44px;
+  --jz-row-h-lg: 52px;
+
+  /* ── Elevation ── */
   --jz-shadow-card: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px -18px rgba(16,24,40,.18);
   --jz-shadow-dialog: 0 20px 60px -24px rgba(16,24,40,.30);
+
+  /* ── Motion and focus ── */
+  --jz-motion-hover: 120ms;
+  --jz-motion-expand: 180ms;
+  --jz-motion-page: 220ms;
+  --jz-ease: cubic-bezier(.2, 0, 0, 1);
+  --jz-focus-width: 2px;
+  --jz-focus-offset: 2px;
+
+  color-scheme: light;
 }
-.dark {
+/* Scoped to html.dark, not .dark: React Flow adds its own `dark` class to canvas containers,
+   and a bare .dark selector would pin the canvas subtree to dark values in light mode. */
+html.dark {
   --jz-canvas: 14 17 22;
   --jz-surface: 21 26 33;
   --jz-surface-2: 27 34 44;
@@ -30,16 +108,32 @@
   --jz-ink-2: 196 203 214;
   --jz-muted: 139 149 165;
   --jz-border: 40 49 61;
+  --jz-border-strong: 107 118 135;
   --jz-brand: 142 162 255;
   --jz-brand-soft: 27 37 74;
+  --jz-on-brand: 14 17 22;       /* white on the light indigo fill is 2.4:1 */
   --jz-teal: 79 209 197;
   --jz-amber: 245 184 75;
+  --jz-orange: 255 160 110;
   --jz-red: 255 138 128;
+  --jz-teal-ink: 79 209 197;
+  --jz-amber-ink: 245 184 75;
+  --jz-on-red: 14 17 22;
+  --jz-scrim: 0 0 0;
+  --jz-shadow-card: 0 1px 2px rgba(0,0,0,.24), 0 8px 24px -18px rgba(0,0,0,.6);
+  --jz-shadow-dialog: 0 20px 60px -24px rgba(0,0,0,.7);
+  color-scheme: dark;
 }
+@media (max-width: 1100px) { :root { --jz-page-pad: 16px; } }
+@media (max-width: 760px) { :root { --jz-page-pad: 12px; } }
+@media (prefers-reduced-motion: reduce) {
+  :root { --jz-motion-hover: 0ms; --jz-motion-expand: 0ms; --jz-motion-page: 0ms; }
+}
+
 html, body { background: rgb(var(--jz-canvas)); color: rgb(var(--jz-ink)); }
-body { font-family: var(--jz-font-body); font-size: 14px; line-height: 1.6; }
-.jz-display { font-family: var(--jz-font-display); font-size: 36px; line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; }
-.jz-page-title { font-family: var(--jz-font-display); font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.015em; }
-.jz-section { font-size: 17px; line-height: 1.35; font-weight: 600; }
-.jz-meta { font-size: 12px; line-height: 1.45; color: rgb(var(--jz-muted)); }
+body { font-family: var(--jz-font-body); font-size: var(--jz-text-body); line-height: var(--jz-leading-body); }
+.jz-display { font-family: var(--jz-font-display); font-size: var(--jz-text-display); line-height: var(--jz-leading-display); font-weight: var(--jz-weight-strong); letter-spacing: var(--jz-tracking-display); }
+.jz-page-title { font-family: var(--jz-font-display); font-size: var(--jz-text-page); line-height: var(--jz-leading-page); font-weight: var(--jz-weight-strong); letter-spacing: var(--jz-tracking-page); }
+.jz-section { font-size: var(--jz-text-section); line-height: var(--jz-leading-section); font-weight: var(--jz-weight-strong); }
+.jz-meta { font-size: var(--jz-text-meta); line-height: var(--jz-leading-meta); color: rgb(var(--jz-muted)); }
 .jz-mono { font-family: var(--jz-font-mono); font-variant-numeric: tabular-nums; }

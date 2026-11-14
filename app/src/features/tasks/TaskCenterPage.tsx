@@ -15,7 +15,7 @@ import { usePentest } from '@/stores/pentest';
 //  ③清理失败项/导出/新建上移页头右端;检索卡严格两行(搜索+下拉+Checkbox 开关 / 纯状态胶囊)
 //  ④honestDone 判定收紧: 业务码类数真实统计严禁覆盖;「脱壳受阻」=明确有壳 且 (类数=0 或 文本明确未脱出)
 //    (实证 #785 17类/#786 1类 均无壳=正常完成+真实类数;旧「≤20 类即受阻」规则废除)
-//  ⑤操作列统一 px-2.5 py-1 text-xs rounded-md border 胶囊(接力同高同圆角,禁用态同尺寸)
+//  ⑤操作列统一 px-2.5 py-1 text-meta rounded-control border 胶囊(接力同高同圆角,禁用态同尺寸)
 import { Badge, DataToolbar, EmptyStatePlaceholder, exportDataFile, Modal, SkeletonLoader, StatusBadge } from '@/components/ui';
 import { ArtifactsModal } from './ArtifactsModal';
 import { RerunTaskModal } from './RerunTaskModal';
@@ -27,17 +27,17 @@ const ST_CN: Record<string, string> = { done: '完成', running: '运行中', fa
 // 渲染见 honestDone/outcomeProbe——data-unpack-outcome 探针值域与原徽章恒等
 // (pass/small_app/32bit_only/install_failed/verdict 原词/recovered/no_biz_code)。
 // R103-1: 状态色改双模 CSS 变量(原硬编码 hex 亮色模式不换肤)
-const ST_COL: Record<string, string> = { done: 'rgb(var(--c-accent-emerald))', running: 'rgb(var(--c-accent-cyan))', failed: 'rgb(var(--c-accent-crimson))', queued: 'rgb(var(--c-text-muted))' };
+const ST_COL: Record<string, string> = { done: 'rgb(var(--jz-teal))', running: 'rgb(var(--jz-brand))', failed: 'rgb(var(--jz-red))', queued: 'rgb(var(--jz-muted))' };
 // R103-8②: 类型四色徽章(unpack 紫/audit 蓝/fuzz 琥珀/recon 灰;其余灰兜底)——双模 CSS 变量
 const KIND_CLS: Record<string, string> = {
- unpack: 'text-neon-accent bg-neon-accent/10',
- audit: 'text-jz-accent-cyan bg-jz-accent-cyan/10',
- fuzz: 'text-jz-accent-amber bg-jz-accent-amber/10',
- recon: 'text-jz-text-muted bg-jz-elevated',
+ unpack: 'text-jz-brand bg-jz-brand/10',
+ audit: 'text-jz-brand bg-jz-brand/10',
+ fuzz: 'text-jz-amber bg-jz-amber/10',
+ recon: 'text-jz-muted bg-jz-surface-2',
 };
 // 操作列按钮统一样式(本轮修复⑤): [接力][报告][产物][重试][详情][删除] 同高同圆角胶囊
-// px-2.5 py-1 text-xs rounded-md border;禁用态保留 disabled 视觉但同尺寸;全部 whitespace-nowrap
-const ACT_BTN = 'inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1 rounded-md border text-xs font-medium transition-colors';
+// px-2.5 py-1 text-meta rounded-control border;禁用态保留 disabled 视觉但同尺寸;全部 whitespace-nowrap
+const ACT_BTN = 'inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1 rounded-control border text-meta font-medium transition-colors';
 // R103-9③: 每页条数可选(原固定 20)
 const PAGE_SIZES = [20, 50, 100, 200];
 // 慢任务标线(规格): 耗时 >15m 琥珀慢任务标
@@ -92,26 +92,26 @@ const TaskLiveProgress: React.FC<{ progress: string }> = ({ progress }) => {
   return (
     <div className="mt-1.5 w-[270px] max-w-[270px] space-y-1" data-task-progress>
       {unpack && (
-        <div className="flex items-start gap-1 text-[11px] leading-snug text-vuln-safe" title={unpack}>
+        <div className="flex items-start gap-1 text-meta leading-snug text-jz-teal" title={unpack}>
           <span className="flex-none">✓ 脱壳 100%</span>
-          <span className="min-w-0 break-words text-vuln-safe/80">
+          <span className="min-w-0 break-words text-jz-teal/80">
             {unpack.replace(/^Unpack:\s*100%\s*(·\s*)?/i, '')}
           </span>
         </div>
       )}
       {decomp ? (
         <div>
-          <div className="flex items-baseline justify-between gap-2 text-[11px]">
-            <span className="flex-none font-medium text-jz-accent-cyan">反编译 {dp ?? 0}%</span>
-            <span className="min-w-0 truncate text-jz-text-muted" title={detail}>{detail || 'jadx…'}</span>
+          <div className="flex items-baseline justify-between gap-2 text-meta">
+            <span className="flex-none font-medium text-jz-brand">反编译 {dp ?? 0}%</span>
+            <span className="min-w-0 truncate text-jz-muted" title={detail}>{detail || 'jadx…'}</span>
           </div>
-          <div className="mt-0.5 h-1 w-full rounded-full bg-jz-elevated overflow-hidden" data-progress-bar={dp ?? 0}>
-            <div className="h-full bg-jz-accent-cyan transition-all" style={{ width: String(dp ?? 0) + '%' }} />
+          <div className="mt-0.5 h-1 w-full rounded-pill bg-jz-surface-2 overflow-hidden" data-progress-bar={dp ?? 0}>
+            <div className="h-full bg-jz-brand transition-all" style={{ width: String(dp ?? 0) + '%' }} />
           </div>
-          {post && <div className="text-[11px] text-jz-text-muted">当前：{STAGE_CN[post.split(':')[0]] || post}</div>}
+          {post && <div className="text-meta text-jz-muted">当前：{STAGE_CN[post.split(':')[0]] || post}</div>}
         </div>
       ) : (
-        <div className="text-[11px] text-jz-text-muted">当前：{STAGE_CN[last.split(':')[0]] || last}</div>
+        <div className="text-meta text-jz-muted">当前：{STAGE_CN[last.split(':')[0]] || last}</div>
       )}
     </div>
   );
@@ -120,8 +120,8 @@ const TaskLiveProgress: React.FC<{ progress: string }> = ({ progress }) => {
 const PackerChip: React.FC<{ packer?: string | null }> = ({ packer }) => {
   if (!packer) return null;
   const name = PACKER_NAMES[packer] || packer;
-  if (packer === 'none') return <span className="flex-none rounded px-1.5 py-0.5 text-[11px] font-mono bg-jz-elevated text-jz-text-muted" title="未检出加固防护">无壳</span>;
-  return <span className="inline-flex flex-none items-center rounded px-1.5 py-0.5 text-[11px] font-mono font-medium bg-vuln-medium/10 text-vuln-medium" title={`防护指纹: ${packer}`}>
+  if (packer === 'none') return <span className="flex-none rounded-control px-1.5 py-0.5 text-meta font-mono bg-jz-surface-2 text-jz-muted" title="未检出加固防护">无壳</span>;
+  return <span className="inline-flex flex-none items-center rounded-control px-1.5 py-0.5 text-meta font-mono font-medium bg-jz-sev-medium/10 text-jz-sev-medium" title={`防护指纹: ${packer}`}>
     {name}
   </span>;
 };
@@ -175,9 +175,9 @@ const outcomeProbe = (o: any): string | null => {
 
 // 设备标签(会话卡): emulator-* 序列=模拟器,其余非空=真机,空=无设备(本地启发,真值来自既有 device 字段)
 const devTagOf = (d?: string | null): { label: string; cls: string } =>
-  !d ? { label: '无设备', cls: 'text-jz-text-muted bg-jz-elevated' }
-    : /^emulator/i.test(d) ? { label: '模拟器', cls: 'text-jz-accent-cyan bg-jz-accent-cyan/10' }
-    : { label: '真机', cls: 'text-vuln-safe bg-vuln-safe/10' };
+  !d ? { label: '无设备', cls: 'text-jz-muted bg-jz-surface-2' }
+    : /^emulator/i.test(d) ? { label: '模拟器', cls: 'text-jz-brand bg-jz-brand/10' }
+    : { label: '真机', cls: 'text-jz-teal bg-jz-teal/10' };
 
 export const TaskCenterPage: React.FC = () => {
   const nav = useNavigate();
@@ -492,35 +492,35 @@ export const TaskCenterPage: React.FC = () => {
    { v: String(devN), label: '在线设备', title: '在线设备数(adb device 态入池;数据=TopBar 8s 轮询 /api/pentest/devices 写入的共享真值)' },
  ];
     return (
-      <div className="rounded-2xl bg-jz-surface shadow-jz-card p-5 h-full flex flex-col" data-slot-pod>
+      <div className="rounded-panel bg-jz-surface shadow-card p-5 h-full flex flex-col" data-slot-pod>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-jz-text-primary whitespace-nowrap">调度引擎与并发槽位</span>
+          <span className="text-body font-semibold text-jz-ink whitespace-nowrap">调度引擎与并发槽位</span>
           <span className="inline-flex items-center gap-1.5 flex-none">
             <span className="relative flex h-2 w-2" aria-hidden>
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${hot ? 'bg-vuln-critical' : warm ? 'bg-jz-accent-amber' : 'bg-vuln-safe'}`} />
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${hot ? 'bg-vuln-critical' : warm ? 'bg-jz-accent-amber' : 'bg-vuln-safe'}`} />
+              <span className={` absolute inline-flex h-full w-full rounded-pill opacity-60 ${hot ? 'bg-jz-sev-critical' : warm ? 'bg-jz-amber' : 'bg-jz-teal'}`} />
+              <span className={`relative inline-flex rounded-pill h-2 w-2 ${hot ? 'bg-jz-sev-critical' : warm ? 'bg-jz-amber' : 'bg-jz-teal'}`} />
             </span>
             <span data-slot-indicator
  title={`统计口径: 当前正在执行或排队的审计任务数(running+queued 真值) / 组织套餐最大并发数(quota_concurrent)。达上限新建任务将被 429 拒绝(M4 配额闸)`}
- className={`px-1.5 rounded font-mono text-[11px] tnum whitespace-nowrap ${hot ? 'bg-vuln-critical/10 text-vuln-critical' : warm ? 'bg-jz-accent-amber/10 text-jz-accent-amber' : 'bg-vuln-safe/10 text-vuln-safe'}`}>
+ className={`px-1.5 rounded-control font-mono text-meta tnum whitespace-nowrap ${hot ? 'bg-jz-sev-critical/10 text-jz-sev-critical' : warm ? 'bg-jz-amber/10 text-jz-amber' : 'bg-jz-teal/10 text-jz-teal'}`}>
               空闲 {unlim ? '不限' : `${free} 槽`}
             </span>
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 flex-1 items-stretch">
           {metrics.map((m) => (
-            <div key={m.label} className="rounded-xl bg-jz-elevated/40 px-3 py-2.5 flex flex-col justify-center min-w-0" title={m.title}>
-              <div className="text-xl font-bold font-mono tnum text-jz-text-primary leading-none truncate">{m.v}</div>
-              <div className="mt-1.5 text-[11px] text-jz-text-muted whitespace-nowrap">{m.label}</div>
+            <div key={m.label} className="rounded-card bg-jz-surface-2/40 px-3 py-2.5 flex flex-col justify-center min-w-0" title={m.title}>
+              <div className="text-title font-semibold font-mono tnum text-jz-ink leading-none truncate">{m.v}</div>
+              <div className="mt-1.5 text-meta text-jz-muted whitespace-nowrap">{m.label}</div>
             </div>
           ))}
         </div>
         {!unlim && quota > 0 && (
           <div className="mt-4 flex items-center gap-2">
-            <div className="h-1.5 flex-1 rounded-full bg-jz-elevated overflow-hidden" aria-hidden>
-              <span className="block h-full rounded-full transition-all" style={{ width: `${Math.min(100, Math.round((used / quota) * 100))}%`, background: hot ? 'rgb(var(--c-accent-crimson))' : warm ? 'rgb(var(--c-accent-amber))' : 'rgb(var(--c-accent-emerald))' }} />
+            <div className="h-1.5 flex-1 rounded-pill bg-jz-surface-2 overflow-hidden" aria-hidden>
+              <span className="block h-full rounded-pill transition-all" style={{ width: `${Math.min(100, Math.round((used / quota) * 100))}%`, background: hot ? 'rgb(var(--jz-red))' : warm ? 'rgb(var(--jz-amber))' : 'rgb(var(--jz-teal))' }} />
             </div>
-            <span className="text-[11px] font-mono tnum text-jz-text-muted whitespace-nowrap">负载 {load == null ? '—' : `${load}%`}</span>
+            <span className="text-meta font-mono tnum text-jz-muted whitespace-nowrap">负载 {load == null ? '—' : `${load}%`}</span>
           </div>
         )}
       </div>
@@ -534,57 +534,57 @@ export const TaskCenterPage: React.FC = () => {
  const pendingN = Math.max(0, batchSum.count - doneN - failN);
  const donePct = batchSum.count ? Math.round((doneN / batchSum.count) * 100) : 0;
     return (
-      <div className="rounded-2xl bg-jz-surface shadow-jz-card p-5 h-full" data-batch-summary data-batch-dashboard>
+      <div className="rounded-panel bg-jz-surface shadow-card p-5 h-full" data-batch-summary data-batch-dashboard>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-jz-text-primary">批量脱壳聚合</span>
+          <span className="text-meta font-semibold text-jz-ink">批量脱壳聚合</span>
           {/* R117-4④: 完成率计数器口径注(方案 4.4 槽位指标不存在,映射到本页并发槽位舱) */}
           <span title="统计口径: 批量脱壳任务群 done 数/总任务数(updated_at 落定即计 done, failed 单列不计入 done)"><Badge level="safe">完成率 {donePct}%</Badge></span>
           <span className="flex-1" />
-          <button onClick={() => setBatchOpen(!batchOpen)} className="text-jz-text-muted hover:text-jz-text-primary text-xs">{batchOpen ? '收起' : '明细'}</button>
-          <button onClick={loadBatch} className="text-jz-text-muted hover:text-jz-text-primary text-xs">刷新</button>
+          <button onClick={() => setBatchOpen(!batchOpen)} className="text-jz-muted hover:text-jz-ink text-meta">{batchOpen ? '收起' : '明细'}</button>
+          <button onClick={loadBatch} className="text-jz-muted hover:text-jz-ink text-meta">刷新</button>
         </div>
         <div className="mt-2 flex items-stretch gap-3 flex-wrap">
           <div className="min-w-[64px]">
-            <div className="text-xl font-bold font-mono tnum text-vuln-safe leading-none">{doneN}<span className="text-xs text-jz-text-muted font-normal">/{batchSum.count}</span></div>
-            <div className="mt-1 text-[11px] text-jz-text-muted">完成</div>
+            <div className="text-title font-semibold font-mono tnum text-jz-teal leading-none">{doneN}<span className="text-meta text-jz-muted font-normal">/{batchSum.count}</span></div>
+            <div className="mt-1 text-meta text-jz-muted">完成</div>
           </div>
           <div className="w-px bg-jz-border/60" aria-hidden />
           <div className="min-w-[64px]">
-            <div className={`text-xl font-bold font-mono tnum leading-none ${failN > 0 ? 'text-vuln-critical' : 'text-jz-text-muted'}`}>{failN}</div>
-            <div className="mt-1 text-[11px] text-jz-text-muted">失败</div>
+            <div className={`text-title font-semibold font-mono tnum leading-none ${failN > 0 ? 'text-jz-sev-critical' : 'text-jz-muted'}`}>{failN}</div>
+            <div className="mt-1 text-meta text-jz-muted">失败</div>
           </div>
           <div className="w-px bg-jz-border/60" aria-hidden />
           <div className="min-w-[64px]">
-            <div className="text-xl font-bold font-mono tnum text-jz-text-secondary leading-none">{pendingN}</div>
-            <div className="mt-1 text-[11px] text-jz-text-muted">待执行</div>
+            <div className="text-title font-semibold font-mono tnum text-jz-ink-2 leading-none">{pendingN}</div>
+            <div className="mt-1 text-meta text-jz-muted">待执行</div>
           </div>
           <div className="w-px bg-jz-border/60" aria-hidden />
           <div className="min-w-[64px]">
-            <div className="text-xl font-bold font-mono tnum text-jz-text-primary leading-none">{batchSum.avg_dur_s != null ? fmtDur(batchSum.avg_dur_s) : '—'}</div>
-            <div className="mt-1 text-[11px] text-jz-text-muted" title={`done 任务耗时均值(updated_at−created_at, n 项)`}>均值</div>
+            <div className="text-title font-semibold font-mono tnum text-jz-ink leading-none">{batchSum.avg_dur_s != null ? fmtDur(batchSum.avg_dur_s) : '—'}</div>
+            <div className="mt-1 text-meta text-jz-muted" title={`done 任务耗时均值(updated_at−created_at, n 项)`}>均值</div>
           </div>
           <div className="w-px bg-jz-border/60" aria-hidden />
           <div className="min-w-[64px]">
             {/* R103-9④: 后端无体积字段(batch-unpack-summary 仅 dex_files_count 条数)——如实显条数并更正文案,不冒充体积 */}
-            <div className="text-xl font-bold font-mono tnum text-jz-text-primary leading-none">{batchSum.dex_total}</div>
-            <div className="mt-1 text-[11px] text-jz-text-muted" title="后端无体积字段,此处为 DEX 文件条数(非总体积);体积采集=挂账">DEX 个数</div>
+            <div className="text-title font-semibold font-mono tnum text-jz-ink leading-none">{batchSum.dex_total}</div>
+            <div className="mt-1 text-meta text-jz-muted" title="后端无体积字段,此处为 DEX 文件条数(非总体积);体积采集=挂账">DEX 个数</div>
           </div>
           <span className="flex-1" />
           <div className="flex flex-col justify-center gap-1 min-w-[200px]">
             {/* 双色分段进度条(规格): 翠绿=成功占比 + 玫红=失败占比,余段=待执行 */}
-            <span className="inline-flex h-2 w-full rounded-full bg-jz-elevated overflow-hidden" data-batch-bar-track title={`完成 ${doneN} · 失败 ${failN} · 待执行 ${pendingN}`}>
-              {doneN > 0 && <span className="block h-full" style={{ width: `${(doneN / batchSum.count) * 100}%`, background: 'rgb(var(--c-accent-emerald))' }} data-batch-bar-fill />}
-              {failN > 0 && <span className="block h-full" style={{ width: `${(failN / batchSum.count) * 100}%`, background: 'rgb(var(--c-accent-crimson))' }} data-batch-bar-fail />}
+            <span className="inline-flex h-2 w-full rounded-pill bg-jz-surface-2 overflow-hidden" data-batch-bar-track title={`完成 ${doneN} · 失败 ${failN} · 待执行 ${pendingN}`}>
+              {doneN > 0 && <span className="block h-full" style={{ width: `${(doneN / batchSum.count) * 100}%`, background: 'rgb(var(--jz-teal))' }} data-batch-bar-fill />}
+              {failN > 0 && <span className="block h-full" style={{ width: `${(failN / batchSum.count) * 100}%`, background: 'rgb(var(--jz-red))' }} data-batch-bar-fail />}
             </span>
-            <span className="text-[11px] font-mono tnum text-jz-text-muted">完成 {donePct}%{failN > 0 ? ` · 失败 ${Math.round((failN / batchSum.count) * 100)}%` : ''}</span>
+            <span className="text-meta font-mono tnum text-jz-muted">完成 {donePct}%{failN > 0 ? ` · 失败 ${Math.round((failN / batchSum.count) * 100)}%` : ''}</span>
           </div>
         </div>
         {batchOpen && (
-          <table className="w-full mt-2 text-xs">
-            <thead><tr className="text-[11px] font-semibold text-jz-text-secondary tracking-wider bg-jz-elevated/40"><th className="text-left py-1">#</th><th className="text-left">APP</th><th className="text-left">状态</th><th className="text-left">壳</th><th className="text-left">方式</th><th className="text-left">DEX</th><th className="text-left" title="done=updated_at−created_at;运行中/失败无耗时">耗时</th></tr></thead>
+          <table className="w-full mt-2 text-meta">
+            <thead><tr className="text-meta font-semibold text-jz-ink-2 bg-jz-surface-2/40"><th className="text-left py-1">#</th><th className="text-left">APP</th><th className="text-left">状态</th><th className="text-left">壳</th><th className="text-left">方式</th><th className="text-left">DEX</th><th className="text-left" title="done=updated_at−created_at;运行中/失败无耗时">耗时</th></tr></thead>
             <tbody>
  {(batchSum.items || []).map((it: any) => (
-                <tr key={it.task_id} className="hover:bg-jz-elevated/30 rounded-lg">
+                <tr key={it.task_id} className="hover:bg-jz-surface-2/30 rounded-control">
                   <td className="py-1 font-mono">{it.task_id}</td>
                   <td className="truncate max-w-[180px]">{it.app_name}</td>
                   <td>{it.status}</td>
@@ -600,7 +600,7 @@ export const TaskCenterPage: React.FC = () => {
       </div>
     );
   })() : (
-    <div className="rounded-2xl bg-jz-surface shadow-jz-card p-5 h-full text-xs text-jz-text-muted" data-batch-dashboard-empty>
+    <div className="rounded-panel bg-jz-surface shadow-card p-5 h-full text-meta text-jz-muted" data-batch-dashboard-empty>
       批量脱壳聚合 · 暂无批量任务群(口径: kind=unpack 且 params.batch 标记;有批量任务后此处呈现 完成/失败/均值/DEX 仪表板)
     </div>
   );
@@ -610,24 +610,24 @@ export const TaskCenterPage: React.FC = () => {
       {/* 页头(本轮修复③): 「任务中心」大标题 + 右侧常驻操作区 [清理失败项][导出▾][新建审计任务]——
           原三钮挤在检索工具栏行尾窄容器内折行悬空,上移至页头与标题两端对齐(全部 whitespace-nowrap shrink-0) */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-xl font-bold text-jz-text-primary whitespace-nowrap">任务中心</h2>
+        <h2 className="text-title font-semibold text-jz-ink whitespace-nowrap">任务中心</h2>
         <div className="flex items-center gap-2 flex-none" data-toolbar-actions>
           <button onClick={() => setCleanOpen(true)} disabled={batchBusy || failedInView.length === 0} data-clean-failed
  title="清理当前过滤视图内全部失败任务(所见即所删,先二次确认;运行中/排队不受影响)"
- className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-vuln-critical/10 text-xs text-vuln-critical hover:bg-vuln-critical/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap shrink-0">
+ className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control bg-jz-sev-critical/10 text-meta text-jz-sev-critical hover:bg-jz-sev-critical/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap shrink-0">
             清理失败项({failedInView.length})
           </button>
           <div className="relative shrink-0" ref={expRef} data-toolbar-export>
             <button onClick={() => setExpOpen((v) => !v)} data-toolbar-export-toggle
- className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-secondary hover:text-neon-accent transition-colors whitespace-nowrap">
+ className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink-2 hover:text-jz-brand transition-colors whitespace-nowrap">
               <Download size={12} /> 导出 ▾
             </button>
             {expOpen && (
-              <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-xl bg-jz-surface border border-jz-border shadow-jz-card py-1" data-toolbar-export-panel>
+              <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-card bg-jz-surface border border-jz-border shadow-card py-1" data-toolbar-export-panel>
                 {([{ id: 'csv', label: '导出任务列表 CSV' }, { id: 'json', label: '导出任务列表 JSON' }]).map((it) => (
                   <button key={it.id} onClick={() => { const rows = exportRows(filtered); exportDataFile('tasks_export', it.id as 'csv' | 'json', rows); setBatchMsg(`已导出当前过滤视图 ${rows.length} 行 ${it.id.toUpperCase()}`); setExpOpen(false); }}
  data-toolbar-export-item={it.id}
- className="w-full text-left px-2.5 py-1.5 text-xs text-jz-text-secondary hover:bg-jz-elevated/60 whitespace-nowrap">
+ className="w-full text-left px-2.5 py-1.5 text-meta text-jz-ink-2 hover:bg-jz-surface-2/60 whitespace-nowrap">
                     {it.label}
                   </button>
                 ))}
@@ -635,7 +635,7 @@ export const TaskCenterPage: React.FC = () => {
             )}
           </div>
           <button onClick={() => nav('/new-audit')} data-toolbar-create
- className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-neon-accent/15 text-xs text-neon-accent font-semibold hover:bg-neon-accent/25 transition-colors whitespace-nowrap shrink-0">
+ className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control bg-jz-brand/15 text-meta text-jz-brand font-semibold hover:bg-jz-brand/25 transition-colors whitespace-nowrap shrink-0">
             <Plus size={12} /> 新建审计任务
           </button>
         </div>
@@ -653,7 +653,7 @@ export const TaskCenterPage: React.FC = () => {
  {runningTasks.length > 0 && (
         <div className="space-y-1.5" data-running-lanes>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-jz-text-primary">运行中任务</span>
+            <span className="text-meta font-semibold text-jz-ink">运行中任务</span>
             <StatusBadge tone="info" title="统计口径: status=running 任务计数真值;耗时=created_at→now 实时时钟;进度=后端 progress 文本真值,无结构化子阶段=如实不画子步骤">{runningTasks.length} 个</StatusBadge>
           </div>
           <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1">
@@ -661,24 +661,24 @@ export const TaskCenterPage: React.FC = () => {
               const hit = sessMap[t.id];
               return (
                 <div key={t.id} data-running-lane={t.id}
- className="flex-none w-72 rounded-2xl bg-jz-surface shadow-jz-card px-3 py-2 space-y-1">
+ className="flex-none w-72 rounded-panel bg-jz-surface shadow-card px-3 py-2 space-y-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-jz-accent-cyan animate-pulse flex-none" />
-                    <span className="font-mono text-xs text-jz-text-muted tnum flex-none">{t.id}</span>
-                    <span className="text-xs font-semibold text-jz-text-primary truncate flex-1" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
-                    <span className="flex-none font-mono text-xs text-jz-text-secondary tnum" title="created_at→now 实时耗时">{fmtDur(now - t.created_at)}</span>
+                    <span className="w-1.5 h-1.5 rounded-pill bg-jz-brand animate-pulse flex-none" />
+                    <span className="font-mono text-meta text-jz-muted tnum flex-none">{t.id}</span>
+                    <span className="text-meta font-semibold text-jz-ink truncate flex-1" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
+                    <span className="flex-none font-mono text-meta text-jz-ink-2 tnum" title="created_at→now 实时耗时">{fmtDur(now - t.created_at)}</span>
                   </div>
-                  <div className="text-xs text-jz-text-muted truncate" title={t.progress || '后端暂无进度文本'}>
+                  <div className="text-meta text-jz-muted truncate" title={t.progress || '后端暂无进度文本'}>
                     {t.progress ? t.progress : '执行中(后端未上报进度文本)'}
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-mono font-bold ${KIND_CLS[t.kind || 'audit'] || 'text-jz-text-muted bg-jz-elevated'}`}>{t.kind || 'audit'}</span>
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-control text-meta font-mono font-semibold ${KIND_CLS[t.kind || 'audit'] || 'text-jz-muted bg-jz-surface-2'}`}>{t.kind || 'audit'}</span>
                     {t.packer && <PackerChip packer={t.packer} />}
                     <span className="flex-1" />
                     {hit && (
                       <button onClick={() => { window.location.hash = `/pentest/project/${hit.pid}/session/${hit.sid}`; }}
  data-lane-goto={t.id} title={`进入渗透会话 #${hit.sid}`}
- className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs text-neon-accent hover:bg-neon-accent/10">
+ className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-control text-meta text-jz-brand hover:bg-jz-brand/10">
                         <ExternalLink size={11} /> 工作台
                       </button>
                     )}
@@ -695,20 +695,20 @@ export const TaskCenterPage: React.FC = () => {
      一字一行=彻底移除;每卡 #会话ID/应用名/设备标签(真机/模拟器,device 序列本地启发),
      点击跳对应会话(R76-2 无项目禁跳) */}
  {activeSids.length>0 && (
-        <div className="rounded-2xl bg-jz-surface shadow-jz-card flex flex-col overflow-hidden" data-session-rail>
+        <div className="rounded-panel bg-jz-surface shadow-card flex flex-col overflow-hidden" data-session-rail>
           <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-jz-border/60">
-            <span className="whitespace-nowrap font-semibold text-sm text-jz-text-primary">近期关联渗透会话 ({activeSids.length})</span>
+            <span className="whitespace-nowrap font-semibold text-body text-jz-ink">近期关联渗透会话 ({activeSids.length})</span>
             <div className="flex items-center gap-1.5 flex-none">
               <button onClick={()=>scrollRail(-1)} disabled={!railNav.prev} data-sess-prev title="向左翻页"
- className="w-7 h-7 grid place-items-center rounded-md border border-jz-border/60 bg-jz-surface text-jz-text-secondary hover:bg-jz-elevated/40 hover:text-jz-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+ className="w-7 h-7 grid place-items-center rounded-control border border-jz-border/60 bg-jz-surface text-jz-ink-2 hover:bg-jz-surface-2/40 hover:text-jz-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                 <ChevronLeft size={14} />
               </button>
               <button onClick={()=>scrollRail(1)} disabled={!railNav.next} data-sess-next title="向右翻页"
- className="w-7 h-7 grid place-items-center rounded-md border border-jz-border/60 bg-jz-surface text-jz-text-secondary hover:bg-jz-elevated/40 hover:text-jz-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+ className="w-7 h-7 grid place-items-center rounded-control border border-jz-border/60 bg-jz-surface text-jz-ink-2 hover:bg-jz-surface-2/40 hover:text-jz-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                 <ChevronRight size={14} />
               </button>
               <button onClick={()=>setSessRailOpen(v=>!v)} data-sess-rail-collapse title={sessRailOpen?'收起会话栏':'展开会话栏'}
- className="h-7 px-2 rounded-md border border-jz-border/60 text-xs text-jz-text-secondary hover:bg-jz-elevated/40 hover:text-jz-text-primary transition-colors whitespace-nowrap">
+ className="h-7 px-2 rounded-control border border-jz-border/60 text-meta text-jz-ink-2 hover:bg-jz-surface-2/40 hover:text-jz-ink transition-colors whitespace-nowrap">
                 {sessRailOpen?'收起 ▲':'展开 ▼'}
               </button>
             </div>
@@ -726,21 +726,21 @@ export const TaskCenterPage: React.FC = () => {
  onClick={()=>{ if(canGo) window.location.hash=`/pentest/project/${s.project_id}/session/${s.id}`; }}
  onKeyDown={(e)=>{ if(canGo&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); window.location.hash=`/pentest/project/${s.project_id}/session/${s.id}`; } }}
  title={canGo?`点击进入渗透会话 #${s.id}`:'无关联项目(R76-2 禁跳)'}
- className={`min-w-0 rounded-xl bg-jz-elevated/40 border border-jz-border/40 px-3 h-16 flex items-center gap-2 outline-none transition-all
- ${canGo?'cursor-pointer hover:bg-jz-elevated/60':'opacity-50 cursor-not-allowed'}`}>
-                      <span data-sess-pulse className="h-1.5 w-1.5 rounded-full bg-vuln-safe animate-pulse flex-none" title="活动会话" />
+ className={`min-w-0 rounded-card bg-jz-surface-2/40 border border-jz-border/40 px-3 h-16 flex items-center gap-2 outline-none transition-all
+ ${canGo?'cursor-pointer hover:bg-jz-surface-2/60':'opacity-50 cursor-not-allowed'}`}>
+                      <span data-sess-pulse className="h-1.5 w-1.5 rounded-pill bg-jz-teal animate-pulse flex-none" title="活动会话" />
                       <span className="flex-1 min-w-0 leading-tight">
                         <span className="flex items-center gap-1.5">
-                          <span className="font-mono text-xs text-jz-text-primary tnum">#{s.id}</span>
-                          <span className={`flex-none px-1 rounded text-[11px] ${dev.cls}`}>{dev.label}</span>
+                          <span className="font-mono text-meta text-jz-ink tnum">#{s.id}</span>
+                          <span className={`flex-none px-1 rounded-control text-meta ${dev.cls}`}>{dev.label}</span>
                         </span>
-                        <span className="block text-xs text-jz-text-secondary truncate mt-0.5" title={s.app_name||s.package||''}>{s.app_name||s.package||'—'}</span>
-                        <span className="block font-mono text-[11px] text-jz-text-muted truncate" title={s.device||''}>{s.device||'无设备'}</span>
+                        <span className="block text-meta text-jz-ink-2 truncate mt-0.5" title={s.app_name||s.package||''}>{s.app_name||s.package||'—'}</span>
+                        <span className="block font-mono text-meta text-jz-muted truncate" title={s.device||''}>{s.device||'无设备'}</span>
                       </span>
                       <button onClick={(e)=>{ e.stopPropagation(); if(canGo) window.location.hash=`/pentest/project/${s.project_id}/session/${s.id}`; }}
  disabled={!canGo} data-sess-go
  title={canGo?`进入渗透会话 #${s.id}`:'无关联项目(R76-2 禁跳)'}
- className={`flex-none text-[11px] px-1.5 py-0.5 rounded transition-colors whitespace-nowrap ${canGo?'text-neon-accent hover:bg-neon-accent/10':'text-jz-text-muted/40 cursor-not-allowed'}`}>
+ className={`flex-none text-meta px-1.5 py-0.5 rounded-control transition-colors whitespace-nowrap ${canGo?'text-jz-brand hover:bg-jz-brand/10':'text-jz-muted cursor-not-allowed'}`}>
                         进入
                       </button>
                     </div>
@@ -759,17 +759,17 @@ export const TaskCenterPage: React.FC = () => {
           (data-toolbar/data-task-search/data-toolbar-search/data-toolbar-filter/data-toolbar-dot/
            data-filter-chip-row/data-filter-chip/data-smoke-toggle/data-packer-filter/data-operator-filter
            存量探针原样保留,存量资产闸只增不删) */}
-      <div className="rounded-2xl bg-jz-surface shadow-jz-card p-3 space-y-2" data-toolbar="tasks">
+      <div className="rounded-panel bg-jz-surface shadow-card p-3 space-y-2" data-toolbar="tasks">
         <div className="flex items-center gap-2 flex-wrap min-h-10" data-toolbar-main>
           <div className="relative flex-1 min-w-[280px]">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-jz-text-muted pointer-events-none" />
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-jz-muted pointer-events-none" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜索 APP 名 / 包名 / #ID / 操作员 / 失败原因…"
  data-task-search="" data-toolbar-search
- className="h-10 w-full pl-8 pr-3 rounded-xl bg-jz-elevated/60 text-sm text-jz-text-primary placeholder:text-jz-text-muted outline-none focus:ring-2 focus:ring-neon-accent/30" />
+ className="h-10 w-full pl-8 pr-3 rounded-card bg-jz-surface-2/60 text-body text-jz-ink placeholder:text-jz-muted outline-none focus:ring-2 focus:ring-jz-brand/30" />
           </div>
           {/* 加固壳筛选(选项=已加载任务真实 packer 值派生;库外值原样显) */}
           <select value={packerF} onChange={(e) => setPackerF(e.target.value)} data-packer-filter title="按加固壳指纹筛选(选项来自当前列表真实 packer 值)"
- className="h-8 px-2 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-secondary outline-none focus:ring-2 focus:ring-neon-accent/30 cursor-pointer whitespace-nowrap shrink-0">
+ className="h-8 px-2 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink-2 outline-none focus:ring-2 focus:ring-jz-brand/30 cursor-pointer whitespace-nowrap shrink-0">
             <option value="all">全部壳态</option>
             {packerOptions.length > 0 && <option value="__packed">有壳(任意)</option>}
             {allTasks.some((t: any) => t.packer === 'none') && <option value="none">无壳</option>}
@@ -777,19 +777,19 @@ export const TaskCenterPage: React.FC = () => {
           </select>
           {/* 操作员筛选(名字=/api/tasks/counts users 映射;未加载到名字的先显 #uid,不编名) */}
           <select value={operatorF} onChange={(e) => setOperatorF(e.target.value)} data-operator-filter title="按操作员筛选(名字来自任务计数端点 id→username 只读映射)"
- className="h-8 px-2 rounded-lg bg-jz-elevated/60 text-xs text-jz-text-secondary outline-none focus:ring-2 focus:ring-neon-accent/30 cursor-pointer whitespace-nowrap shrink-0">
+ className="h-8 px-2 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink-2 outline-none focus:ring-2 focus:ring-jz-brand/30 cursor-pointer whitespace-nowrap shrink-0">
             <option value="">全部操作员</option>
             {operatorOptions.map(([uid, n]) => <option key={uid} value={uid}>{usersMap[uid] ? `${usersMap[uid]}(#${uid})` : `#${uid}`}·{n}</option>)}
           </select>
           {/* 0s 冒烟失败隐藏开关(独立 Checkbox 开关): 后端无 svc_smoke 专用标记——诚实降级为本地耗时判据(failed 且耗时<2s) */}
           <label data-smoke-toggle data-active={hideSmokeFail ? '1' : ''}
  title={`口径: status=failed 且耗时<${SMOKE_FAIL_S}s(0s 冒烟失败特征,实测 0.02s~0.84s 即时失败族)。后端无 svc_smoke 专用标记=本地耗时判据,诚实降级`}
- className="inline-flex items-center gap-2 h-8 pl-2.5 pr-2.5 rounded-full border border-jz-border/60 cursor-pointer select-none whitespace-nowrap shrink-0 hover:bg-jz-elevated/40 transition-colors">
-            <span className={`relative inline-flex h-4 w-7 flex-none rounded-full transition-colors ${hideSmokeFail ? 'bg-jz-accent-amber' : 'bg-jz-border'}`}>
+ className="inline-flex items-center gap-2 h-8 pl-2.5 pr-2.5 rounded-pill border border-jz-border/60 cursor-pointer select-none whitespace-nowrap shrink-0 hover:bg-jz-surface-2/40 transition-colors">
+            <span className={`relative inline-flex h-4 w-7 flex-none rounded-pill transition-colors ${hideSmokeFail ? 'bg-jz-amber' : 'bg-jz-border'}`}>
               <input type="checkbox" checked={hideSmokeFail} onChange={() => setHideSmokeFail((v) => !v)} className="sr-only" />
-              <span className={`absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-jz-surface shadow transition-transform ${hideSmokeFail ? 'translate-x-3' : ''}`} />
+              <span className={`absolute top-0.5 left-0.5 h-3 w-3 rounded-pill bg-jz-surface shadow-card transition-transform ${hideSmokeFail ? 'translate-x-3' : ''}`} />
             </span>
-            <span className={`text-xs whitespace-nowrap ${hideSmokeFail ? 'text-jz-accent-amber font-semibold' : 'text-jz-text-muted'}`}>
+            <span className={`text-meta whitespace-nowrap ${hideSmokeFail ? 'text-jz-amber font-semibold' : 'text-jz-muted'}`}>
               隐藏 0s 冒烟失败 (svc_smoke · <span className="font-mono tnum">{smokeFailCount}</span>)
             </span>
           </label>
@@ -808,36 +808,36 @@ export const TaskCenterPage: React.FC = () => {
             return (
               <button key={f.key || 'all'} onClick={() => { setFilter(f.key); if (!f.key) setSearchParams({}); }} title={f.title}
  data-toolbar-filter={f.key} data-active={on ? '1' : ''}
- className={`flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium transition-colors whitespace-nowrap
- ${on ? 'bg-neon-accent/10 text-neon-accent font-semibold' : 'text-jz-text-muted hover:text-jz-text-primary hover:bg-jz-elevated/50'}`}>
-                {f.dot && <span className="inline-block h-1.5 w-1.5 rounded-full bg-jz-accent-cyan animate-pulse" data-toolbar-dot />}
+ className={`flex items-center gap-1.5 h-8 px-3 rounded-pill text-meta font-medium transition-colors whitespace-nowrap
+ ${on ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/50'}`}>
+                {f.dot && <span className="inline-block h-1.5 w-1.5 rounded-pill bg-jz-brand animate-pulse" data-toolbar-dot />}
                 {f.label}
-                <span className={`px-1.5 rounded-full font-mono tnum text-[11px] ${on ? 'bg-neon-accent/15 text-neon-accent' : 'bg-jz-elevated text-jz-text-muted'}`}>{f.count}</span>
+                <span className={`px-1.5 rounded-pill font-mono tnum text-meta ${on ? 'bg-jz-brand/15 text-jz-brand' : 'bg-jz-surface-2 text-jz-muted'}`}>{f.count}</span>
               </button>
             );
           })}
           {hasFilterChip && (
-            <span data-filter-chip className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-neon-accent/15 text-neon-accent text-xs font-mono">
-              {statusParam ? `status=${statusParam}` : `status=${filter}`}<button onClick={()=>{setFilter('');setSearchParams({});}} className="ml-0.5 hover:text-jz-text-primary">✕</button>
+            <span data-filter-chip className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill bg-jz-brand/15 text-jz-brand text-meta font-mono">
+              {statusParam ? `status=${statusParam}` : `status=${filter}`}<button onClick={()=>{setFilter('');setSearchParams({});}} className="ml-0.5 hover:text-jz-ink">✕</button>
             </span>
           )}
         </div>
       </div>
-      <div className="rounded-2xl bg-jz-surface shadow-jz-card overflow-hidden flex flex-col">
+      <div className="rounded-panel bg-jz-surface shadow-card overflow-hidden flex flex-col">
         {/* R108-2①②: 首载(tasks===null)呈表格骨架;加载完成且过滤后为空呈统一空态(文案沿既有逐字) */}
         {tasks === null && (<div className="p-4"><SkeletonLoader variant="table" rows={6} /></div>)}
         {tasks !== null && !filtered.length && (
           <EmptyStatePlaceholder icon={ClipboardList} title="暂无任务" subtitle="从「新建审计」开始第一个扫描" />
         )}
-        {/* 核心表格(规格): 应用名 text-sm font-bold/包名 #ID mono/行 py-3.5/诚实状态列/耗时+时间双行/
+        {/* 核心表格(规格): 应用名 text-body font-semibold/包名 #ID mono/行 py-3.5/诚实状态列/耗时+时间双行/
             漏洞四色胶囊+微缩比例条/显性文字操作列 */}
-        <table className="w-full text-sm">
-          <thead><tr className="text-[11px] font-semibold text-jz-text-secondary tracking-wider bg-jz-elevated/40">
-            <th className="px-3 py-1.5 text-left w-8"><input type="checkbox" checked={allPageSel} onChange={toggleAllPage} data-sel-all title="全选/取消本页" className="align-middle accent-[rgb(var(--c-accent-cyan))] cursor-pointer" /></th>
+        <table className="w-full text-body">
+          <thead><tr className="text-meta font-semibold text-jz-ink-2 bg-jz-surface-2/40">
+            <th className="px-3 py-1.5 text-left w-8"><input type="checkbox" checked={allPageSel} onChange={toggleAllPage} data-sel-all title="全选/取消本页" className="align-middle accent-[rgb(var(--jz-brand))] cursor-pointer" /></th>
             <th className="px-3 py-1.5 text-left">#</th><th className="px-3 py-1.5 text-left">类型</th><th className="px-3 py-1.5 text-left">目标应用</th>
             <th className="px-3 py-1.5 text-left">状态</th><th className="px-3 py-1.5 text-left">耗时 / 时间</th><th className="px-3 py-1.5 text-left">
               <span className="inline-flex items-center gap-1" title="漏洞计数=审计+渗透两域真算(审计域=security_report.json findings 全量;渗透域=findings.db active=pending+confirmed);C/H/M/L=Critical/High/Medium/Low">
-                漏洞态势 <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-jz-elevated text-jz-text-muted text-[11px] font-mono cursor-help hover:bg-jz-border hover:text-jz-text-secondary transition-colors">?</span>
+                漏洞态势 <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-pill bg-jz-surface-2 text-jz-muted text-meta font-mono cursor-help hover:bg-jz-border hover:text-jz-ink-2 transition-colors">?</span>
               </span>
             </th>
             <th className="px-3 py-1.5 text-left">操作员</th><th className="px-3 py-1.5 text-right">操作</th>
@@ -862,22 +862,22 @@ export const TaskCenterPage: React.FC = () => {
               <tr key={t.id||i} data-task-row={t.id}
  onClick={openRow}
  title={sessMap[t.id] ? `点击进入渗透会话 #${sessMap[t.id].sid} 工作台` : artifactsReady ? '点击浏览产物/报告' : undefined}
- className={`cursor-pointer ${(focusParam&&String(t.id)===focusParam?'ring-1 ring-neon-accent/60 bg-neon-accent/10 ':(i%2?'bg-jz-bg/40 ':''))+'hover:bg-jz-elevated/30'}`}>
-                <td className="px-3 py-3.5" onClick={(e)=>e.stopPropagation()}><input type="checkbox" checked={sel.has(t.id)} onChange={()=>toggleRow(t.id)} data-sel-row={t.id} className="align-middle accent-[rgb(var(--c-accent-cyan))] cursor-pointer" /></td>
-                <td className="px-3 py-3.5 font-mono text-jz-text-muted tnum">{t.id}</td>
+ className={`cursor-pointer ${(focusParam&&String(t.id)===focusParam?'ring-1 ring-jz-brand/60 bg-jz-brand/10 ':(i%2?'bg-jz-canvas/40 ':''))+'hover:bg-jz-surface-2/30'}`}>
+                <td className="px-3 py-3.5" onClick={(e)=>e.stopPropagation()}><input type="checkbox" checked={sel.has(t.id)} onChange={()=>toggleRow(t.id)} data-sel-row={t.id} className="align-middle accent-[rgb(var(--jz-brand))] cursor-pointer" /></td>
+                <td className="px-3 py-3.5 font-mono text-jz-muted tnum">{t.id}</td>
                 <td className="px-3 py-3.5">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-bold ${KIND_CLS[kind]||'text-jz-text-muted bg-jz-elevated'}`}>{kind}</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-control text-meta font-mono font-semibold ${KIND_CLS[kind]||'text-jz-muted bg-jz-surface-2'}`}>{kind}</span>
                 </td>
                 <td className="px-3 py-3.5 max-w-[240px]">
-                  {/* 排版层级(规格): 主标=产品名 text-sm font-bold;副标=包名 mono 11px+防护徽章;缺包名=占位符保 Baseline 统一 */}
+                  {/* 排版层级(规格): 主标=产品名 text-body font-semibold;副标=包名 mono 11px+防护徽章;缺包名=占位符保 Baseline 统一 */}
                   <div className="flex flex-col justify-center min-h-[36px] py-0.5 min-w-0">
                     <div className="flex items-center">
-                      <span className="text-sm font-bold text-jz-text-primary truncate leading-snug" title={t.app_name||t.package||''}>{t.app_name||t.package||'—'}</span>
+                      <span className="text-body font-semibold text-jz-ink truncate leading-snug" title={t.app_name||t.package||''}>{t.app_name||t.package||'—'}</span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 min-w-0">
-                      <span className="font-mono text-[11px] font-normal text-jz-text-muted truncate max-w-[200px]" title={t.package||'后端未返回包名'}>{t.package||'包名待解析'}</span>
+                      <span className="font-mono text-meta font-normal text-jz-muted truncate max-w-[200px]" title={t.package||'后端未返回包名'}>{t.package||'包名待解析'}</span>
                       {t.packer ? <PackerChip packer={t.packer} /> : t.status==='running' ? (
-                        <span className="flex-none rounded px-1.5 py-0.5 text-[11px] font-mono bg-jz-elevated text-jz-text-muted" title="壳识别中；完成后写入真实壳型">识别中</span>
+                        <span className="flex-none rounded-control px-1.5 py-0.5 text-meta font-mono bg-jz-surface-2 text-jz-muted" title="壳识别中；完成后写入真实壳型">识别中</span>
                       ) : null}
                     </div>
                   </div>
@@ -886,11 +886,11 @@ export const TaskCenterPage: React.FC = () => {
                   {t.status==='failed' ? (
                     /* 失败态(规格): 红「失败」+完整失败原因(换行不截断;悬停显全文;后端无 error_msg=如实标注) */
                     <div className="flex flex-col gap-1 max-w-[280px]" data-honest-status="failed">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-vuln-critical/10 text-vuln-critical border border-vuln-critical/25 self-start flex-shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-vuln-critical animate-pulse" />
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-control text-meta font-medium bg-jz-sev-critical/10 text-jz-sev-critical border border-jz-sev-critical/25 self-start flex-shrink-0">
+                        <span className="w-1.5 h-1.5 rounded-pill bg-jz-sev-critical animate-pulse" />
                         失败
                       </span>
-                      <span className="text-[11px] font-mono text-vuln-critical bg-vuln-critical/5 border border-vuln-critical/15 px-2 py-0.5 rounded break-all cursor-help"
+                      <span className="text-meta font-mono text-jz-sev-critical bg-jz-sev-critical/5 border border-jz-sev-critical/15 px-2 py-0.5 rounded-control break-all cursor-help"
  title={t.error_msg || '后端未返回失败原因(Progress 列为空)'}>
                         {t.error_msg || t.progress || '后端未返回失败原因'}
                       </span>
@@ -901,11 +901,11 @@ export const TaskCenterPage: React.FC = () => {
                        ③凡无壳或已解析出业务码类=🟢 完成+✓业务码 X 类(实证 #785 17类/#786 1类 均无壳正常完成) */
                     h.blocked ? (
                       <div className="flex flex-col gap-1 max-w-[280px]" data-honest-status="degraded">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-jz-accent-amber/10 text-jz-accent-amber border border-jz-accent-amber/25 self-start flex-shrink-0 whitespace-nowrap" title="管线跑完≠业务码脱出——明确有壳且未脱出业务码,风险结论仅覆盖部分层,严禁当纯绿完整完成消费">
-                          <span className="w-1.5 h-1.5 rounded-full bg-jz-accent-amber" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-control text-meta font-medium bg-jz-amber/10 text-jz-amber border border-jz-amber/25 self-start flex-shrink-0 whitespace-nowrap" title="管线跑完≠业务码脱出——明确有壳且未脱出业务码,风险结论仅覆盖部分层,严禁当纯绿完整完成消费">
+                          <span className="w-1.5 h-1.5 rounded-pill bg-jz-amber" />
                           完成(脱壳受阻)
                         </span>
-                        <span data-unpack-outcome={probeVal || undefined} className="text-[11px] font-mono text-jz-accent-amber bg-jz-accent-amber/5 border border-jz-accent-amber/15 px-2 py-0.5 rounded break-all cursor-help self-start"
+                        <span data-unpack-outcome={probeVal || undefined} className="text-meta font-mono text-jz-amber bg-jz-amber/5 border border-jz-amber/15 px-2 py-0.5 rounded-control break-all cursor-help self-start"
  title={t.unpack_outcome?.diagnosis?.reason || t.progress || '阻塞判定来自 unpack_outcome 结果摘要'}>
                           {h.label}
                         </span>
@@ -921,65 +921,65 @@ export const TaskCenterPage: React.FC = () => {
                           const channel = t.unpack_outcome?.unpack_method || '';
                           const engine = t.unpack_outcome?.engine_commit || '';
                           return (
-                            <span data-unpack-reason className="text-[11px] font-mono text-jz-text-muted break-words max-w-[280px]" title={reason}>
-                              {channel && <span className="text-jz-text-secondary">通道 {channel}</span>}
+                            <span data-unpack-reason className="text-meta font-mono text-jz-muted break-words max-w-[280px]" title={reason}>
+                              {channel && <span className="text-jz-ink-2">通道 {channel}</span>}
                               {channel && (checkTxt || reason) ? ' · ' : ''}
-                              {checkTxt && <span className="text-jz-accent-amber">{checkTxt}</span>}
+                              {checkTxt && <span className="text-jz-amber">{checkTxt}</span>}
                               {checkTxt && reason ? ' · ' : ''}
                               {reason ? reason.slice(0, 140) : '未返回具体失败原因'}
-                              {engine && <span className="text-jz-text-muted/70"> · engine {engine}</span>}
+                              {engine && <span className="text-jz-muted"> · engine {engine}</span>}
                             </span>
                           );
                         })()}
                       </div>
                     ) : (
                       <div className="flex flex-col gap-0.5" data-honest-status="complete" data-unpack-outcome={probeVal || undefined}>
-                        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-vuln-safe whitespace-nowrap">
-                          <span className="w-1.5 h-1.5 rounded-full flex-none bg-vuln-safe" />
+                        <span className="inline-flex items-center gap-1.5 text-body font-medium text-jz-teal whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-pill flex-none bg-jz-teal" />
                           完成 <span title={h.biz != null ? '后端真实业务码统计(严禁受阻覆盖)' : '脱壳判定无阻塞'}>✓</span>
-                          {h.biz != null && <span className="text-[11px] font-mono tnum">业务码 {h.biz} 类</span>}
+                          {h.biz != null && <span className="text-meta font-mono tnum">业务码 {h.biz} 类</span>}
                         </span>
                         {h.biz == null && (
-                          <span className="text-[11px] text-jz-text-muted font-mono whitespace-nowrap">
+                          <span className="text-meta text-jz-muted font-mono whitespace-nowrap">
                             {h.shell ? (h.positive ? '业务码类数未上报' : '无脱壳判定数据(不编数)') : '无壳应用(无脱壳环节)'}
                           </span>
                         )}
                       </div>
                     )
                   ) : (
-                  <span className="inline-flex items-center gap-1.5 font-medium" style={{color:ST_COL[t.status]||'rgb(var(--c-text-muted))'}}>
-                    <span className="w-1.5 h-1.5 rounded-full flex-none" style={{ background: ST_COL[t.status] || 'rgb(var(--c-text-muted))', ...(t.status==='running' ? { animation: 'breathe 1.6s ease-in-out infinite' } : {}) }} />
+                  <span className="inline-flex items-center gap-1.5 font-medium" style={{color:ST_COL[t.status]||'rgb(var(--jz-muted))'}}>
+                    <span className="w-1.5 h-1.5 rounded-pill flex-none" style={{ background: ST_COL[t.status] || 'rgb(var(--jz-muted))' }} />
                     {ST_CN[t.status]||t.status}
                   </span>
                   )}
                   {t.status==='running' && t.progress && <TaskLiveProgress progress={t.progress} />}
                 </td>
-                <td className="px-3 py-3.5 font-mono tnum text-jz-text-secondary whitespace-nowrap" data-dur
+                <td className="px-3 py-3.5 font-mono tnum text-jz-ink-2 whitespace-nowrap" data-dur
  title={`精确耗时: ${Math.round(dur)}s(${t.status === 'running' ? 'created_at→now 实时' : 'created_at→updated_at'} 端点真值)`}>
                   <div className="flex flex-col leading-tight">
                     <span>
-                      {t.status==='running'&&<span className="inline-block h-1.5 w-1.5 rounded-full bg-jz-accent-cyan animate-pulse mr-1 align-middle" />}{fmtDur(dur)}
-                      {slow && <span className="ml-1.5 px-1 rounded text-[11px] font-medium bg-jz-accent-amber/10 text-jz-accent-amber align-middle" title={`耗时 ${Math.round(dur)}s 超 15m 慢任务标线`}>慢</span>}
+                      {t.status==='running'&&<span className="inline-block h-1.5 w-1.5 rounded-pill bg-jz-brand animate-pulse mr-1 align-middle" />}{fmtDur(dur)}
+                      {slow && <span className="ml-1.5 px-1 rounded-control text-meta font-medium bg-jz-amber/10 text-jz-amber align-middle" title={`耗时 ${Math.round(dur)}s 超 15m 慢任务标线`}>慢</span>}
                     </span>
                     {/* 时间副行(规格): 创建/更新时间格式化——两字段后端 tasks 表实存(NOT NULL),优雅回退 '—' */}
-                    <span className="text-[11px] text-jz-text-muted font-mono" title={`创建 ${t.created_at ? new Date(t.created_at*1000).toLocaleString('zh-CN', { hour12: false }) : '—'} · 更新 ${t.updated_at ? new Date(t.updated_at*1000).toLocaleString('zh-CN', { hour12: false }) : '—'}`}>
+                    <span className="text-meta text-jz-muted font-mono" title={`创建 ${t.created_at ? new Date(t.created_at*1000).toLocaleString('zh-CN', { hour12: false }) : '—'} · 更新 ${t.updated_at ? new Date(t.updated_at*1000).toLocaleString('zh-CN', { hour12: false }) : '—'}`}>
                       {fmtTime(t.created_at)} → {fmtTime(t.updated_at)}
                     </span>
                   </div>
                 </td>
                 <td className="px-3 py-3.5" data-vuln-counts>
-                  {!c ? <span className="text-jz-text-muted/60">…</span>
+                  {!c ? <span className="text-jz-muted">…</span>
  : c.total>0 ? (
                     <span className="inline-flex flex-col gap-1">
-                      <span className="inline-flex items-center gap-1 font-mono text-[11px]" title={`审计域+渗透域(${(c.sources||[]).join('+')||'无'}); active=pending+confirmed`
+                      <span className="inline-flex items-center gap-1 font-mono text-meta" title={`审计域+渗透域(${(c.sources||[]).join('+')||'无'}); active=pending+confirmed`
                         + (c.contract ? `\n引擎口径: 原始命中 ${c.contract.raw ?? '—'} → 去重 ${c.contract.kept ?? '—'} → 确认 ${c.contract.confirmed ?? '—'} · 候选 ${c.contract.candidate ?? '—'} · 压制 ${c.contract.suppressed ?? '—'} · 主报告 ${c.contract.report_total ?? '—'}(LLM 实审 ${c.contract.reviewed ?? '—'})` : '')}>
-                        <span className={`px-1.5 py-0.5 rounded border ${c.critical > 0 ? 'bg-vuln-critical/10 text-vuln-critical border-vuln-critical/25 font-semibold' : 'bg-jz-elevated/60 text-jz-text-muted/60 border-transparent'}`} title="致命 Critical">C:{c.critical}</span>
-                        <span className={`px-1.5 py-0.5 rounded border ${c.high > 0 ? 'bg-vuln-high/10 text-vuln-high border-vuln-high/25 font-semibold' : 'bg-jz-elevated/60 text-jz-text-muted/60 border-transparent'}`} title="高危 High">H:{c.high}</span>
-                        <span className={`px-1.5 py-0.5 rounded border ${c.medium > 0 ? 'bg-vuln-medium/10 text-vuln-medium border-vuln-medium/25' : 'bg-jz-elevated/60 text-jz-text-muted/60 border-transparent'}`} title="中危 Medium">M:{c.medium}</span>
-                        <span className={`px-1.5 py-0.5 rounded border ${c.low > 0 ? 'bg-jz-accent-cyan/10 text-jz-accent-cyan border-jz-accent-cyan/25' : 'bg-jz-elevated/60 text-jz-text-muted/60 border-transparent'}`} title="低危 Low">L:{c.low}</span>
+                        <span className={`px-1.5 py-0.5 rounded-control border ${c.critical > 0 ? 'bg-jz-sev-critical/10 text-jz-sev-critical border-jz-sev-critical/25 font-semibold' : 'bg-jz-surface-2/60 text-jz-muted border-transparent'}`} title="致命 Critical">C:{c.critical}</span>
+                        <span className={`px-1.5 py-0.5 rounded-control border ${c.high > 0 ? 'bg-jz-sev-high/10 text-jz-sev-high border-jz-sev-high/25 font-semibold' : 'bg-jz-surface-2/60 text-jz-muted border-transparent'}`} title="高危 High">H:{c.high}</span>
+                        <span className={`px-1.5 py-0.5 rounded-control border ${c.medium > 0 ? 'bg-jz-sev-medium/10 text-jz-sev-medium border-jz-sev-medium/25' : 'bg-jz-surface-2/60 text-jz-muted border-transparent'}`} title="中危 Medium">M:{c.medium}</span>
+                        <span className={`px-1.5 py-0.5 rounded-control border ${c.low > 0 ? 'bg-jz-brand/10 text-jz-brand border-jz-brand/25' : 'bg-jz-surface-2/60 text-jz-muted border-transparent'}`} title="低危 Low">L:{c.low}</span>
                       </span>
                       {/* 4 色微缩比例条(规格): C/H/M/L 占比,h-1 等宽分段(色值=vuln token 同源 hex) */}
-                      <span className="inline-flex h-1 w-28 rounded-full bg-jz-elevated overflow-hidden" data-vuln-bar
+                      <span className="inline-flex h-1 w-28 rounded-pill bg-jz-surface-2 overflow-hidden" data-vuln-bar
  title={`占比: C ${c.critical} · H ${c.high} · M ${c.medium} · L ${c.low}(共 ${c.total})`}>
                         {c.critical > 0 && <span className="block h-full" style={{ width: `${(c.critical / c.total) * 100}%`, background: '#EF4444' }} />}
                         {c.high > 0 && <span className="block h-full" style={{ width: `${(c.high / c.total) * 100}%`, background: '#F97316' }} />}
@@ -987,52 +987,52 @@ export const TaskCenterPage: React.FC = () => {
                         {c.low > 0 && <span className="block h-full" style={{ width: `${(c.low / c.total) * 100}%`, background: '#06B6D4' }} />}
                       </span>
                     </span>
-                  ) : <span className="inline-flex px-2 py-0.5 rounded bg-jz-elevated/60 text-jz-text-muted font-mono text-[11px]" title="脱壳任务不执行漏洞检测(两域均无记录)">未涉及审计</span>}
+                  ) : <span className="inline-flex px-2 py-0.5 rounded-control bg-jz-surface-2/60 text-jz-muted font-mono text-meta" title="脱壳任务不执行漏洞检测(两域均无记录)">未涉及审计</span>}
                 </td>
-                <td className="px-3 py-3.5 font-mono text-sm text-jz-text-secondary truncate max-w-[90px]" data-operator title={t.user_id!=null?`uid=${t.user_id}`:''}>{usersMap[String(t.user_id)]||(t.user_id!=null?`#${t.user_id}`:'—')}</td>
+                <td className="px-3 py-3.5 font-mono text-body text-jz-ink-2 truncate max-w-[90px]" data-operator title={t.user_id!=null?`uid=${t.user_id}`:''}>{usersMap[String(t.user_id)]||(t.user_id!=null?`#${t.user_id}`:'—')}</td>
                 <td className="px-3 py-3.5 whitespace-nowrap text-right relative" onClick={(e)=>e.stopPropagation()}>
-                  {/* 操作列显性化+样式统一(本轮修复⑤): 全部按钮同高同圆角胶囊(ACT_BTN: px-2.5 py-1 text-xs
-                      rounded-md border,whitespace-nowrap);接力禁用态保留 disabled 视觉但同尺寸;
+                  {/* 操作列显性化+样式统一(本轮修复⑤): 全部按钮同高同圆角胶囊(ACT_BTN: px-2.5 py-1 text-meta
+                      rounded-control border,whitespace-nowrap);接力禁用态保留 disabled 视觉但同尺寸;
                       完成=[工作台/接力][报告][产物][⋯] 失败=[重试][详情][删除];会话跳转/接力占位探针原样保留 */}
                   <span className="inline-flex items-center gap-1">
                     {sessMap[t.id]&&(
                       <button onClick={()=>window.location.hash=`/pentest/project/${sessMap[t.id].pid}/session/${sessMap[t.id].sid}`} data-goto-session
- className={`${ACT_BTN} text-neon-accent bg-neon-accent/10 border-neon-accent/25 hover:bg-neon-accent/20`} title="查看渗透会话">工作台</button>
+ className={`${ACT_BTN} text-jz-brand bg-jz-brand/10 border-jz-brand/25 hover:bg-jz-brand/20`} title="查看渗透会话">工作台</button>
                     )}
                     {t.status==='done'&&!sessMap[t.id]&&(
-                      <button disabled title="无关联项目(R76-2 禁跳)" onClick={()=>relay(t)} data-relay-btn className={`${ACT_BTN} text-jz-text-muted/40 bg-jz-elevated/40 border-jz-border/40 cursor-not-allowed`}>接力</button>
+                      <button disabled title="无关联项目(R76-2 禁跳)" onClick={()=>relay(t)} data-relay-btn className={`${ACT_BTN} text-jz-muted bg-jz-surface-2/40 border-jz-border/40 cursor-not-allowed`}>接力</button>
                     )}
                     {t.status==='done'&&canAsk&&(
                       <button onClick={()=>nav(`/reports?taskId=${t.id}`)} data-act-report title="打开报告中心(该任务审计报告)"
- className={`${ACT_BTN} text-jz-accent-cyan bg-jz-accent-cyan/10 border-jz-accent-cyan/25 hover:bg-jz-accent-cyan/20`}>报告</button>
+ className={`${ACT_BTN} text-jz-brand bg-jz-brand/10 border-jz-brand/25 hover:bg-jz-brand/20`}>报告</button>
                     )}
                     {artifactsReady&&(
                       <button onClick={()=>setArtTask(t.id)} data-artifacts-btn title="产物浏览"
- className={`${ACT_BTN} text-neon-accent bg-neon-accent/10 border-neon-accent/25 hover:bg-neon-accent/20`}>产物</button>
+ className={`${ACT_BTN} text-jz-brand bg-jz-brand/10 border-jz-brand/25 hover:bg-jz-brand/20`}>产物</button>
                     )}
                     {t.status==='failed'&&(
                       <button onClick={()=>setRerunTask(t)} data-act-retry title="重跑任务（可重选设备/模式/深度）"
- className={`${ACT_BTN} text-jz-text-secondary bg-jz-elevated/60 border-jz-border/50 hover:text-neon-accent`}>重试</button>
+ className={`${ACT_BTN} text-jz-ink-2 bg-jz-surface-2/60 border-jz-border/50 hover:text-jz-brand`}>重试</button>
                     )}
                     {(t.status==='failed'||t.status==='running'||t.status==='queued')&&(
                       <button onClick={()=>setDetailTask(t)} data-act-detail title="任务详情(后端原始字段,失败原因全文)"
- className={`${ACT_BTN} text-jz-text-secondary bg-jz-elevated/60 border-jz-border/50 hover:text-jz-text-primary`}>详情</button>
+ className={`${ACT_BTN} text-jz-ink-2 bg-jz-surface-2/60 border-jz-border/50 hover:text-jz-ink`}>详情</button>
                     )}
                     {t.status==='failed'&&(
                       <button onClick={()=>{ if(window.confirm(`确认删除任务 #${t.id}?`))removeTask(t); }} data-act-del title="删除该任务(不可恢复)"
- className={`${ACT_BTN} text-vuln-critical bg-vuln-critical/10 border-vuln-critical/25 hover:bg-vuln-critical/20`}>删除</button>
+ className={`${ACT_BTN} text-jz-sev-critical bg-jz-sev-critical/10 border-jz-sev-critical/25 hover:bg-jz-sev-critical/20`}>删除</button>
                     )}
-                    <button onClick={()=>setMenuFor(menuFor===t.id?null:t.id)} data-more-btn className="inline-flex items-center justify-center whitespace-nowrap p-1 rounded-md text-jz-text-muted hover:text-jz-text-primary hover:bg-jz-elevated/40" title="更多操作"><MoreHorizontal size={14} /></button>
+                    <button onClick={()=>setMenuFor(menuFor===t.id?null:t.id)} data-more-btn className="inline-flex items-center justify-center whitespace-nowrap p-1 rounded-control text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/40" title="更多操作"><MoreHorizontal size={14} /></button>
                   </span>
                   {menuFor===t.id&&(
                     <>
                       <div className="fixed inset-0 z-40" onClick={()=>setMenuFor(null)} />
-                      <div className="absolute right-2 top-7 z-50 w-32 rounded-xl bg-jz-surface shadow-jz-card py-1 text-left" data-more-menu>
+                      <div className="absolute right-2 top-7 z-50 w-32 rounded-card bg-jz-surface shadow-card py-1 text-left" data-more-menu>
                         {canAsk&&(
-                          <button onClick={()=>{setMenuFor(null);window.location.hash=`/agent?task=${t.id}`;}} data-ask-btn className="w-full px-3 py-1.5 text-xs text-vuln-safe hover:bg-jz-elevated/40 flex items-center gap-1.5"><MessageSquare size={12} /> 追问 AI</button>
+                          <button onClick={()=>{setMenuFor(null);window.location.hash=`/agent?task=${t.id}`;}} data-ask-btn className="w-full px-3 py-1.5 text-meta text-jz-teal hover:bg-jz-surface-2/40 flex items-center gap-1.5"><MessageSquare size={12} /> 追问 AI</button>
                         )}
-                        <button onClick={()=>{setMenuFor(null);setRerunTask(t);}} className="w-full px-3 py-1.5 text-xs text-jz-text-secondary hover:bg-jz-elevated/40 flex items-center gap-1.5">重跑</button>
-                        <button onClick={()=>{setMenuFor(null);if(window.confirm(`确认删除任务 #${t.id}?`))removeTask(t);}} className="w-full px-3 py-1.5 text-xs text-vuln-critical hover:bg-jz-elevated/40 flex items-center gap-1.5">删除</button>
+                        <button onClick={()=>{setMenuFor(null);setRerunTask(t);}} className="w-full px-3 py-1.5 text-meta text-jz-ink-2 hover:bg-jz-surface-2/40 flex items-center gap-1.5">重跑</button>
+                        <button onClick={()=>{setMenuFor(null);if(window.confirm(`确认删除任务 #${t.id}?`))removeTask(t);}} className="w-full px-3 py-1.5 text-meta text-jz-sev-critical hover:bg-jz-surface-2/40 flex items-center gap-1.5">删除</button>
                       </div>
                     </>
                   )}
@@ -1043,7 +1043,7 @@ export const TaskCenterPage: React.FC = () => {
         </table>
         {/* 底部分页器(规格): 20/50/100+页码+跳页——DataToolbar 纯 pager 实例,位置=表格底部
             (data-v3-pagination/data-jump-input 存量探针透传保留) */}
-        <div className="flex-none px-4 py-2.5 bg-jz-elevated/30">
+        <div className="flex-none px-4 py-2.5 bg-jz-surface-2/30">
           <DataToolbar
  pager={{ total: filtered.length, page: safePage, pageSize, onPage: setPage, onPageSize: (n) => setPageSize(n) }}
  pageSizes={PAGE_SIZES}
@@ -1053,77 +1053,77 @@ export const TaskCenterPage: React.FC = () => {
       </div>
  {/* R103-9①: 底部已选批量条(选中行>0 时出现;规格文案对齐: 已选择 N 项/批量重新扫描/导出所选 CSV/JSON/批量删除/取消选择) */}
  {sel.size>0&&(
-        <div className="sticky bottom-0 z-30 flex items-center gap-2 flex-wrap px-3 py-2 rounded-2xl bg-jz-surface/95 shadow-jz-card text-xs" data-batch-bar>
-          <span className="font-semibold text-jz-text-primary">已选择 {sel.size} 项:</span>
+        <div className="sticky bottom-0 z-30 flex items-center gap-2 flex-wrap px-3 py-2 rounded-panel bg-jz-surface/95 shadow-card text-meta" data-batch-bar>
+          <span className="font-semibold text-jz-ink">已选择 {sel.size} 项:</span>
           <button onClick={()=>setRetryOpen(true)} disabled={batchBusy} data-batch-retry
  title={batchBusy ? '批量操作进行中,已锁定防重复提交' : '对选中任务发起批量重跑(先二次确认)'}
- className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-jz-elevated/60 text-jz-text-secondary hover:text-neon-accent disabled:opacity-40 disabled:cursor-not-allowed"><RefreshCw size={12} /> 批量重新扫描</button>
+ className="inline-flex items-center gap-1 px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-ink-2 hover:text-jz-brand disabled:opacity-40 disabled:cursor-not-allowed"><RefreshCw size={12} /> 批量重新扫描</button>
           <button onClick={exportSelCsv} disabled={batchBusy} data-batch-csv
  title="导出所选任务 CSV(字段=表格列;业务码/漏洞计数缺加载时留空不编造)"
- className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-jz-elevated/60 text-jz-text-secondary hover:text-neon-accent disabled:opacity-40 disabled:cursor-not-allowed">导出所选 CSV</button>
+ className="inline-flex items-center gap-1 px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-ink-2 hover:text-jz-brand disabled:opacity-40 disabled:cursor-not-allowed">导出所选 CSV</button>
           <button onClick={exportSelJson} disabled={batchBusy} data-batch-json
  title="导出所选任务 JSON(字段=表格列;业务码/漏洞计数缺加载时留空不编造)"
- className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-jz-elevated/60 text-jz-text-secondary hover:text-neon-accent disabled:opacity-40 disabled:cursor-not-allowed">导出所选 JSON</button>
+ className="inline-flex items-center gap-1 px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-ink-2 hover:text-jz-brand disabled:opacity-40 disabled:cursor-not-allowed">导出所选 JSON</button>
           <button onClick={()=>setDelOpen(true)} disabled={batchBusy} data-batch-del
  title={batchBusy ? '批量操作进行中,已锁定防重复提交' : '批量清理选中任务(先二次确认)'}
- className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-vuln-critical/10 text-vuln-critical hover:bg-vuln-critical/20 disabled:opacity-40 disabled:cursor-not-allowed">批量删除</button>
+ className="inline-flex items-center gap-1 px-2 py-1 rounded-control bg-jz-sev-critical/10 text-jz-sev-critical hover:bg-jz-sev-critical/20 disabled:opacity-40 disabled:cursor-not-allowed">批量删除</button>
           {/* R602: 恰选 2 个有关联会话的任务 → 报告中心对比(URL 参数驱动既有发现级 Diff 面板) */}
           {cmpPair && (
             <button onClick={() => nav(`/reports?sid=${cmpPair.a}&cmp=${cmpPair.b}`)} data-batch-compare
  title={`跳转报告中心对比会话 #${cmpPair.a} vs #${cmpPair.b}(发现级 added/removed/changed Diff)`}
- className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-jz-elevated/60 text-jz-text-secondary hover:text-neon-accent">对比报告</button>
+ className="inline-flex items-center gap-1 px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-ink-2 hover:text-jz-brand">对比报告</button>
           )}
-          <button onClick={()=>setSel(new Set())} className="text-jz-text-muted hover:text-jz-text-primary">取消选择</button>
+          <button onClick={()=>setSel(new Set())} className="text-jz-muted hover:text-jz-ink">取消选择</button>
         </div>
       )}
       {batchMsg&&(
-        <div className="text-xs text-jz-text-secondary" data-batch-msg>{batchMsg}<button onClick={()=>setBatchMsg(null)} className="ml-1.5 text-jz-text-muted hover:text-jz-text-primary">✕</button></div>
+        <div className="text-meta text-jz-ink-2" data-batch-msg>{batchMsg}<button onClick={()=>setBatchMsg(null)} className="ml-1.5 text-jz-muted hover:text-jz-ink">✕</button></div>
       )}
       {/* R117-4③: 批量重跑统一模态二次确认(明示条数+不可逆提示;确认后锁定) */}
       <Modal open={retryOpen} title={`确认批量重跑 ${sel.size} 个任务?`} onClose={()=>setRetryOpen(false)}>
-        <div className="text-xs text-jz-text-secondary space-y-2" data-batch-retry-modal>
+        <div className="text-meta text-jz-ink-2 space-y-2" data-batch-retry-modal>
           <div>将对以下 {selTasks.length} 个任务逐个创建重跑任务(新增任务,原任务保留):</div>
-          <div className="max-h-32 overflow-auto rounded bg-jz-bg p-2 font-mono text-xs text-jz-text-muted">
+          <div className="max-h-32 overflow-auto rounded-control bg-jz-canvas p-2 font-mono text-meta text-jz-muted">
  {selTasks.map((t:any)=>(`#${t.id} ${t.app_name||t.package||''} [${t.status}]`)).join('\n')}
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <button onClick={()=>setRetryOpen(false)} className="px-3 py-1.5 rounded-lg bg-jz-elevated/60 text-jz-text-secondary text-xs hover:bg-jz-elevated">取消</button>
+            <button onClick={()=>setRetryOpen(false)} className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:bg-jz-surface-2">取消</button>
             <button onClick={batchRetry} disabled={batchBusy} data-batch-retry-confirm
- className="px-3 py-1.5 rounded-lg bg-neon-accent/15 text-neon-accent text-xs font-semibold hover:bg-neon-accent/25 disabled:opacity-40 disabled:cursor-not-allowed">确认重跑</button>
+ className="px-3 py-1.5 rounded-control bg-jz-brand/15 text-jz-brand text-meta font-semibold hover:bg-jz-brand/25 disabled:opacity-40 disabled:cursor-not-allowed">确认重跑</button>
           </div>
         </div>
       </Modal>
       <Modal open={delOpen} title={`确认批量清理 ${sel.size} 个任务?`} onClose={()=>setDelOpen(false)}>
-        <div className="text-xs text-jz-text-secondary space-y-2" data-batch-del-modal>
+        <div className="text-meta text-jz-ink-2 space-y-2" data-batch-del-modal>
           <div>将循环调用 DELETE 逐个删除以下任务(不可恢复):</div>
-          <div className="max-h-32 overflow-auto rounded bg-jz-bg p-2 font-mono text-xs text-jz-text-muted">
+          <div className="max-h-32 overflow-auto rounded-control bg-jz-canvas p-2 font-mono text-meta text-jz-muted">
  {selTasks.map((t:any)=>(`#${t.id} ${t.app_name||t.package||''} [${t.status}]`)).join('\n')}
           </div>
-          <div className="text-vuln-critical">运行中/排队状态的任务后端会拒绝删除,将如实跳过并回显数量。</div>
+          <div className="text-jz-sev-critical">运行中/排队状态的任务后端会拒绝删除,将如实跳过并回显数量。</div>
           <div className="flex justify-end gap-2 pt-1">
-            <button onClick={()=>setDelOpen(false)} className="px-3 py-1.5 rounded-lg bg-jz-elevated/60 text-jz-text-secondary text-xs hover:bg-jz-elevated">取消</button>
-            <button onClick={batchDelete} disabled={batchBusy} data-batch-del-confirm className="px-3 py-1.5 rounded-lg bg-vuln-critical/15 text-vuln-critical text-xs font-semibold hover:bg-vuln-critical/25 disabled:opacity-40 disabled:cursor-not-allowed">确认删除</button>
+            <button onClick={()=>setDelOpen(false)} className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:bg-jz-surface-2">取消</button>
+            <button onClick={batchDelete} disabled={batchBusy} data-batch-del-confirm className="px-3 py-1.5 rounded-control bg-jz-sev-critical/15 text-jz-sev-critical text-meta font-semibold hover:bg-jz-sev-critical/25 disabled:opacity-40 disabled:cursor-not-allowed">确认删除</button>
           </div>
         </div>
       </Modal>
       {/* 清理失败项二次确认(范围=当前过滤视图内 failed;所见即所删) */}
       <Modal open={cleanOpen} title={`确认清理当前视图内 ${failedInView.length} 个失败任务?`} onClose={()=>setCleanOpen(false)}>
-        <div className="text-xs text-jz-text-secondary space-y-2" data-clean-failed-modal>
+        <div className="text-meta text-jz-ink-2 space-y-2" data-clean-failed-modal>
           <div>删除范围=当前过滤视图(含搜索/筛选)内 status=failed 的任务,不可恢复;运行中/排队任务不在范围内。</div>
-          <div className="max-h-32 overflow-auto rounded bg-jz-bg p-2 font-mono text-xs text-jz-text-muted">
+          <div className="max-h-32 overflow-auto rounded-control bg-jz-canvas p-2 font-mono text-meta text-jz-muted">
  {failedInView.slice(0, 12).map((t:any)=>(`#${t.id} ${t.app_name||t.package||''} ${(t.error_msg||'').slice(0,40)}`)).join('\n')}
  {failedInView.length > 12 ? `\n… 共 ${failedInView.length} 个` : ''}
           </div>
           <div className="flex justify-end gap-2 pt-1">
-            <button onClick={()=>setCleanOpen(false)} className="px-3 py-1.5 rounded-lg bg-jz-elevated/60 text-jz-text-secondary text-xs hover:bg-jz-elevated">取消</button>
-            <button onClick={cleanFailed} disabled={batchBusy} data-clean-failed-confirm className="px-3 py-1.5 rounded-lg bg-vuln-critical/15 text-vuln-critical text-xs font-semibold hover:bg-vuln-critical/25 disabled:opacity-40 disabled:cursor-not-allowed">确认清理</button>
+            <button onClick={()=>setCleanOpen(false)} className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:bg-jz-surface-2">取消</button>
+            <button onClick={cleanFailed} disabled={batchBusy} data-clean-failed-confirm className="px-3 py-1.5 rounded-control bg-jz-sev-critical/15 text-jz-sev-critical text-meta font-semibold hover:bg-jz-sev-critical/25 disabled:opacity-40 disabled:cursor-not-allowed">确认清理</button>
           </div>
         </div>
       </Modal>
       {/* 行内任务详情(规格失败态 [详情]): 后端原始字段如实呈现,失败原因全文不截断 */}
       <Modal open={!!detailTask} title={`任务 #${detailTask?.id ?? ''} 详情`} onClose={()=>setDetailTask(null)}>
         {detailTask && (
-          <div className="text-xs text-jz-text-secondary space-y-1.5 max-h-[60vh] overflow-auto" data-detail-modal>
+          <div className="text-meta text-jz-ink-2 space-y-1.5 max-h-[60vh] overflow-auto" data-detail-modal>
             {([
               ['ID / 类型', `#${detailTask.id} · ${detailTask.kind || 'audit'}`],
               ['目标应用', detailTask.app_name || '—'],
@@ -1136,21 +1136,21 @@ export const TaskCenterPage: React.FC = () => {
               ['APK 路径', detailTask.apk_path || '—'],
               ['结果 ID', detailTask.result_id != null ? `#${detailTask.result_id}` : '无'],
             ] as Array<[string, string]>).map(([k, v]) => (
-              <div key={k} className="flex gap-2"><span className="flex-none w-16 text-jz-text-muted">{k}</span><span className="font-mono break-all">{v}</span></div>
+              <div key={k} className="flex gap-2"><span className="flex-none w-16 text-jz-muted">{k}</span><span className="font-mono break-all">{v}</span></div>
             ))}
-            <div className="pt-1"><span className="text-jz-text-muted">进度全文</span><pre className="mt-1 p-2 rounded bg-jz-bg font-mono whitespace-pre-wrap break-all text-jz-text-secondary">{detailTask.progress || '(后端无进度文本)'}</pre></div>
+            <div className="pt-1"><span className="text-jz-muted">进度全文</span><pre className="mt-1 p-2 rounded-control bg-jz-canvas font-mono whitespace-pre-wrap break-all text-jz-ink-2">{detailTask.progress || '(后端无进度文本)'}</pre></div>
             {detailTask.status === 'failed' && (
-              <div><span className="text-jz-text-muted">失败原因全文(不截断)</span><pre className="mt-1 p-2 rounded bg-jz-bg font-mono whitespace-pre-wrap break-all text-vuln-critical" data-detail-error>{detailTask.error_msg || detailTask.progress || '(后端未返回失败原因)'}</pre></div>
+              <div><span className="text-jz-muted">失败原因全文(不截断)</span><pre className="mt-1 p-2 rounded-control bg-jz-canvas font-mono whitespace-pre-wrap break-all text-jz-sev-critical" data-detail-error>{detailTask.error_msg || detailTask.progress || '(后端未返回失败原因)'}</pre></div>
             )}
             {detailTask.unpack_outcome && (
-              <div><span className="text-jz-text-muted">脱壳判定(unpack_outcome 原值)</span><pre className="mt-1 p-2 rounded bg-jz-bg font-mono whitespace-pre-wrap break-all text-jz-text-secondary">{JSON.stringify(detailTask.unpack_outcome, null, 2)}</pre></div>
+              <div><span className="text-jz-muted">脱壳判定(unpack_outcome 原值)</span><pre className="mt-1 p-2 rounded-control bg-jz-canvas font-mono whitespace-pre-wrap break-all text-jz-ink-2">{JSON.stringify(detailTask.unpack_outcome, null, 2)}</pre></div>
             )}
             <div className="flex justify-end gap-2 pt-1">
               {detailTask.status === 'failed' && (
                 <button onClick={()=>{ const t = detailTask; setDetailTask(null); setRerunTask(t); }} data-detail-retry
- className="px-3 py-1.5 rounded-lg bg-jz-elevated/60 text-jz-text-secondary text-xs hover:text-neon-accent">重试该任务</button>
+ className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:text-jz-brand">重试该任务</button>
               )}
-              <button onClick={()=>setDetailTask(null)} className="px-3 py-1.5 rounded-lg bg-jz-elevated/60 text-jz-text-secondary text-xs hover:bg-jz-elevated">关闭</button>
+              <button onClick={()=>setDetailTask(null)} className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:bg-jz-surface-2">关闭</button>
             </div>
           </div>
         )}

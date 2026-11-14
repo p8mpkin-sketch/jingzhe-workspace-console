@@ -1,268 +1,106 @@
+@import "../../../design/tokens.css";
+@import "./fonts.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* R95-UI: 语义色变量双基底——dark(原平台基底 #080B11/#0F1420/rgba(255,255,255,.08)) 与 light(#F8FAFC/#FFF/rgba(0,0,0,.08))。
-   组件层统一消费 jz-* token, 切换 <html>.dark 即全局换肤, 业务组件零改动。 */
-:root {
-  --c-bg: 10 12 16;              /* #0A0C10 A13 色阶重排 */
-  --c-surface: 26 29 35;         /* #1A1D23 卡片浮层 */
-  --c-elevated: 38 42 51;        /* #262A33 悬浮层 */
-  --c-border: 45 51 64;              /* #2D3340 A16 实色(修 currentColor 回落) */
-  --c-border-active: 0 240 255;  /* #00F0FF 聚焦/激活重音(暗) */
-  --c-accent-cyan: 0 229 255;    /* #00E5FF 状态正常/ADB在线 */
-  --c-accent-emerald: 16 185 129;/* #10B981 脱壳成功/验证通过 */
-  --c-accent-amber: 245 158 11;  /* #F59E0B 中危提示 */
-  --c-accent-crimson: 239 68 68; /* #EF4444 高危/阻断 */
-  --c-text-primary: 248 250 252; /* #F8FAFC */
-  --c-text-secondary: 148 163 184;
-  --c-text-muted: 100 116 139;
-  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  color-scheme: dark;
-}
-
-/* R117-3②: 作用域收窄 .dark → html.dark——React Flow v12 colorMode=dark 会给 .react-flow 容器
-   挂自身 `dark` 类,旧通用 .dark 选择器被该容器命中,把画布子树的 --c-* 变量整体拖回暗色
-   (亮色模式下画布内部恒暗的根因);收窄到 html.dark 后容器类不再竞争变量作用域,
-   子树继承 html 层双模取值,主题切换画布即时跟随。 */
-html.dark {
-  --c-bg: 10 12 16;
-  --c-surface: 26 29 35;
-  --c-elevated: 38 42 51;        /* #262A33 */
-  --c-border: 45 51 64;              /* #2D3340 A16 实色(修 currentColor 回落) */
-  --c-border-active: 0 240 255;
-  --c-accent-cyan: 0 229 255;
-  --c-accent-emerald: 16 185 129;
-  --c-accent-amber: 245 158 11;
-  --c-accent-crimson: 239 68 68;
-  --c-text-primary: 248 250 252;
-  --c-text-secondary: 148 163 184;
-  --c-text-muted: 100 116 139;
-  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  color-scheme: dark;
-}
-
-/* 亮色基底: #F8FAFC / #FFFFFF / rgba(0,0,0,0.08) */
-html:not(.dark) {
-  --c-bg: 226 230 238;           /* #E2E6EE A15+用户对比度反馈: 加深一档,白卡浮起更清晰 */
-  --c-surface: 255 255 255;      /* #FFFFFF */
-  --c-elevated: 234 238 245;     /* #EAEEF5 凹井/chip染底,白面上清晰可辨 */
-  --c-border: 226 232 240;         /* #E2E8F0 发丝灰 */
-  --c-border-active: 37 99 235;  /* #2563EB 科技蓝(亮) */
-  --c-accent-cyan: 2 132 199;    /* #0284C7 */
-  --c-accent-emerald: 5 150 105; /* #059669 */
-  --c-accent-amber: 217 119 6;   /* #D97706 */
-  --c-accent-crimson: 220 38 38; /* #DC2626 */
-  --c-text-primary: 15 23 42;    /* #0F172A */
-  --c-text-secondary: 71 85 105;
-  --c-text-muted: 100 116 139;
-  /* 用户反馈(10-09): 0.10 环境影在 #E9ECF2 底上浮起感不足卡片融底——再加强一档(0.16+更宽扩散),实线仍零依赖 */
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 10px 32px -10px rgba(15, 23, 42, 0.16), inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
-  color-scheme: light;
-}
+/* Global layer for the jz design system. Colors, sizes, radii and shadows come from design/tokens.css only. */
 
 html, body, #root { height: 100%; }
-body { @apply bg-jz-bg text-jz-text-primary font-sans antialiased; overflow: hidden; text-rendering: optimizeLegibility; transition: background-color 0.25s ease, color 0.25s ease; }
+body {
+  @apply bg-jz-canvas text-jz-ink font-sans antialiased;
+  overflow: hidden;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--jz-motion-page) var(--jz-ease), color var(--jz-motion-page) var(--jz-ease);
+}
+h1, h2 { font-family: var(--jz-font-display); }
 
-/* 滚动条(双模自适应) */
+/* Scrollbars */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: rgb(var(--c-border)); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-border)); }
+::-webkit-scrollbar-thumb { background: rgb(var(--jz-border)); border-radius: var(--jz-radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--jz-border-strong)); }
 ::-webkit-scrollbar-track { background: transparent; }
 
-/* dockview 主题对齐 jz tokens(dark 基底; light 模式由主题切换覆盖容器变量) */
+/* dockview theme (session workspace panels) follows the tokens in both modes */
 .dockview-theme-abyss {
-  --dv-color-groupview-background: #0F1420;
-  --dv-background: #080B11;
-  --dv-tabs-container-background-color: #0B1120;
-  --dv-active-tab-visible-color: #F8FAFC;
-  --dv-inactive-tab-visible-color: #94A3B8;
-  --dv-separator-border: rgba(255, 255, 255, 0.08);
-  --dv-paneview-header-border-color: rgba(255, 255, 255, 0.08);
+  --dv-color-groupview-background: rgb(var(--jz-surface));
+  --dv-background: rgb(var(--jz-canvas));
+  --dv-tabs-container-background-color: rgb(var(--jz-surface-2));
+  --dv-active-tab-visible-color: rgb(var(--jz-ink));
+  --dv-inactive-tab-visible-color: rgb(var(--jz-muted));
+  --dv-separator-border: rgb(var(--jz-border));
+  --dv-paneview-header-border-color: rgb(var(--jz-border));
 }
 
-/* R103-1: tnum 数字工具类正式定义(此前多处使用但从未定义,静默失效) */
 @layer utilities {
   .tnum { font-variant-numeric: tabular-nums; }
 }
 
-/* R103-1: 主题切换图标平滑动效(Sun/Moon 换轴旋转) */
-@keyframes theme-swap {
-  from { transform: rotate(-120deg) scale(0.4); opacity: 0; }
-  to { transform: rotate(0deg) scale(1); opacity: 1; }
-}
-.theme-icon-swap { animation: theme-swap 0.45s ease; }
+/* Theme switch icon: a short fade, no rotation */
+@keyframes theme-swap { from { opacity: 0; } to { opacity: 1; } }
+.theme-icon-swap { animation: theme-swap var(--jz-motion-expand) var(--jz-ease); }
 
-/* R104-1: V3 单卡片分隔线体系规范类——列表项收敛进统一卡片容器, 项间仅 divide-y 1px 弱底线。
-   分隔线色=jz-border token(rgb(var(--c-border)): 暗=白 0.08 / 亮=黑 0.08, 双模变量承载,
-   不用裸 slate 值; 较规约原型 divide-slate-100/800 更弱, 符合「弱底线」)。
-   ⚠ 禁「铁笼」: 禁止列表项各自 border+rounded+mb-2 独立成框——消费方只需外层容器套本类,
-   子项只写内容行(padding 由消费方按密度自定), 分隔线由本类统一供给。 */
+/* List rows inside one surface, separated by hairlines */
 @layer components {
-  .divided-card-list {
-    @apply bg-jz-surface rounded-2xl divide-y divide-jz-border;
-  }
+  .divided-card-list { @apply bg-jz-surface rounded-panel divide-y divide-jz-border; }
 }
 
-/* R104-1: 状态胶囊柔和光晕(StatusBadge 配套)——以 currentColor(字符 token 色)派生,
-   零裸 hex; 暗色呈柔和边缘光晕, 亮色自动衰减为极弱投影, 杜绝生硬黑线框。 */
-.status-glow { box-shadow: 0 0 10px -2px color-mix(in srgb, currentColor 45%, transparent); }
-html:not(.dark) .status-glow { box-shadow: 0 0 8px -3px color-mix(in srgb, currentColor 25%, transparent); }
+/* Dialog entrance */
+@keyframes modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-scale-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.modal-overlay-in { animation: modal-fade-in var(--jz-motion-expand) var(--jz-ease); }
+.modal-panel-in { animation: modal-scale-in var(--jz-motion-page) var(--jz-ease); }
 
-/* R104-1: 对话框/弹出层动效(UnifiedModal 配套)——遮罩平滑淡入 + 面板入场放大, 纯 CSS 零依赖 */
-@keyframes modal-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes modal-scale-in {
-  from { opacity: 0; transform: scale(0.96) translateY(4px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-.modal-overlay-in { animation: modal-fade-in 0.18s ease-out; }
-.modal-panel-in { animation: modal-scale-in 0.2s ease-out; }
-
-/* R104-6: 上传热区「光栅扫描线」动效(纯 CSS 零依赖)——拖入/上传/预检中呈现。
-   面色=--c-accent-cyan token 派生(零裸 hex): ::before=光栅网格底缓慢漂移,
-   ::after=横向扫描线自上而下循环 + 同色柔光;父容器须 relative overflow-hidden。 */
-@keyframes raster-grid-drift {
-  from { background-position: 0 0; }
-  to { background-position: 0 14px; }
-}
-@keyframes raster-line-sweep {
-  0% { top: -4%; opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { top: 104%; opacity: 0; }
-}
-.raster-scan { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
-.raster-scan::before {
-  content: ''; position: absolute; inset: 0;
-  background-image: repeating-linear-gradient(0deg, rgb(var(--c-accent-cyan) / 0.07) 0 1px, transparent 1px 7px);
-  animation: raster-grid-drift 0.9s linear infinite;
-}
-.raster-scan::after {
-  content: ''; position: absolute; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, rgb(var(--c-accent-cyan) / 0.9), transparent);
-  box-shadow: 0 0 12px rgb(var(--c-accent-cyan) / 0.55);
-  animation: raster-line-sweep 1.6s ease-in-out infinite;
-}
-
-/* R95-UI: light 模式 dockview 覆盖(框架浅色化) */
-html:not(.dark) .dockview-theme-abyss {
-  --dv-color-groupview-background: #FFFFFF;
-  --dv-background: #F8FAFC;
-  --dv-tabs-container-background-color: #EEF2F7;
-  --dv-active-tab-visible-color: #0F172A;
-  --dv-inactive-tab-visible-color: #64748B;
-  --dv-separator-border: rgba(0, 0, 0, 0.08);
-  --dv-paneview-header-border-color: rgba(0, 0, 0, 0.08);
-}
-
-/* R108-1(指令1①): SkeletonLoader Shimmer 流变动效(纯 CSS 零依赖)——
-   扫描高光零裸 hex: 暗色=白 0.07 / 亮色=slate-900 0.08, 随 html.dark 双段切换。 */
-@keyframes apksec-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-.apksec-shimmer {
-  background-image: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.07) 50%, transparent 100%);
+/* Skeleton shimmer */
+@keyframes jz-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.jz-shimmer {
+  background-image: linear-gradient(90deg, transparent 0%, rgb(var(--jz-ink) / 0.06) 50%, transparent 100%);
   background-size: 200% 100%;
   background-repeat: no-repeat;
-  animation: apksec-shimmer 1.6s ease-in-out infinite;
-}
-html:not(.dark) .apksec-shimmer {
-  background-image: linear-gradient(90deg, transparent 0%, rgb(15 23 42 / 0.08) 50%, transparent 100%);
+  animation: jz-shimmer 1.6s ease-in-out infinite;
 }
 
-/* R108-1(指令1③): Toast 入场动效 + 进度微线(纯 CSS 零依赖)——
-   进度时长与自动消失同步, animation-duration 由 ToastContainer 按 toast.duration 内联注入。 */
-@keyframes apksec-toast-in {
-  from { opacity: 0; transform: translateX(12px); }
-  to { opacity: 1; transform: translateX(0); }
+/* Toast entrance and auto-dismiss progress (duration is injected inline by ToastContainer) */
+@keyframes jz-toast-in { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+.jz-toast-in { animation: jz-toast-in var(--jz-motion-expand) var(--jz-ease); }
+@keyframes jz-toast-progress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.jz-toast-progress { transform-origin: left; animation: jz-toast-progress 3.5s linear forwards; }
+
+/* New row in a live feed: one fade on mount, never looping */
+@keyframes feed-row-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+.feed-row-in { animation: feed-row-in var(--jz-motion-page) var(--jz-ease); }
+
+/* Interaction: state transitions only */
+button { transition: background-color var(--jz-motion-hover) var(--jz-ease), color var(--jz-motion-hover) var(--jz-ease), border-color var(--jz-motion-hover) var(--jz-ease), opacity var(--jz-motion-hover) var(--jz-ease); }
+a { transition: color var(--jz-motion-hover) var(--jz-ease), background-color var(--jz-motion-hover) var(--jz-ease), opacity var(--jz-motion-hover) var(--jz-ease); }
+input, select, textarea { transition: border-color var(--jz-motion-hover) var(--jz-ease), background-color var(--jz-motion-hover) var(--jz-ease); }
+
+/* Keyboard focus: 2px brand ring with 2px offset on every interactive control */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
+summary:focus-visible, [role="button"]:focus-visible, [role="tab"]:focus-visible, [tabindex]:focus-visible {
+  outline: var(--jz-focus-width) solid rgb(var(--jz-brand));
+  outline-offset: var(--jz-focus-offset);
 }
-.apksec-toast-in { animation: apksec-toast-in 0.18s ease-out; }
-@keyframes apksec-toast-progress {
-  from { transform: scaleX(1); }
-  to { transform: scaleX(0); }
-}
-.apksec-toast-progress {
-  transform-origin: left;
-  animation: apksec-toast-progress 3.5s linear forwards;
+::selection { background: rgb(var(--jz-brand-soft)); color: rgb(var(--jz-ink)); }
+svg.lucide { stroke-width: 1.75; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
-/* R117-6①(方案6.1): 打印隔离——报告预览 Ctrl+P 导出 PDF 时隐藏全局脚手架(顶栏/侧栏/导航/
-   no-print 标记件),报告容器强制 A4 纯白底黑字文档流(暗色模式打印不再整页涂黑)。 */
+/* Print: report preview exports as a plain document; shell chrome is hidden */
 @media print {
   html, body, #root { height: auto !important; overflow: visible !important; }
-  body {
-    background: #ffffff !important;
-    color: #000000 !important;
-  }
-  header, aside, nav, .no-print {
-    display: none !important;
-  }
+  body { background: rgb(var(--jz-paper)) !important; color: rgb(var(--jz-print-ink)) !important; }
+  header, aside, nav, .no-print { display: none !important; }
   .report-print-container, .report-print-container * {
-    color: #000000 !important;
+    color: rgb(var(--jz-print-ink)) !important;
     background: transparent !important;
-    border-color: #cccccc !important;
+    border-color: rgb(var(--jz-print-rule)) !important;
     box-shadow: none !important;
     overflow: visible !important;
     max-height: none !important;
   }
-  .report-print-container {
-    position: static !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-}
-
-/* R125(方案1.2/二.4): 事件流新到行入场淡入——仅真实新事件挂载时加类(见 DashboardPage seenKeys
-   去重),200ms 一次不循环;禁止循环跑马灯假动画,静止行零动画开销。 */
-@keyframes feed-row-in {
-  from { opacity: 0; transform: translateY(-3px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.feed-row-in { animation: feed-row-in 0.2s ease-out; }
-
-/* A14: 全局字体渲染打磨 */
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* A16: 全局交互动态化——按压/悬停/焦点/选区,覆盖所有模块(用户令:点击的动态化显示) */
-button {
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease,
-              transform 0.12s ease, opacity 0.15s ease;
-}
-button:active:not(:disabled) {
-  transform: scale(0.97);           /* 按压回弹: 一切可点元素皆有落手感 */
-}
-a {
-  transition: color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
-}
-input, select, textarea {
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-}
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
-[tabindex]:focus-visible {
-  outline: 2px solid rgb(var(--c-border-active) / 0.45);
-  outline-offset: 2px;              /* 键盘导航焦点环(主题 accent) */
-}
-::selection {
-  background: rgb(var(--c-accent-cyan) / 0.22);   /* 文字选区品牌色 */
-}
-svg.lucide {
-  stroke-width: 1.8;                /* 图标线条精修(默认2偏重) */
-}
-::-webkit-scrollbar-thumb { border-radius: 9999px; }   /* 滚动条胶囊化(覆盖既有4px) */
-@media (prefers-reduced-motion: reduce) {
-  button:active:not(:disabled) { transform: none; }
-}
-
-/* P3-③: AI 助手对话区顶部微环境光——仅暗色作用域(亮色零变化);纯装饰层,pointer-events 关闭 */
-.dark .ai-ambient {
-  background: radial-gradient(ellipse 70% 55% at 50% 0%, rgba(99, 102, 241, 0.055), transparent 70%);
+  .report-print-container { position: static !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
 }

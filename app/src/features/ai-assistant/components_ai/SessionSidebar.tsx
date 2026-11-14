@@ -83,29 +83,29 @@ export const SessionSidebar: React.FC<{
   });
 
   const renderItem = (s: ChatSession) => (
-    <div key={s.id} className={`group flex items-center gap-1 px-2.5 py-2 mb-1.5 rounded-xl bg-jz-surface shadow-jz-card cursor-pointer transition-all
-      ${current === s.id ? 'ring-1 ring-neon-accent/60' : 'hover:ring-1 hover:ring-jz-border'}`}
+    <div key={s.id} className={`group flex items-center gap-1 px-2.5 py-2 mb-1.5 rounded-card bg-jz-surface shadow-card cursor-pointer transition-all
+      ${current === s.id ? 'ring-1 ring-jz-brand/60' : 'hover:ring-1 hover:ring-jz-border'}`}
       onClick={() => { if (!batch) onSelect(s.id); }} data-chat-item={s.title}>
       {batch && (
         <input type="checkbox" checked={picked.has(s.id)} onChange={() => togglePick(s.id)}
-          onClick={(e) => e.stopPropagation()} data-batch-check={s.id} className="flex-none accent-indigo-500" />
+          onClick={(e) => e.stopPropagation()} data-batch-check={s.id} className="flex-none accent-jz-brand" />
       )}
       <div className="flex-1 min-w-0">
-        <div className={`text-xs font-semibold truncate ${current === s.id ? 'text-neon-accent' : 'text-jz-text-primary'}`}>
+        <div className={`text-meta font-semibold truncate ${current === s.id ? 'text-jz-brand' : 'text-jz-ink'}`}>
           {s.title?.trim() || '(未命名)'}
         </div>
-        <div className="text-[11px] font-mono text-jz-text-muted/80 truncate tabular-nums">{fmtTime(s.updated_at)} · {(s.last_msg || '').slice(0, 16)}</div>
+        <div className="text-meta font-mono text-jz-muted truncate tabular-nums">{fmtTime(s.updated_at)} · {(s.last_msg || '').slice(0, 16)}</div>
       </div>
-      {s.pinned ? <Pin size={10} className="flex-none text-neon-accent fill-current group-hover:hidden" /> : null}
+      {s.pinned ? <Pin size={10} className="flex-none text-jz-brand fill-current group-hover:hidden" /> : null}
       {!batch && (
         <span className="hidden group-hover:flex gap-0.5 flex-none" data-chat-actions>
           <button onClick={(e) => { e.stopPropagation(); onTogglePin(s); }} data-pin-btn
-            className={`px-0.5 ${s.pinned ? 'text-neon-accent' : 'text-jz-text-muted hover:text-neon-accent'}`}
+            className={`px-0.5 ${s.pinned ? 'text-jz-brand' : 'text-jz-muted hover:text-jz-brand'}`}
             title={s.pinned ? '取消置顶' : '置顶'}>
             <Pin size={11} className={s.pinned ? 'fill-current' : ''} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onRename(s); }} className="text-xs text-jz-text-muted hover:text-neon-accent px-0.5" title="重命名">✎</button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="text-xs text-jz-text-muted hover:text-vuln-critical px-0.5" title="删除">✕</button>
+          <button onClick={(e) => { e.stopPropagation(); onRename(s); }} className="text-meta text-jz-muted hover:text-jz-brand px-0.5" title="重命名">✎</button>
+          <button onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="text-meta text-jz-muted hover:text-jz-sev-critical px-0.5" title="删除">✕</button>
         </span>
       )}
     </div>
@@ -114,7 +114,7 @@ export const SessionSidebar: React.FC<{
   const grpHeader = (label: string, key?: string, count?: number) => {
     const isCollapsed = key ? collapsed.has(key) : false;
     return (
-      <div className={`text-xs text-jz-text-muted/70 px-1.5 mb-1 ${key ? 'cursor-pointer flex items-center gap-0.5 select-none hover:text-jz-text-secondary' : ''}`}
+      <div className={`text-meta text-jz-muted px-1.5 mb-1 ${key ? 'cursor-pointer flex items-center gap-0.5 select-none hover:text-jz-ink-2' : ''}`}
         onClick={key ? () => toggleCollapse(key) : undefined}
         data-grp-head={key}>
         {key && (isCollapsed ? <ChevronRight size={11} /> : <ChevronDown size={11} />)}
@@ -124,28 +124,28 @@ export const SessionSidebar: React.FC<{
   };
 
   return (
-    <div className="w-60 flex-none bg-jz-elevated p-2 overflow-auto flex flex-col" data-chat-list>
+    <div className="w-60 flex-none bg-jz-surface-2 p-2 overflow-auto flex flex-col" data-chat-list>
       <Button variant="primary" className="w-full justify-center mb-2" onClick={onNew}>＋ 新建对话</Button>
       {/* P2-②: 会话/包名关键词搜索(前端真值过滤) */}
       <div className="relative mb-2" data-session-search>
-        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-jz-text-muted/60" />
+        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-jz-muted" />
         <input ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)}
           placeholder="搜索会话 / 包名…(⌘K)"
           data-session-search-input
-          className="w-full pl-7 pr-2 py-1.5 rounded-lg bg-jz-surface/70 text-xs text-jz-text-primary placeholder:text-jz-text-muted/50 outline-none focus:ring-1 focus:ring-neon-accent/50" />
+          className="w-full pl-7 pr-2 py-1.5 rounded-control bg-jz-surface/70 text-meta text-jz-ink placeholder:text-jz-muted outline-none focus:ring-1 focus:ring-jz-brand/50" />
       </div>
       {matches ? (
         <div className="mb-2" data-grp-search>
           {grpHeader(`搜索结果(${matches.length})`)}
           {matches.map(renderItem)}
-          {matches.length === 0 && <div className="text-xs text-jz-text-muted/70 px-1.5 py-2">无匹配会话</div>}
+          {matches.length === 0 && <div className="text-meta text-jz-muted px-1.5 py-2">无匹配会话</div>}
         </div>
       ) : (
         <>
           <div className="flex gap-1 mb-2" data-grp-toggle>
             {(['time', 'task'] as const).map((k) => (
               <button key={k} data-grp={k} onClick={() => setGrp(k)}
-                className={`flex-1 rounded-full px-1 py-0.5 text-xs transition-colors ${grp === k ? 'bg-neon-accent/10 text-neon-accent font-semibold' : 'text-jz-text-muted hover:bg-jz-elevated/60'}`}>
+                className={`flex-1 rounded-pill px-1 py-0.5 text-meta transition-colors ${grp === k ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface-2/60'}`}>
                 {k === 'time' ? '按时间' : '按任务'}
               </button>
             ))}
@@ -176,17 +176,17 @@ export const SessionSidebar: React.FC<{
       <div className="pt-1 border-t border-jz-border/60 flex items-center gap-2" data-batch-bar>
         <button onClick={() => { setBatch((v) => !v); setPicked(new Set()); }}
           data-batch-toggle
-          className={`text-xs px-1.5 py-1 rounded-md transition-colors ${batch ? 'bg-neon-accent/10 text-neon-accent' : 'text-jz-text-muted hover:text-jz-text-secondary'}`}>
+          className={`text-meta px-1.5 py-1 rounded-control transition-colors ${batch ? 'bg-jz-brand/10 text-jz-brand' : 'text-jz-muted hover:text-jz-ink-2'}`}>
           {batch ? '退出批量' : '批量管理'}
         </button>
         {batch && (
           <>
-            <span className="text-xs text-jz-text-muted tabular-nums">已选 {picked.size}</span>
+            <span className="text-meta text-jz-muted tabular-nums">已选 {picked.size}</span>
             <span className="flex-1" />
             <button disabled={picked.size === 0}
               onClick={() => { onBatchDelete([...picked]); setPicked(new Set()); }}
               data-batch-delete
-              className="text-xs px-1.5 py-1 rounded-md text-vuln-critical hover:bg-vuln-critical/10 disabled:opacity-40">
+              className="text-meta px-1.5 py-1 rounded-control text-jz-sev-critical hover:bg-jz-sev-critical/10 disabled:opacity-40">
               删除所选
             </button>
           </>

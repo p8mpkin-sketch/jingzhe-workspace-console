@@ -9,15 +9,15 @@ export const SEV_TONE = (sev: string): StatusTone =>
 export const SEV_WEIGHT: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 export const STATE_ORDER: Record<string, number> = { confirmed: 0, pending: 1, excluded: 2 };
 export const KIND_CN: Record<string, string> = { added: '新增', removed: '消失', changed: '变更' };
-export const SEV_TXT: Record<string, string> = { critical: 'text-vuln-critical', high: 'text-vuln-high', medium: 'text-vuln-medium', low: 'text-vuln-low' };
+export const SEV_TXT: Record<string, string> = { critical: 'text-jz-sev-critical', high: 'text-jz-sev-high', medium: 'text-jz-sev-medium', low: 'text-jz-sev-low' };
 export const STATE_CN: Record<string, string> = { all: '全部', confirmed: '确认', pending: '待复核', excluded: '已排除' };
 
 // R104-2①: 既有判色 → 状态微图标(映射既有 red/green/gray/yellow,不发明新语义)
 export const MX_ICON: Record<string, { Icon: React.ElementType; cls: string; label: string }> = {
- red: { Icon: Zap, cls: 'text-vuln-critical animate-pulse', label: '越权暴露: 匿名可达' },
- green: { Icon: ShieldCheck, cls: 'text-vuln-safe', label: '已拦截: 重定向/鉴权拒绝' },
- yellow: { Icon: ShieldAlert, cls: 'text-vuln-medium', label: '配置疏漏: 登录态可见新数据(UI 走查)' },
- gray: { Icon: Minus, cls: 'text-jz-text-muted', label: '未判定: SPA 兜底壳/未部署' },
+ red: { Icon: Zap, cls: 'text-jz-sev-critical animate-pulse', label: '越权暴露: 匿名可达' },
+ green: { Icon: ShieldCheck, cls: 'text-jz-teal', label: '已拦截: 重定向/鉴权拒绝' },
+ yellow: { Icon: ShieldAlert, cls: 'text-jz-sev-medium', label: '配置疏漏: 登录态可见新数据(UI 走查)' },
+ gray: { Icon: Minus, cls: 'text-jz-muted', label: '未判定: SPA 兜底壳/未部署' },
 };
 
 // R104-2③: evidence 既有字段如实分桶(零编造)——文件:行号定位行(及随行代码)→ 调用栈;
@@ -68,11 +68,11 @@ export const ScoreRing: React.FC<{
  className?: string;
 }> = ({ rate, size, stroke = 5, children, className = '' }) => {
  const R = 22 - stroke / 2, C = 2 * Math.PI * R;
- const col = rate >= 85 ? 'text-vuln-safe' : rate >= 60 ? 'text-vuln-medium' : 'text-vuln-critical';
+ const col = rate >= 85 ? 'text-jz-teal' : rate >= 60 ? 'text-jz-sev-medium' : 'text-jz-sev-critical';
   return (
     <div className={`relative flex-none ${className}`} style={{ width: size, height: size }}>
       <svg viewBox="0 0 44 44" className="w-full h-full -rotate-90">
-        <circle cx="22" cy="22" r={R} fill="none" strokeWidth={stroke} className="stroke-jz-elevated" />
+        <circle cx="22" cy="22" r={R} fill="none" strokeWidth={stroke} className="stroke-jz-surface-2" />
         <circle cx="22" cy="22" r={R} fill="none" strokeWidth={stroke} strokeLinecap="round"
  className={col} stroke="currentColor" strokeDasharray={`${(Math.max(0, Math.min(100, rate)) / 100) * C} ${C}`} />
       </svg>
@@ -110,7 +110,7 @@ export const Menu: React.FC<{
       {open && (
         <div
  data-menu-panel
- className={`absolute z-40 mt-1.5 ${align === 'right' ? 'right-0' : 'left-0'} ${widthCls} max-h-[420px] overflow-auto rounded-xl border border-jz-border bg-jz-surface shadow-jz-card p-1.5 space-y-0.5`}
+ className={`absolute z-40 mt-1.5 ${align === 'right' ? 'right-0' : 'left-0'} ${widthCls} max-h-[420px] overflow-auto rounded-card border border-jz-border bg-jz-surface shadow-card p-1.5 space-y-0.5`}
  >
  {children(() => setOpen(false))}
         </div>
@@ -119,4 +119,4 @@ export const Menu: React.FC<{
   );
 };
 
-export const menuItemCls = 'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm text-jz-text-secondary hover:bg-jz-elevated/70 hover:text-jz-text-primary transition-colors';
+export const menuItemCls = 'w-full flex items-center gap-2 px-3 py-2 rounded-control text-left text-body text-jz-ink-2 hover:bg-jz-surface-2/70 hover:text-jz-ink transition-colors';

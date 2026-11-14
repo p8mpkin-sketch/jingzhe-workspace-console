@@ -12,8 +12,13 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/v2/brand/favicon-16.png" />
     <link rel="shortcut icon" href="/v2/brand/favicon.ico" />
     <link rel="apple-touch-icon" href="/v2/brand/apple-touch-icon.png" />
-    <meta name="theme-color" content="#0A0F20" />
-    <style>html,body{background:#090D16}</style>
+    <meta name="theme-color" content="" />
+    <script>
+      // Apply the stored theme before first paint (no flash). Colors come from the token stylesheet.
+      (function () {
+        try { if (localStorage.getItem('apksec-theme') === 'light') document.documentElement.classList.remove('dark'); } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

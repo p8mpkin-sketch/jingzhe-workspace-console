@@ -88,15 +88,15 @@ export const TopBar: React.FC = () => {
   };
 
   return (
-    <header className="h-12 flex-none flex items-center gap-3 px-4 bg-jz-surface/95 backdrop-blur-md shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_28px_-16px_rgba(15,23,42,0.35)] sticky top-0 z-40" data-topbar>
+    <header className="h-12 flex-none flex items-center gap-3 px-4 bg-jz-surface/95 backdrop-blur-md shadow-card sticky top-0 z-40" data-topbar>
       {/* 左: 模块面包屑 */}
-      <div className="flex items-center gap-1.5 text-[12px] min-w-0" data-breadcrumb>
-        <Shield className="w-4 h-4 text-neon-accent flex-none" />
-        <span className="font-semibold text-jz-text-primary whitespace-nowrap">{crumb}</span>
+      <div className="flex items-center gap-1.5 text-meta min-w-0" data-breadcrumb>
+        <Shield className="w-4 h-4 text-jz-brand flex-none" />
+        <span className="font-semibold text-jz-ink whitespace-nowrap">{crumb}</span>
         {sid != null && fingerprint !== '—' && (
           <>
-            <span className="text-jz-text-muted">/</span>
-            <span className="font-mono text-jz-text-secondary truncate max-w-[220px]">#{sid} {fingerprint}</span>
+            <span className="text-jz-muted">/</span>
+            <span className="font-mono text-jz-ink-2 truncate max-w-[220px]">#{sid} {fingerprint}</span>
           </>
         )}
       </div>
@@ -109,26 +109,26 @@ export const TopBar: React.FC = () => {
         {/* R590-P4b: 平台徽章(三端维度,Android 绿/鸿蒙 紫/iOS 蓝) */}
         {sid != null && fingerprint !== '—' && (
           <div data-pf-badge
- className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-jz-elevated text-[11px] font-mono text-jz-text-secondary"
+ className="flex items-center gap-1.5 px-2 py-1 rounded-pill bg-jz-surface-2 text-meta font-mono text-jz-ink-2"
  title={`会话平台: ${pf === 'harmony' ? 'HarmonyOS' : pf === 'ios' ? 'iOS' : 'Android'}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${
- pf === 'harmony' ? 'bg-violet-400' : pf === 'ios' ? 'bg-sky-400' : 'bg-emerald-400'}`} />
+            <span className={`w-1.5 h-1.5 rounded-pill ${
+ pf === 'harmony' ? 'bg-jz-brand' : pf === 'ios' ? 'bg-jz-brand' : 'bg-jz-teal'}`} />
             {pf === 'harmony' ? '鸿蒙' : pf === 'ios' ? 'iOS' : 'Android'}
           </div>
         )}
         {/* 会话状态胶囊(绿点=已挂载会话/灰点=无活动会话) */}
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-jz-elevated border border-transparent text-[11px] font-mono"
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-pill bg-jz-surface-2 border border-transparent text-meta font-mono"
  title={sse === 'live' ? `SSE 已连接 · 会话 #${sid} 实时事件流` : '未选中渗透会话'} data-capsule-session>
-          <span className={`w-1.5 h-1.5 rounded-full ${sid != null && sse === 'live' ? 'bg-vuln-safe' : 'bg-jz-text-muted'}`} />
+          <span className={`w-1.5 h-1.5 rounded-pill ${sid != null && sse === 'live' ? 'bg-jz-teal' : 'bg-jz-muted'}`} />
           {sid != null ? `#${sid}` : '无会话'}
         </div>
         {/* 目标包名胶囊(截断+悬浮显复制钮,点击写剪贴板) */}
         {fingerprint !== '—' && (
           <button onClick={copyPkg} title={`复制: ${fingerprint}`}
- className="group flex items-center gap-1 px-2 py-1 rounded-full bg-jz-elevated border border-transparent text-[11px] font-mono text-jz-text-secondary hover:border-neon-accent/50 max-w-[220px]" data-capsule-pkg>
+ className="group flex items-center gap-1 px-2 py-1 rounded-pill bg-jz-surface-2 border border-transparent text-meta font-mono text-jz-ink-2 hover:border-jz-brand/50 max-w-[220px]" data-capsule-pkg>
             <span className="truncate">{fingerprint}</span>
             {copied
-              ? <Check size={11} className="text-vuln-safe flex-none" />
+              ? <Check size={11} className="text-jz-teal flex-none" />
               : <Copy size={11} className="flex-none opacity-0 group-hover:opacity-60 transition-opacity" />}
           </button>
         )}
@@ -137,9 +137,9 @@ export const TopBar: React.FC = () => {
         <div className="relative" data-capsule-device-wrap>
           <button type="button" onClick={() => setDevPop((v) => !v)} data-capsule-device data-capsule-device-clickable
  title="点击展开设备与 Frida 状态明细(数据源 /api/pentest/devices)"
- className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-full bg-jz-elevated border border-transparent
- text-[13px] font-mono text-jz-text-secondary hover:border-neon-accent/50 transition-colors max-w-[280px]">
-            <Smartphone size={12} className={device?.online ? 'text-vuln-safe' : 'text-jz-text-muted'} />
+ className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-pill bg-jz-surface-2 border border-transparent
+ text-label font-mono text-jz-ink-2 hover:border-jz-brand/50 transition-colors max-w-[280px]">
+            <Smartphone size={12} className={device?.online ? 'text-jz-teal' : 'text-jz-muted'} />
             <span className="truncate">
               {device?.serial
                 ? `${device.model || device.serial}${device.android ? ` · Android ${device.android}` : ''} | ${device.online ? '在线' : '离线'}`
@@ -157,13 +157,13 @@ export const TopBar: React.FC = () => {
       {/* R116: 全局刷新按钮(点击重新加载当前页面所有数据) */}
       <button onClick={() => window.location.reload()} data-topbar-refresh
  title="刷新当前页面数据"
- className="w-8 h-8 rounded-lg flex items-center justify-center text-jz-text-secondary hover:text-neon-accent hover:bg-jz-elevated/60 transition-colors">
+ className="w-8 h-8 rounded-control flex items-center justify-center text-jz-ink-2 hover:text-jz-brand hover:bg-jz-surface-2/60 transition-colors">
         <RefreshCw size={15} />
       </button>
 
       {/* 右: 主题切换(Sun/Moon 平滑旋转动效,R103-1) */}
       <button onClick={toggle} data-theme-toggle title={theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}
- className="w-8 h-8 rounded-lg flex items-center justify-center text-jz-text-secondary hover:text-neon-accent hover:bg-jz-elevated/60 transition-colors"
+ className="w-8 h-8 rounded-control flex items-center justify-center text-jz-ink-2 hover:text-jz-brand hover:bg-jz-surface-2/60 transition-colors"
  aria-label="切换亮/暗主题">
         <span key={theme} className="theme-icon-swap inline-flex">
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
@@ -174,28 +174,28 @@ export const TopBar: React.FC = () => {
       <NotificationBell />
 
       {/* 设置快捷入口 */}
-      <Link to="/system" className="w-8 h-8 rounded-lg flex items-center justify-center text-jz-text-secondary hover:text-neon-accent hover:bg-jz-elevated/60 transition-colors" title="系统设置">
+      <Link to="/system" className="w-8 h-8 rounded-control flex items-center justify-center text-jz-ink-2 hover:text-jz-brand hover:bg-jz-surface-2/60 transition-colors" title="系统设置">
         <Settings size={15} />
       </Link>
 
       {/* 管理员下拉菜单 */}
       <div className="relative" data-user-menu>
-        <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-1 px-1 py-1 rounded-lg hover:bg-jz-elevated/60 transition-colors">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-neon-accent to-vuln-high flex items-center justify-center text-[11px] font-bold text-white">
+        <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-1 px-1 py-1 rounded-control hover:bg-jz-surface-2/60 transition-colors">
+          <div className="w-7 h-7 rounded-pill bg-jz-brand flex items-center justify-center text-meta font-semibold text-jz-on-brand">
             {(me?.username || 'U').slice(0, 1).toUpperCase()}
           </div>
-          <ChevronDown size={13} className="text-jz-text-muted" />
+          <ChevronDown size={13} className="text-jz-muted" />
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 w-44 rounded-lg bg-jz-surface shadow-jz-card p-1 z-50" onMouseLeave={() => setMenuOpen(false)}>
-            <div className="px-2.5 py-1.5 text-[11px] text-jz-text-muted border-b border-jz-border mb-1">
+          <div className="absolute right-0 top-full mt-1 w-44 rounded-control bg-jz-surface shadow-card p-1 z-50" onMouseLeave={() => setMenuOpen(false)}>
+            <div className="px-2.5 py-1.5 text-meta text-jz-muted border-b border-jz-border mb-1">
               {me?.username || '未登录'} · {me?.role || ''}
             </div>
             <button onClick={() => { setMenuOpen(false); window.location.hash = '/system'; }}
- className="w-full text-left px-2.5 py-1.5 rounded text-[12px] text-jz-text-secondary hover:bg-jz-elevated/60">系统设置</button>
-            <a href="/" className="block px-2.5 py-1.5 rounded text-[12px] text-jz-text-secondary hover:bg-jz-elevated/60">回老版</a>
+ className="w-full text-left px-2.5 py-1.5 rounded-control text-meta text-jz-ink-2 hover:bg-jz-surface-2/60">系统设置</button>
+            <a href="/" className="block px-2.5 py-1.5 rounded-control text-meta text-jz-ink-2 hover:bg-jz-surface-2/60">回老版</a>
             <button onClick={() => { localStorage.removeItem('token'); window.location.hash = ''; window.location.reload(); }}
- className="w-full text-left px-2.5 py-1.5 rounded text-[12px] text-vuln-critical hover:bg-vuln-critical/10">退出登录</button>
+ className="w-full text-left px-2.5 py-1.5 rounded-control text-meta text-jz-sev-critical hover:bg-jz-sev-critical/10">退出登录</button>
           </div>
         )}
       </div>

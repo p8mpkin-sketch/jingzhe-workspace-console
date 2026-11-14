@@ -7,15 +7,15 @@ import { useToastItems, type ToastKind } from './ToastContext';
 // 纯呈现: 数据来自 ToastProvider context, 零请求零业务语义。
 
 const ICON: Record<ToastKind, React.ReactNode> = {
-  success: <CheckCircle2 className="w-4 h-4 shrink-0 text-jz-accent-emerald" />,
-  error: <XCircle className="w-4 h-4 shrink-0 text-jz-accent-crimson" />,
-  warning: <AlertTriangle className="w-4 h-4 shrink-0 text-jz-accent-amber" />,
+  success: <CheckCircle2 className="w-4 h-4 shrink-0 text-jz-teal" />,
+  error: <XCircle className="w-4 h-4 shrink-0 text-jz-red" />,
+  warning: <AlertTriangle className="w-4 h-4 shrink-0 text-jz-amber" />,
 };
 
 const BAR: Record<ToastKind, string> = {
-  success: 'bg-jz-accent-emerald',
-  error: 'bg-jz-accent-crimson',
-  warning: 'bg-jz-accent-amber',
+  success: 'bg-jz-teal',
+  error: 'bg-jz-red',
+  warning: 'bg-jz-amber',
 };
 
 export const ToastContainer: React.FC = () => {
@@ -28,17 +28,17 @@ export const ToastContainer: React.FC = () => {
           key={t.id}
           role="status"
           data-testid={`toast-${t.kind}`}
-          className="apksec-toast-in pointer-events-auto overflow-hidden rounded-lg border border-jz-border
-                     bg-jz-elevated/80 backdrop-blur-md shadow-jz-card"
+          className="jz-toast-in pointer-events-auto overflow-hidden rounded-control border border-jz-border
+                     bg-jz-surface-2/80 backdrop-blur-md shadow-card"
         >
-          <div className="flex items-start gap-2 px-3 py-2.5 text-xs text-jz-text-primary">
+          <div className="flex items-start gap-2 px-3 py-2.5 text-meta text-jz-ink">
             {ICON[t.kind]}
             <span className="flex-1 break-words leading-relaxed">{t.text}</span>
           </div>
           {/* 进度微线: 时长与自动消失同步(内联 animation-duration 按 toast.duration 注入) */}
           <div className="h-0.5 bg-jz-border">
             <div
-              className={`apksec-toast-progress h-full ${BAR[t.kind]}`}
+              className={`jz-toast-progress h-full ${BAR[t.kind]}`}
               style={{ animationDuration: `${t.duration}ms` }}
             />
           </div>
