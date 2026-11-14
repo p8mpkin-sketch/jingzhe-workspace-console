@@ -11,6 +11,7 @@ behavior are unchanged. One entry per phase; each phase is one commit.
 - `/skills`: the candidate review header is a `Panel` with the pre-review count and action, and a counted `SegmentedControl` for the pre-review filter. Loading, empty and filtered-empty states added; candidate checkboxes have labels. The fifth metric spans the row on phones.
 - Keyboard: a shared `pressable()` helper (`components/ui/pressable.ts`) gives clickable rows and cards one Tab stop and Enter / Space activation. Applied to agent and assistant session items, assistant group headers (with `aria-expanded`), evidence and finding rows, API tree rows, Burp flow rows, environment chips and the AI sidebar cards. Session hover actions also show on keyboard focus.
 - Session workbench and attack graph (`features/pentest`, `features/attack-canvas`): node, severity, step and method colors read the `jz` tokens instead of hex and `rgb()` literals; the old `accent-*` classes are gone; the glow box shadow, drop-shadow edge filter, gradient approval orb, blurred minimap and the pulsing running dots are removed. Exported PNGs use the canvas token as background.
+- `/skills` review: rejecting a single candidate now asks for confirmation first (same outcome text as bulk reject); the request is unchanged and is sent only on confirm. Approving a single candidate stays one click.
 - Motion: skeleton pulse is `motion-safe` only; indeterminate progress bars stay (system feedback) and the global reduced-motion rule still applies.
 
 ### Verified

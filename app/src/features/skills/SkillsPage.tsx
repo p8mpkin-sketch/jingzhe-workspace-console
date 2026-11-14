@@ -263,6 +263,7 @@ export const SkillsPage: React.FC = () => {
  const [delBusy, setDelBusy] = useState(false);
  const delSkill = (s: SkillRow) => setDelFor(s);
  const [bulkAsk, setBulkAsk] = useState<'approve' | 'reject' | null>(null);
+ const [rejectFor, setRejectFor] = useState<number | null>(null);
  const runBulk = async (action: 'approve' | 'reject') => {
  setBulkBusy(true);
  if (action === 'approve') {
@@ -711,7 +712,7 @@ export const SkillsPage: React.FC = () => {
  if (on) s.add(id); else s.delete(id);
  setSelCands(s);
  }}
- onDecide={decideCand}
+ onDecide={(id, action) => (action === 'reject' ? setRejectFor(id) : decideCand(id, action))}
  onInspect={setCandFor}
  />
  ))}
@@ -809,6 +810,11 @@ export const SkillsPage: React.FC = () => {
         outcome={bulkAsk === 'approve' ? '这些候选会写入正式知识库,之后可以被检索。审核结果不能撤回。' : '这些候选不会写入知识库,但记录会保留,可在审计中查看。审核结果不能撤回。'}
         onCancel={() => setBulkAsk(null)}
         onConfirm={async () => { const a = bulkAsk; setBulkAsk(null); if (a) await runBulk(a); }} />
+      <ConfirmDialog open={rejectFor != null} destructive busy={candBusy === rejectFor} confirmLabel="拒绝"
+        title={`拒绝候选 #${rejectFor}?`}
+        outcome="这条候选不会写入知识库,但记录会保留,可在审计中查看。审核结果不能撤回。"
+        onCancel={() => setRejectFor(null)}
+        onConfirm={async () => { const id = rejectFor; setRejectFor(null); if (id != null) await decideCand(id, 'reject'); }} />
     </Page>
   );
 };
