@@ -381,10 +381,10 @@ export const AiAssistantPage: React.FC = () => {
 
  // C-UI-2 空态四建议卡 → R104-4②: 内容=真实系统能力,禁编造(在案口径不变)
  const SUGGESTS = [
- { icon: KeyRound, tint: 'text-accent-cyan', tile: 'from-accent-cyan/25 to-accent-cyan/5', title: '硬编码密钥提取', q: '汇总当前项目全部 APK 中发现的所有硬编码 key,按任务分组列出' },
- { icon: ShieldOff, tint: 'text-accent-amber', tile: 'from-accent-amber/25 to-accent-amber/5', title: '证书锁定绕过提示', q: '哪些 APP 启用了证书锁定(SSL Pinning)?结合 ssl_bypass 钩子给出绕过思路与风险提示' },
- { icon: DoorOpen, tint: 'text-accent-emerald', tile: 'from-accent-emerald/25 to-accent-emerald/5', title: '导出组件审计', q: '汇总所有 APP 的导出组件(exported activity/service/receiver/provider),标出未加权限保护的' },
- { icon: Bug, tint: 'text-accent-crimson', tile: 'from-accent-crimson/25 to-accent-crimson/5', title: '危险 API 清单', q: '列出各 APP 的危险函数调用与高危权限使用,按风险等级分组' },
+ { icon: KeyRound, tint: 'text-jz-sev-medium', title: '硬编码密钥提取', q: '汇总当前项目全部 APK 中发现的所有硬编码 key,按任务分组列出' },
+ { icon: ShieldOff, tint: 'text-jz-amber', title: '证书锁定绕过提示', q: '哪些 APP 启用了证书锁定(SSL Pinning)?结合 ssl_bypass 钩子给出绕过思路与风险提示' },
+ { icon: DoorOpen, tint: 'text-jz-brand', title: '导出组件审计', q: '汇总所有 APP 的导出组件(exported activity/service/receiver/provider),标出未加权限保护的' },
+ { icon: Bug, tint: 'text-jz-sev-critical', title: '危险 API 清单', q: '列出各 APP 的危险函数调用与高危权限使用,按风险等级分组' },
  ];
  const askSuggest = async (q: string) => {
  let sid = current;
@@ -473,7 +473,6 @@ export const AiAssistantPage: React.FC = () => {
 
       {/* 中列: 对话 */}
       <div className="flex-1 min-w-0 flex flex-col relative">
-        <div aria-hidden className=" pointer-events-none absolute inset-x-0 top-0 h-56" data-ai-ambient />
         {/* 顶栏: 遥测胶囊 + 关联任务 + 开发者模式 */}
         <div className="flex items-center gap-2 px-4 py-1.5">
           <span className="text-meta text-jz-muted">{auditTids.length ? `任务追问模式 #${auditTids.join('+')}` : 'APK 安全审计助手'}</span>
@@ -564,7 +563,7 @@ export const AiAssistantPage: React.FC = () => {
  className="text-left px-3.5 py-3 rounded-panel bg-jz-surface shadow-card
  hover:-translate-y-0.5 hover:shadow-card transition-all duration-150">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span aria-hidden className={`w-7 h-7 rounded-control bg-gradient-to-br ${s.tile} ${s.tint} inline-flex items-center justify-center flex-none`}>
+                      <span aria-hidden className={`w-7 h-7 rounded-control bg-jz-surface-2 ${s.tint} inline-flex items-center justify-center flex-none`}>
                         <s.icon size={15} />
                       </span>
                       <span className="text-body font-semibold text-jz-ink" data-suggest-title>{s.title}</span>

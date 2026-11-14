@@ -28,7 +28,7 @@ const statusLabel = (s: AgentSession) => {
   return s.status || 'idle';
 };
 const statusTone = (s: AgentSession) => (
-  s.status === 'done' ? 'bg-jz-teal' : s.status === 'running' ? 'bg-jz-brand animate-pulse' : 'bg-jz-muted/40'
+  s.status === 'done' ? 'bg-jz-teal' : s.status === 'running' ? 'bg-jz-brand' : 'bg-jz-muted/40'
 );
 const statusBar = (s: AgentSession) => (
   s.status === 'done' ? 'bg-jz-teal/70' : s.status === 'running' ? 'bg-jz-brand/80' : 'bg-jz-muted/30'

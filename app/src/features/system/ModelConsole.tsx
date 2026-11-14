@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import { Badge, Button, Skeleton } from '@/components/ui';
+import { Eye, EyeOff, Plug } from 'lucide-react';
+import {
+  Button, Panel, StatusBadge, Tag, SkeletonLoader, EmptyState, Field, Input, Select, Checkbox, Drawer, ConfirmDialog, InlineAlert,
+} from '@/components/ui';
 import { api } from '@/services/api';
 
 /** R52 P0-1: G2 模型路由控制台 —— 供应商卡片矩阵 + 配置抽屉(脱敏 key) + 三段式连通性探针 + 分流规则。
@@ -42,7 +44,7 @@ const MODEL_CATALOG: Record<string, { value: string; label: string; tag?: string
 const REASONING_OPTIONS = [
   { value: 'fast', label: 'Fast · 快速' },
   { value: 'balanced', label: 'Balanced · 均衡' },
-  { value: 'max', label: 'Max · 深审' },
+  { value: 'max', label: 'Max · 深入' },
 ];
 
 const VENDORS = [
@@ -61,9 +63,12 @@ export const ModelConsole: React.FC = () => {
   const [probes, setProbes] = useState<Record<string, Probe>>({});
   const [probing, setProbing] = useState<string | null>(null);
   const [toast, setToast] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const reload = useCallback(() => {
-    api<any>('/api/models/providers').then(setData).catch(() => setData({ providers: [], active_id: null }));
+    api<any>('/api/models/providers').then((r) => { setData(r); setLoadFailed(false); }).catch(() => { setData({ providers: [], active_id: null }); setLoadFailed(true); });
     api<any>('/api/models/routing').then((r) => setRouting(r.routing)).catch(() => setRouting(null));
   }, []);
   useEffect(() => { reload(); }, [reload]);
@@ -98,94 +103,94 @@ export const ModelConsole: React.FC = () => {
     reload();
   };
 
-  if (!data) return <div className="p-3"><Skeleton className="h-24" /></div>;
+  if (!data) return <Panel title="模型服务"><SkeletonLoader variant="card" rows={2} /></Panel>;
   const ps = data.providers || [];
 
   return (
-    <div className="space-y-4 relative">
-      {toast && <div data-toast className="fixed top-14 right-6 z-50 px-3 py-1.5 rounded-control bg-jz-teal/15 border border-jz-teal/40 text-jz-teal text-meta">{toast}</div>}
+    <div className="flex flex-col gap-6">
+      {toast && <div data-toast role="status" className="fixed right-6 top-14 z-50 rounded-control border border-jz-teal bg-jz-surface px-3 py-1.5 text-label text-jz-teal shadow-card">{toast}</div>}
 
-      {/* 分流规则 */}
-      <section className="rounded-panel bg-jz-surface shadow-card p-4">
-        <div className="text-meta font-semibold text-jz-ink mb-2">模型分流规则 <span className="text-jz-muted font-normal">主模型 429/超限时自动降级至兜底并在时间线标记回退</span></div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          {[['inference', '推理任务(逆向/因果)'], ['cleaning', '清洗任务(流量/日志)'], ['report', '报告生成'], ['fallback', '兜底模型']].map(([k, label]) => (
-            <label key={k} className="text-meta text-jz-muted space-y-1 block">
-              {label}
-              <select value={(routing as any)?.[k] || ''} onChange={(e) => saveRouting(k, e.target.value)}
-                className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink">
-                <option value="">未配置</option>
-                {ps.map((p) => <option key={p.id} value={p.id}>{p.label || p.vendor} · {p.model}</option>)}
-              </select>
-            </label>
+      <Panel title="分流规则" description="主模型返回 429 或超出限额时自动改用兜底模型,并在时间线上标记。">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 desktop:grid-cols-4">
+          {[['inference', '推理任务(逆向、因果分析)'], ['cleaning', '清洗任务(流量、日志)'], ['report', '报告生成'], ['fallback', '兜底模型']].map(([k, label]) => (
+            <Field key={k} label={label}>
+              {(ids) => (
+                <Select ids={ids} value={(routing as any)?.[k] || ''} onChange={(e) => saveRouting(k, e.target.value)}>
+                  <option value="">未配置</option>
+                  {ps.map((p) => <option key={p.id} value={p.id}>{p.label || p.vendor || p.name || p.id} · {p.model}</option>)}
+                </Select>
+              )}
+            </Field>
           ))}
         </div>
-      </section>
+      </Panel>
 
-      {/* 供应商卡片 */}
-      <section>
-        <div className="text-meta font-semibold text-jz-ink mb-2">供应商({ps.length})</div>
-        {ps.length === 0 && <div className="text-meta text-jz-muted p-3 rounded-control border border-dashed border-jz-border/60 bg-jz-surface-2">尚未配置供应商——点下方卡片开始</div>}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-          {ps.map((p) => {
-            const pr = probes[p.id];
-            return (
-              <div key={p.id} data-provider-card={p.id}
-                className={`rounded-card p-3 bg-jz-surface shadow-card space-y-2 ring-1 ${data.active_id === p.id ? 'ring-jz-brand/60' : 'ring-transparent hover:ring-jz-border'}`}>
-                <div className="flex items-center gap-2">
-                  <span className="text-meta font-semibold text-jz-ink">{p.label || p.vendor}</span>
-                  {data.active_id === p.id && <Badge level="safe">主力</Badge>}
-                  {p.enabled === false && <Badge level="medium">已停用</Badge>}
-                  <span className="ml-auto text-meta font-mono text-jz-muted">并发 {p.concurrency ?? 2}</span>
-                </div>
-                <div className="text-meta font-mono text-jz-muted truncate">{p.base_url} · {p.model}</div>
-                <div className="text-meta text-jz-muted">推理等级: <span className="text-jz-ink-2">{p.reasoning || 'balanced'}</span></div>
-                <div className="text-meta font-mono text-jz-muted">key: {p.key_masked || '未配置'}</div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <Button variant="ghost" className="px-2 py-1 text-meta" onClick={() => setDrawer({ mode: 'edit', provider: p })}>配置</Button>
-                  <Button variant="ghost" className="px-2 py-1 text-meta" onClick={() => runProbe(p.id)}>
-                    {probing === p.id
-                      ? <span data-probe-busy className="inline-flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-pill border border-current border-t-transparent animate-spin inline-block" />探测中…
-                        </span>
-                      : '连通性探针'}
-                  </Button>
-                  {data.active_id !== p.id && <Button variant="ghost" className="px-2 py-1 text-meta" onClick={() => activate(p.id)}>设为主力</Button>}
-                  <Button variant="ghost" className="px-2 py-1 text-meta text-jz-sev-critical" onClick={() => remove(p.id)}>删除</Button>
-                </div>
-                  {pr && (
-                  <div data-probe-result className={`rounded-control border p-2 text-meta font-mono space-y-0.5 ${pr.error_class === 'OK' ? 'border-jz-teal/40 bg-jz-teal/10 text-jz-teal' : 'border-jz-sev-critical/40 bg-jz-sev-critical/10 text-jz-sev-critical'}`}>
-                    <div>
-                      分类: {pr.error_class || '—'}
-                      {(() => { const ms = (pr.stages || []).reduce((n: number, s: ProbeStage) => n + (s.rtt_ms || 0), 0); return ms ? ` · 总时延 ${ms}ms` : ''; })()}
-                      {pr.tps ? ` · TPS ${pr.tps}` : ''}
-                    </div>
-                    {(pr.stages || []).map((s, i) => (
-                      <div key={i}>{s.ok ? '✓' : '✗'} {s.stage}{s.rtt_ms != null ? ` · ${s.rtt_ms}ms` : ''}{s.http ? ` · HTTP ${s.http}` : ''}{s.tokens ? ` · ${s.tokens} tokens` : ''}{s.error ? ` · ${s.error}` : ''}</div>
-                    ))}
-                    {pr.error_class === 'AUTH_ERROR' && <div className="text-jz-muted">API Key 无效/过期——到供应商控制台重新签发后更新</div>}
-                    {pr.error_class === 'NETWORK' && <div className="text-jz-muted">网络不可达——检查代理/DNS 配置</div>}
+      <Panel title={`供应商(${ps.length})`} description="模型服务的连接配置。连通性探针依次检查 DNS 与 TLS、鉴权和一次生成请求。">
+        {loadFailed && <InlineAlert tone="danger" className="mb-3" action={<Button size="sm" variant="secondary" onClick={reload}>重试</Button>}>供应商列表没有加载成功,下面的内容可能不完整。</InlineAlert>}
+        {ps.length === 0 ? (
+          <EmptyState compact icon={Plug} title="还没有配置供应商" cause="从下方“添加供应商”选择一种开始。" />
+        ) : (
+          <div className="grid grid-cols-1 gap-3 desktop:grid-cols-2">
+            {ps.map((p) => {
+              const pr = probes[p.id];
+              const active = data.active_id === p.id;
+              const ms = pr ? (pr.stages || []).reduce((n: number, s: ProbeStage) => n + (s.rtt_ms || 0), 0) : 0;
+              return (
+                <div key={p.id} data-provider-card={p.id}
+                  className={`flex min-w-0 flex-col gap-2 rounded-card border bg-jz-surface p-4 ${active ? 'border-jz-brand' : 'border-jz-border'}`}>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="min-w-0 truncate text-body font-semibold text-jz-ink">{p.label || p.vendor || p.name || p.id}</span>
+                    {active && <StatusBadge tone="brand">主力</StatusBadge>}
+                    {p.enabled === false && <StatusBadge tone="neutral">已停用</StatusBadge>}
+                    <span className="ml-auto flex-none font-mono text-meta tnum text-jz-muted">并发 {p.concurrency ?? 2}</span>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
+                  <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-label">
+                    <dt className="text-jz-muted">端点</dt><dd className="truncate font-mono text-jz-ink-2" title={p.base_url}>{p.base_url || '—'}</dd>
+                    <dt className="text-jz-muted">模型</dt><dd className="truncate font-mono text-jz-ink-2">{p.model || '—'}</dd>
+                    <dt className="text-jz-muted">推理等级</dt><dd className="text-jz-ink-2">{p.reasoning || 'balanced'}</dd>
+                    <dt className="text-jz-muted">Key</dt><dd className="truncate font-mono text-jz-ink-2">{p.key_masked || '未配置'}</dd>
+                  </dl>
+                  <div className="flex flex-wrap items-center gap-1.5 border-t border-jz-border pt-2">
+                    <Button size="sm" variant="secondary" onClick={() => setDrawer({ mode: 'edit', provider: p })}>配置</Button>
+                    <Button size="sm" variant="subtle" onClick={() => runProbe(p.id)} disabled={probing === p.id}>
+                      {probing === p.id
+                        ? <span data-probe-busy className="inline-flex items-center gap-1.5">
+                            <span aria-hidden className="inline-block h-2.5 w-2.5 animate-spin rounded-pill border border-current border-t-transparent" />探测中…
+                          </span>
+                        : '连通性探针'}
+                    </Button>
+                    {!active && <Button size="sm" variant="subtle" onClick={() => activate(p.id)}>设为主力</Button>}
+                    <Button size="sm" variant="ghost" className="ml-auto text-jz-red" onClick={() => setConfirmDel(p)}>删除</Button>
+                  </div>
+                  {pr && (
+                    <div data-probe-result role="status"
+                      className={`space-y-0.5 rounded-control border p-2 font-mono text-meta ${pr.error_class === 'OK' ? 'border-jz-teal bg-jz-surface-2 text-jz-teal' : 'border-jz-red bg-jz-surface-2 text-jz-red'}`}>
+                      <div>分类: {pr.error_class || '—'}{ms ? ` · 总时延 ${ms}ms` : ''}{pr.tps ? ` · TPS ${pr.tps}` : ''}</div>
+                      {(pr.stages || []).map((s, i) => (
+                        <div key={i}>{s.ok ? '✓' : '✗'} {s.stage}{s.rtt_ms != null ? ` · ${s.rtt_ms}ms` : ''}{s.http ? ` · HTTP ${s.http}` : ''}{s.tokens ? ` · ${s.tokens} tokens` : ''}{s.error ? ` · ${s.error}` : ''}</div>
+                      ))}
+                      {pr.error_class === 'AUTH_ERROR' && <div className="font-sans text-jz-ink-2">API Key 无效或已过期。到供应商控制台重新签发后更新。</div>}
+                      {pr.error_class === 'NETWORK' && <div className="font-sans text-jz-ink-2">网络不可达。检查代理和 DNS 配置。</div>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Panel>
 
-      {/* 新增入口 */}
-      <section>
-        <div className="text-meta font-semibold text-jz-ink mb-2">添加供应商</div>
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-2">
+      <Panel title="添加供应商">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 desktop:grid-cols-3 wide:grid-cols-6">
           {VENDORS.map((v) => (
-            <button key={v.key} onClick={() => setDrawer({ mode: 'add', vendor: v.key })}
-              className="rounded-card bg-jz-surface-2 p-3 text-left hover:bg-jz-surface-2/70 hover:ring-1 hover:ring-jz-brand/50 transition-all">
-              <div className="text-meta font-semibold text-jz-ink">{v.label}</div>
-              <div className="text-meta text-jz-muted truncate">{v.hint}</div>
+            <button key={v.key} type="button" onClick={() => setDrawer({ mode: 'add', vendor: v.key })}
+              className="min-w-0 rounded-card border border-jz-border bg-jz-surface-2 p-3 text-left transition-colors duration-hover hover:border-jz-brand">
+              <div className="text-label font-semibold text-jz-ink">{v.label}</div>
+              <div className="truncate text-meta text-jz-muted">{v.hint}</div>
             </button>
           ))}
         </div>
-      </section>
+      </Panel>
 
       {drawer && (
         <ConfigDrawer
@@ -194,6 +199,13 @@ export const ModelConsole: React.FC = () => {
           onSaved={() => { setDrawer(null); reload(); }}
         />
       )}
+
+      <ConfirmDialog open={!!confirmDel} title="删除这个供应商?" destructive busy={deleting} confirmLabel="删除"
+        outcome="删除后这条连接配置和保存的 Key 都会移除;分流规则里引用它的位置会变成未配置。需要时可以重新添加。"
+        onCancel={() => setConfirmDel(null)}
+        onConfirm={async () => { setDeleting(true); try { await remove(confirmDel.id); } finally { setDeleting(false); setConfirmDel(null); } }}>
+        <span className="font-mono">{confirmDel ? `${confirmDel.label || confirmDel.vendor || confirmDel.name || confirmDel.id} · ${confirmDel.model}` : ''}</span>
+      </ConfirmDialog>
     </div>
   );
 };
@@ -213,102 +225,98 @@ function ConfigDrawer({ drawer, onClose, onSaved }: {
   const [remoteModels, setRemoteModels] = useState<{ value: string; label: string; tag?: string }[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [apiKey, setApiKey] = useState('');
-  const [showKey, setShowKey] = useState(false);   // R117-9②: 密文遮罩+零依赖眼睛显隐(默认圆点掩码防投屏泄露)
+  const [showKey, setShowKey] = useState(false);   // R117-9②: masked by default
   const [concurrency, setConcurrency] = useState<number>(p?.concurrency ?? 2);
   const [enabled, setEnabled] = useState<boolean>(p?.enabled !== false);
   const [label, setLabel] = useState(p?.label || '');
   const [err, setErr] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const save = async () => {
     setErr('');
+    setSaving(true);
     const body: any = { base_url: baseUrl, model, concurrency, enabled, label, reasoning };
     if (apiKey) body.api_key = apiKey;
-    const r = await api<any>(
-      isEdit ? `/api/models/providers/${p.id}` : '/api/models/providers',
-      { method: isEdit ? 'POST' : 'POST', body: JSON.stringify(body) },
-    );
-    if (r && r.status === 'ok') onSaved();
-    else setErr(r?.detail || '保存失败');
+    try {
+      const r = await api<any>(
+        isEdit ? `/api/models/providers/${p.id}` : '/api/models/providers',
+        { method: isEdit ? 'POST' : 'POST', body: JSON.stringify(body) },
+      );
+      if (r && r.status === 'ok') onSaved();
+      else setErr(r?.detail || '保存失败');
+    } catch (e: any) {
+      setErr(e?.message || '保存失败');
+    } finally {
+      setSaving(false);
+    }
   };
 
+  const all = [...modelPresets, ...remoteModels];
+  const custom = !all.some((m) => m.value === model);
+
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-jz-scrim/40" onClick={onClose} data-config-drawer>
-      <div className="w-[380px] h-full bg-jz-surface shadow-card p-4 space-y-3 overflow-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <span className="text-body font-semibold text-jz-ink">{isEdit ? '编辑供应商' : '新增供应商'}</span>
-          <button onClick={onClose} className="text-jz-muted hover:text-jz-ink text-meta">关闭</button>
-        </div>
-        <label className="block text-meta text-jz-muted space-y-1">显示名
-          <input value={label} onChange={(e) => setLabel(e.target.value)}
-            className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink" /></label>
-        <label className="block text-meta text-jz-muted space-y-1">Base URL
-          <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://..."
-            className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink font-mono" /></label>
-        <label className="block text-meta text-jz-muted space-y-1">
-          API Key {isEdit && p?.key_masked ? <span className="font-mono">(当前 {p.key_masked})</span> : ''}
-          <div className="relative">
-            <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={isEdit && p?.has_key ? '留空保留旧 key' : 'sk-...'}
-              autoComplete="off"
-              className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 pr-9 text-meta text-jz-ink font-mono" />
-            {/* R117-9②: 纯 SVG 眼睛切换(默认 password 掩码;明文仅点按期间呈现) */}
-            <button type="button" onClick={() => setShowKey(!showKey)} data-key-toggle
-              title={showKey ? '隐藏 API Key(回到密文)' : '显示 API Key 明文(投屏时请保持隐藏)'}
-              aria-label={showKey ? '隐藏 API Key' : '显示 API Key'}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-jz-muted hover:text-jz-brand transition-colors">
-              {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
-          </div>
-        </label>
-        <label className="block text-meta text-jz-muted space-y-1">模型
-          <select
-            value={[...modelPresets, ...remoteModels].some(m => m.value === model) ? model : '__custom'}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v !== '__custom') setModel(v);
-            }}
-            className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink">
-            <option value="__custom">自定义模型…</option>
-            {[...modelPresets, ...remoteModels].map(m => <option key={m.value} value={m.value}>{m.label}{m.tag ? ` · ${m.tag}` : ''}</option>)}
-          </select>
-          {![...modelPresets, ...remoteModels].some(m => m.value === model) && (
-            <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="deepseek-chat / deepseek-reasoner / glm-4-plus"
-              className="w-full mt-1 bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink font-mono" />
+    <Drawer open title={isEdit ? '编辑供应商' : '新增供应商'} onClose={onClose}
+      footer={<><Button variant="secondary" onClick={onClose}>取消</Button><Button onClick={save} loading={saving}>保存</Button></>}>
+      <div data-config-drawer className="flex flex-col gap-4">
+        <Field label="显示名">{(ids) => <Input ids={ids} value={label} onChange={(e) => setLabel(e.target.value)} />}</Field>
+        <Field label="Base URL">{(ids) => <Input ids={ids} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="https://..." className="font-mono" />}</Field>
+        <Field label={<>API Key {isEdit && p?.key_masked ? <span className="font-mono font-normal text-jz-muted">(当前 {p.key_masked})</span> : null}</>}
+          hint="明文只放在请求体里发给后端保存,前端不写入本地存储,列表只显示脱敏后的值。">
+          {(ids) => (
+            <div className="relative">
+              <Input ids={ids} type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)}
+                placeholder={isEdit && p?.has_key ? '留空则保留原来的 Key' : 'sk-...'} autoComplete="off" className="pr-10 font-mono" />
+              <button type="button" onClick={() => setShowKey(!showKey)} data-key-toggle
+                title={showKey ? '隐藏 API Key' : '显示 API Key 明文(共享屏幕时请保持隐藏)'}
+                aria-label={showKey ? '隐藏 API Key' : '显示 API Key'} aria-pressed={showKey}
+                className="absolute right-1 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-control text-jz-muted hover:bg-jz-surface-2 hover:text-jz-ink">
+                {showKey ? <EyeOff size={14} aria-hidden /> : <Eye size={14} aria-hidden />}
+              </button>
+            </div>
           )}
-          <div className="flex items-center gap-2">
-            <span className="text-meta text-jz-muted">实际 API model id；切换后下一条审计生效</span>
-            {isEdit && <button type="button" disabled={loadingModels}
-              onClick={async () => {
-                setLoadingModels(true);
-                try {
-                  const r = await api<any>(`/api/models/providers/${p.id}/models`);
-                  const ms = (r?.models || []).map((m: string) => ({ value: m, label: m, tag: 'API' }));
-                  setRemoteModels(ms);
-                } finally { setLoadingModels(false); }
-              }}
-              className="ml-auto text-meta text-jz-brand hover:underline disabled:opacity-40">
-              {loadingModels ? '拉取中…' : '拉取模型列表'}
-            </button>}
-          </div>
-        </label>
-        <label className="block text-meta text-jz-muted space-y-1">推理等级
-          <select value={reasoning} onChange={(e) => setReasoning(e.target.value)}
-            className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink">
-            {REASONING_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-          <span className="text-meta text-jz-muted">Fast 60 / Balanced 120 / Max 240 条 L3 候选预算（不是厂商 API 参数）</span>
-        </label>
-        <div className="flex gap-3">
-          <label className="block text-meta text-jz-muted space-y-1 flex-1">并发上限
-            <input type="number" min={1} max={32} value={concurrency} onChange={(e) => setConcurrency(Number(e.target.value))}
-              className="w-full bg-jz-surface-2 border border-transparent rounded-control px-2 py-1.5 text-meta text-jz-ink" /></label>
-          <label className="flex items-end gap-1.5 text-meta text-jz-muted pb-1.5">
-            <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />启用
-          </label>
+        </Field>
+        <Field label="模型" hint="填写厂商的 API model id;切换后从下一次评估开始生效。">
+          {(ids) => (
+            <div className="flex flex-col gap-2">
+              <Select ids={ids} value={custom ? '__custom' : model} onChange={(e) => { const v = e.target.value; if (v !== '__custom') setModel(v); }}>
+                <option value="__custom">自定义模型…</option>
+                {all.map((m) => <option key={m.value} value={m.value}>{m.label}{m.tag ? ` · ${m.tag}` : ''}</option>)}
+              </Select>
+              {custom && (
+                <Input value={model} onChange={(e) => setModel(e.target.value)} aria-label="自定义模型 id"
+                  placeholder="deepseek-chat / deepseek-reasoner / glm-4-plus" className="font-mono" />
+              )}
+              {isEdit && (
+                <div>
+                  <Button size="sm" variant="subtle" loading={loadingModels} disabled={loadingModels}
+                    onClick={async () => {
+                      setLoadingModels(true);
+                      try {
+                        const r = await api<any>(`/api/models/providers/${p.id}/models`);
+                        const ms = (r?.models || []).map((m: string) => ({ value: m, label: m, tag: 'API' }));
+                        setRemoteModels(ms);
+                      } finally { setLoadingModels(false); }
+                    }}>
+                    {loadingModels ? '拉取中…' : '拉取模型列表'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </Field>
+        <Field label="推理等级" hint="Fast 60、Balanced 120、Max 240 条 L3 候选预算(这是本系统的预算,不是厂商 API 参数)。">
+          {(ids) => (
+            <Select ids={ids} value={reasoning} onChange={(e) => setReasoning(e.target.value)}>
+              {REASONING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </Select>
+          )}
+        </Field>
+        <div className="grid grid-cols-2 items-end gap-4">
+          <Field label="并发上限">{(ids) => <Input ids={ids} type="number" min={1} max={32} value={concurrency} onChange={(e) => setConcurrency(Number(e.target.value))} className="tnum" />}</Field>
+          <div className="pb-2"><Checkbox label="启用" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} /></div>
         </div>
-        {err && <div className="text-meta text-jz-sev-critical">{err}</div>}
-        <Button className="w-full" onClick={save}>保存</Button>
-        <div className="text-meta text-jz-muted leading-4">key 明文仅经请求体传后端 600 权限文件存储;前端不落 localStorage,列表只回显脱敏形。</div>
+        {err && <InlineAlert tone="danger">{err}</InlineAlert>}
       </div>
-    </div>
+    </Drawer>
   );
 }

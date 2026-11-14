@@ -95,6 +95,7 @@ export const routes = [
   ['GET', /^\/api\/models\/providers$/, providers],
   ['GET', /^\/api\/models\/routing$/, { routing: { default: 'p1', chat: 'p1', audit: 'p1' } }],
   ['GET', /^\/api\/models\/catalog$/, { models: [] }],
+  ['GET', /^\/api\/skills\/\d+\/source$/, { file: 'skills/sample/SKILL.md', bytes: 212, truncated: false, content: '# 示例知识条目\n# 用途: 复用已完成任务中的分析步骤\n\n1. 读取任务产物清单\n2. 核对网络与存储相关发现\n3. 汇总结论并附出处\n' }],
   ['GET', /^\/api\/skills$/, [1, 2, 3, 4, 5].map((i) => ({ id: i, name: `示例知识条目 ${i}`, slug: `sample-${i}`, summary: '从已完成任务中沉淀的可复用分析步骤。', description: '从已完成任务中沉淀的可复用分析步骤。', status: ['active', 'draft', 'disabled', 'active', 'active'][i - 1], tags: ['network', 'storage'], category: ['network', 'storage', 'crypto'][i % 3], source: 'distill', updated_at: now - i * 5000, created_at: now - i * 9000, owner: 'demo', version: 1 }))],
   ['GET', /^\/api\/kb\/candidates$/, { items: [1, 2, 3].map((i) => ({ id: i, title: `候选条目 ${i}`, summary: '待审核的知识候选。', status: 'pending', kind: 'pattern', score: 0.6 + i / 10, created_at: now - i * 4000, task_id: 100 + i })) }],
   ['GET', /^\/api\/v2\/overview$/, { tasks_total: 8, candidates_total: 83, confirmed_total: 12, real_confirmed: 9, synthetic_confirmed: 3, silver_total: 20, unresolved_total: 51, apk_with_confirmed: 5, sink_families: 7,

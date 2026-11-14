@@ -12,15 +12,15 @@ import { projectTurns } from './model/turnProjection';
 import type { EvidenceView } from './content/types';
 
 const SUGGESTS_AGENT = [
-  { icon: ShieldAlert, tint: 'text-jz-sev-critical', tile: 'from-jz-sev-critical/20 to-jz-sev-critical/5', label: '高危漏洞清单', desc: '按任务聚合高危发现，给出文件位置和修复优先级', q: '任务 #100367 有哪些高危发现？给出文件位置和修复优先级' },
-  { icon: KeyRound, tint: 'text-jz-sev-medium', tile: 'from-jz-sev-medium/20 to-jz-sev-medium/5', label: '硬编码密钥提取', desc: '汇总密钥、证书与凭据，标注文件、置信度和用途', q: '汇总任务 #100367 中的硬编码密钥/证书，列出文件与置信度' },
-  { icon: DoorOpen, tint: 'text-jz-brand', tile: 'from-jz-brand/20 to-jz-brand/5', label: '导出组件审计', desc: '检查 exported 组件及其权限保护状态', q: '列出任务 #100367 的 exported 组件，标出未加权限保护的' },
-  { icon: Bug, tint: 'text-jz-teal', tile: 'from-jz-teal/20 to-jz-teal/5', label: '危险 API 清单', desc: '按风险等级整理危险调用与高危权限', q: '汇总任务 #100367 中危险 API 调用，按风险等级排序' },
+  { icon: ShieldAlert, tint: 'text-jz-sev-critical', label: '高危漏洞清单', desc: '按任务聚合高危发现，给出文件位置和修复优先级', q: '任务 #100367 有哪些高危发现？给出文件位置和修复优先级' },
+  { icon: KeyRound, tint: 'text-jz-sev-medium', label: '硬编码密钥提取', desc: '汇总密钥、证书与凭据，标注文件、置信度和用途', q: '汇总任务 #100367 中的硬编码密钥/证书，列出文件与置信度' },
+  { icon: DoorOpen, tint: 'text-jz-brand', label: '导出组件审计', desc: '检查 exported 组件及其权限保护状态', q: '列出任务 #100367 的 exported 组件，标出未加权限保护的' },
+  { icon: Bug, tint: 'text-jz-teal', label: '危险 API 清单', desc: '按风险等级整理危险调用与高危权限', q: '汇总任务 #100367 中危险 API 调用，按风险等级排序' },
 ];
 const SUGGESTS_QUICK = [
-  { icon: ShieldAlert, tint: 'text-jz-sev-critical', tile: 'from-jz-sev-critical/20 to-jz-sev-critical/5', label: '证书锁定结论', desc: '检索本地知识库中的 SSL Pinning 结论与出处', q: '检索本地知识库里关于证书锁定（SSL Pinning）的结论与出处' },
-  { icon: KeyRound, tint: 'text-jz-sev-medium', tile: 'from-jz-sev-medium/20 to-jz-sev-medium/5', label: '硬编码密钥', desc: '查看历史密钥/凭据发现与出处', q: '检索本地知识库中硬编码密钥/凭据的历史发现与出处' },
-  { icon: Sparkles, tint: 'text-jz-brand', tile: 'from-jz-brand/20 to-jz-brand/5', label: '会话要点小结', desc: '总结结论、证据和未验证项', q: '总结当前会话的结论、证据和未验证项' },
+  { icon: ShieldAlert, tint: 'text-jz-sev-critical', label: '证书锁定结论', desc: '检索本地知识库中的 SSL Pinning 结论与出处', q: '检索本地知识库里关于证书锁定（SSL Pinning）的结论与出处' },
+  { icon: KeyRound, tint: 'text-jz-sev-medium', label: '硬编码密钥', desc: '查看历史密钥/凭据发现与出处', q: '检索本地知识库中硬编码密钥/凭据的历史发现与出处' },
+  { icon: Sparkles, tint: 'text-jz-brand', label: '会话要点小结', desc: '总结结论、证据和未验证项', q: '总结当前会话的结论、证据和未验证项' },
 ];
 
 export const AgentPage: React.FC = () => {
@@ -159,7 +159,7 @@ export const AgentPage: React.FC = () => {
           )}
           <span className="flex-1" />
           <span data-agent-status className={`hidden md:flex items-center gap-1 px-2 py-0.5 rounded-pill text-meta ${a.running ? 'bg-jz-brand/10 text-jz-brand' : 'bg-jz-surface-2/60 text-jz-muted'}`}>
-            <span className={`w-1.5 h-1.5 rounded-pill ${a.running ? 'bg-jz-brand animate-pulse' : 'bg-jz-muted/50'}`} />
+            <span className={`w-1.5 h-1.5 rounded-pill ${a.running ? 'bg-jz-brand' : 'bg-jz-muted/50'}`} />
             {a.running ? 'running' : (currentSession?.status || 'idle')}
           </span>
           <span data-agent-connected className={`hidden md:flex items-center gap-1 text-meta ${a.connected ? 'text-jz-teal' : 'text-jz-muted'}`}>
@@ -217,9 +217,9 @@ export const AgentPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-[780px] mx-auto w-full">
                   {(a.mode === 'quick' ? SUGGESTS_QUICK : SUGGESTS_AGENT).map((s) => (
                     <button key={s.q} onClick={() => ask(s.q)} data-agent-suggest
-                      className="group text-left px-4 py-3.5 rounded-panel bg-jz-surface border border-jz-border/40 shadow-card hover:-translate-y-0.5 hover:border-jz-brand/40 hover:shadow-card transition-all duration-150">
+                      className="group text-left px-4 py-3.5 rounded-panel bg-jz-surface border border-jz-border/40 shadow-card hover:border-jz-brand transition-colors duration-hover">
                       <div className="flex items-start gap-3">
-                        <span className={`w-8 h-8 rounded-card bg-gradient-to-br ${s.tile} ${s.tint} grid place-items-center flex-none`}>
+                        <span className={`w-8 h-8 rounded-card bg-jz-surface-2 ${s.tint} grid place-items-center flex-none`}>
                           <s.icon size={16} />
                         </span>
                         <span className="min-w-0 flex-1">

@@ -131,12 +131,12 @@ export const AnswerCard: React.FC<{
         {!!toolsCount && <span className="text-meta text-jz-muted">· {toolsCount} 工具</span>}
         {!!tokenCount && <span className="text-meta font-mono text-jz-muted">· {tokenCount.toLocaleString()} tokens</span>}
         {node.interrupted && <span className="px-1.5 py-0.5 rounded-control bg-jz-sev-medium/15 text-jz-sev-medium text-meta">已中断</span>}
-        {live && <span className="px-1.5 py-0.5 rounded-control bg-jz-brand/10 text-jz-brand text-meta animate-pulse">生成中</span>}
+        {live && <span className="px-1.5 py-0.5 rounded-control bg-jz-brand/10 text-jz-brand text-meta">生成中</span>}
       </div>
       <div className="rounded-card border border-jz-border/45 bg-jz-surface/55 px-4 py-3" data-agent-content>
         {node.text ? <ContentRenderer blocks={blocks} sessionId={sessionId} evidence={evidenceIndex || evidence} /> : (
           <div className="text-meta text-jz-muted flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-pill bg-jz-brand animate-pulse" /> 正在整理工具结果…
+            <span className="w-1.5 h-1.5 rounded-pill bg-jz-brand" /> 正在整理工具结果…
           </div>
         )}
         {!!node.reasoning && (
@@ -215,7 +215,7 @@ export const AnswerCard: React.FC<{
         </div>
       </div>
       {!!previewUrl && (
-        <div className="fixed inset-0 z-[70] bg-jz-scrim/40 backdrop-blur-[1px] flex items-center justify-center p-4" onClick={() => setPreviewUrl('')} data-evidence-preview>
+        <div className="fixed inset-0 z-[70] bg-jz-scrim/40  flex items-center justify-center p-4" onClick={() => setPreviewUrl('')} data-evidence-preview>
           <div className="w-full max-w-lg rounded-panel bg-jz-surface border border-jz-border/50 shadow-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 px-4 py-3 border-b border-jz-border/35">
               <Link2 size={13} className="text-jz-brand" />

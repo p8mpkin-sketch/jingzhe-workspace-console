@@ -20,8 +20,8 @@ export type KBCandidate = {
 };
 
 export const KB_CAT_LABEL: Record<string, string> = {
- burp_capture: 'Burp 抓包路径', decrypt_recipe: '解密套路',
- biz_extract: '信息提取 pattern', waf_bypass: 'WAF 绕过组合',
+ burp_capture: 'Burp 抓包路径', decrypt_recipe: '解密方法',
+ biz_extract: '信息提取规则', waf_bypass: 'WAF 规则核对',
 };
 
 export const fmtTime = (ts?: number | null) => {
@@ -49,25 +49,14 @@ export const KIND_ICON: Record<string, React.ComponentType<{ className?: string 
 };
 export const iconOf = (s: SkillRow) => KIND_ICON[kindOf(s).tab] || Braces;
 
-/** 色彩分层: 类别→顶部 h-1 渐变指示条(规格锚定: Claude 技能 indigo→purple / 平台模块 emerald→sky;
- *  标准色 500 系双主题可读,带 dark: 400 变体补亮主题差)。 */
-export const KIND_GRADIENT: Record<string, string> = {
- 'Claude 技能': 'from-jz-brand to-jz-brand dark:from-jz-brand dark:to-jz-brand',
- 'Claude 归档': 'from-jz-brand to-jz-brand dark:from-jz-brand dark:to-jz-brand',
- '平台模块': 'from-jz-teal to-jz-brand dark:from-jz-teal dark:to-jz-brand',
- '项目 rules': 'from-jz-amber to-jz-orange dark:from-jz-amber dark:to-jz-orange',
- '导入': 'from-jz-brand to-jz-brand dark:from-jz-brand dark:to-jz-brand',
- '蒸馏草案': 'from-jz-red to-jz-orange dark:from-jz-red dark:to-jz-orange',
-};
-
-/** 候选分类彩色徽章(壳档案紫/解密套路青;其余按 vuln token 分色,双主题)。 */
-export const catBadgeCls = (c: KBCandidate): string => {
- if (c.category === '壳档案') return 'bg-jz-brand/10 dark:bg-jz-brand/15 text-jz-brand dark:text-jz-brand ring-1 ring-inset ring-jz-brand/25';
- if (c.category === 'decrypt_recipe') return 'bg-jz-sev-low/10 text-jz-sev-low ring-1 ring-inset ring-jz-sev-low/25';
- if (c.category === 'burp_capture') return 'bg-jz-sev-high/10 text-jz-sev-high ring-1 ring-inset ring-jz-sev-high/25';
- if (c.category === 'waf_bypass') return 'bg-jz-sev-critical/10 text-jz-sev-critical ring-1 ring-inset ring-jz-sev-critical/25';
- if (c.category === 'biz_extract') return 'bg-jz-teal/10 text-jz-teal ring-1 ring-inset ring-jz-teal/25';
- return 'bg-jz-brand/10 text-jz-brand ring-1 ring-inset ring-jz-brand/25';
+/** Candidate category: a quiet dot colour next to the label (no tinted fills). */
+export const catDotCls = (c: KBCandidate): string => {
+  if (c.category === '壳档案') return 'bg-jz-brand';
+  if (c.category === 'decrypt_recipe') return 'bg-jz-sev-low';
+  if (c.category === 'burp_capture') return 'bg-jz-sev-high';
+  if (c.category === 'waf_bypass') return 'bg-jz-sev-critical';
+  if (c.category === 'biz_extract') return 'bg-jz-teal';
+  return 'bg-jz-border-strong';
 };
 
 /** 绝对路径缩短(来源行/任务目录防裸奔): 保留末 3 段,前缀 …/ 标记截断。 */
@@ -83,7 +72,7 @@ export type ShortPath = { icon: string; label: string };
  * .claude/skills/xxx / pentest/xxx.py / task:N / 本地层 / host/path;
  * 完整原文由调用方放 title+复制。 */
 export const formatSkillPath = (raw: string): ShortPath => {
- if (!raw) return { icon: '📎', label: '(无注册路径)' };
+ if (!raw) return { icon: '', label: '(无注册路径)' };
  if (raw.startsWith('local:')) return { icon: '', label: '本地层(浏览器视图内)' };
  if (raw.startsWith('task:')) return { icon: '', label: raw.length > 34 ? raw.slice(0, 34) + '…' : raw };
  if (/^https?:\/\//i.test(raw)) {
@@ -247,7 +236,7 @@ export const renderSourceCode = (code: string): React.ReactNode => {
  );
  })}
  {lines.length > SRC_RENDER_MAX_LINES && (
-        <div className="pl-11 text-jz-muted">…(共 {lines.length} 行,展示层截断;复制按钮取全量原文)</div>
+        <div className="pl-11 text-jz-muted">…(共 {lines.length} 行,这里只显示前 {SRC_RENDER_MAX_LINES} 行;复制按钮会复制全文)</div>
       )}
     </>
   );

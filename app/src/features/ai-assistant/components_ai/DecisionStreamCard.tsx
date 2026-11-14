@@ -16,7 +16,7 @@ export interface AnswerMeta {
 }
 
 const PhaseDot: React.FC<{ phase: StreamPhase }> = ({ phase }) => (
-  <span aria-hidden className={`w-1.5 h-1.5 rounded-pill flex-none ${phase === 'generating' ? 'bg-jz-teal animate-pulse' : 'bg-jz-brand animate-pulse'}`} />
+  <span aria-hidden className={`w-1.5 h-1.5 rounded-pill flex-none ${phase === 'generating' ? 'bg-jz-teal' : 'bg-jz-brand'}`} />
 );
 
 /** 流式进行中的观测卡(phase !== idle 时渲染);facts 全部来自后端步事件真值,缺省不显示 */

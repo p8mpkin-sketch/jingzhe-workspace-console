@@ -11,8 +11,13 @@ import { usePentest } from '@/stores/pentest';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/theme/ThemeContext';
 // R104-3: V3 微型状态胶囊/模型路由胶囊消费(R104-1 底座);Badge 调试标签全部收敛为 StatusBadge(三铁律②)
-import { StatusBadge, ModelSelectorChip, toast } from '@/components/ui';
-import { Database, Activity, AlertTriangle, Bot, Radar, List, Zap, ArrowUpRight } from 'lucide-react';
+import {
+  Page, PageHeader, Panel, Metric, MetricGrid, DataTable, Button, IconButton, StatusBadge, Tag, Tabs, SegmentedControl, EmptyState,
+  StaleNotice, SkeletonLoader, toast, cx, tokenColor, useThemeVersion,
+} from '@/components/ui';
+import type { Column, TabItem } from '@/components/ui';
+import { moduleLabel } from '@/layout/navigation';
+import { Database, Activity, Radar, List, Zap, ArrowUpRight, RefreshCw, Plus } from 'lucide-react';
 
 // R84-3: DOMAINS/domainOf 抽至 features/pentest/masvsDomains.ts(单一来源),本文件仅 import
 // R104-3②: 默认态跨会话合规均值雷达同用 domainOf 归域(零第二份映射,后端只回 masvs 原值)
@@ -39,9 +44,14 @@ const CardTitle: React.FC<{ icon?: React.ReactNode; text: string; extra?: React.
 );
 
 // R103-7: 堆叠柱严重度配色(canvas 吃不了 CSS 变量,按 tailwind vuln 色板镜像;info=中性灰)
-const SEV_COLOR: Record<string, string> = {
-  critical: '#EF4444', high: '#F97316', medium: '#F59E0B', low: '#06B6D4', info: '#64748B',
-};
+const SEV_TOKEN = { critical: 'sev-critical', high: 'sev-high', medium: 'sev-medium', low: 'sev-low', info: 'sev-info' } as const;
+const SEV_SWATCH: Record<string, string> = { critical: 'bg-jz-sev-critical', high: 'bg-jz-sev-high', medium: 'bg-jz-sev-medium', low: 'bg-jz-sev-low', info: 'bg-jz-sev-info' };
+const SEV_NAME: Record<string, string> = { critical: '严重', high: '高', medium: '中', low: '低', info: '提示' };
+/** Chart chrome from the jz tokens, read at draw time so both themes follow the stylesheet. */
+const chartChrome = () => ({
+  split: [tokenColor('surface'), tokenColor('surface-2')], line: tokenColor('border'), label: tokenColor('ink-2'), muted: tokenColor('muted'),
+  brand: tokenColor('brand'), brandArea: tokenColor('brand', 0.18),
+});
 const SEV_ORDER = ['critical', 'high', 'medium', 'low', 'info'] as const;
 // R104-3④: 资产行微型比例条=红/橙/黄/蓝(critical/high/medium/low,by_session active 真算)
 const SEV_BAR_KEYS = ['critical', 'high', 'medium', 'low'] as const;
@@ -101,7 +111,7 @@ const feedTarget = (e: any): string => {
  *  ≥75 良好(翡翠) / 45-74 预警(琥珀) / <45 危险(红);零活跃发现时均分不可算→中性灰不着色。 */
 const healthCls = (score: number, counted: boolean): string =>
   !counted ? 'text-jz-muted'
-    : score >= 75 ? 'text-jz-teal' : score >= 45 ? 'text-jz-sev-medium' : 'text-jz-sev-critical';
+    : score >= 75 ? 'text-jz-teal' : score >= 45 ? 'text-jz-amber' : 'text-jz-red';
 
 /**
  * R104-3②: 默认态跨会话合规均值雷达聚合(纯前端按 masvsDomains.ts 单一来源归域)。
@@ -142,6 +152,7 @@ const computeAggRadar = (a: any): { scores: number[]; counts: number[]; otherCou
 export const DashboardPage: React.FC = () => {
   const nav = useNavigate();
   const { theme } = useTheme();   // R103-1: 雷达双模色板随主题
+  const tv = useThemeVersion();   // re-read token colors after the theme class changes
   const sid = usePentest((s) => s.sid);
   const pid = usePentest((s) => s.projectId);
   const ref = useRef<HTMLDivElement>(null);
@@ -191,6 +202,7 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     let chart: echarts.ECharts | null = null;
     let barChart: echarts.ECharts | null = null;
+    const cc = chartChrome();
     const load = async () => {
       // R104-3②: 会话态=既有逻辑(分组卡发现计数);全量态=跨会话合规均值(scores, max 100)
       const useSession = radarMode === 'session' && !!sid;
@@ -209,16 +221,16 @@ export const DashboardPage: React.FC = () => {
                         { name: `${OTHER_DOMAIN_NAME}·${Math.round(aggRadar.scores[DOMAINS.length])}`, max: 100 }],
             radius: '62%',
             // R103-1: 双模色板(ECharts canvas 吃不了 CSS 变量,按主题取值)
-            splitArea: { areaStyle: { color: theme === 'dark' ? ['#131B2E', '#0f172a'] : ['#FFFFFF', '#F1F5F9'] } },
-            axisLine: { lineStyle: { color: theme === 'dark' ? '#1F2E47' : '#CBD5E1' } },
-            axisName: { color: theme === 'dark' ? '#94A3B8' : '#475569', fontSize: 11 },
-            splitLine: { lineStyle: { color: theme === 'dark' ? '#1F2E47' : '#CBD5E1' } },
+            splitArea: { areaStyle: { color: cc.split } },
+            axisLine: { lineStyle: { color: cc.line } },
+            axisName: { color: cc.label, fontSize: 11 },
+            splitLine: { lineStyle: { color: cc.line } },
           },
           series: [{
             type: 'radar', symbolSize: 4,
             data: [{ value: aggRadar.scores, name: '跨会话合规均值',
-              areaStyle: { color: 'rgba(99,102,241,.25)' },
-              lineStyle: { color: '#6366F1' }, itemStyle: { color: '#6366F1' } }],
+              areaStyle: { color: cc.brandArea },
+              lineStyle: { color: cc.brand }, itemStyle: { color: cc.brand } }],
           }],
         });
         // R104-3②: 全量态无会话上下文,域下钻不可用(navDomain 无 sid 守卫),悬浮读数照常
@@ -265,16 +277,16 @@ export const DashboardPage: React.FC = () => {
           indicator: [...DOMAINS.map((d) => ({ name: d.name, max })), { name: '其他', max }],
           radius: '62%',   // R103-7: 9 轴留标签空间
           // R103-1: 双模色板(原硬编码暗色 hex 亮色不换肤;ECharts canvas 吃不了 CSS 变量,按主题取值)
-          splitArea: { areaStyle: { color: theme === 'dark' ? ['#131B2E', '#0f172a'] : ['#FFFFFF', '#F1F5F9'] } },
-          axisLine: { lineStyle: { color: theme === 'dark' ? '#1F2E47' : '#CBD5E1' } },
-          axisName: { color: theme === 'dark' ? '#94A3B8' : '#475569', fontSize: 11 },
-          splitLine: { lineStyle: { color: theme === 'dark' ? '#1F2E47' : '#CBD5E1' } },
+          splitArea: { areaStyle: { color: cc.split } },
+          axisLine: { lineStyle: { color: cc.line } },
+          axisName: { color: cc.label, fontSize: 11 },
+          splitLine: { lineStyle: { color: cc.line } },
         },
         series: [{
           type: 'radar', symbolSize: 4,
           data: [{ value: radarCounts, name: '发现分布',
-            areaStyle: { color: 'rgba(99,102,241,.25)' },
-            lineStyle: { color: '#6366F1' }, itemStyle: { color: '#6366F1' } }],
+            areaStyle: { color: cc.brandArea },
+            lineStyle: { color: cc.brand }, itemStyle: { color: cc.brand } }],
         }],
       });
       // R76-5: 雷达域可点 → ?tab=vulns&masvs=<域匹配器列表>(VulnsPanel 消费)
@@ -303,19 +315,19 @@ export const DashboardPage: React.FC = () => {
           grid: { left: 6, right: 6, top: 20, bottom: 0, containLabel: true },
           xAxis: {
             type: 'category', data: domNames,
-            axisLabel: { color: theme === 'dark' ? '#94A3B8' : '#475569', fontSize: 10, interval: 0, rotate: 36 },
-            axisLine: { lineStyle: { color: theme === 'dark' ? '#1F2E47' : '#CBD5E1' } },
+            axisLabel: { color: cc.label, fontSize: 10, interval: 0, rotate: 36 },
+            axisLine: { lineStyle: { color: cc.line } },
             axisTick: { show: false },
           },
           yAxis: {
             type: 'value',
-            axisLabel: { color: theme === 'dark' ? '#64748B' : '#64748B', fontSize: 10 },
-            splitLine: { lineStyle: { color: theme === 'dark' ? '#1F2E47' : '#E2E8F0' } },
+            axisLabel: { color: cc.muted, fontSize: 10 },
+            splitLine: { lineStyle: { color: cc.line } },
           },
           series: SEV_ORDER.map((sv) => ({
-            name: sv, type: 'bar', stack: 'total', barMaxWidth: 16,
+            type: 'bar', stack: 'total', barMaxWidth: 16,
             data: domNames.map((n) => domSev[n][sv] || 0),
-            itemStyle: { color: SEV_COLOR[sv] },
+            itemStyle: { color: tokenColor(SEV_TOKEN[sv]) }, name: SEV_NAME[sv],
           })),
         });
       }
@@ -349,7 +361,7 @@ export const DashboardPage: React.FC = () => {
     const onResize = () => { chart?.resize(); barChart?.resize(); };
     window.addEventListener('resize', onResize);
     return () => { window.removeEventListener('resize', onResize); chart?.dispose(); chart = null; barChart?.dispose(); barChart = null; };
-  }, [sid, theme, radarMode, aggRadar]);   // R103-1: 主题切换重绘;R104-3②: 口径/聚合数据变化重绘
+  }, [sid, theme, tv, radarMode, aggRadar]);   // R103-1: 主题切换重绘;R104-3②: 口径/聚合数据变化重绘
 
   // ─── R103-6: SOC HUD 数据面(全真实端点,零 mock) ───
   const [glob, setGlob] = useState<{ total?: number; done?: number; running?: number; failed?: number } | null>(null);
@@ -391,7 +403,6 @@ export const DashboardPage: React.FC = () => {
   const [rowSev, setRowSev] = useState<Record<number, any>>({});        // sid → severity entry
   const [rowScore, setRowScore] = useState<Record<number, any>>({});    // sid → risk_score
   const [queued, setQueued] = useState<number | null>(null);            // R104-3①: 排队=queued 真值
-  const ringDone = useRef(false);
 
   // R600(六模块优化-仪表盘 P2): 实时活跃工作流泳道数据源——running 任务真值 30s 轮询
   // (与任务中心泳道同口径: 实时耗时=created_at→now 时钟 10s 跳动;进度=后端 progress 文本真值)
@@ -440,10 +451,15 @@ export const DashboardPage: React.FC = () => {
     return rows;
   }, [feed, feedFilter]);
 
-  useEffect(() => {
-    api<any>('/api/tasks-summary').then(setGlob).catch(() => {});
-    api<any>('/api/tasks/batch-unpack-summary').then(setUnpk).catch(() => {});
-    api<any>('/api/pentest/vulns/severity-summary').then(setSev).catch(() => {});
+  const [sumErr, setSumErr] = useState(false);
+  const [apkLoading, setApkLoading] = useState(true);
+  // Same requests, same order as before; failures are now recorded so the page can say the numbers may be incomplete.
+  const loadSummary = useCallback(() => {
+    setSumErr(false);
+    const fail = () => setSumErr(true);
+    api<any>('/api/tasks-summary').then(setGlob).catch(() => { setGlob((g) => g ?? {}); fail(); });
+    api<any>('/api/tasks/batch-unpack-summary').then(setUnpk).catch(fail);
+    api<any>('/api/pentest/vulns/severity-summary').then(setSev).catch(() => { setSev((v: any) => v ?? {}); fail(); });
     // R104-3①: 排队真值=既有 /api/tasks status 过滤行数(零后端改动;失败显「—」不假造 0)
     api<any[]>('/api/tasks?status=queued&limit=2000').then((r) => setQueued(Array.isArray(r) ? r.length : null)).catch(() => {});
     // AI 负载卡: providers/routing 读面 admin-gated(R97-2),非 admin 诚实降级
@@ -454,14 +470,15 @@ export const DashboardPage: React.FC = () => {
       if (!pv && !rt) { setAi({ gated: true }); return; }
       const providers = pv?.providers || [];
       const active = providers.find((p: any) => p.id === pv?.active_id);
-      setAi({ activeModel: active ? `${active.label || active.vendor} · ${active.model}` : rt?.routing?.inference || undefined,
+      setAi({ activeModel: active ? [active.label || active.vendor || active.name, active.model].filter(Boolean).join(' · ') : rt?.routing?.inference || undefined,
               enabled: providers.filter((p: any) => p.enabled !== false).length, total: providers.length });
     });
     api<any[]>('/api/tasks?limit=500').then((rows) => {
       setApkRows((rows || []).filter((r: any) => r.kind === 'audit').slice(0, 10));
-    }).catch(() => {});
+    }).catch(fail).finally(() => setApkLoading(false));
     loadSessMap();
   }, [loadSessMap]);
+  useEffect(() => { loadSummary(); }, [loadSummary]);
 
   // severity by_session → 行计数;行 risk_score(仅前 8 行有会话链路者,Promise.all 有界)
   useEffect(() => {
@@ -479,9 +496,8 @@ export const DashboardPage: React.FC = () => {
 
   // 迷你环形(渗透状态卡: done/failed/running 真算)
   useEffect(() => {
-    if (!glob || !ringRef.current || ringDone.current) return;
+    if (!glob || !ringRef.current) return;
     const done = glob.done ?? 0, failed = glob.failed ?? 0, running = glob.running ?? 0;
-    ringDone.current = true;
     const inst = echarts.init(ringRef.current, undefined, { renderer: 'canvas' });
     // R117-5②: 零数据静默灰环——全 0 时不再以 0.001 ε 值渲染三色残丝(视觉噪声),
     // 改单段静默灰环如实呈现「零任务」态;有数据时三段真值原样(除零防护本就在位)。
@@ -491,16 +507,16 @@ export const DashboardPage: React.FC = () => {
       series: [{
         type: 'pie', radius: ['62%', '88%'], label: { show: false }, silent: true,
         data: allZero
-          ? [{ value: 1, itemStyle: { color: 'rgb(var(--jz-surface-2))' } }]
+          ? [{ value: 1, itemStyle: { color: tokenColor('surface-2') } }]
           : [
-            { value: done || 0.001, itemStyle: { color: '#10B981' } },
-            { value: failed || 0.001, itemStyle: { color: '#EF4444' } },
-            { value: running || 0.001, itemStyle: { color: '#00E5FF' } },
+            { value: done || 0.001, itemStyle: { color: tokenColor('teal') } },
+            { value: failed || 0.001, itemStyle: { color: tokenColor('red') } },
+            { value: running || 0.001, itemStyle: { color: tokenColor('brand') } },
           ],
       }],
     });
     return () => { inst.dispose(); };
-  }, [glob]);
+  }, [glob, tv]);
 
   const rate = glob && (glob.done != null) && ((glob.done ?? 0) + (glob.failed ?? 0)) > 0
     ? `${Math.round(((glob.done ?? 0) / ((glob.done ?? 0) + (glob.failed ?? 0))) * 100)}%` : '—';
@@ -522,447 +538,242 @@ export const DashboardPage: React.FC = () => {
     ...(sid ? [{ id: 'session', label: `会话 #${sid}`, vendor: 'SID' }] : []),
   ];
 
+  const gradeTone = (g: string): 'success' | 'neutral' | 'attention' | 'danger' => (g === 'A' || g === 'B' ? 'success' : g === 'C' ? 'neutral' : g === 'D' ? 'attention' : 'danger');
+  const critN = Number(sev?.by_severity?.critical ?? 0);
+  const feedTabs: TabItem<'all' | 'findings' | 'errors'>[] = feed ? ([['all', '全部'], ['findings', '有发现'], ['errors', '异常']] as const).map(([id, label]) => ({
+    key: id, label,
+    count: id === 'all' ? feed.events.length : feed.events.filter((e: any) => (id === 'findings' ? feedFinding(e) : feedIsError(e))).length,
+    dataAttrs: { 'data-feed-filter-id': id },
+  })) : [];
+  const radarTabs: TabItem<'all' | 'session'>[] = radarModeOptions.map((o) => ({ key: o.id as 'all' | 'session', label: o.label, dataAttrs: { 'data-radar-mode-opt': o.id } }));
+
+  const assetCols: Column<any>[] = [
+    { key: 'app', header: '应用', card: 'title', cell: (r) => (
+      <span className="flex min-w-0 items-center gap-2.5">
+        <span aria-hidden className="grid h-8 w-8 flex-none place-items-center rounded-control bg-jz-surface-2 text-label font-semibold text-jz-ink-2">
+          {(r.app_name || r.package || 'A').slice(0, 1).toUpperCase()}
+        </span>
+        <span className="min-w-0">
+          <span className="block max-w-48 truncate text-label font-semibold text-jz-ink">{r.app_name || r.package || '—'}</span>
+          <span className="block max-w-56 truncate font-mono text-meta text-jz-muted" title={r.package || ''}>#{r.id} {r.package || ''}</span>
+        </span>
+      </span>
+    ) },
+    { key: 'packer', header: '加固', cell: (r) => {
+      const pk = String(r.packer || '').trim();
+      return pk && pk !== 'none' ? <Tag title={`加固类型:${pk}`}>{PACKER_LABEL[pk] || pk}</Tag> : <span className="text-meta text-jz-muted" title="没有检测到加固">无加固</span>;
+    } },
+    { key: 'grade', header: <span title="依据会话的风险分:A≥90,B≥75,C≥60,D≥45,E≥30,F<30。没有会话的任务没有评分。">评级</span>, label: '评级', cell: (r) => {
+      const gd = grade(rowScore[r.id]);
+      return gd ? (
+        <span className="inline-flex items-center gap-1.5" title={`风险分 ${rowScore[r.id]}`}>
+          <StatusBadge tone={gradeTone(gd.g)}>{gd.g}</StatusBadge>
+          <span className="font-mono text-meta tnum text-jz-ink-2">{Number(rowScore[r.id])} 分</span>
+        </span>
+      ) : <span className="text-meta text-jz-muted" title="没有关联会话,无法评分">未评估</span>;
+    } },
+    { key: 'sev', header: <span title="关联会话中待确认和已确认的发现,依次为严重、高、中">发现 (严重/高/中)</span>, label: '发现', cell: (r) => {
+      const link = sessMap[r.id];
+      const sentry = link ? rowSev[link.sid] : null;
+      const sevCounts = sentry ? SEV_BAR_KEYS.map((k) => sentry[k]?.active || 0) : null;
+      if (!sevCounts) return <span className="text-meta text-jz-muted">—</span>;
+      return (
+        <span className="inline-flex items-center gap-2 font-mono text-meta tnum" title={`会话 #${link.sid}:${SEV_BAR_KEYS.map((k, i) => `${k} ${sevCounts[i]}`).join(' · ')}`}>
+          {sevCounts.slice(0, 3).map((n, i) => <span key={i} className={n > 0 ? 'font-semibold text-jz-ink' : 'text-jz-muted'}>{n}</span>)}
+        </span>
+      );
+    } },
+    { key: 'session', header: '渗透会话', cell: (r) => {
+      const link = sessMap[r.id];
+      if (link) return <Button size="sm" variant="ghost" onClick={() => goSession(r)} data-apk-session={link.sid} title={`打开会话 #${link.sid}`}>会话 #{link.sid}</Button>;
+      if (r.status === 'done') return (
+        <Button size="sm" variant="secondary" onClick={() => launchPentest(r)} data-launch-pentest={r.id} disabled={creatingTid != null} loading={creatingTid === r.id}
+          title={`为评估 #${r.id} 创建渗透会话并打开`}>{creatingTid === r.id ? '创建中…' : '创建会话'}</Button>
+      );
+      return <span className="text-meta text-jz-muted" title={`任务状态:${r.status || '未知'}。评估完成后才能创建会话。`}>未完成</span>;
+    } },
+    { key: 'go', header: <span className="sr-only">打开</span>, label: '打开', align: 'right', card: 'action', cell: (r) => {
+      const link = sessMap[r.id];
+      return link
+        ? <IconButton size="sm" label={`打开会话 #${link.sid}`} onClick={() => goSession(r)} data-drill-btn><ArrowUpRight size={16} aria-hidden /></IconButton>
+        : <IconButton size="sm" label={`在任务页查看 #${r.id}`} onClick={() => nav(`/tasks?focus=${r.id}`)} data-apk-view-task={r.id}><ArrowUpRight size={16} aria-hidden /></IconButton>;
+    } },
+  ];
+
   return (
-    // R125(方案二.3): 八档间距纪律 p-6 space-y-6——主工作区容器补齐标准节奏,卡片已有 shadow-card 漂浮层次
-    <div className="p-6 h-full overflow-auto space-y-6">
-      {/* ─── R104-3①: SOC 四指标卡 V3 精细化(全真实端点;大号数字=八档内 28px) ─── */}
-      {/* R200(V3 节点化第4步): 执行节点状态条(admin)——自治节点在线/设备数/心跳年龄 */}
-      {isAdmin && (nodes || []).length > 0 && (
-        <div className="flex items-center gap-3 flex-wrap rounded-panel bg-jz-surface shadow-card px-3 py-2" data-node-strip>
-          <span className="text-meta font-semibold text-jz-ink-2">执行节点</span>
-          {(nodes || []).slice(0, 6).map((n: any) => (
-            <span key={n.node_id} className="flex items-center gap-1.5 text-meta font-mono"
-              title={`心跳 ${Math.max(0, Math.round(Date.now() / 1000 - (n.last_seen || 0)))}s 前 · 设备: ${(n.devices || []).join(', ') || '—'}`}>
-              <span className={`w-1.5 h-1.5 rounded-pill ${n.online ? 'bg-jz-teal animate-pulse' : 'bg-jz-muted/40'}`} />
-              <span className={n.online ? 'text-jz-ink' : 'text-jz-muted'}>{n.node_id}</span>
-              <span className="text-jz-muted">{(n.devices || []).length} 设备</span>
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-kpi-row>
-        <div className="relative rounded-panel bg-jz-surface shadow-card p-4">
-          <span className="absolute top-3 right-3 text-jz-brand/50" data-kpi-asset-icon><Database size={16} /></span>
-          <CardTitle text="累计审计资产" />
-          <div className="text-title md:text-page leading-none font-mono font-semibold text-jz-ink tnum" data-kpi-total>{glob?.total ?? '—'}</div>
-          <div className="text-meta text-jz-muted mt-1.5">
-            已完成 <span className="text-jz-teal tnum font-mono">{glob?.done ?? '—'}</span> · 异常 <span className="text-jz-sev-critical tnum font-mono">{glob?.failed ?? '—'}</span>
-          </div>
-          <div className="mt-2">
-            <div className="flex justify-between text-meta text-jz-muted"><span>脱壳率</span><span className="font-mono tnum">{coverage != null ? `${coverage}%` : '—'}</span></div>
-            <div className="h-1 rounded-control bg-jz-surface-2 overflow-hidden mt-0.5"><span className="block h-full bg-jz-brand/70" style={{ width: coverage != null ? `${coverage}%` : '0%' }} /></div>
-          </div>
-        </div>
-        <div className="rounded-panel bg-jz-surface shadow-card p-4 flex flex-col">
-          <CardTitle icon={<Activity size={13} />} text="渗透任务状态"
-            extra={
-              /* R126(D-FIX-2): 公式彻底退出正文文本流,收敛至徽章 title 悬浮层 */
-              <StatusBadge tone="info" title="统计口径: 任务成功率 = done/(done+failed)×100%,进行中与排队中不计入分母;排队=GET /api/tasks?status=queued 实时行数真值(现库无排队任务即显 0),非估算">成功率口径</StatusBadge>
-            } />
-          <div className="flex items-center gap-2.5">
-            <div ref={ringRef} className="w-11 h-11 flex-none" data-status-ring />
-            <div className="min-w-0">
-              <div className="text-title md:text-page leading-none font-mono font-semibold text-jz-ink tnum">{rate}</div>
-              <div className="text-meta text-jz-muted mt-0.5">成功率</div>
-            </div>
-          </div>
-          {/* R126(D-FIX-2): 规整底栏——呼吸点真值门控(running>0),失败计数右沉(近邻成功率读数) */}
-          <div className="mt-auto pt-2 flex items-center gap-1.5 text-meta text-jz-muted">
-            <span className={`w-1.5 h-1.5 rounded-pill flex-none ${(glob?.running ?? 0) > 0 ? 'bg-jz-teal animate-pulse' : 'bg-jz-muted/40'}`}
-              title={(glob?.running ?? 0) > 0 ? '有渗透任务进行中' : '无进行中任务'} />
-            <span>进行中 <span className="text-jz-brand tnum font-mono" data-running-num>{glob?.running ?? '—'}</span></span>
-            <span className="text-jz-muted">·</span>
-            <span>排队 <span className="tnum font-mono" data-queued-num>{queued ?? '—'}</span></span>
-            <span className="flex-1" />
-            <span>失败 <span className="tnum font-mono text-jz-sev-critical">{glob?.failed ?? '—'}</span></span>
-          </div>
-        </div>
-        <div className="rounded-panel bg-jz-surface shadow-card p-4 flex flex-col" data-sev-card>
-          <CardTitle icon={<AlertTriangle size={13} />} text="高危与严重漏洞发现"
-            extra={<StatusBadge tone="info" title="active=pending+confirmed(排除 excluded),与 severity-summary 同口径;confirmed 已确认数单列不混入 active">活跃口径</StatusBadge>} />
-          {/* R126(D-FIX-3): Critical/High 双轨并列主视线——法定最高优先级 Critical 居首(0=中性置灰,>0=警示红),
-              High 琥珀紧随;废除 R125 的 High 独占大数+Critical 沉底小字的层级倒置 */}
-          <div className="flex items-baseline gap-5 mt-1">
-            <div className="flex items-baseline gap-1.5">
-              <span className={`text-title md:text-page leading-none font-mono font-semibold tnum ${Number(sev?.by_severity?.critical ?? 0) > 0 ? 'text-jz-sev-critical' : 'text-jz-muted'}`} data-critical-num>{sev?.by_severity?.critical ?? '—'}</span>
-              <span className={`text-meta font-semibold ${Number(sev?.by_severity?.critical ?? 0) > 0 ? 'text-jz-sev-critical' : 'text-jz-muted'}`}
-                title={Number(sev?.by_severity?.critical ?? 0) > 0 ? `Critical 严重级发现 ${sev.by_severity.critical} 条` : 'Critical=0(中性置灰: 零值不以红色渲染,防误读)'}>Critical</span>
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-title md:text-page leading-none font-mono font-semibold text-jz-sev-high tnum" data-high-num>{sev?.by_severity?.high ?? '—'}</span>
-              <span className="text-meta font-semibold text-jz-sev-high">High</span>
-            </div>
-          </div>
-          {/* R126(D-FIX-3): 底栏规整——覆盖度与活跃总数对齐,不再悬空孤挂 */}
-          <div className="mt-auto pt-2 flex items-center justify-between text-meta text-jz-muted">
-            <span title="severity-summary 逐库扫描进度真值">计入 <span className="tnum font-mono text-jz-ink-2">{sev?.sessions_scanned ?? '—'}/{sev?.sessions_total ?? '—'}</span> 会话库</span>
-            <span className="font-mono tnum" title="全量活跃检出(active 口径,含中低危)">活跃共 <span className="text-jz-ink-2 font-semibold">{sev?.total_active ?? '—'}</span> 项</span>
-          </div>
-        </div>
-        <div className="rounded-panel bg-jz-surface shadow-card p-4 flex flex-col overflow-hidden">
-          <CardTitle icon={<Bot size={13} />} text="AI 引擎负载"
-            extra={
-              ai?.gated ? undefined : (
-                <StatusBadge tone="info" title="providers 列表 enabled 计数(R97-2 读面收口);切换与连通性详情在系统页">{ai?.enabled ?? '—'}/{ai?.total ?? '—'} 已接入</StatusBadge>
-              )
-            } />
-          {ai?.gated ? (
-            <div className="text-meta text-jz-muted py-2" data-ai-gated>模型配置仅管理员可见(R97-2 读面收口)——连通状态请在系统页查看</div>
-          ) : (
-            <>
-              {/* R127(D-R127-1): 表单控件绝迹——假 select 化的 ModelSelectorChip(点击开菜单但 onChange 有意空转)
-                  改为纯状态模型卡(只读遥测语义): 静态绿点=有已接入节点(enabled 真值门控,不假充心跳),
-                  模型名 truncate+title 全文 */}
-              <div className="flex items-center justify-between gap-2 min-w-0 mt-0.5">
-                <div className="shrink-0">
-                  <div className="text-title md:text-page leading-none font-mono font-semibold text-jz-ink tnum" data-ai-enabled-num>
-                    {ai?.enabled ?? '—'}<span className="text-body text-jz-muted">/{ai?.total ?? '—'}</span>
-                  </div>
-                  <div className="text-meta text-jz-muted mt-0.5">节点就绪</div>
-                </div>
-                <div className="flex items-center gap-1.5 min-w-0 max-w-[150px] rounded-control bg-jz-surface-2/60 px-2.5 py-1 flex-none"
-                  data-ai-model title={`当前主力模型: ${ai?.activeModel || '未配置'}(切换请到系统页)`}>
-                  <span className={`w-2 h-2 rounded-pill flex-none ${Number(ai?.enabled ?? 0) > 0 ? 'bg-jz-teal' : 'bg-jz-muted/50'}`} />
-                  <span className="font-mono text-meta font-medium text-jz-ink truncate">{ai?.activeModel || '未配置'}</span>
-                </div>
-              </div>
-              {/* R127(D-R127-1): 遥测底栏——待探针工程草稿字样退役为「遥测待命」(诚实语义不变: 无全局聚合端点未采集) */}
-              <div className="mt-auto pt-2 flex items-center justify-between text-meta">
-                <span className="text-jz-muted">实时推理遥测</span>
-                <span className="flex items-center gap-1.5 font-mono tnum">
-                  <span className="text-jz-ink-2">-- tok/s</span>
-                  <span className="rounded-control bg-jz-surface-2 px-1 py-px text-meta text-jz-muted"
-                    title="usage-summary 为会话级(需 chat sid),仪表盘无全局吞吐/时延聚合端点——未采集,不估算不假造">遥测待命</span>
-                </span>
-              </div>
-            </>
-          )}
-        </div>
+    <Page data-dashboard-page>
+      <PageHeader title={moduleLabel('/dashboard')} description="评估、渗透会话和发现的整体情况。"
+        meta={isAdmin && (nodes || []).length > 0 ? (
+          <span className="flex flex-wrap items-center gap-2" data-node-strip>
+            <span className="text-meta text-jz-muted">执行节点</span>
+            {(nodes || []).slice(0, 6).map((n: any) => (
+              <span key={n.node_id} title={`上次心跳 ${Math.max(0, Math.round(Date.now() / 1000 - (n.last_seen || 0)))} 秒前 · 设备:${(n.devices || []).join(', ') || '—'}`}>
+                <StatusBadge tone={n.online ? 'success' : 'neutral'}>
+                  <span className="font-mono">{n.node_id}</span> · {(n.devices || []).length} 台设备{n.online ? '' : ' · 离线'}
+                </StatusBadge>
+              </span>
+            ))}
+          </span>
+        ) : undefined}
+        actions={(
+          <>
+            <Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} onClick={loadSummary} data-dashboard-refresh>刷新</Button>
+            <Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-audit')} data-dashboard-new>新建评估</Button>
+          </>
+        )} />
+
+      {sumErr && <StaleNotice reason="部分汇总数据没有加载成功,显示的数字可能不完整。" onRefresh={loadSummary} />}
+
+      <div data-kpi-row>
+        <MetricGrid>
+          <Metric label="评估资产" loading={glob === null && !sumErr} data-kpi-asset
+            value={<span data-kpi-total>{glob?.total ?? '—'}</span>}
+            hint={<>已完成 <span className="tnum">{glob?.done ?? '—'}</span> · 失败 <span className="tnum">{glob?.failed ?? '—'}</span> · 脱壳完成 <span className="tnum">{coverage != null ? `${coverage}%` : '—'}</span></>} />
+          <Metric label="任务成功率" loading={glob === null && !sumErr}
+            title="成功率 = 完成 / (完成 + 失败)。运行中和排队中的任务不计入。"
+            value={<span className="flex items-center gap-2.5"><span ref={ringRef} className="h-9 w-9 flex-none" data-status-ring aria-hidden />{rate}</span>}
+            hint={<>运行中 <span className="tnum" data-running-num>{glob?.running ?? '—'}</span> · 排队 <span className="tnum" data-queued-num>{queued ?? '—'}</span> · 失败 <span className="tnum">{glob?.failed ?? '—'}</span></>} />
+          <Metric label="严重 / 高 发现" loading={sev === null && !sumErr} data-sev-card tone={critN > 0 ? 'danger' : 'default'}
+            title="待确认和已确认的发现,不含已排除的。"
+            value={<><span data-critical-num>{sev?.by_severity?.critical ?? '—'}</span><span className="text-jz-muted"> / </span><span data-high-num>{sev?.by_severity?.high ?? '—'}</span></>}
+            hint={<>共 <span className="tnum">{sev?.total_active ?? '—'}</span> 项 · 来自 <span className="tnum">{sev?.sessions_scanned ?? '—'}/{sev?.sessions_total ?? '—'}</span> 个会话</>} />
+          <Metric label="模型" loading={ai === null}
+            value={ai?.gated ? <span className="text-section text-jz-muted" data-ai-gated>仅管理员可见</span>
+              : <span data-ai-enabled-num>{ai?.enabled ?? '—'}<span className="text-section text-jz-muted">/{ai?.total ?? '—'}</span></span>}
+            hint={ai?.gated ? '连接状态可在系统页查看' : <span data-ai-model title={`当前模型:${ai?.activeModel || '未配置'}。可在系统页切换。`}>已启用 · 当前 {ai?.activeModel || '未配置'}</span>} />
+        </MetricGrid>
       </div>
 
-      {/* R600(六模块优化-仪表盘 P2): 实时活跃工作流泳道——running 任务逐卡(真值同任务中心泳道口径:
-          30s 轮询+now 时钟+progress 后端文本真值+关联会话工作台直达);无运行任务不渲染整卡
-          (KPI 渗透任务卡的进行中计数已承载零任务态,诚实空态不重复) */}
-      {runningTasks.length > 0 && (
-        <div className="rounded-panel bg-jz-surface shadow-card p-3 space-y-2" data-live-workflows>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Zap size={13} className="text-jz-brand flex-none" />
-            <span className="text-meta font-semibold text-jz-ink">实时活跃工作流</span>
-            <StatusBadge tone="info" title="统计口径: status=running 任务计数真值(30s 轮询);耗时=created_at→now 实时时钟;进度=后端 progress 文本真值,无结构化子阶段=如实不画子步骤">{runningTasks.length} 个进行中</StatusBadge>
-            <span className="flex-1" />
-            <button onClick={() => nav('/tasks')} data-lw-goto-tasks
-              className="text-meta text-jz-muted hover:text-jz-brand transition-colors">任务中心 →</button>
-          </div>
-          <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1">
-            {runningTasks.map((t: any) => {
-              const hit = sessMap[t.id];
-              return (
-                <div key={t.id} data-live-lane={t.id}
-                  className="flex-none w-72 rounded-card bg-jz-surface-2/50 px-3 py-2 space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-pill bg-jz-brand animate-pulse flex-none" />
-                    <span className="font-mono text-meta text-jz-muted tnum flex-none">{t.id}</span>
-                    <span className="text-meta font-semibold text-jz-ink truncate flex-1" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
-                    <span className="flex-none font-mono text-meta text-jz-ink-2 tnum" title="created_at→now 实时耗时">{fmtDur(now - t.created_at)}</span>
-                  </div>
-                  <div className="text-meta text-jz-muted truncate" title={t.progress || '后端暂无进度文本'}>
-                    {t.progress ? t.progress : '执行中(后端未上报进度文本)'}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-meta text-jz-muted font-mono">{t.kind || 'audit'}</span>
-                    <span className="flex-1" />
-                    {hit && (
-                      <button onClick={() => nav(`/pentest/project/${hit.pid}/session/${hit.sid}`)}
-                        data-lw-goto-session={t.id} title={`进入渗透会话 #${hit.sid}`}
-                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-control text-meta text-jz-brand hover:bg-jz-brand/10">
-                        <ArrowUpRight size={11} /> 工作台
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ─── R103-7 → R104-3② → R125(方案二.1) → R126(D-FIX-1): 60/40 双栏锁高 500px——
-              右栏事件流固定视口内部滚动,不再撑长行高;左栏消灭 R125 实测的 ~300px 留白死区 ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[60fr_40fr] gap-3 items-stretch">
-        <div className="rounded-panel bg-jz-surface shadow-card p-4 flex flex-col lg:h-[500px]">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="inline-flex text-jz-brand"><Radar size={13} /></span>
-            <span className="text-meta font-semibold text-jz-ink">OWASP MASTG 域雷达{radarSessionView ? ' + 域×严重度堆叠柱' : '(全量合规均值)'}</span>
-            <span data-radar-mode={radarMode} data-radar-counted={aggRadar.counted} />
-            {radarSessionView ? (
-              unmapped > 0
-                // R77-3: 黄条改口径——无标准域归属的已入「其他」轴,不再「不计入雷达」;归零则显全归类徽标
-                ? <StatusBadge tone="info" title="已计入「其他」轴(masvs=__none__ 下钻),不静默丢弃">{unmapped} 条无标准域归属</StatusBadge>
-                : <StatusBadge tone="custom" className="text-jz-teal bg-jz-teal/10" title="全部发现已按域归类(零未映射)">✓ 全部发现已按域归类</StatusBadge>
-            ) : (
-              <StatusBadge tone="info" title={`数据源=GET /api/pentest/vulns/domain-summary 只读聚合;计入 ${aggRadar.counted}/${aggRadar.scanned} 个有活跃发现的会话;每库得分=1−该域违规/该库总违规(与报告中心合规卡同式),域均分,零发现会话不计入分母;「其他」轴=${aggRadar.otherCount} 条无标准域归属(masvs 原值由后端逐库聚合,域映射=前端 masvsDomains.ts 单一来源)${aggRadar.counted === 0 ? ';全库零活跃发现,均分不可算,全域显 0(诚实口径,不假造)' : ''}`}>跨会话 {aggRadar.counted}/{aggRadar.scanned} 库计入</StatusBadge>
-            )}
-            {/* R104-3②: 右上角紧凑过滤切换器(ModelSelectorChip,选项消费方传入) */}
-            <span className="flex-1" />
-            <ModelSelectorChip className="flex-none" options={radarModeOptions} value={radarMode}
-              onChange={(id) => setRadarMode(id as 'all' | 'session')} />
-          </div>
-          {/* R125(方案1.1): 悬浮读数行保留(固定高度防跳动;全量态=域均分+跨会话违规数,会话态=发现实例数) */}
-          <div className="h-4 text-meta font-mono tnum text-jz-ink-2" data-radar-hover>
+      <div className="grid grid-cols-1 gap-6 desktop:grid-cols-3">
+        <Panel className="desktop:col-span-2" title={<span className="flex items-center gap-2"><Radar size={16} aria-hidden className="text-jz-muted" />按 MASTG 域分布</span>}
+          description={radarSessionView
+            ? (unmapped > 0 ? `会话 #${sid} 的发现数;${unmapped} 条没有标准域,计入“其他”。` : `会话 #${sid} 的发现数,全部已按域归类。`)
+            : `合规均分来自 ${aggRadar.counted}/${aggRadar.scanned} 个有发现的会话。每个会话的域得分 = 1 − 该域发现 / 全部发现。`}
+          actions={radarTabs.length > 1 ? <SegmentedControl items={radarTabs} value={radarMode} onChange={setRadarMode} label="数据范围" /> : undefined}
+          data-radar-panel>
+          <span data-radar-mode={radarMode} data-radar-counted={aggRadar.counted} hidden />
+          <div className="h-5 font-mono text-meta tnum text-jz-ink-2" data-radar-hover aria-live="polite">
             {hoverName && hoverVal != null
-              ? (radarSessionView
-                  ? `${hoverName} · 发现 ${hoverVal}`
-                  : `${hoverName} · 合规均分 ${hoverVal}% · 跨会话违规 ${hoverCount}`)
-              : null}
+              ? (radarSessionView ? `${hoverName} · 发现 ${hoverVal}` : `${hoverName} · 合规均分 ${hoverVal}% · 发现 ${hoverCount}`)
+              : <span className="text-jz-muted">把鼠标移到图上查看各域的数值{radarSessionView ? ',点击可查看该域的发现' : ''}</span>}
           </div>
-          {/* R125(方案1.1)→R126(D-FIX-1): Bento 双栏 1:1——左=雷达(收敛死区),右=全量态 Top-5 域违规条形图/会话态 域×严重度堆叠柱。
-              口径收敛至头部 StatusBadge title;flex-1 my-auto 垂直居中吃掉锁高 500px 的余量,不留底部死区 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:items-center mt-1 flex-1 my-auto min-h-0">
-            <div ref={ref} className="h-56 lg:h-60" title={radarSessionView ? undefined : '默认态=跨会话均值视图(只读);域下钻需在切换器选会话'} />
+          <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-2">
+            <div ref={ref} className="h-64" role="img" aria-label={radarSessionView ? `会话 #${sid} 各域发现数雷达图` : '各域合规均分雷达图'} />
             {radarSessionView ? (
-              <div className="flex flex-col justify-center min-w-0">
-                <div className="flex items-center gap-2 text-meta text-jz-muted mb-0.5">
-                  <span>堆叠柱=当前会话发现按域×严重度(与雷达同源同口径)</span>
-                  <span className="inline-flex items-center gap-1 flex-wrap">
-                    {SEV_ORDER.map((sv) => (
-                      <span key={sv} className="inline-flex items-center gap-0.5">
-                        <span className="inline-block w-2 h-2 rounded-tag" style={{ background: SEV_COLOR[sv] }} />
-                        {sv}
-                      </span>
-                    ))}
-                  </span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-jz-muted">
+                  <span>各域按严重度</span>
+                  {SEV_ORDER.map((sv) => (
+                    <span key={sv} className="inline-flex items-center gap-1">
+                      <span aria-hidden className={cx('inline-block h-2 w-2 rounded-tag', SEV_SWATCH[sv])} />{SEV_NAME[sv]}
+                    </span>
+                  ))}
                 </div>
-                <div ref={barRef} className="h-52" data-sev-bar />
+                <div ref={barRef} className="h-56" data-sev-bar role="img" aria-label="各域按严重度的发现数" />
               </div>
             ) : (
-              <div className="flex flex-col justify-center gap-2.5 lg:pr-2" data-domain-top>
-                <div className="text-meta font-semibold text-jz-ink-2">
-                  各域违规聚合 Top-5<span className="text-jz-muted font-normal">(跨会话 {aggRadar.counted} 库真值,含全部严重度)</span>
-                </div>
+              <div className="space-y-3" data-domain-top>
+                <h3 className="text-label font-semibold text-jz-ink">发现最多的 5 个域</h3>
                 {topDomains.map((r) => (
-                  <div key={r.name}
-                    title={`${r.name}: 跨会话违规实例 ${r.count} 项(含全部严重度)· 合规均分 ${aggRadar.counted > 0 ? `${r.score}%` : '不可算(零活跃发现)'} · 健康度色阶: ≥75 良好 / 45-74 预警 / <45 危险(与报告中心合规卡同式: 每库得分=1−该域违规/该库总违规,域均分)`}>
-                    <div className="flex justify-between items-baseline text-meta mb-0.5">
-                      <span className="text-jz-ink font-medium truncate max-w-[150px]">
+                  <div key={r.name} title={`${r.name}:发现 ${r.count} 项 · 合规均分 ${aggRadar.counted > 0 ? `${r.score}%` : '无法计算(没有发现)'}。≥75 良好,45–74 需关注,<45 较差。`}>
+                    <div className="mb-1 flex items-baseline justify-between gap-2 text-label">
+                      <span className="min-w-0 truncate font-medium text-jz-ink">
                         {r.name}
-                        <span className={`ml-1.5 font-mono tnum ${healthCls(r.score, aggRadar.counted > 0)}`}>
-                          {aggRadar.counted > 0 ? r.score : '—'}
-                        </span>
+                        <span className={cx('ml-1.5 font-mono text-meta tnum', healthCls(r.score, aggRadar.counted > 0))}>{aggRadar.counted > 0 ? r.score : '—'}</span>
                       </span>
-                      <span className="font-mono tnum text-jz-ink-2">{r.count} 项</span>
+                      <span className="flex-none font-mono text-meta tnum text-jz-ink-2">{r.count} 项</span>
                     </div>
-                    <div className="h-1.5 w-full rounded-pill bg-jz-surface-2 overflow-hidden">
-                      <div className="h-full rounded-pill bg-jz-sev-high/80 transition-all" style={{ width: `${Math.round((r.count / topMax) * 100)}%` }} />
+                    <div className="h-1.5 w-full overflow-hidden rounded-pill bg-jz-surface-2">
+                      <div className="h-full rounded-pill bg-jz-brand" style={{ width: `${Math.round((r.count / topMax) * 100)}%` }} />
                     </div>
                   </div>
                 ))}
-                {restCount > 0 && (
-                  <div className="text-meta text-jz-muted" title={`其余 ${restDomains.length} 个域(含「其他」兜底轴)合计 ${restCount} 项违规,完整九轴分布见左侧雷达`}>
-                    其余 {restDomains.length} 域合计 {restCount} 项 · 完整分布见雷达九轴
-                  </div>
-                )}
+                {restCount > 0 && <p className="text-meta text-jz-muted">其余 {restDomains.length} 个域共 {restCount} 项,完整分布见雷达图。</p>}
+                <p className="border-t border-jz-border pt-3 text-meta text-jz-muted" data-mastg-capsule>
+                  {DOMAINS.length + 1} 个域(8 个标准域和“其他”)共 <span className="font-mono tnum text-jz-ink-2">{domainStats.reduce((s, r) => s + r.count, 0)}</span> 项发现。
+                </p>
               </div>
             )}
           </div>
-          {/* R126(D-FIX-1/§5 等价映射): 底部合规汇总胶囊行——填实锁高余量,增强态势感知;措辞按真值语义
-              (违规实例总计,非「拦截」——聚合口径无拦截概念,不假造) */}
-          {!radarSessionView && (
-            <div className="shrink-0 mt-1 rounded-card bg-jz-surface-2/60 px-3 py-1.5 flex items-center justify-between"
-              data-mastg-capsule
-              title={`口径: ${aggRadar.counted}/${aggRadar.scanned} 个有活跃发现的会话库聚合;含「其他」兜底轴;与雷达九轴同源同口径${aggRadar.counted === 0 ? '(零活跃发现,均分不可算全域显 0,诚实口径)' : ''}`}>
-              <span className="text-meta text-jz-ink-2">全量 {DOMAINS.length + 1} 轴合规评估概览(8 标准域+其他)</span>
-              <span className="text-meta font-mono tnum text-jz-ink-2">
-                违规实例总计 <span className="text-jz-ink font-semibold">{domainStats.reduce((s, r) => s + r.count, 0)}</span> 项
-              </span>
-            </div>
-          )}
-        </div>
+        </Panel>
 
-        {/* R126(D-FIX-1): 锁高 500px——事件流 30 行在卡片内部视口滚动(flex-1 min-h-0 overflow-auto 既有链路生效),不撑长页面 */}
-        <div className="rounded-panel bg-jz-surface shadow-card p-4 flex flex-col min-h-0 h-[500px]" data-live-feed>
-          <CardTitle icon={<Zap size={13} />} text="实时渗透事件流"
-            extra={
-              /* R104-3③→R125: 活动会话数→呼吸绿点(活动>0 才呼吸,真值脉冲);数据源口径收敛至 title */
-              <StatusBadge tone="custom" className="text-jz-teal bg-jz-teal/10"
-                title="活动=未关闭会话;8s 轮询 /api/pentest/events/recent 真实 progress 事件(各活动会话 pentest/events/progress.jsonl 尾部);SSE 推送版=挂账;空数据不造数">
-                <span className={`w-1.5 h-1.5 rounded-pill flex-none ${(feed?.sessions_scanned ?? 0) > 0 ? 'bg-jz-teal animate-pulse' : 'bg-jz-muted/40'}`} />
-                活动会话 {feed ? feed.sessions_scanned : '—'}
-              </StatusBadge>
-            } />
-          {/* R125(方案二.1): 快速过滤 Tab(全部/仅看漏洞/异常阻断)——客户端派生过滤,计数真值 */}
+        <Panel flush title="会话事件" description={feed && feed.sessions_scanned != null ? `${feed.sessions_scanned} 个未关闭的会话,每 8 秒刷新` : '每 8 秒刷新'} data-live-feed
+          className="flex min-h-0 flex-col desktop:h-[34rem]" bodyClassName="flex min-h-0 flex-1 flex-col">
           {feed && feed.events.length > 0 && (
-            <div className="flex items-center gap-1 pb-1.5 mb-0.5" data-feed-filter>
-              {([['all', '全部'], ['findings', '仅看漏洞'], ['errors', '异常']] as const).map(([id, label]) => (
-                <button key={id} onClick={() => setFeedFilter(id)} data-feed-filter-id={id}
-                  className={`px-2 py-0.5 rounded-control text-meta transition-colors ${feedFilter === id ? 'bg-jz-brand/15 text-jz-brand font-semibold' : 'text-jz-muted hover:text-jz-ink-2 hover:bg-jz-surface-2/50'}`}>
-                  {label}
-                </button>
-              ))}
-              <span className="flex-1" />
-              <span className="text-meta text-jz-muted tnum font-mono" title="当前过滤视图事件数 / 流内总事件数">{shownFeed.length} / {feed.events.length} 事件</span>
+            <div className="px-4 pt-1" data-feed-filter>
+              <Tabs items={feedTabs} value={feedFilter} onChange={setFeedFilter} label="按事件类型筛选" />
             </div>
           )}
           {!feed ? (
-            <div className="text-meta text-jz-muted p-2">加载中…</div>
+            <div className="p-4"><SkeletonLoader variant="table" rows={5} /></div>
           ) : shownFeed.length === 0 ? (
-            <div className="text-meta text-jz-muted flex-1 flex items-center justify-center text-center p-3" data-feed-empty>
-              {feed.events.length === 0
-                ? '暂无活动会话事件——活动=未关闭会话的 progress 流;无事件不造数'
-                : `当前过滤(${feedFilter === 'findings' ? '仅看漏洞' : '异常'})下无匹配事件——真实流里暂无此类事件`}
+            <div data-feed-empty className="flex flex-1 items-center justify-center">
+              <EmptyState compact icon={Zap}
+                title={feed.events.length === 0 ? '没有会话事件' : '没有符合条件的事件'}
+                cause={feed.events.length === 0 ? '未关闭的会话产生进度事件后会显示在这里。' : '换一个筛选看看。'} />
             </div>
           ) : (
-            <div className="flex-1 min-h-0 overflow-auto scroll-smooth flex flex-col gap-1 pr-0.5" data-feed-list>
-              {shownFeed.map(({ e, k, fnd, skip, err }: any) => {
-                const isNew = freshFeedKeys.has(k);
-                return (
-                  <div key={k} data-feed-row={k} data-feed-finding={fnd ? '1' : '0'}
-                    className={`flex items-start gap-2 rounded-control px-2 py-1.5 transition-colors ${isNew ? 'feed-row-in' : ''} ${
-                      fnd
-                        ? 'bg-jz-sev-critical/5 hover:bg-jz-sev-critical/10'
-                        : 'hover:bg-jz-surface-2/30'}`}>
-                    <span className="font-mono text-meta text-jz-muted flex-none tnum pt-0.5" title={`事件时间戳全文: ${String(e.ts ?? '—')}`}>{formatFeedTs(e.ts)}</span>
-                    {/* R125(方案1.2): 三分类状态徽标——漏洞发现=实心红/跳过=灰染底/异常=琥珀/探测执行=品牌蓝(回访轮: 徽章去border线,染底+文字色承载语义);原始 type 收敛至 title */}
-                    <span className={`flex-none rounded-control px-1.5 py-px text-meta font-semibold ${
-                      fnd ? 'bg-jz-sev-critical text-jz-on-brand'
-                        : err ? 'bg-jz-sev-medium/15 text-jz-sev-medium'
-                        : skip ? 'bg-jz-surface-2/70 text-jz-muted'
-                        : 'bg-jz-brand/10 text-jz-brand'}`}
-                      title={`事件类型: ${e.type || '(无类型)'}${feedTarget(e) ? ` · ${feedTarget(e)}` : ''}`}>
-                      {fnd ? '漏洞发现' : err ? '异常' : skip ? '跳过' : '探测执行'}
+            <ol className="min-h-0 flex-1 divide-y divide-jz-border overflow-auto" data-feed-list aria-live="off">
+              {shownFeed.map(({ e, k, fnd, skip, err }: any) => (
+                <li key={k} data-feed-row={k} data-feed-finding={fnd ? '1' : '0'} className={cx('flex items-start gap-3 px-4 py-2.5', freshFeedKeys.has(k) && 'feed-row-in')}>
+                  <span className="flex-none pt-0.5 font-mono text-meta tnum text-jz-muted" title={String(e.ts ?? '—')}>{formatFeedTs(e.ts)}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <StatusBadge tone={fnd ? 'danger' : err ? 'attention' : skip ? 'neutral' : 'brand'} title={`事件类型:${e.type || '无'}${feedTarget(e) ? ` · ${feedTarget(e)}` : ''}`}>
+                        {fnd ? '有发现' : err ? '异常' : skip ? '跳过' : '执行'}
+                      </StatusBadge>
+                      <span className="font-mono text-meta text-jz-muted">#{e.sid}</span>
                     </span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-meta leading-tight truncate ${fnd ? 'text-jz-sev-critical font-medium' : 'text-jz-ink-2'}`}
-                        title={feedText(e)}>
-                        <span className="font-mono text-meta text-jz-muted mr-1">[#{e.sid}]</span>
-                        {feedText(e)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    <span className="mt-1 block truncate text-label text-jz-ink-2" title={feedText(e)}>{feedText(e)}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
           )}
-        </div>
+        </Panel>
       </div>
 
-      {/* ─── R103-6 → R104-3④ → R127(D-R127-2/3): 最近审计资产=规范表格(表头六列/固定列宽语义/
-              无会话行静默胶囊/动作列右对齐)——标题算法字符串收敛 StatusBadge title(正文断言 /评分 A≥90/ =0) ─── */}
-      <div className="rounded-panel bg-jz-surface shadow-card p-4">
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className="inline-flex text-jz-brand"><List size={13} /></span>
-          <span className="text-meta font-semibold text-jz-ink">最近审计资产</span>
-          <StatusBadge tone="info"
-            title="评分阈值: A≥90(优秀) B≥75(良好) C≥60(中危) D≥45(高危) E≥30(严重) F<30;源=会话 risk_score,任务级无评分显「未评估」;隐患计数=该资产关联会话 active(pending+confirmed,排除 excluded)">健康评级基准</StatusBadge>
-          <span className="flex-1" />
-          <span className="text-meta text-jz-muted font-mono tnum">共 {apkRows.length} 资产</span>
-          <button onClick={() => nav('/tasks')} data-assets-goto-tasks
-            className="text-meta font-semibold text-jz-brand hover:underline"
-            title="全部审计/脱壳任务与产物见任务中心">任务中心 →</button>
+      {runningTasks.length > 0 && (
+        <Panel title={<span className="flex items-center gap-2"><Activity size={16} aria-hidden className="text-jz-muted" />运行中的任务</span>}
+          description="每 30 秒刷新" data-live-workflows
+          actions={<Button size="sm" variant="ghost" onClick={() => nav('/tasks')} data-lw-goto-tasks>全部任务</Button>}>
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 desktop:grid-cols-4">
+            {runningTasks.map((t: any) => {
+              const hit = sessMap[t.id];
+              return (
+                <li key={t.id} data-live-lane={t.id} className="min-w-0 rounded-card border border-jz-border px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex-none font-mono text-meta tnum text-jz-muted">#{t.id}</span>
+                    <span className="min-w-0 flex-1 truncate text-label font-semibold text-jz-ink" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
+                    <span className="flex-none font-mono text-meta tnum text-jz-ink-2" title="从创建到现在">{fmtDur(now - t.created_at)}</span>
+                  </div>
+                  <p className="mt-1 truncate text-meta text-jz-muted" title={t.progress || '还没有上报进度'}>{t.progress || '正在执行,还没有上报进度'}</p>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <Tag mono>{t.kind || 'audit'}</Tag>
+                    <span className="flex-1" />
+                    {hit && <Button size="sm" variant="ghost" icon={<ArrowUpRight size={14} aria-hidden />} onClick={() => nav(`/pentest/project/${hit.pid}/session/${hit.sid}`)} data-lw-goto-session={t.id}>会话</Button>}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Panel>
+      )}
+
+      <Panel flush title={<span className="flex items-center gap-2"><List size={16} aria-hidden className="text-jz-muted" />最近的评估</span>}
+        description={apkRows.length ? `最近 ${apkRows.length} 个评估任务` : undefined}
+        actions={<Button size="sm" variant="ghost" onClick={() => nav('/tasks')} data-assets-goto-tasks>全部任务</Button>}>
+        <div data-apk-list>
+          <DataTable<any> label="最近的评估" columns={assetCols} rows={apkRows} rowKey={(r) => r.id} stickyHeader={false}
+            rowDataAttrs={(r) => ({ 'data-apk-row': r.id })}
+            state={apkRows.length === 0 ? (
+              apkLoading ? <div className="p-4"><SkeletonLoader variant="table" rows={4} /></div>
+                : <EmptyState icon={Database} title="还没有评估" cause="创建评估后,最近的任务会显示在这里。"
+                    action={<Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-audit')}>新建评估</Button>} />
+            ) : undefined} />
         </div>
-        {apkRows.length === 0 && <div className="text-meta text-jz-muted p-2">暂无审计任务——先到「新建审计」向导创建</div>}
-        {apkRows.length > 0 && (
-          <table className="w-full text-left" data-apk-list>
-            <thead>
-              <tr className="text-meta font-semibold text-jz-ink-2">
-                <th className="py-1.5 pl-2 font-medium">应用 / 包名</th>
-                <th className="py-1.5 font-medium">加固特征</th>
-                <th className="py-1.5 font-medium">安全健康度</th>
-                <th className="py-1.5 font-medium">隐患分布 (C/H/M)</th>
-                <th className="py-1.5 font-medium">关联渗透会话</th>
-                <th className="py-1.5 pr-2 text-right font-medium">动作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-jz-border">
-              {apkRows.map((r: any) => {
-                const link = sessMap[r.id];
-                const sentry = link ? rowSev[link.sid] : null;
-                const sevCounts = sentry ? SEV_BAR_KEYS.map((k) => sentry[k]?.active || 0) : null;
-                const gd = grade(rowScore[r.id]);
-                const pk = String(r.packer || '').trim();
-                return (
-                  <tr key={r.id} className="group hover:bg-jz-surface-2/30 transition-colors" data-apk-row={r.id}>
-                    <td className="py-2 pl-2">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="w-7 h-7 rounded-control bg-jz-surface-2 flex items-center justify-center text-meta font-semibold text-jz-ink-2 flex-none">
-                          {(r.app_name || r.package || 'A').slice(0, 1).toUpperCase()}
-                        </span>
-                        <div className="min-w-0">
-                          <div className="text-meta font-semibold text-jz-ink truncate max-w-[160px]">{r.app_name || r.package || '—'}</div>
-                          <div className="font-mono text-meta text-jz-muted truncate max-w-[200px]" title={r.package || ''}>#{r.id} {r.package || ''}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-2">
-                      {/* R104-3④: 加固轻量 Badge(已知厂商显示名,未知值原样;无壳=浅灰) */}
-                      {pk && pk !== 'none'
-                        ? <span className="inline-flex rounded-control px-1.5 py-0.5 text-meta font-mono bg-jz-sev-medium/10 text-jz-sev-medium" title={`加固/壳检测: ${pk}`}>{PACKER_LABEL[pk] || pk}</span>
-                        : <span className="inline-flex rounded-control px-1.5 py-0.5 text-meta font-mono bg-jz-surface-2 text-jz-muted" title="无壳(packer=none 或未检出)">未加固</span>}
-                    </td>
-                    <td className="py-2">
-                      {gd ? (
-                        <span className="inline-flex items-center gap-1.5" title={`risk_score ${rowScore[r.id]}`}>
-                          <span className={`px-1.5 py-0.5 rounded-control font-semibold tnum text-meta ${gd.cls}`}>{gd.g}</span>
-                          <span className="text-meta font-mono tnum text-jz-ink-2">{Number(rowScore[r.id])} 分</span>
-                        </span>
-                      ) : <span className="text-meta text-jz-muted" title="任务级无评分">未评估</span>}
-                    </td>
-                    <td className="py-2">
-                      {/* R127(D-R127-3): 隐患分布 C/H/M 三色计数胶囊(by_session active 真算;low/info 收敛至 title) */}
-                      {sevCounts ? (
-                        <span className="inline-flex items-center gap-1"
-                          title={`关联会话 #${link.sid} 发现(active 口径)· ${SEV_BAR_KEYS.map((k, i2) => `${k} ${sevCounts[i2]}`).join(' · ')}`}>
-                          {['critical', 'high', 'medium'].map((sv, i2) => (
-                            <span key={sv} className={`inline-flex rounded-control px-1 py-0.5 text-meta font-semibold tnum ${
-                              sv === 'critical' ? 'bg-jz-sev-critical/10 text-jz-sev-critical'
-                                : sv === 'high' ? 'bg-jz-sev-high/10 text-jz-sev-high'
-                                : 'bg-jz-sev-medium/10 text-jz-sev-medium'}`}>{sevCounts[i2]}</span>
-                          ))}
-                        </span>
-                      ) : <span className="text-meta text-jz-muted">—</span>}
-                    </td>
-                    <td className="py-2">
-                      {/* R128: 关联渗透会话列全面实义化——有关联=会话链;已完成未关联=发起渗透(真建会话直入工作台);
-                          未完成=未就绪胶囊(后端 409 守卫同语义,诚实标注原因)。「待关联作战」静态占位退役 */}
-                      {link ? (
-                        <button onClick={() => goSession(r)} data-apk-session={link.sid}
-                          className="inline-flex items-center gap-1 text-meta text-jz-brand hover:underline"
-                          title={`进入会话 #${link.sid} 工作台`}>
-                          <span className="w-1.5 h-1.5 rounded-pill bg-jz-teal flex-none" />
-                          会话 #{link.sid}
-                        </button>
-                      ) : r.status === 'done' ? (
-                        <button onClick={() => launchPentest(r)} data-launch-pentest={r.id} disabled={creatingTid != null}
-                          className="inline-flex items-center gap-1 rounded-control bg-jz-brand/10 px-2 py-0.5 text-meta font-semibold text-jz-brand hover:bg-jz-brand/20 transition-colors disabled:opacity-50 disabled:cursor-wait"
-                          title={`对已完成审计 #${r.id} 发起渗透会话并进入工作台`}>
-                          {creatingTid === r.id ? '创建中…' : '+ 发起渗透'}
-                        </button>
-                      ) : (
-                        <span className="inline-flex rounded-control bg-jz-surface-2 px-2 py-0.5 text-meta text-jz-muted"
-                          title={`任务状态 ${r.status || '未知'}——仅已完成审计可发起渗透,可先到任务中心查看进度`}>未就绪</span>
-                      )}
-                    </td>
-                    <td className="py-2 pr-2 text-right">
-                      {/* R128: 动作列全行实义——有关联=下钻工作台;无关联=查看任务详情(/tasks?focus=N 深链,复用 R94-1) */}
-                      {link
-                        ? <button onClick={() => goSession(r)} data-drill-btn
-                            className="w-7 h-7 rounded-control inline-flex items-center justify-center text-jz-muted hover:text-jz-brand hover:bg-jz-brand/10 transition-colors"
-                            title={`下钻工作台(会话 #${link.sid})`}>
-                            <ArrowUpRight size={14} />
-                          </button>
-                        : <button onClick={() => nav(`/tasks?focus=${r.id}`)} data-apk-view-task={r.id}
-                            className="w-7 h-7 rounded-control inline-flex items-center justify-center text-jz-muted hover:text-jz-brand hover:bg-jz-brand/10 transition-colors"
-                            title={`查看任务详情(#${r.id},产物与报告在任务中心)`}>
-                            <ArrowUpRight size={14} />
-                          </button>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
+      </Panel>
+    </Page>
   );
 };
 

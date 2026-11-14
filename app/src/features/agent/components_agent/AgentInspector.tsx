@@ -23,7 +23,7 @@ export const AgentInspector: React.FC<{
     };
   })();
   return (
-    <div className="h-full flex flex-col bg-jz-surface-2/95 backdrop-blur-xl" data-agent-inspector>
+    <div className="h-full flex flex-col bg-jz-surface-2/95 " data-agent-inspector>
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-jz-border/50">
         <Activity size={13} className="text-jz-brand" />
         <span className="text-meta font-semibold text-jz-ink">运行详情</span>
@@ -59,7 +59,7 @@ export const AgentInspector: React.FC<{
           {!todos.length && <div className="text-meta text-jz-muted">尚未建立</div>}
           {todos.map((t, i) => (
             <div key={i} className="flex items-start gap-1.5 text-meta py-0.5">
-              <span className={`mt-0.5 w-1.5 h-1.5 rounded-pill flex-none ${t.status === 'completed' ? 'bg-jz-teal' : t.status === 'in_progress' ? 'bg-jz-brand animate-pulse' : 'bg-jz-muted/40'}`} />
+              <span className={`mt-0.5 w-1.5 h-1.5 rounded-pill flex-none ${t.status === 'completed' ? 'bg-jz-teal' : t.status === 'in_progress' ? 'bg-jz-brand' : 'bg-jz-muted/40'}`} />
               <span className={`${t.status === 'completed' ? 'text-jz-muted line-through' : 'text-jz-ink-2'}`}>{t.text}</span>
             </div>
           ))}
@@ -80,7 +80,7 @@ export const AgentInspector: React.FC<{
           {!tools.length && <div className="text-meta text-jz-muted">尚无工具调用</div>}
           {tools.map((t) => (
             <div key={t.id} className="flex items-center gap-1 text-meta font-mono py-0.5" data-agent-tool-row>
-              <span className={`w-1.5 h-1.5 rounded-pill ${t.status === 'running' ? 'bg-jz-brand animate-pulse' : t.status === 'error' ? 'bg-jz-sev-critical' : 'bg-jz-teal'}`} />
+              <span className={`w-1.5 h-1.5 rounded-pill ${t.status === 'running' ? 'bg-jz-brand' : t.status === 'error' ? 'bg-jz-sev-critical' : 'bg-jz-teal'}`} />
               <span className="text-jz-ink-2 truncate">{t.name}</span>
               <span className="flex-1" />
               <span className="text-jz-muted">{t.status}</span>

@@ -4,8 +4,8 @@
 // 字号八档口径: 本文件 font 一律 11/12/13/14/16/20/24/28。
 import React, { useMemo, useState } from 'react';
 import { GraduationCap } from 'lucide-react';
-import { Badge } from '@/components/ui';
-import { parseCandidateRawText, catBadgeCls, KB_CAT_LABEL } from './skillsShared';
+import { StatusBadge } from '@/components/ui';
+import { parseCandidateRawText, catDotCls, KB_CAT_LABEL } from './skillsShared';
 import type { KBCandidate, ParsedCand } from './skillsShared';
 
 const PreNote: React.FC<{ cand: KBCandidate }> = ({ cand }) => {
@@ -85,7 +85,8 @@ export const CandidateCard: React.FC<{
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className={`px-2 py-0.5 rounded-control text-meta font-medium ${catBadgeCls(cand)}`}>
+            <span className="inline-flex items-center gap-1.5 text-meta font-medium text-jz-ink-2">
+              <span aria-hidden className={`h-2 w-2 flex-none rounded-pill ${catDotCls(cand)}`} />
               {KB_CAT_LABEL[cand.category] || cand.category}
             </span>
             <span className="px-1.5 py-0.5 rounded-control bg-jz-surface-2/60 text-meta font-mono text-jz-muted"
@@ -193,10 +194,11 @@ export const CandidateInspector: React.FC<{ cand: KBCandidate }> = ({ cand }) =>
   return (
     <div className="space-y-3" data-kb-cand-inspector={cand.id}>
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className={`px-2 py-0.5 rounded-control text-meta font-medium ${catBadgeCls(cand)}`}>
+        <span className="inline-flex items-center gap-1.5 text-meta font-medium text-jz-ink-2">
+          <span aria-hidden className={`h-2 w-2 flex-none rounded-pill ${catDotCls(cand)}`} />
           {KB_CAT_LABEL[cand.category] || cand.category}
         </span>
-        <Badge level={cand.status === 'pending' ? 'medium' : cand.status === 'approved' ? 'safe' : 'info'}>{cand.status}</Badge>
+        <StatusBadge tone={cand.status === 'pending' ? 'attention' : cand.status === 'approved' ? 'success' : 'neutral'}>{cand.status}</StatusBadge>
         <span className="font-mono text-body text-jz-muted">#{cand.id}</span>
         <span className="text-meta text-jz-muted font-mono">task#{cand.task_id}{cand.session_id ? ` · sid${cand.session_id}` : ''}</span>
         {cand.source && <span className="px-1.5 py-0.5 rounded-control bg-jz-surface-2/60 text-meta font-mono text-jz-muted">{cand.source}</span>}

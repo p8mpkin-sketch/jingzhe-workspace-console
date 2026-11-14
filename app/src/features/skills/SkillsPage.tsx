@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Braces, Copy, Check, FolderOpen, FlaskConical, Plug, Swords, GraduationCap, Bell } from 'lucide-react';
+import { Activity, Braces, Copy, Check, FolderOpen, FlaskConical, Plug, GraduationCap, Bell, RefreshCw } from 'lucide-react';
 import { api } from '@/services/api';
 import { useAuth } from '@/stores/auth';
 // 全平台升级 Step4①: DataToolbar(搜索/排序/导入/导出/分页)+ 本地自定义技能 + 技能包导入(前端解析)
 // Rxxx 重构: 顶层 KPI 卡 + 一级双工作台 Tab(资产库/候选审核台);卡片拆 SkillCard/CandidateCard 子组件。
 import { DataToolbar, UniversalImportModal, exportDataFile } from '@/components/ui';
 import type { UniversalImportResult } from '@/components/ui';
-import { Badge, Drawer, EmptyStatePlaceholder, Skeleton, toast } from '@/components/ui';
+import { Badge, Button, ConfirmDialog, Input, Panel, Drawer, EmptyState, ErrorState, SkeletonLoader, EmptyStatePlaceholder, Page, PageHeader, Skeleton, Tabs, toast, tokenColor, useThemeVersion } from '@/components/ui';
+import { moduleLabel } from '@/layout/navigation';
+import type { ColorToken } from '@/components/ui';
 import { SkillCard } from './SkillCard';
 import { CandidateCard, CandidateInspector } from './CandidateCard';
 import { kindOf, renderSourceCode } from './skillsShared';
@@ -18,20 +20,22 @@ import { TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 echarts.use([GraphChart, TooltipComponent, LegendComponent, CanvasRenderer]);
 
-const KB_NODE_CATS = [
-  { name: 'packer', color: '#f97316' },
-  { name: 'task', color: '#22d3ee' },
-  { name: 'item', color: '#a78bfa' },
-  { name: 'source', color: '#94a3b8' },
-  { name: 'vuln', color: '#ef4444' },
+const KB_NODE_TOKENS: { name: string; token: ColorToken }[] = [
+  { name: 'packer', token: 'orange' },
+  { name: 'task', token: 'teal' },
+  { name: 'item', token: 'brand' },
+  { name: 'source', token: 'muted' },
+  { name: 'vuln', token: 'red' },
 ];
 
-/** R355: relations 结果→echarts force 力导向图(四类分色/rel 边标签/悬停 tooltip) */
+/** R355: relations 结果→echarts force 力导向图(分类颜色全部取自 jz 令牌,随主题切换) */
 const KbGraph: React.FC<{ graph: any }> = ({ graph }) => {
   const ref = React.useRef<HTMLDivElement | null>(null);
+  const tv = useThemeVersion();
  useEffect(() => {
     if (!ref.current || !graph?.nodes?.length) return;
     const inst = echarts.init(ref.current);
+    const KB_NODE_CATS = KB_NODE_TOKENS.map((c) => ({ name: c.name, color: tokenColor(c.token) }));
     const catIdx: Record<string, number> = {};
  KB_NODE_CATS.forEach((c, i) => { catIdx[c.name] = i; });
     const deg: Record<string, number> = {};
@@ -40,12 +44,12 @@ const KbGraph: React.FC<{ graph: any }> = ({ graph }) => {
  tooltip: { confine: true, formatter: (p: any) => p.dataType === 'node'
         ? `${p.data.name}<br/>类型 ${p.data.catName} · 关联 ${deg[p.data.name] || 0}`
         : `${p.data.sourceName} → ${p.data.targetName}<br/>${p.data.rel} ×${p.data.count || 1}` },
- legend: { data: KB_NODE_CATS.map((c) => c.name), textStyle: { color: '#94a3b8', fontSize: 10 }, top: 0 },
+ legend: { data: KB_NODE_CATS.map((c) => c.name), textStyle: { color: tokenColor('muted'), fontSize: 10 }, top: 0 },
  series: [{
  type: 'graph', layout: 'force', roam: true, draggable: true,
  force: { repulsion: 140, edgeLength: [40, 110], layoutAnimation: true },
  categories: KB_NODE_CATS,
- label: { show: true, color: '#cbd5e1', fontSize: 9,
+ label: { show: true, color: tokenColor('ink-2'), fontSize: 9,
  formatter: (p: any) => String(p.data.name || '').replace(/^(src|item|packer|vuln|task):/, '').slice(0, 18) },
  edgeLabel: { show: false },
  data: (graph.nodes || []).map((n: any) => ({
@@ -62,7 +66,7 @@ const KbGraph: React.FC<{ graph: any }> = ({ graph }) => {
  const onResize = () => inst.resize();
  window.addEventListener('resize', onResize);
  return () => { window.removeEventListener('resize', onResize); inst.dispose(); };
-  }, [graph]);
+   }, [graph, tv]);
   return <div ref={ref} data-kb-graph-canvas className="w-full" style={{ height: 320 }} />;
 };
 
@@ -75,22 +79,20 @@ const KbGraph: React.FC<{ graph: any }> = ({ graph }) => {
 
 // R117-7②(方案7.2): 源码抽屉行号对齐+零依赖注释着色(renderSourceCode 迁 skillsShared,口径不变)。
 
-/** KPI 大卡: 语义图标+大号等宽数字(text-title md:text-page)+微光边框;点击=快速过滤列表。 */
+/** Clickable metric: a quick filter for the library list. */
 const KpiCard: React.FC<{
   icon: React.ComponentType<{ className?: string }>;
- label: string; value: React.ReactNode; sub: string; title?: string;
- active?: boolean; onClick: () => void;
+  label: string; value: React.ReactNode; sub: string; title?: string;
+  active?: boolean; onClick: () => void;
 }> = ({ icon: Icon, label, value, sub, title, active, onClick }) => (
-  <button onClick={onClick} title={title} data-skills-kpi={label}
- className={`rounded-panel bg-jz-surface shadow-card p-4 text-left border transition-all ${active
- ? 'border-jz-brand/50 '
- : 'border-jz-brand/10 hover:border-jz-brand/40 hover:'}`}>
-    <div className="flex items-center gap-1.5 text-meta text-jz-muted">
-      <Icon className="w-3.5 h-3.5 text-jz-brand shrink-0" />
+  <button type="button" onClick={onClick} title={title} data-skills-kpi={label} aria-pressed={!!active}
+    className={`min-w-0 rounded-card border bg-jz-surface p-4 text-left transition-colors duration-hover ${active ? 'border-jz-brand' : 'border-jz-border hover:border-jz-border-strong'}`}>
+    <div className="flex items-center gap-1.5 text-label text-jz-muted">
+      <Icon className="h-3.5 w-3.5 flex-none" />
       <span className="truncate">{label}</span>
     </div>
-    <div className="mt-1.5 text-title md:text-page font-semibold font-mono tabular-nums text-jz-ink leading-none">{value}</div>
-    <div className="mt-1.5 text-meta text-jz-muted truncate">{sub}</div>
+    <div className="mt-2 font-display text-metric font-semibold tnum leading-none text-jz-ink">{value}</div>
+    <div className="mt-2 truncate text-meta text-jz-muted">{sub}</div>
   </button>
 );
 
@@ -256,17 +258,41 @@ export const SkillsPage: React.FC = () => {
  load();
  } catch (e: any) { toast.err('状态变更失败: ' + e.message); }
  };
- const delSkill = async (s: SkillRow) => {
- // 全平台升级 Step4①: 本地技能走本地删除(无后端调用);库内技能走既有 DELETE(挂载引用防呆在后端 409)
+ // Delete goes through a confirm dialog (delFor); the requests are unchanged.
+ const [delFor, setDelFor] = useState<SkillRow | null>(null);
+ const [delBusy, setDelBusy] = useState(false);
+ const delSkill = (s: SkillRow) => setDelFor(s);
+ const [bulkAsk, setBulkAsk] = useState<'approve' | 'reject' | null>(null);
+ const runBulk = async (action: 'approve' | 'reject') => {
+ setBulkBusy(true);
+ if (action === 'approve') {
+ try {
+ const d = await api<any>('/api/kb/candidates/decide-batch', {
+ method: 'POST', body: JSON.stringify({ ids: Array.from(selCands), action: 'approve' }) });
+ toast.ok(`批量通过 ${(d.decided || []).length}/${selCands.size} 条,已写入知识库`);
+ } catch { toast.err('批量通过失败'); }
+ setSelCands(new Set());
+ const l = await api<{ items: KBCandidate[] }>('/api/kb/candidates');
+ setCands(l.items || []);
+ setBulkBusy(false);
+ return;
+ }
+ try {
+ const d = await api<any>('/api/kb/candidates/decide-batch', {
+ method: 'POST', body: JSON.stringify({ ids: Array.from(selCands), action: 'reject' }) });
+ toast.ok(`批量拒绝 ${(d.decided || []).length}/${selCands.size} 条(保留记录)`);
+ setSelCands(new Set());
+ const l = await api<{ items: KBCandidate[] }>('/api/kb/candidates');
+ setCands(l.items || []);
+ } catch { toast.err('批量拒绝失败'); }
+ finally { setBulkBusy(false); }
+ };
+ const doDelete = async (s: SkillRow) => {
  if ((s.source_path || '').startsWith('local:')) {
- if (!window.confirm(`删除本地技能「${s.name}」?(仅移除本地层记录)`)) return;
  persistLocal(localSkills.filter((x) => x.id !== s.id));
  toast.ok(`已删除本地技能「${s.name}」`);
  return;
  }
- // Rxxx: 内置技能(平台收编存量)二次确认——先问内身份再问删除,防误触删库内资产
- if (kindOf(s).label === '内置' && !window.confirm(`「${s.name}」是内置技能(平台收编存量,${kindOf(s).tab})。删除将从 AI 选技池移除,确认继续?`)) return;
- if (!window.confirm(`删除技能「${s.name}」?实战回流与挂载关系将一并清除(不可恢复)。`)) return;
  try {
  await api(`/api/skills/${s.id}`, { method: 'DELETE' });
  toast.ok(`已删除「${s.name}」`);
@@ -380,85 +406,59 @@ export const SkillsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 h-full overflow-auto" data-skills-page>
-      {/* 页头: 标题 + 理念徽章 + 手动模式/重扫(全局动作,双工作台共享) */}
-      <div className="flex items-center gap-2 flex-wrap mb-4">
-        <h2 className="text-section font-semibold text-jz-ink">技能知识库</h2>
-        <Badge level="safe">AI+技能库+实战三驱动: 选技/挂载/回流/缺口蒸馏已自动化</Badge>
-        <span className="flex-1" />
-        <button onClick={() => setManualOpen(!manualOpen)} data-manual-toggle
- title="AI 主路径之外的人工兜底: 给历史任务补挂/覆盖 AI 选择;从成功任务手动蒸馏——日常流程零依赖"
- className={`px-2.5 py-1 rounded-pill text-meta transition-colors ${manualOpen
- ? 'bg-jz-brand/10 text-jz-brand font-semibold'
- : 'bg-jz-surface-2/50 text-jz-muted hover:text-jz-ink-2'}`}>
-          {manualOpen ? '▾' : '▸'} 手动模式(兜底)
-        </button>
-        <button onClick={rescan} disabled={scanning} data-skills-rescan
- title="一键热重载语义=存量重扫(POST /api/skills/scan,幂等)"
- className="px-2 py-1 rounded-control bg-jz-brand/10 text-jz-brand text-meta hover:bg-jz-brand/20 disabled:opacity-40">
-          {scanning ? '扫描中…' : '↻ 重新扫描(幂等)'}
-        </button>
-      </div>
+    <Page data-skills-page>
+      <PageHeader title={moduleLabel('/skills')}
+        description="评估中沉淀的可复用技能。AI 会自动选用、挂载并记录结果;手动操作只用于补挂历史任务和从成功任务提炼。"
+        actions={<>
+          <Button variant="secondary" onClick={() => setManualOpen(!manualOpen)} data-manual-toggle aria-expanded={manualOpen}
+            title="AI 自动流程之外的人工操作:给历史任务补挂或覆盖 AI 的选择,从成功任务手动提炼。日常流程不依赖它。">
+            {manualOpen ? '收起手动操作' : '手动操作'}
+          </Button>
+          <Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} onClick={rescan} loading={scanning} disabled={scanning} data-skills-rescan
+            title="重新扫描已收编的技能目录(POST /api/skills/scan,重复执行结果不变)">
+            {scanning ? '扫描中…' : '重新扫描'}
+          </Button>
+        </>} />
 
-      {/* ① 顶部 5 KPI 卡(列表真算): 总技能/蒸馏自研/本地自定义/实战回流/已挂载;点击=快速过滤 */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-4">
-        <KpiCard icon={Braces} label="总技能" value={rows ? allRows.length : '…'}
- sub={`${cats.length} 个来源分类`} active={kpiActive.total}
- title="口径: /api/skills 列表 + 本地层自定义(列表真算,零推断)"
- onClick={() => applyKpi('total')} />
-        <KpiCard icon={FlaskConical} label="蒸馏自研" value={rows ? distilledCount : '…'}
- sub="draft / task: 指针口径" active={kpiActive.distill}
- title="口径:status=draft 或 source_path 为 task: 指针的蒸馏草案数(列表真算)"
- onClick={() => applyKpi('distill')} />
+      <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 desktop:grid-cols-5 desktop:gap-4">
+        <KpiCard icon={Braces} label="总技能" value={rows ? allRows.length : err ? '—' : '…'}
+          sub={`${cats.length} 个来源分类`} active={kpiActive.total}
+          title="/api/skills 列表加本地自定义条目,按列表实际计数"
+          onClick={() => applyKpi('total')} />
+        <KpiCard icon={FlaskConical} label="蒸馏自研" value={rows ? distilledCount : err ? '—' : '…'}
+          sub="草案或由任务提炼" active={kpiActive.distill}
+          title="status=draft 或 source_path 以 task: 开头的条目数"
+          onClick={() => applyKpi('distill')} />
         <KpiCard icon={FolderOpen} label="本地自定义" value={localSkills.length}
- sub="localStorage 视图层" active={kpiActive.local}
- title="口径: 本地层自定义+导入技能包条数(localStorage,不写后端,显式标注)"
- onClick={() => applyKpi('local')} />
-        <KpiCard icon={Swords} label="实战回流" value={rows ? battleTotal : '…'}
- sub="skill_outcomes 真值" active={kpiActive.battle}
- title="口径: skill_outcomes 表全量条数(R125 起任务终态按 code_recovered/unpack_ok 真值回流;含 AI 自动挂载技能);点击按实战次数↓排序"
- onClick={() => applyKpi('battle')} />
+          sub="只保存在本浏览器" active={kpiActive.local}
+          title="本地自定义和导入技能包的条目数(localStorage,不写入后端)"
+          onClick={() => applyKpi('local')} />
+        <KpiCard icon={Activity} label="实战回流" value={rows ? battleTotal : err ? '—' : '…'}
+          sub="任务结果记录" active={kpiActive.battle}
+          title="skill_outcomes 记录总数(任务结束时按 code_recovered / unpack_ok 回写);点击按使用次数排序"
+          onClick={() => applyKpi('battle')} />
         <KpiCard icon={Plug} label="已挂载" value={mountTid ? mounted.length : '—'}
- sub={mountTid ? `任务 #${mountTid}` : '未选目标任务'} active={kpiActive.mount}
- title={mountTid ? `口径:当前选中任务 #${mountTid} 的挂载数(GET /api/tasks/${mountTid}/skills 真值)` : '点击打开手动模式选目标任务后统计;平台无全局挂载计数端点,全局统计=挂账'}
- onClick={() => applyKpi('mount')} />
+          sub={mountTid ? `任务 #${mountTid}` : '未选目标任务'} active={kpiActive.mount}
+          title={mountTid ? `任务 #${mountTid} 当前挂载的技能数` : '在手动操作里选择目标任务后显示;后端没有全局挂载计数接口'}
+          onClick={() => applyKpi('mount')} />
       </div>
 
-      {/* ② 一级分段导航(h-12 mb-6): 已入库技能资产库 / 自学习候选审核台(琥珀脉冲徽章) */}
-      <div className="flex items-center gap-1.5 h-12 mb-6 rounded-panel bg-jz-surface shadow-card ring-1 ring-jz-border/40 p-1.5"
- data-skills-primary-tabs>
-        <button onClick={() => setWorkbench('library')} data-skills-primary-tab="library"
- className={`h-full px-3 md:px-4 rounded-card text-body font-semibold transition-colors truncate ${effectiveWb === 'library'
- ? 'bg-jz-brand/15 text-jz-brand shadow-card' : 'text-jz-muted hover:text-jz-ink-2'}`}>
-           已入库技能资产库
-          <span className="ml-1 font-mono tnum">({allRows.length})</span>
-        </button>
-        {isAdmin && (
-          <button onClick={() => setWorkbench('review')} data-skills-primary-tab="review"
- className={`h-full px-3 md:px-4 rounded-card text-body font-semibold transition-colors truncate ${effectiveWb === 'review'
- ? 'bg-jz-brand/15 text-jz-brand shadow-card' : 'text-jz-muted hover:text-jz-ink-2'}`}>
-             自学习候选审核台
-            <span className="ml-1 font-mono tnum hidden lg:inline">
-              (待审 {pendingCands.length} · 已通过 {decidedCounts.approved} · 已拒绝 {decidedCounts.rejected})
-            </span>
- {pendingCands.length > 0 && (
-              <span className="relative ml-1.5 inline-flex h-2 w-2 align-middle" title={`待审 ${pendingCands.length}`}>
-                <span className=" absolute inline-flex h-full w-full rounded-pill bg-jz-amber opacity-60" />
-                <span className="relative inline-flex rounded-pill h-2 w-2 bg-jz-amber" />
-              </span>
-            )}
-          </button>
-        )}
-        <span className="flex-1" />
- {/* Tab1 右侧快捷胶囊: 有候选待审一键跳审核台 */}
- {isAdmin && effectiveWb === 'library' && pendingCands.length > 0 && (
-          <button onClick={() => setWorkbench('review')} data-skills-cand-pill
- title="跳转自学习候选审核台(post_mortem 复盘产出,零自动转正)"
- className="hidden sm:inline-flex items-center gap-1 h-8 px-3 mr-0.5 rounded-pill bg-jz-sev-medium/10 text-jz-sev-medium text-meta font-semibold hover:bg-jz-sev-medium/20 transition-colors">
-            <Bell className="w-3.5 h-3.5" /> 有 {pendingCands.length} 条候选待审 →
-          </button>
+      <div className="flex flex-wrap items-end gap-3" data-skills-primary-tabs>
+        <Tabs<'library' | 'review'> label="知识库工作区" value={effectiveWb} onChange={setWorkbench} className="min-w-0 flex-1"
+          items={[
+            { key: 'library', label: '技能库', count: allRows.length, dataAttrs: { 'data-skills-primary-tab': 'library' } },
+            ...(isAdmin ? [{ key: 'review' as const, label: '候选审核', count: pendingCands.length, dataAttrs: { 'data-skills-primary-tab': 'review' } }] : []),
+          ]} />
+        {isAdmin && effectiveWb === 'library' && pendingCands.length > 0 && (
+          <Button size="sm" variant="subtle" icon={<Bell size={14} aria-hidden />} onClick={() => setWorkbench('review')} data-skills-cand-pill
+            title="切换到候选审核(复盘产出的候选,不会自动入库)">
+            {pendingCands.length} 条候选待审核
+          </Button>
         )}
       </div>
+      {isAdmin && effectiveWb === 'review' && (
+        <p className="-mt-3 text-meta text-jz-muted">待审 {pendingCands.length} · 已通过 {decidedCounts.approved} · 已拒绝 {decidedCounts.rejected}</p>
+      )}
 
       {effectiveWb === 'library' && (
         <div className="space-y-4">
@@ -574,47 +574,29 @@ export const SkillsPage: React.FC = () => {
  onCreate={() => setNewOpen(true)} createLabel="新建自定义技能"
  pager={{ total, page: safePage, pageSize, onPage: setPage, onPageSize: setPageSize }}
  />
-          {err && <div className="text-meta text-jz-sev-critical p-3">加载失败: {err}</div>}
-          {!rows && !err && <div className="space-y-2">{[...Array(4)].map((_, i) => <Skeleton key={i} className="h-16" />)}</div>}
-          {rows && rows.length === 0 && (
-            <div className="rounded-panel bg-jz-surface shadow-card" data-skills-empty>
-              {/* R117-7④: 空库态接入封版 EmptyStatePlaceholder+快捷扫描动作 */}
-              <EmptyStatePlaceholder
-                icon={FolderOpen}
-                title="暂无攻击技能"
-                subtitle="技能库为空——收编 ~/.claude/skills、项目 rules/ 与 pentest 模块存量后此处呈现。"
-                action={
-                  <button onClick={rescan} data-skills-empty-rescan
- className="px-3 py-1.5 rounded-pill bg-jz-brand/15 text-jz-brand text-meta font-medium hover:bg-jz-brand/25 transition-colors">
-                    重新扫描(幂等)
-                  </button>
- }
- />
-            </div>
- )}
- {rows && rows.length > 0 && shown.length === 0 && (
-            <div className="rounded-panel bg-jz-surface shadow-card" data-skills-tab-empty>
-              {/* R117-7④: 分类过滤无匹配空态+一键清筛选(方案7.4 功能等价: 本页无关键词搜索框,过滤维度=场景分类) */}
-              <EmptyStatePlaceholder
-                icon={Braces}
-                title="未检索到匹配结果"
-                subtitle="该分类下暂无技能(计数随列表实时真算),可切回全量查看。"
-                action={
-                  <button onClick={() => { setTab('全部'); setQ(''); }} data-skills-reset-tab
- className="px-3 py-1.5 rounded-pill bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:text-jz-brand transition-colors">
-                    清空筛选
-                  </button>
- }
- />
+          {err && (
+            <div className="rounded-card border border-jz-border bg-jz-surface" data-skills-error>
+              <ErrorState title="技能列表没有加载成功" message={err} onRetry={load} />
             </div>
           )}
-          {/* 已入库技能网格(md 2 列 / xl 3 列;卡片大字+色彩分层+路径精简见 SkillCard) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5" data-skill-grid>
- {shown.length === 0 && (allRows).length > 0 && (
-              <div className="col-span-full rounded-panel bg-jz-surface-2 p-4 text-center text-meta text-jz-muted" data-skill-search-empty>
-                {q ? `无匹配「${q}」的技能(当前 Tab ${tab} 下 ${allRows.length} 条)` : `Tab「${tab}」下暂无条目`}
+          {!rows && !err && <SkeletonLoader variant="card" rows={3} />}
+          {rows && allRows.length === 0 && (
+            <div className="rounded-card border border-jz-border bg-jz-surface" data-skills-empty>
+              <EmptyState icon={FolderOpen} title="还没有技能"
+                cause="重新扫描会收编已有的技能目录、项目规则和平台模块;也可以新建本地技能或导入技能包。"
+                action={<Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} onClick={rescan} loading={scanning} data-skills-empty-rescan>重新扫描</Button>} />
+            </div>
+          )}
+          {rows && allRows.length > 0 && shown.length === 0 && (
+            <div className="rounded-card border border-jz-border bg-jz-surface" data-skills-tab-empty>
+              <div data-skill-search-empty>
+                <EmptyState icon={Braces} title="没有符合条件的技能"
+                  cause={q ? `“${q}”在“${tab}”中没有匹配项,共 ${allRows.length} 条技能。` : `“${tab}”下没有条目。`}
+                  action={<Button variant="secondary" onClick={() => { setTab('全部'); setQ(''); }} data-skills-reset-tab>清除筛选</Button>} />
               </div>
- )}
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2 desktop:grid-cols-3" data-skill-grid>
  {paged.map((s) => (
               <SkillCard key={s.id} s={s}
  isLocal={(s.source_path || '').startsWith('local:')}
@@ -630,43 +612,34 @@ export const SkillsPage: React.FC = () => {
           </div>
           {/* R195(V3 图谱化第2步): 知识图谱查询面板(admin)——壳↔漏洞↔来源 跨维关联人工研判(置于库尾,不占首屏) */}
           {isAdmin && (
-            <div className="rounded-panel bg-jz-surface shadow-card p-3" data-kb-graph>
-              <div className="flex items-center gap-2">
-                <GraduationCap className="w-3.5 h-3.5 text-jz-brand" />
-                <span className="text-meta font-semibold text-jz-ink-2">知识图谱</span>
-                <input value={gq} onChange={(e) => setGq(e.target.value)}
- onKeyDown={(e) => e.key === 'Enter' && loadGraph()}
- placeholder="关键词(ijiami/未授权/65536…)"
- className="px-2.5 py-1 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink w-56 outline-none focus:ring-2 focus:ring-jz-brand/30" />
-                <button onClick={loadGraph} disabled={gBusy} data-kb-graph-query
- className="px-2 py-1 rounded-control bg-jz-brand/10 text-jz-brand text-meta hover:bg-jz-brand/20 disabled:opacity-40">
-                  {gBusy ? '查询中…' : '查关联'}
-                </button>
-                {graph && (
-                  <span className="text-meta text-jz-muted font-mono"
- title="R183 /api/kb/relations 现算轻图谱">{graph.nodes?.length || 0} 节点 / {graph.edges?.length || 0} 边</span>
-                )}
-              </div>
+            <Panel title="知识关联" description="按关键词查询加固方案、发现类型和来源之间的关联(/api/kb/relations)。" data-kb-graph
+              actions={graph ? <span className="font-mono text-meta tnum text-jz-muted">{graph.nodes?.length || 0} 节点 / {graph.edges?.length || 0} 边</span> : undefined}>
+              <form className="flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); loadGraph(); }}>
+                <div className="w-full max-w-xs">
+                  <Input value={gq} onChange={(e) => setGq(e.target.value)} aria-label="关联查询关键词" placeholder="关键词,例如 ijiami" />
+                </div>
+                <Button type="submit" variant="secondary" loading={gBusy} disabled={gBusy} data-kb-graph-query>{gBusy ? '查询中…' : '查询'}</Button>
+              </form>
  {graph && (graph.nodes?.length > 0) && (
-                <div className="mt-2 rounded-card bg-jz-surface-2 overflow-hidden" data-kb-graph-box>
+                <div className="mt-3 overflow-hidden rounded-card border border-jz-border" data-kb-graph-box>
                   <KbGraph graph={graph} />
                 </div>
  )}
  {graph && (graph.nodes?.length > 0) && (
-                <div className="mt-1.5 grid grid-cols-3 gap-2 text-meta">
+                <div className="mt-3 grid grid-cols-1 gap-3 text-label tablet:grid-cols-3">
                   <div>
-                    <div className="text-jz-muted mb-0.5">壳关联</div>
+                    <div className="mb-1 text-meta text-jz-muted">加固方案</div>
  {(graph.nodes || []).filter((n: any) => n.type === 'packer').map((n: any) => (
                       <div key={n.id} className="font-mono text-jz-ink-2">{n.id}</div>))}
                   </div>
                   <div>
-                    <div className="text-jz-muted mb-0.5">漏洞型</div>
+                    <div className="mb-1 text-meta text-jz-muted">发现类型</div>
  {(graph.nodes || []).filter((n: any) => n.type === 'vuln').map((n: any) => (
-                      <div key={n.id} className="font-mono text-jz-sev-medium">{n.id}</div>))}
+                      <div key={n.id} className="font-mono text-jz-ink-2">{n.id}</div>))}
  {!(graph.nodes || []).some((n: any) => n.type === 'vuln') && <span className="text-jz-muted">—</span>}
                   </div>
                   <div>
-                    <div className="text-jz-muted mb-0.5">强边(×≥2)</div>
+                    <div className="mb-1 text-meta text-jz-muted">出现 2 次以上的关联</div>
  {(graph.edges || []).filter((e: any) => (e.count || 0) >= 2).slice(0, 5).map((e: any, i: number) => (
                       <div key={i} className="font-mono text-jz-ink-2 truncate" title={`${e.a} → ${e.b} (${e.rel})`}>
                         {e.a.replace(/^(src|item):/, '')}→{e.b.replace(/^(src|item|packer|vuln|task):/, '')} ×{e.count}</div>))}
@@ -674,8 +647,8 @@ export const SkillsPage: React.FC = () => {
                 </div>
               )}
               {graph && (graph.nodes?.length === 0) && (
-                <div className="mt-1 text-meta text-jz-muted">无命中(诚实空态)</div>)}
-            </div>
+                <p className="mt-3 text-label text-jz-muted">没有找到与这个关键词相关的条目。</p>)}
+            </Panel>
           )}
         </div>
       )}
@@ -740,46 +713,11 @@ export const SkillsPage: React.FC = () => {
  );
  })()}
  {selCands.size > 0 && (
-            <div className="flex items-center gap-1.5" data-kb-bulk-bar>
-              <span className="text-meta font-mono text-jz-muted">已选 <span className="tnum">{selCands.size}</span> 条</span>
-              <button
- onClick={async () => {
-                  if (!confirm(`批量通过 ${selCands.size} 条候选写入正式知识库?(每条均由你勾选,零自动)`)) return;
-                  setBulkBusy(true);
-                  try {
-                    const d = await api<any>('/api/kb/candidates/decide-batch', {
-                      method: 'POST', body: JSON.stringify({ ids: Array.from(selCands), action: 'approve' }) });
-                    toast.ok(`批量通过 ${(d.decided || []).length}/${selCands.size} 条写入正式知识库`);
-                  } catch { toast.err('批量通过失败'); }
-                  setSelCands(new Set());
-                  const l = await api<{ items: KBCandidate[] }>('/api/kb/candidates');
- setCands(l.items || []);
- setBulkBusy(false);
- }}
- disabled={bulkBusy} data-kb-bulk-approve
- className="px-1.5 py-0.5 rounded-control bg-jz-teal/10 text-jz-teal text-meta hover:bg-jz-teal/20 disabled:opacity-40">
-                ✓ 批量通过选中
-              </button>
-              <button
- onClick={async () => {
-                  if (!confirm(`批量拒绝 ${selCands.size} 条候选?(留档不删,审计可查)`)) return;
-                  setBulkBusy(true);
-                  try {
-                    const d = await api<any>('/api/kb/candidates/decide-batch', {
-                      method: 'POST', body: JSON.stringify({ ids: Array.from(selCands), action: 'reject' }) });
-                    toast.ok(`批量拒绝 ${(d.decided || []).length}/${selCands.size} 条(留档)`);
-                    setSelCands(new Set());
-                    const l = await api<{ items: KBCandidate[] }>('/api/kb/candidates');
- setCands(l.items || []);
- } catch { toast.err('批量拒绝失败'); }
- finally { setBulkBusy(false); }
- }}
- disabled={bulkBusy} data-kb-bulk-reject
- className="px-1.5 py-0.5 rounded-control bg-jz-sev-critical/10 text-jz-sev-critical text-meta hover:bg-jz-sev-critical/20 disabled:opacity-40">
-                ✕ 批量拒绝选中
-              </button>
-              <button onClick={() => setSelCands(new Set())} data-kb-bulk-clear
- className="px-1.5 py-0.5 rounded-control bg-jz-surface-2/60 text-jz-muted text-meta hover:bg-jz-surface-2">清空选择</button>
+            <div role="region" aria-label="批量审核" className="flex flex-wrap items-center gap-2 rounded-control border border-jz-border bg-jz-brand-soft px-3 py-2 text-label" data-kb-bulk-bar>
+              <span className="text-jz-ink">已选 <span className="font-semibold tnum">{selCands.size}</span> 条</span>
+              <Button size="sm" variant="secondary" onClick={() => setBulkAsk('approve')} disabled={bulkBusy} data-kb-bulk-approve>批量通过</Button>
+              <Button size="sm" variant="secondary" className="text-jz-red" onClick={() => setBulkAsk('reject')} disabled={bulkBusy} data-kb-bulk-reject>批量拒绝</Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelCands(new Set())} data-kb-bulk-clear>取消选择</Button>
             </div>
           )}
           {pendingCands.length === 0 && (
@@ -814,7 +752,7 @@ export const SkillsPage: React.FC = () => {
  open={packImpOpen}
  title="导入技能包(前端解析,本地层)"
  hint="json 数组或 {skills|items|rows:[...]} / csv 表格;行字段: name(必填)/description/scene"
- onClose={() => setImpOpen(false)}
+ onClose={() => setPackImpOpen(false)}
  validateRow={(row) => (String(row.name || row['名称'] || '').trim() ? '' : '缺 name(名称)字段')}
  onImportSuccess={(r: UniversalImportResult) => onImportPack(r.rows)}
  />
@@ -848,7 +786,10 @@ export const SkillsPage: React.FC = () => {
               </div>
             )}
             {!srcData && !srcErr && <Skeleton className="h-40" />}
-            {srcData && (
+            {srcData && typeof srcData.content !== 'string' && (
+              <EmptyState compact icon={Braces} title="没有可显示的源码" cause="接口没有返回文件内容。注册路径和说明见上方。" />
+            )}
+            {srcData && typeof srcData.content === 'string' && (
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-meta text-jz-muted">
                   <span>源文件 <span className="font-mono break-all">{srcData.file}</span>
@@ -872,7 +813,22 @@ export const SkillsPage: React.FC = () => {
           </>
         )}
       </Drawer>
-    </div>
+      <ConfirmDialog open={!!delFor} destructive busy={delBusy} confirmLabel="删除"
+        title={delFor ? `删除「${delFor.name}」?` : ''}
+        outcome={!delFor ? null : (delFor.source_path || '').startsWith('local:')
+          ? '只移除本浏览器里的这条本地记录,不影响后端。'
+          : kindOf(delFor).label === '内置'
+            ? `这是内置技能(${kindOf(delFor).tab})。删除后 AI 不会再选用它,实战记录和挂载关系一并清除,无法恢复。只想暂停使用请改为“停用”。`
+            : '实战记录和挂载关系会一并清除,无法恢复。只想暂停使用请改为“停用”。'}
+        onCancel={() => setDelFor(null)}
+        onConfirm={async () => { if (!delFor) return; setDelBusy(true); try { await doDelete(delFor); } finally { setDelBusy(false); setDelFor(null); } }} />
+      <ConfirmDialog open={!!bulkAsk} destructive={bulkAsk === 'reject'} busy={bulkBusy}
+        confirmLabel={bulkAsk === 'approve' ? '批量通过' : '批量拒绝'}
+        title={bulkAsk === 'approve' ? `通过 ${selCands.size} 条候选?` : `拒绝 ${selCands.size} 条候选?`}
+        outcome={bulkAsk === 'approve' ? '这些候选会写入正式知识库,之后可以被检索。审核结果不能撤回。' : '这些候选不会写入知识库,但记录会保留,可在审计中查看。审核结果不能撤回。'}
+        onCancel={() => setBulkAsk(null)}
+        onConfirm={async () => { const a = bulkAsk; setBulkAsk(null); if (a) await runBulk(a); }} />
+    </Page>
   );
 };
 

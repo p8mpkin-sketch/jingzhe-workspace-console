@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { tokenVar } from '@/components/ui';
 
 /** P2-②(修正版④): AI 页专用 Inspector 面板——只复用抽屉视觉(挤压式非遮罩),逻辑不搬
  *  AiInspectorDrawer(该组件绑死渗透工作台 approvals/graph/inspectorTarget 上下文)。
@@ -67,8 +68,8 @@ export const InspectorPanel: React.FC<{
                 `${(i / (pts.length - 1)) * (W - 4) + 2},${H - 3 - ((v - mn) / (mx - mn || 1)) * (H - 8)}`).join(' ');
               return (
                 <svg width={W} height={H} data-usage-spark className="w-full">
-                  <polyline points={xy} fill="none" stroke="#6366F1" strokeWidth="1.5" />
-                  <text x="2" y="9" fontSize="11" fill="#64748B">近{pts.length}次 completion tokens</text>
+                  <polyline points={xy} fill="none" stroke={tokenVar('brand')} strokeWidth="1.5" />
+                  <text x="2" y="9" fontSize="11" fill={tokenVar('muted')}>近{pts.length}次 completion tokens</text>
                 </svg>
               );
             })()}

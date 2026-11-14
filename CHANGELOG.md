@@ -3,6 +3,38 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 8 — Knowledge, agent and system
+
+### Changed
+- `/dashboard` (`features/dashboard/DashboardPage.tsx`): `Page`, `PageHeader` (node strip in the header meta, refresh and new-assessment actions), four `Metric`s, then the domain radar (2/3) beside the session event feed (1/3), running tasks, and recent assessments in a `DataTable`. Chart colors come from `tokenColor()` and re-read on theme change (`useThemeVersion`). The summary loads are one `loadSummary` callback with the same requests and order; a failed summary refresh shows a stale notice. The radar mode is a `SegmentedControl` instead of the model chip.
+- `/system` (`features/system/SystemPage.tsx`): rebuilt on `Tabs`, `Panel`, `DataTable`, `Pagination`, `Field`, `Select`, `Drawer`, `Dialog` and `ConfirmDialog`. Users: create in a drawer, password reset in a dialog, disabling an account and deleting an account both confirm first (delete had no confirmation before). Audit log: filters, presets, paginated table, detail drawer. API tokens and webhooks keep their probes. Non-admin roles see `PermissionState`.
+- Model console (`features/system/ModelConsole.tsx`): routing rules as four `Select` fields, provider cards with endpoint, model, reasoning level and masked key, probe results inline, provider config in a `Drawer` with `Field`s and a masked key toggle. Deleting a provider confirms first (it did not before). Load failure shows an alert with retry instead of an empty list.
+- `/skills` (`features/skills/SkillsPage.tsx`, `SkillCard.tsx`, `CandidateCard.tsx`, `skillsShared.tsx`): `PageHeader` with the manual-operations toggle and rescan, five clickable metrics that filter the list, `Tabs` for library and candidate review. Cards use `StatusBadge`, `Tag`, `Button`, `IconButton`; categories are a quiet dot instead of tinted fills. Deleting a skill and bulk approve / reject use `ConfirmDialog` instead of `window.confirm` (built-in skills still get the stronger warning, now in one dialog). The knowledge relation panel is a `Panel` with a search form; its graph colors come from tokens.
+- `/agent` and `/ai-assistant`: suggestion tiles are flat token fills; the old `accent-*` classes, the empty ambient layer and the inline hex colors in the usage sparkline are gone. Layout and behavior are unchanged; both stay for phase 9 responsive work.
+- Copy: neutral wording for headings, metric hints and confirmations; stored values, request bodies and export columns are unchanged.
+
+### Fixed
+- The skill-pack import dialog closed the wrong dialog on cancel (`setImpOpen` instead of `setPackImpOpen`), so it could not be dismissed.
+- The skill source drawer crashed the page when the response had no `content`; it now shows an empty state.
+- The dashboard printed `undefined` in the model hint and the event feed description when a field was missing.
+- A failed skill list load showed a bare red line with no retry and metrics stuck on “…”; it now shows the error state with retry and “—” in the metrics. Loading, empty and no-match states use the shared skeleton and `EmptyState` (one no-match message instead of two).
+
+### Removed
+- Gradient tiles and the category gradient bar on skill cards, pulsing status dots in the agent and assistant views, the amber ping on the review tab, emoji in the feedback stats and skill paths.
+
+### Verified
+- `tsc --noEmit` and `npm run build` pass. Main chunk 925.6 kB, CSS 153.7 kB.
+- 14 routes at five widths and both themes: no overflow, no page errors; request log identical to baseline; shell checks pass.
+- Phase 8 routes captured in the empty, error, forbidden and slow variants. Interactions at 1440, 1024, 760 and dark 1440: metric filters, manual operations, skill delete confirm (cancel sends nothing), source drawer, candidate review with bulk reject confirm, provider delete confirm, provider config drawer, user delete confirm, dashboard refresh. No write requests were sent by cancelled dialogs.
+- Token lint 120 (from 178); the remaining phase 8 hits are task numbers in prompt text (`#100367`). Contrast check: no failing pair.
+
+### Remaining gaps
+- The candidate review panel keeps its older inner header (counts as chips, pre-review filter buttons); the cards inside are migrated.
+- `/agent` and `/ai-assistant` keep their own three-column layouts; the session sidebar filter chips wrap awkwardly at 1440 (phase 9).
+- `src/features/pentest/**` still uses `accent-*` classes and pulsing dots; that route was not in this phase.
+- Approve and reject on a single candidate card are still one click, as before, although the decision cannot be undone. Adding a confirmation is a behavior question for review.
+- Fixtures for skills, candidates, providers and the new source endpoint are inferred; candidate fixtures have no `content`, so card bodies render empty in screenshots.
+
 ## Phase 7 — Tasks and discovery
 
 ### Changed
