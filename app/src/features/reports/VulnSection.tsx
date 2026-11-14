@@ -1,206 +1,165 @@
-// VulnSection.tsx — 漏洞明细(证据链三段式,自 R103-10②/R104-2③ 迁移)+ V4 增强:
-// 胶囊式三态 Tab(动态计数)/ 本地合并层(导入+手动新增,纯前端暂存如实标注)/ 在 AI 助手追问(R598 契约保留)。
+// VulnSection.tsx — findings with their evidence. State filter, domain filter from the section above,
+// local additions (import / manual, kept in page state only), and the follow-up link to the Agent page.
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Wrench, MessageSquare, Plus } from 'lucide-react';
-import { StatusBadge, CodePill } from '@/components/ui';
-import { SEV_TONE, SEV_WEIGHT, STATE_ORDER, STATE_CN, parseEvidence } from './shared';
+import { ChevronDown, ChevronRight, MessageSquare, Plus, X, ListChecks } from 'lucide-react';
+import { Panel, Button, SeverityBadge, StatusBadge, CodePill, SegmentedControl, EmptyState, ErrorState, SkeletonLoader, Tag } from '@/components/ui';
+import type { TabItem } from '@/components/ui';
+import { SEV_WEIGHT, STATE_ORDER, STATE_CN, parseEvidence, sevLevel, BlockLabel } from './shared';
 import { domainOf } from '@/features/pentest/masvsDomains';
 import type { LocalVuln } from './types';
 
+type StateKey = 'all' | 'confirmed' | 'pending' | 'excluded';
+const STATE_HINT: Record<StateKey, string> = {
+  all: '该会话的全部发现,含本地添加的条目',
+  confirmed: '已确认成立,计入风险结论',
+  pending: '已命中规则,等待人工复核',
+  excluded: '经人工判定为误报或不适用',
+};
+const PRE = 'whitespace-pre-wrap break-all rounded-control bg-jz-surface p-2.5 font-mono text-meta text-jz-ink-2';
+
 export const VulnSection: React.FC<{
   vm: { confirmed: any[]; pending: any[]; excluded: any[]; counts: Record<string, number> } | null;
- selected: number | null;
- cmFilter: string | null;
- clearCmFilter: () => void;
- sessions: any[];
- localVulns: LocalVuln[];
- onAddManual: () => void;
-  secRef: React.RefObject<HTMLElement>;
-}> = ({ vm, selected, cmFilter, clearCmFilter, sessions, localVulns, onAddManual, secRef }) => {
-  const [vmF, setVmF] = useState<'all' | 'confirmed' | 'pending' | 'excluded'>('all');
+  state: 'loading' | 'ok' | 'error';
+  selected: number | null;
+  cmFilter: string | null;
+  clearCmFilter: () => void;
+  sessions: any[];
+  localVulns: LocalVuln[];
+  onAddManual: () => void;
+}> = ({ vm, state, selected, cmFilter, clearCmFilter, sessions, localVulns, onAddManual }) => {
+  const [vmF, setVmF] = useState<StateKey>('all');
   const [vmOpen, setVmOpen] = useState<string | null>(null);
 
- const inFilter = (f: any) => {
- if (vmF !== 'all' && f.state !== vmF) return false;
- if (cmFilter) {
- const dom = domainOf(f.masvs || '');
- if ((cmFilter === '其他' ? dom !== null : dom?.name !== cmFilter)) return false;
- }
- return true;
- };
+  const inFilter = (f: any) => {
+    if (vmF !== 'all' && f.state !== vmF) return false;
+    if (cmFilter) {
+      const dom = domainOf(f.masvs || '');
+      if ((cmFilter === '其他' ? dom !== null : dom?.name !== cmFilter)) return false;
+    }
+    return true;
+  };
 
- const rows = vm
- ? ([...vm.confirmed, ...vm.pending, ...vm.excluded] as any[])
- .filter(inFilter)
- .sort((a, b) => (SEV_WEIGHT[a.severity] ?? 9) - (SEV_WEIGHT[b.severity] ?? 9)
+  const rows = vm
+    ? ([...vm.confirmed, ...vm.pending, ...vm.excluded] as any[])
+      .filter(inFilter)
+      .sort((a, b) => (SEV_WEIGHT[a.severity] ?? 9) - (SEV_WEIGHT[b.severity] ?? 9)
         || (STATE_ORDER[a.state] ?? 9) - (STATE_ORDER[b.state] ?? 9)
         || String(a.id).localeCompare(String(b.id)))
     : [];
   const shownVm = rows.slice(0, 200);
+  const total = vm ? vm.confirmed.length + vm.pending.length + vm.excluded.length : 0;
 
-  const STATE_TABS: Array<{ key: 'all' | 'confirmed' | 'pending' | 'excluded'; label: string; tone: ReturnType<typeof SEV_TONE>; n: number; caliber: string }> = vm ? [
-    { key: 'all', label: '全部', tone: 'info', n: vm.confirmed.length + vm.pending.length + vm.excluded.length, caliber: '统计口径: 该会话全部漏洞条目数(confirmed+pending+excluded+本地合并层,实例级)' },
-    { key: 'confirmed', label: '确认', tone: 'low', n: vm.confirmed.length, caliber: '统计口径: 确认成立(含本地导入/手动新增,实例级,计入风险结论)' },
-    { key: 'pending', label: '待复核', tone: 'medium', n: vm.pending.length, caliber: '统计口径: 已触发规则等待人工复核的漏洞条目数(不计入确认结论)' },
-    { key: 'excluded', label: '已排除', tone: 'info', n: vm.excluded.length, caliber: '统计口径: 经人工判定误报/不适用而被排除的条目数(不计入风险合计)' },
-  ] : [];
+  const stateItems: TabItem<StateKey>[] = vm ? (['all', 'confirmed', 'pending', 'excluded'] as const).map((k) => ({
+    key: k, label: <span title={STATE_HINT[k]}>{STATE_CN[k]}</span>, count: k === 'all' ? total : vm[k].length, dataAttrs: { 'data-vuln-tab': k },
+  })) : [];
+  const sess = sessions.find((x) => x.id === selected);
+  const tid = sess?.task_id;
 
   return (
-    <section className="space-y-2" data-vuln-matrix ref={secRef}>
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-body font-semibold text-jz-ink">漏洞明细(证据链)</span>
- {STATE_TABS.map((s) => (
-          <button key={s.key} type="button" onClick={() => setVmF(s.key)} data-vuln-tab={s.key}
- title={s.caliber}
- className={`px-3 py-1 rounded-pill text-body font-medium transition-colors ${vmF === s.key
- ? 'bg-jz-brand/15 text-jz-brand ring-1 ring-jz-brand/50'
- : 'text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/50'}`}>
-            {s.label} <span className="font-mono tnum">{s.n}</span>
-          </button>
-        ))}
-        {cmFilter && (
-          <button type="button" onClick={clearCmFilter} data-vuln-filter-active
- className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill text-meta font-mono bg-jz-brand/15 text-jz-brand"
- title="点击清除域过滤(来自合规图谱卡点击)">
-            域: {cmFilter} ✕
-          </button>
-        )}
-        <span className="flex-1" />
-        <button type="button" onClick={onAddManual} data-vuln-add-manual
- title="手动新增漏洞(纯前端暂存入本地合并层,可随 CSV/JSON 导出持久;不写后端)"
- className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-jz-surface-2/60 hover:bg-jz-brand/10 text-meta font-medium text-jz-ink transition-colors">
-          <Plus size={13} className="text-jz-brand" />手动新增漏洞
-        </button>
- {localVulns.length > 0 && (
-          <StatusBadge tone="custom" className="bg-jz-sev-low/10 text-jz-sev-low" title="本地合并层条数(导入+手动新增;仅当前页面状态,导出即持久)">
-            本地 {localVulns.length}
-          </StatusBadge>
-        )}
-        <span className="text-meta text-jz-muted tnum">会话: #{selected ?? '—'} · 屏显 {shownVm.length}/{rows.length}</span>
-      </div>
+    <Panel flush data-vuln-matrix title="发现明细"
+      description={<>{selected ? `会话 #${selected}` : '会话的全部发现及其证据'}{vm && <> · 显示 {shownVm.length} / {rows.length} 条</>}{localVulns.length > 0 && <> · 其中 {localVulns.length} 条为本地添加</>}</>}
+      actions={<Button variant="secondary" size="sm" icon={<Plus size={14} aria-hidden />} onClick={onAddManual} data-vuln-add-manual
+        title="添加的发现只保存在当前页面,随导出文件一起保留">手动添加发现</Button>}>
+      {vm && (
+        <div className="flex flex-wrap items-center gap-3 border-b border-jz-border px-4 py-3">
+          <div className="max-w-full overflow-x-auto"><SegmentedControl items={stateItems} value={vmF} onChange={setVmF} label="按状态筛选" /></div>
+          {cmFilter && (
+            <Button size="sm" variant="secondary" icon={<X size={14} aria-hidden />} onClick={clearCmFilter} data-vuln-filter-active title="清除域筛选">域: {cmFilter}</Button>
+          )}
+        </div>
+      )}
 
       {!vm ? (
-        <div className="text-body text-jz-muted px-4 py-3 rounded-panel bg-jz-surface shadow-card">
-          {selected ? '加载中…' : '先在上方切换器选择任务'}
-        </div>
+        !selected ? <EmptyState compact icon={ListChecks} title="没有可显示的会话" cause="发现明细来自任务的会话数据。" />
+          : state === 'error' ? <ErrorState compact title="发现明细加载失败" message="服务端没有返回该会话的发现。" />
+            : <div className="p-4"><SkeletonLoader variant="table" rows={5} /></div>
       ) : shownVm.length === 0 ? (
-        <div className="text-body text-jz-muted px-4 py-3 rounded-panel bg-jz-surface-2">
-          当前过滤条件({STATE_CN[vmF] || vmF}{cmFilter ? ` · 域=${cmFilter}` : ''})无匹配发现
-        </div>
+        <EmptyState compact icon={ListChecks} title={total === 0 ? '该会话没有发现' : '没有符合条件的发现'}
+          cause={total === 0 ? '可以手动添加,或从文件导入。' : `状态为「${STATE_CN[vmF] || vmF}」${cmFilter ? `、域为「${cmFilter}」` : ''}的发现不存在。`} />
       ) : (
-        <div className="divided-card-list max-h-[620px] overflow-y-auto" data-vuln-list>
- {shownVm.map((f) => {
+        <ul className="max-h-[38rem] divide-y divide-jz-border overflow-y-auto" data-vuln-list>
+          {shownVm.map((f) => {
             const k = `${f.state}:${f.id}`;
             const open = vmOpen === k;
-            const seg = parseEvidence(f.evidence || '');
+            const seg = open ? parseEvidence(f.evidence || '') : null;
             return (
-              <div key={k} data-vuln-row={k}>
-                <button type="button"
- className="w-full min-h-[40px] py-1 px-3 flex items-center gap-2 text-left hover:bg-jz-surface-2/30 transition-colors"
- onClick={() => setVmOpen(open ? null : k)}>
-                  {open ? <ChevronDown size={14} className="flex-none text-jz-muted" /> : <ChevronRight size={14} className="flex-none text-jz-muted" />}
-                  <StatusBadge tone={SEV_TONE(f.severity)}>{f.severity}</StatusBadge>
-                  <span className="flex-1 min-w-0 truncate text-body font-semibold text-jz-ink" title={f.title}>{f.title}</span>
-                  {f.source === 'manual' && <StatusBadge tone="custom" className="bg-jz-brand/15 text-jz-brand">手动新增</StatusBadge>}
-                  {f.source === 'import' && <StatusBadge tone="custom" className="bg-jz-sev-low/10 text-jz-sev-low">导入</StatusBadge>}
-                  {f.masvs && <CodePill value={f.masvs} maxW="max-w-[120px]" />}
+              <li key={k} data-vuln-row={k}>
+                <button type="button" aria-expanded={open}
+                  className="flex min-h-jz-row w-full items-center gap-2 px-4 py-1.5 text-left transition-colors duration-hover hover:bg-jz-surface-2 max-[760px]:min-h-jz-touch"
+                  onClick={() => setVmOpen(open ? null : k)}>
+                  {open ? <ChevronDown size={14} className="flex-none text-jz-muted" aria-hidden /> : <ChevronRight size={14} className="flex-none text-jz-muted" aria-hidden />}
+                  <SeverityBadge level={sevLevel(f.severity)} />
+                  <span className="min-w-0 flex-1 truncate text-label font-medium text-jz-ink" title={f.title}>{f.title}</span>
+                  {f.source === 'manual' && <Tag>手动添加</Tag>}
+                  {f.source === 'import' && <Tag>导入</Tag>}
+                  {vmF === 'all' && <span className="hidden text-meta text-jz-muted tablet:inline">{STATE_CN[f.state] || f.state}</span>}
+                  {f.masvs && <span className="hidden tablet:inline-flex"><Tag mono>{f.masvs}</Tag></span>}
                 </button>
-                {open && (
-                  <div className="px-3 pb-3" data-vuln-detail={k}>
-                    <div className="bg-jz-surface-2 rounded-control p-3 space-y-2 text-meta">
-                      <div className="flex items-center gap-2 flex-wrap font-mono text-jz-muted">
-                        <span title={f.rule_id ? '规则号' : '后端 rule_id 现返回空串(指纹 id 为准)'}>rule_id: {f.rule_id || '—'}</span>
-                        <span>·</span><span title="发现指纹 id">id: {f.id}</span>
-                        <span>·</span><span>phase: {f.phase || '—'}</span>
-                        <span>·</span><span>state: {f.state}{f.source ? `(${f.source === 'manual' ? '本地手动' : '本地导入'})` : ''}</span>
-                      </div>
-                      {/* ① 代码调用栈行号: evidence 中 文件:行号 定位行+随行代码(既有字段如实分桶) */}
+                {open && seg && (
+                  <div className="space-y-3 bg-jz-surface-2 px-4 py-3 pl-10" data-vuln-detail={k}>
+                    <dl className="flex flex-wrap gap-x-5 gap-y-1 font-mono text-meta text-jz-muted">
+                      <div className="flex gap-1.5"><dt>规则</dt><dd className="text-jz-ink-2" title={f.rule_id ? undefined : '服务端没有返回规则编号'}>{f.rule_id || '—'}</dd></div>
+                      <div className="flex gap-1.5"><dt>编号</dt><dd className="text-jz-ink-2">{f.id}</dd></div>
+                      <div className="flex gap-1.5"><dt>阶段</dt><dd className="text-jz-ink-2">{f.phase || '—'}</dd></div>
+                      <div className="flex gap-1.5"><dt>状态</dt><dd className="text-jz-ink-2">{STATE_CN[f.state] || f.state}{f.source ? `(${f.source === 'manual' ? '本地手动' : '本地导入'})` : ''}</dd></div>
+                      {f.masvs && <div className="flex items-center gap-1.5 tablet:hidden"><dt>MASVS</dt><dd><CodePill value={f.masvs} maxW="max-w-[160px]" /></dd></div>}
+                    </dl>
+                    <div>
+                      <BlockLabel>代码位置</BlockLabel>
+                      {seg.stack.length
+                        ? <pre className={PRE}>{seg.stack.map((l, j) => <span key={j} className={j === 0 ? 'text-jz-ink' : undefined}>{l + '\n'}</span>)}</pre>
+                        : <p className="text-meta text-jz-muted">证据中没有「文件:行号」形式的定位。</p>}
+                    </div>
+                    <div>
+                      <BlockLabel>请求与响应</BlockLabel>
+                      {seg.traffic.length
+                        ? <pre className={PRE}>{seg.traffic.join('\n')}</pre>
+                        : <p className="text-meta text-jz-muted">证据中没有 HTTP 报文。</p>}
+                    </div>
+                    {f.repro && (
                       <div>
-                        <div className="text-jz-ink-2 font-semibold mb-0.5">代码调用栈行号</div>
-                        {seg.stack.length ? (
-                          <pre className="whitespace-pre-wrap break-all font-mono leading-4">
- {seg.stack.map((l, j) => (
-                              <span key={j} className={j === 0 ? 'text-jz-ink' : 'text-jz-ink-2'}>{l + '\n'}</span>
-                            ))}
-                          </pre>
-                        ) : (
-                          <div className="text-jz-muted">该证据维度暂无数据</div>
-                        )}
+                        <BlockLabel>复现与修复建议</BlockLabel>
+                        <pre className={PRE}>{f.repro}</pre>
                       </div>
-                      {/* ② 动态报文: evidence 中 HTTP 请求/响应标记行(既有字段如实分桶) */}
+                    )}
+                    {seg.rest.length > 0 && (
                       <div>
-                        <div className="text-jz-ink-2 font-semibold mb-0.5">动态报文</div>
-                        {seg.traffic.length ? (
-                          <pre className="whitespace-pre-wrap break-all font-mono leading-4 text-jz-ink-2">{seg.traffic.join('\n')}</pre>
-                        ) : (
-                          <div className="text-jz-muted">该证据维度暂无数据</div>
-                        )}
+                        <BlockLabel>其余证据原文</BlockLabel>
+                        <pre className={PRE}>{seg.rest.join('\n')}</pre>
                       </div>
-                      {/* ③ AI 因果链: 后端无独立 AI 生成字段——诚实标注,不编造;repro 字段如实另列 */}
-                      <div>
-                        <div className="text-jz-ink-2 font-semibold mb-0.5">AI 因果链</div>
-                        <div className="text-jz-muted">该证据维度暂无数据(后端无独立 AI 因果链字段;evidence/repro 为规则引擎原始输出,如实呈现)</div>
-                        {f.repro && (
-                          <div className="pt-1">
-                            <div className="text-jz-muted mb-0.5">复现/修复建议 · repro</div>
-                            <pre className="whitespace-pre-wrap break-all font-mono leading-4 text-jz-ink-2">{f.repro}</pre>
-                          </div>
-                        )}
-                      </div>
- {seg.rest.length > 0 && (
-                        <div>
-                          <div className="text-jz-ink-2 font-semibold mb-0.5">证据原文(其余)</div>
-                          <pre className="whitespace-pre-wrap break-all font-mono leading-4 text-jz-muted">{seg.rest.join('\n')}</pre>
-                        </div>
+                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {tid ? (
+                        <Button size="sm" variant="secondary" icon={<MessageSquare size={14} aria-hidden />} data-vuln-ask-ai
+                          title={`带上任务 #${tid} 的上下文,在 Agent 中继续询问这条发现`}
+                          onClick={() => {
+                            try {
+                              localStorage.setItem('ai_prefill', JSON.stringify({
+                                label: '报告中心',
+                                title: `追问: ${f.title}`.slice(0, 60),
+                                sid: selected,
+                                ts: Date.now(),
+                              }));
+                            } catch { /* storage unavailable: the link still opens */ }
+                            window.location.hash = `/agent?task=${tid}`;
+                          }}>在 Agent 中追问</Button>
+                      ) : (
+                        <StatusBadge tone="neutral" title="该会话没有关联的评估任务">无关联任务,不能在 Agent 中追问</StatusBadge>
                       )}
-                      <div className="flex items-center gap-2 pt-1 flex-wrap">
-                        <button type="button" disabled
- title="生成修复补丁——后端无 AI 补丁生成能力,挂账(R104 挂账区)"
- className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill text-meta bg-jz-surface-2/50 text-jz-muted opacity-50 cursor-not-allowed">
-                          <Wrench size={11} />生成修复补丁
-                        </button>
- {/* R598(方案5.1③ 联动): 在 AI 助手追问此发现——经既有 ?task= 审计追问链(R538/R543 编排已通)
- + ai_prefill 消费链(问题预填),会话有 task_id 才可用(无关联如实标注) */}
- {(() => {
- const sess = sessions.find((x) => x.id === selected);
-                          const tid = sess?.task_id;
-                          if (!tid) return (
-                            <span className="text-meta text-jz-muted" title="该会话无关联审计任务(task_id 缺失),AI 追问链不可用=诚实标注">无关联任务,AI 追问不可用</span>
-                          );
-                          return (
-                            <button type="button" data-vuln-ask-ai
- title={`带任务 #${tid} 上下文在 AI 助手追问此发现(经 ?task= 审计追问链,问题预填)`}
- className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill text-meta bg-jz-brand/15 text-jz-brand hover:bg-jz-brand/25 transition-colors"
- onClick={() => {
- try {
- localStorage.setItem('ai_prefill', JSON.stringify({
- label: '报告中心',
- title: `追问: ${f.title}`.slice(0, 60),
- sid: selected,
- ts: Date.now(),
- }));
- } catch { /* 如实忽略 */ }
- window.location.hash = `/agent?task=${tid}`;
- }}>
-                              <MessageSquare size={11} /> 在 AI 助手追问
-                            </button>
-                          );
-                        })()}
-                      </div>
                     </div>
                   </div>
                 )}
-              </div>
+              </li>
             );
           })}
-        </div>
- )}
- {vm && rows.length > 200 && (
-        <div className="text-meta text-jz-muted">(仅显示前 200 行,共 {rows.length} 行;完整数据见 JSON 证据包/CSV 导出)</div>
+        </ul>
       )}
-      <div className="text-meta text-jz-muted" data-vuln-footnote>
-        CVSS 评分/受影响组件:后端无字段,挂账不显(零假字段);masvs 列承载 MASVS/CWE 编号(rule_id 后端现返回空串,发现以指纹 id 为准);证据三段式=evidence 既有字段如实分桶,无该维度诚实标注;本地合并层(导入/手动新增)仅存在于当前页面状态、零后端写入,导出 CSV/JSON 即持久。
-      </div>
-    </section>
+      {vm && rows.length > 200 && (
+        <p className="border-t border-jz-border px-4 py-2 text-meta text-jz-muted">只显示前 200 条,共 {rows.length} 条。完整数据请导出 CSV 或证据包。</p>
+      )}
+      <p className="border-t border-jz-border px-4 py-2.5 text-meta text-jz-muted" data-vuln-footnote>
+        证据按原文拆成代码位置、请求与响应、其余三部分,不做改写。服务端不提供 CVSS 评分和受影响组件,所以这里不显示。本地添加和导入的发现只存在于当前页面,导出后才会保留。
+      </p>
+    </Panel>
   );
 };

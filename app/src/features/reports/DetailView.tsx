@@ -1,13 +1,13 @@
-// DetailView.tsx — 报告中心 Level 2 详情页: 吸顶头(返回/大标题/包名徽章/可搜索任务切换器/导入+导出下拉)
-// + 胶囊式二级 Tab(动态计数,即 R598 章节 TOC 的升级形态,锚点直达保留)+ 五大区块
-// (鉴权矩阵/MASVS 图谱/漏洞明细/会话报告/审计报告)。
+// DetailView.tsx — report detail: header (back, title, task switcher, session choice, import, one export menu),
+// section navigation on the left, the five report sections on the right.
 import React, { useRef, useState } from 'react';
 import {
-  ArrowLeft, Download, Upload, FileDown, FileJson, FileText, Printer, Braces, Table2, Gauge,
-  ShieldAlert, ScrollText, Layers,
+  ArrowLeft, Download, Upload, FileDown, FileJson, FileText, Printer, Braces, Table2, ScrollText, FileX,
 } from 'lucide-react';
-import { StatusBadge, CodePill, Skeleton } from '@/components/ui';
-import { Menu, menuItemCls } from './shared';
+import {
+  Button, StatusBadge, CodePill, Skeleton, Panel, Popover, MenuItem, SegmentedControl, EmptyState, InlineAlert, SkeletonLoader,
+} from '@/components/ui';
+import type { TabItem } from '@/components/ui';
 import { TaskSwitcher } from './TaskSwitcher';
 import { MatrixSection } from './MatrixSection';
 import { MasvsSection } from './MasvsSection';
@@ -21,211 +21,218 @@ import type { HubEntry } from './types';
 
 const AUDIT_REPORT_FILES = ['executive_summary.md', 'security_report.md', 'pentest_report.md', 'native_report.md'];
 const FILE_LABEL: Record<string, string> = {
-  'executive_summary.md': '高管摘要',
-  'security_report.md': '安全报告',
-  'pentest_report.md': '渗透报告',
+  'executive_summary.md': '管理摘要',
+  'security_report.md': '安全评估报告',
+  'pentest_report.md': '动态验证报告',
   'native_report.md': '原生库报告',
 };
 
+/** Text preview state the parent derives from its own request: loading, the API's failure, or the text. */
+export type TextPreview = { state: 'loading' | 'ok' | 'error'; text: string; message?: string };
+
+
 export const DetailView: React.FC<{
- task: any | null;
- entries: HubEntry[];
- taskSessions: any[];
- selected: number | null;
- aggLoading: boolean;
- onPickSession: (sid: number) => void;
- onBack: () => void;
- onPickTask: (tid: number) => void;
- // 鉴权矩阵
- mx: any | null;
- mxState: 'loading' | 'ok' | 'error' | 'empty';
- reloadMatrix: (refresh: boolean) => void;
- // MASVS 图谱
- cm: { rows: any[]; otherCount: number; total: number } | null;
- cmFilter: string | null;
- setCmFilter: (v: string | null) => void;
- goDrill: (name: string) => void;
-  // 漏洞明细
+  task: any | null;
+  entries: HubEntry[];
+  taskSessions: any[];
+  selected: number | null;
+  aggLoading: boolean;
+  onPickSession: (sid: number) => void;
+  onBack: () => void;
+  onPickTask: (tid: number) => void;
+  // auth matrix
+  mx: any | null;
+  mxState: 'loading' | 'ok' | 'error' | 'empty';
+  reloadMatrix: (refresh: boolean) => void;
+  // domain map
+  cm: { rows: any[]; otherCount: number; total: number } | null;
+  cmState: 'loading' | 'ok' | 'error';
+  cmFilter: string | null;
+  setCmFilter: (v: string | null) => void;
+  goDrill: (name: string) => void;
+  // findings
   vm: { confirmed: any[]; pending: any[]; excluded: any[]; counts: Record<string, number> } | null;
- localVulns: LocalVuln[];
- onMergeImport: (target: ImportTarget, rows: any[], strategy: 'dedupe' | 'override') => void;
- onAddManualVuln: (v: LocalVuln) => void;
- // 会话报告
- sessKind: 'pentest' | 'apk_audit';
- setSessKind: (k: 'pentest' | 'apk_audit') => void;
- sessPreview: string;
- sessions: any[];
- // 审计报告(pipeline)
- fileName: string;
- setFileName: (f: string) => void;
- preview: string;
- // 对比/Diff
- showDiff: boolean; setShowDiff: (v: boolean) => void;
- showCompare: boolean; setShowCompare: (v: boolean) => void;
- cmpSid: number | null; setCmpSid: (v: number) => void;
+  vmState: 'loading' | 'ok' | 'error';
+  localVulns: LocalVuln[];
+  onMergeImport: (target: ImportTarget, rows: any[], strategy: 'dedupe' | 'override') => void;
+  onAddManualVuln: (v: LocalVuln) => void;
+  // session report
+  sessKind: 'pentest' | 'apk_audit';
+  setSessKind: (k: 'pentest' | 'apk_audit') => void;
+  sessPreview: TextPreview;
+  sessions: any[];
+  // report files of the task
+  fileName: string;
+  setFileName: (f: string) => void;
+  preview: TextPreview;
+  // compare / diff
+  showDiff: boolean; setShowDiff: (v: boolean) => void;
+  showCompare: boolean; setShowCompare: (v: boolean) => void;
+  cmpSid: number | null; setCmpSid: (v: number) => void;
   cmp: { a: any; b: any } | null;
   diffRows: Array<{ kind: 'added' | 'removed' | 'changed'; title: string; sev: string; note: string }> | null;
- // 导出(全部走父层: 端点下载 + 纯前端合成)
- onDl: (kind: 'package' | 'pdf') => void;
- onDlExec: () => void;
- onExportEvidenceJson: () => void;
- onExportVulnsCsv: () => void;
- onExportMatrixCsv: () => void;
- onExportMatrixJson: () => void;
- onExportFullJson: () => void;
- onExportFullMd: () => void;
- onPrint: () => void;
+  // exports (all owned by the parent: endpoint downloads and client-side composition)
+  onDl: (kind: 'package' | 'pdf') => void;
+  onDlExec: () => void;
+  onExportEvidenceJson: () => void;
+  onExportVulnsCsv: () => void;
+  onExportMatrixCsv: () => void;
+  onExportMatrixJson: () => void;
+  onExportFullJson: () => void;
+  onExportFullMd: () => void;
+  onPrint: () => void;
 }> = (p) => {
-  // R598 章节锚点 refs(TOC 直达;纯定位,无 scroll-spy 假活跃态)
-  const mxSecRef = useRef<HTMLElement>(null);
-  const cmSecRef = useRef<HTMLElement>(null);
-  const vulnSecRef = useRef<HTMLElement>(null);
-  const sessReportRef = useRef<HTMLElement>(null);
-  const pipelineSecRef = useRef<HTMLElement>(null);
+  const mxSecRef = useRef<HTMLDivElement>(null);
+  const cmSecRef = useRef<HTMLDivElement>(null);
+  const vulnSecRef = useRef<HTMLDivElement>(null);
+  const sessReportRef = useRef<HTMLDivElement>(null);
+  const pipelineSecRef = useRef<HTMLDivElement>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
 
-  const goSec = (ref: React.RefObject<HTMLElement | null>) =>
- ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Scroll the page's own scroller (not scrollIntoView, which also moves clipped ancestors) and clear the sticky section bar.
+  const navRef = useRef<HTMLElement>(null);
+  const goSec = (ref: React.RefObject<HTMLElement | null>) => {
+    const el = ref.current;
+    const sc = el?.closest<HTMLElement>('[data-reports-page]');
+    if (!el || !sc) return;
+    const bar = navRef.current && window.matchMedia('(max-width: 1023px)').matches ? navRef.current.offsetHeight : 0;
+    const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - bar - 16;
+    sc.scrollTo({ top, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  };
 
- const mxN = p.mx?.rows?.length;
- const cmActiveN = p.cm ? p.cm.rows.filter((r) => r.count > 0).length : null;
+  const mxN = p.mx?.rows?.length;
+  const cmActiveN = p.cm ? p.cm.rows.filter((r) => r.count > 0).length : null;
   const vmN = p.vm ? p.vm.confirmed.length + p.vm.pending.length + p.vm.excluded.length : null;
-  const TABS: Array<{ key: string; label: string; icon: React.ElementType; n: number | null | undefined; ref: React.RefObject<HTMLElement | null> }> = [
- { key: 'mx', label: '鉴权矩阵', icon: Table2, n: mxN, ref: mxSecRef },
- { key: 'cm', label: 'MASVS 图谱', icon: Gauge, n: cmActiveN, ref: cmSecRef },
- { key: 'vulns', label: '漏洞明细', icon: ShieldAlert, n: vmN, ref: vulnSecRef },
- { key: 'sess', label: '会话报告', icon: ScrollText, n: null as number | null, ref: sessReportRef },
- { key: 'pipe', label: '审计报告', icon: Layers, n: AUDIT_REPORT_FILES.length, ref: pipelineSecRef },
- ];
+  const SECTIONS: Array<{ key: string; label: string; n: number | null | undefined; ref: React.RefObject<HTMLDivElement | null> }> = [
+    { key: 'mx', label: '鉴权矩阵', n: mxN, ref: mxSecRef },
+    { key: 'cm', label: '合规域分布', n: cmActiveN, ref: cmSecRef },
+    { key: 'vulns', label: '发现明细', n: vmN, ref: vulnSecRef },
+    { key: 'sess', label: '会话报告', n: null, ref: sessReportRef },
+    { key: 'pipe', label: '报告文件', n: AUDIT_REPORT_FILES.length, ref: pipelineSecRef },
+  ];
 
- const t = p.task;
- const multiSess = p.taskSessions.length > 1;
+  const t = p.task;
+  const noSession = p.selected == null;
+  const sessionItems: TabItem<string>[] = p.taskSessions.slice(0, 8).map((s) => ({ key: String(s.id), label: <span className="font-mono tnum">#{s.id}</span>, dataAttrs: { 'data-session-pill': s.id } }));
+  const fileItems: TabItem<string>[] = AUDIT_REPORT_FILES.map((f) => ({ key: f, label: FILE_LABEL[f], dataAttrs: { 'data-pipeline-file': f } }));
 
   return (
-    <div className="space-y-4" data-reports-detail>
-      {/* 吸顶头 */}
-      <div className="sticky top-0 z-30 -mx-1 px-6 py-3.5 rounded-panel bg-jz-surface/95 backdrop-blur-sm shadow-card space-y-2.5" data-detail-header>
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <button type="button" onClick={p.onBack} data-detail-back
- className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-jz-surface-2/60 hover:bg-jz-surface-2 text-body text-jz-ink-2 hover:text-jz-ink transition-colors flex-none">
-            <ArrowLeft size={14} />返回报告大厅
-          </button>
-          {t ? (
-            <>
-              <h2 className="text-section md:text-title font-semibold text-jz-ink truncate max-w-[380px]" data-detail-title
- title={t.app_name || t.package || `任务 #${t.id}`}>
-                {t.app_name || t.package || `任务 #${t.id}`}
-              </h2>
-              <span className="font-mono text-body text-jz-brand tnum flex-none">#{t.id}</span>
-              <CodePill value={t.package || '未返回包名'} textCls="text-body" maxW="max-w-[240px]" />
-              {t.packer && t.packer !== 'none' && <StatusBadge tone="medium">壳 {t.packer}</StatusBadge>}
-            </>
-          ) : (
-            <Skeleton className="h-6 w-64" />
-          )}
-          <TaskSwitcher entries={p.entries} currentTaskId={t?.id ?? null}
- currentLabel={t ? `#${t.id} ${t.app_name || t.package || ''}`.slice(0, 40) : '切换任务…'}
- onPick={p.onPickTask} />
-          {multiSess && (
-            <div className="flex items-center gap-1 flex-wrap" data-session-pills>
-              <span className="text-meta text-jz-muted">会话</span>
- {p.taskSessions.slice(0, 8).map((s) => (
-                <button key={s.id} type="button" data-session-pill={s.id} onClick={() => p.onPickSession(s.id)}
- title={`切换到会话 #${s.id}${s.id === p.selected ? '(当前)' : ''}`}
- className={`px-2 py-0.5 rounded-pill font-mono text-meta tnum transition-colors ${s.id === p.selected ? 'bg-jz-brand/15 text-jz-brand ring-1 ring-jz-brand/40' : 'text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/60'}`}>
-                  #{s.id}
-                </button>
- ))}
- {p.taskSessions.length > 8 && <span className="text-meta text-jz-muted tnum">+{p.taskSessions.length - 8}</span>}
-            </div>
-          )}
-          <span className="flex-1" />
-          <button type="button" onClick={() => setImportOpen(true)} data-detail-import
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-jz-surface-2/60 hover:bg-jz-brand/10 text-body text-jz-ink transition-colors">
-            <Upload size={14} className="text-jz-brand" />导入数据
-          </button>
-          <Menu
-            label={<span className="inline-flex items-center gap-1.5"><Download size={14} className="text-jz-brand" />导出报告</span>}
- btnCls="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control bg-jz-brand/15 hover:bg-jz-brand/25 text-body font-medium text-jz-brand"
- widthCls="w-60">
- {(close) => (
+    <div className="flex flex-col gap-6" data-reports-detail>
+      <div className="flex flex-col gap-3" data-detail-header>
+        <div>
+          <Button variant="ghost" size="sm" className="-ml-2" icon={<ArrowLeft size={14} aria-hidden />} onClick={p.onBack} data-detail-back>返回报告列表</Button>
+        </div>
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0 flex-1 basis-80">
+            {t ? (
               <>
-                <button type="button" className={menuItemCls} data-detail-export="vulns-csv" onClick={() => { close(); p.onExportVulnsCsv(); }}><Table2 size={13} className="text-jz-brand" />漏洞明细 CSV</button>
-                <button type="button" className={menuItemCls} data-detail-export="matrix-csv" onClick={() => { close(); p.onExportMatrixCsv(); }}><Table2 size={13} className="text-jz-brand" />鉴权矩阵 CSV</button>
-                <button type="button" className={menuItemCls} data-detail-export="matrix-json" onClick={() => { close(); p.onExportMatrixJson(); }}><FileJson size={13} className="text-jz-brand" />鉴权矩阵 JSON</button>
-                <button type="button" className={menuItemCls} data-detail-export="full-json" onClick={() => { close(); p.onExportFullJson(); }}><Braces size={13} className="text-jz-brand" />完整审计报告 JSON</button>
-                <button type="button" className={menuItemCls} data-detail-export="full-md" onClick={() => { close(); p.onExportFullMd(); }}><FileText size={13} className="text-jz-brand" />完整审计报告 Markdown</button>
-                <button type="button" className={menuItemCls} data-detail-export="print" onClick={() => { close(); p.onPrint(); }}><Printer size={13} className="text-jz-brand" />打印 / PDF 视图</button>
-                <div className="h-px bg-jz-border my-1 mx-1" />
-                <button type="button" className={menuItemCls} data-detail-export="pdf" onClick={() => { close(); p.onDl('pdf'); }}><FileText size={13} className="text-jz-muted" />报告 PDF(端点)</button>
-                <button type="button" className={menuItemCls} data-detail-export="exec" onClick={() => { close(); p.onDlExec(); }}><ScrollText size={13} className="text-jz-muted" />高管摘要 PDF(端点)</button>
-                <button type="button" className={menuItemCls} data-detail-export="evidence" onClick={() => { close(); p.onExportEvidenceJson(); }}><Braces size={13} className="text-jz-muted" />JSON 证据包(端点口径)</button>
-                <button type="button" className={menuItemCls} data-detail-export="zip" onClick={() => { close(); p.onDl('package'); }}><FileDown size={13} className="text-jz-muted" />报告包 zip(端点)</button>
+                <h1 className="jz-page-title break-words text-jz-ink" data-detail-title>{t.app_name || t.package || `任务 #${t.id}`}</h1>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-label text-jz-muted">
+                  <span className="font-mono tnum">任务 #{t.id}</span>
+                  <CodePill value={t.package || '未返回包名'} maxW="max-w-[280px]" />
+                  {t.packer && t.packer !== 'none' && <StatusBadge tone="neutral">加固 {t.packer}</StatusBadge>}
+                </div>
               </>
-            )}
-          </Menu>
+            ) : <Skeleton className="h-8 w-64" />}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <TaskSwitcher entries={p.entries} currentTaskId={t?.id ?? null} onPick={p.onPickTask} />
+            <Button variant="secondary" icon={<Upload size={14} aria-hidden />} onClick={() => setImportOpen(true)} data-detail-import>导入数据</Button>
+            <Popover label="导出报告" role="menu" align="end" className="w-64"
+              trigger={(tp) => <Button icon={<Download size={14} aria-hidden />} data-menu-btn {...tp}>导出</Button>}>
+              {(close) => {
+                const run = (fn: () => void) => () => { close(); fn(); };
+                // One export menu for the page. Each item keeps the hooks of the buttons it replaces.
+                const item = (key: string, icon: React.ReactNode, label: string, fn: () => void, extra: Record<string, string> = {}, disabled = false) => (
+                  <MenuItem key={key} icon={icon} disabled={disabled} data-detail-export={key} onClick={run(fn)} {...extra}>{label}</MenuItem>
+                );
+                return (
+                  <div data-menu-panel>
+                    <div className="px-2.5 pb-1 pt-1.5 text-meta text-jz-muted">在浏览器中生成</div>
+                    {item('vulns-csv', <Table2 size={14} aria-hidden />, '发现明细 CSV', p.onExportVulnsCsv)}
+                    {item('matrix-csv', <Table2 size={14} aria-hidden />, '鉴权矩阵 CSV', p.onExportMatrixCsv, { 'data-matrix-export-csv': '' })}
+                    {item('matrix-json', <FileJson size={14} aria-hidden />, '鉴权矩阵 JSON', p.onExportMatrixJson, { 'data-matrix-export-json': '' })}
+                    {item('full-json', <Braces size={14} aria-hidden />, '完整报告 JSON', p.onExportFullJson)}
+                    {item('full-md', <FileText size={14} aria-hidden />, '完整报告 Markdown', p.onExportFullMd)}
+                    {item('evidence', <Braces size={14} aria-hidden />, '发现证据包 JSON', p.onExportEvidenceJson, { 'data-export-btn': 'json' }, noSession || !p.vm)}
+                    {item('print', <Printer size={14} aria-hidden />, '打印或另存为 PDF', p.onPrint)}
+                    <div className="mx-1 my-1 h-px bg-jz-border" role="separator" />
+                    <div className="px-2.5 pb-1 pt-1.5 text-meta text-jz-muted">由服务端生成{noSession ? '(需要关联会话)' : ''}</div>
+                    {item('pdf', <FileText size={14} aria-hidden />, '会话报告 PDF', () => p.onDl('pdf'), { 'data-export-btn': 'pdf' }, noSession)}
+                    {item('exec', <ScrollText size={14} aria-hidden />, '管理摘要 PDF', p.onDlExec, { 'data-export-btn': 'exec' }, noSession)}
+                    {item('zip', <FileDown size={14} aria-hidden />, '报告包 ZIP', () => p.onDl('package'), { 'data-export-btn': 'zip' }, noSession)}
+                  </div>
+                );
+              }}
+            </Popover>
+          </div>
         </div>
-        {/* 二级 Tab(胶囊式 + 动态计数徽章)= R598 章节 TOC 升级形态 */}
-        <div className="flex items-center gap-1.5 flex-wrap" data-toc-nav data-detail-tabs>
- {TABS.map((s) => (
-            <button key={s.key} type="button" onClick={() => goSec(s.ref)} data-toc-item={s.key}
- title={`跳到「${s.label}」章节`}
- className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-control text-body font-medium transition-colors ${s.n != null
- ? 'text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2/60 bg-jz-surface-2/30'
- : 'text-jz-muted hover:text-jz-ink bg-jz-surface-2/20'}`}>
-              <s.icon size={13} className="text-jz-brand" />
-              {s.label}
-              {s.n != null && (
-                <span data-toc-count={s.key} className="px-1.5 py-0.5 rounded-pill bg-jz-surface-2 text-meta font-mono tnum text-jz-ink-2">{s.n}</span>
-              )}
-            </button>
-          ))}
-        </div>
+        {p.taskSessions.length > 1 && (
+          <div className="flex flex-wrap items-center gap-2 text-label text-jz-muted" data-session-pills>
+            <span>会话</span>
+            <SegmentedControl items={sessionItems} value={String(p.selected ?? '')} onChange={(k) => p.onPickSession(Number(k))} label="选择会话" className="max-w-full overflow-x-auto" />
+            {p.taskSessions.length > 8 && <span className="tnum">另有 {p.taskSessions.length - 8} 个</span>}
+          </div>
+        )}
       </div>
 
-      {p.aggLoading && !t && <Skeleton className="h-40 rounded-panel" />}
+      {t && noSession && (
+        <InlineAlert tone="info" title="该任务没有关联的活跃会话">鉴权矩阵、合规域分布、发现明细和会话报告来自会话数据,当前不可用。报告文件仍可查看和导出。</InlineAlert>
+      )}
 
-      {/* ① 鉴权矩阵 */}
-      <MatrixSection mx={p.mx} state={p.mxState} reload={p.reloadMatrix} secRef={mxSecRef}
- onExportCsv={p.onExportMatrixCsv} onExportJson={p.onExportMatrixJson} />
-
-      {/* ② MASVS 图谱 */}
-      <MasvsSection cm={p.cm} selected={p.selected} cmFilter={p.cmFilter}
- onFilter={(name) => { p.setCmFilter(p.cmFilter === name ? null : name); goSec(vulnSecRef); }}
- clearFilter={() => p.setCmFilter(null)} onDrill={p.goDrill} secRef={cmSecRef} />
-
-      {/* ③ 漏洞明细 */}
-      <VulnSection vm={p.vm} selected={p.selected} cmFilter={p.cmFilter}
- clearCmFilter={() => p.setCmFilter(null)} sessions={p.sessions}
- localVulns={p.localVulns} onAddManual={() => setManualOpen(true)} secRef={vulnSecRef} />
-
-      {/* ④ 会话报告 + 对比 */}
-      <ReportSection
- selected={p.selected} sessKind={p.sessKind} setSessKind={p.setSessKind} sessPreview={p.sessPreview}
- sessions={p.sessions} showDiff={p.showDiff} setShowDiff={p.setShowDiff}
- showCompare={p.showCompare} setShowCompare={p.setShowCompare}
- cmpSid={p.cmpSid} setCmpSid={p.setCmpSid} cmp={p.cmp} diffRows={p.diffRows}
- onDl={p.onDl} onDlExec={p.onDlExec} onExportEvidenceJson={p.onExportEvidenceJson}
- secRef={sessReportRef} />
-
-      {/* ⑤ 审计报告(pipeline,锚定当前任务) */}
-      <section className="rounded-panel bg-jz-surface shadow-card p-3 space-y-2" data-pipeline-reports ref={pipelineSecRef}>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-body font-semibold text-jz-ink">审计报告(pipeline)</span>
-          <span className="text-meta text-jz-muted">锚定当前任务 #{t?.id ?? '—'}</span>
-          <span className="flex-1" />
- {AUDIT_REPORT_FILES.map((f) => (
-            <button key={f} type="button" onClick={() => p.setFileName(f)} data-pipeline-file={f}
- className={`px-2.5 py-1 rounded-pill text-body font-mono transition-colors ${p.fileName === f ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface-2/50'}`}>
-              {FILE_LABEL[f]}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[12rem_minmax(0,1fr)]">
+        <nav ref={navRef} aria-label="报告章节" data-toc-nav data-detail-tabs
+          className="sticky top-0 z-10 -mx-jz-page flex gap-1 overflow-x-auto border-b border-jz-border bg-jz-canvas px-jz-page py-2 [scrollbar-width:none] lg:top-4 lg:mx-0 lg:flex-col lg:self-start lg:overflow-visible lg:border-b-0 lg:px-0 lg:py-0">
+          {SECTIONS.map((s) => (
+            <button key={s.key} type="button" onClick={() => goSec(s.ref)} data-toc-item={s.key}
+              className="flex h-jz-control flex-none items-center justify-between gap-2 whitespace-nowrap rounded-control px-3 text-label text-jz-ink-2 transition-colors duration-hover hover:bg-jz-surface-2 hover:text-jz-ink max-[760px]:h-jz-touch">
+              {s.label}
+              {s.n != null && <span data-toc-count={s.key} className="font-mono text-meta tnum text-jz-muted">{s.n}</span>}
             </button>
           ))}
+        </nav>
+
+        <div className="flex min-w-0 flex-col gap-6">
+          {p.aggLoading && !t && <SkeletonLoader variant="card" />}
+
+          <div ref={mxSecRef}>
+            <MatrixSection mx={p.mx} state={p.mxState} reload={p.reloadMatrix} hasSession={!noSession} />
+          </div>
+
+          <div ref={cmSecRef}>
+            <MasvsSection cm={p.cm} state={p.cmState} selected={p.selected} cmFilter={p.cmFilter}
+              onFilter={(name) => { p.setCmFilter(p.cmFilter === name ? null : name); goSec(vulnSecRef); }}
+              clearFilter={() => p.setCmFilter(null)} onDrill={p.goDrill} />
+          </div>
+
+          <div ref={vulnSecRef}>
+            <VulnSection vm={p.vm} state={p.vmState} selected={p.selected} cmFilter={p.cmFilter}
+              clearCmFilter={() => p.setCmFilter(null)} sessions={p.sessions}
+              localVulns={p.localVulns} onAddManual={() => setManualOpen(true)} />
+          </div>
+
+          <div ref={sessReportRef}>
+            <ReportSection
+              selected={p.selected} sessKind={p.sessKind} setSessKind={p.setSessKind} sessPreview={p.sessPreview}
+              sessions={p.sessions} showDiff={p.showDiff} setShowDiff={p.setShowDiff}
+              showCompare={p.showCompare} setShowCompare={p.setShowCompare}
+              cmpSid={p.cmpSid} setCmpSid={p.setCmpSid} cmp={p.cmp} diffRows={p.diffRows} />
+          </div>
+
+          <div ref={pipelineSecRef}>
+            <Panel title="报告文件" description={`评估流程为任务 #${t?.id ?? '—'} 生成的报告`} data-pipeline-reports
+              actions={<SegmentedControl items={fileItems} value={p.fileName} onChange={p.setFileName} label="报告文件" className="max-w-full overflow-x-auto" />}>
+              {p.preview.state === 'loading' ? <SkeletonLoader variant="card" />
+                : p.preview.state === 'error' ? (
+                  <EmptyState compact icon={FileX} title="这份报告文件不可用" cause={`服务端没有返回「${FILE_LABEL[p.fileName]}」(${p.preview.message || '未知原因'})。评估流程可能没有生成它。`} />
+                ) : p.preview.text ? (
+                  <pre data-report-preview tabIndex={0} className="max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-control bg-jz-surface-2 p-3 font-mono text-label text-jz-ink-2">{p.preview.text}</pre>
+                ) : <EmptyState compact icon={FileX} title="报告文件为空" cause="服务端返回了空内容。" />}
+            </Panel>
+          </div>
         </div>
-        {t && (
-          <pre data-report-preview className="max-h-96 overflow-auto rounded-control bg-jz-surface-2/50 p-3 text-label leading-5 text-jz-ink-2 whitespace-pre-wrap">{p.preview || '(空)'}</pre>
-        )}
-      </section>
+      </div>
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)} onMerge={p.onMergeImport} />
       <ManualVulnModal open={manualOpen} onClose={() => setManualOpen(false)} onAdd={p.onAddManualVuln} />

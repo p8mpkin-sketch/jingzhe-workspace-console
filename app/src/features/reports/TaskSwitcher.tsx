@@ -1,34 +1,21 @@
-// TaskSwitcher.tsx — 详情页可搜索任务切换器(自定义 Popover w-96 max-h-96,彻底替换原微型 select):
-// 搜索框按包名/#ID/应用名过滤;列表项=任务号+包名+合规评分;点击切换任务(含当前任务高亮)。
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+// TaskSwitcher.tsx — searchable task switcher of the report detail header (popover with a search field and a list).
+import React, { useMemo, useState } from 'react';
+import { ChevronsUpDown } from 'lucide-react';
+import { Button, Popover, SearchField } from '@/components/ui';
 import type { HubEntry } from './types';
 import { complianceScoreOf } from './types';
+import { scoreCls } from './shared';
 
 export const TaskSwitcher: React.FC<{
- entries: HubEntry[];
- currentTaskId: number | null;
- currentLabel: string;
- onPick: (tid: number) => void;
-}> = ({ entries, currentTaskId, currentLabel, onPick }) => {
-  const [open, setOpen] = useState(false);
+  entries: HubEntry[];
+  currentTaskId: number | null;
+  onPick: (tid: number) => void;
+}> = ({ entries, currentTaskId, onPick }) => {
   const [q, setQ] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
- useEffect(() => {
- if (!open) return;
- inputRef.current?.focus();
- const onDoc = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
- const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
- document.addEventListener('mousedown', onDoc);
- document.addEventListener('keydown', onKey);
- return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
- }, [open]);
-
- const list = useMemo(() => {
- const k = q.trim().toLowerCase();
- const hit = (e: HubEntry) => !k
+  const list = useMemo(() => {
+    const k = q.trim().toLowerCase();
+    const hit = (e: HubEntry) => !k
       || String(e.task.id).includes(k.replace('#', ''))
       || String(e.task.package || '').toLowerCase().includes(k)
       || String(e.task.app_name || '').toLowerCase().includes(k);
@@ -36,45 +23,39 @@ export const TaskSwitcher: React.FC<{
   }, [entries, q]);
 
   return (
-    <div className="relative" ref={ref}>
-      <button type="button" data-task-switcher-btn onClick={() => setOpen((v) => !v)}
- title="切换任务(可搜索包名/#ID/应用名)"
- className="inline-flex items-center gap-1.5 h-8 px-3 rounded-control bg-jz-surface-2/60 hover:bg-jz-surface-2 text-meta text-jz-ink max-w-[320px]">
-        <span className="truncate">{currentLabel}</span>
-        <ChevronDown size={13} className={`flex-none transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <div data-task-switcher className="absolute z-40 left-0 mt-1.5 w-96 max-h-96 flex flex-col rounded-card border border-jz-border bg-jz-surface shadow-card overflow-hidden">
-          <div className="relative p-2 border-b border-jz-border flex-none">
-            <Search size={14} className="absolute left-5 top-1/2 -translate-y-1/2 text-jz-muted" />
-            <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} data-task-switcher-search
- placeholder="搜索包名 / #ID / 应用名…"
- className="w-full h-9 pl-8 pr-3 rounded-control bg-jz-surface-2/60 text-body text-jz-ink placeholder:text-jz-muted outline-none focus:border-jz-brand/50 border border-transparent" />
+    <Popover label="切换任务" align="end" className="w-96 !p-0"
+      trigger={(tp) => (
+        <Button variant="secondary" icon={<ChevronsUpDown size={14} aria-hidden />} data-task-switcher-btn title="切换到另一个任务的报告" {...tp}>切换任务</Button>
+      )}>
+      {(close) => (
+        <div data-task-switcher className="flex max-h-96 flex-col">
+          <div className="flex-none border-b border-jz-border p-2">
+            <SearchField autoFocus value={q} onValueChange={setQ} label="搜索任务" placeholder="搜索包名、任务编号或应用名" data-task-switcher-search />
           </div>
-          <div className="overflow-y-auto flex-1 p-1.5 space-y-0.5" data-task-switcher-list>
-            {list.length === 0 && <div className="px-3 py-4 text-body text-jz-muted">无匹配任务</div>}
- {list.map(({ task: t, agg }) => {
+          <ul className="flex-1 overflow-y-auto p-1.5" data-task-switcher-list>
+            {list.length === 0 && <li className="px-3 py-4 text-label text-jz-muted">没有匹配的任务</li>}
+            {list.map(({ task: t, agg }) => {
               const score = complianceScoreOf(agg?.summary);
               const cur = t.id === currentTaskId;
               return (
-                <button key={t.id} type="button" data-task-switcher-item={t.id}
- onClick={() => { onPick(t.id); setOpen(false); setQ(''); }}
- className={`w-full flex items-center gap-2 px-3 py-2 rounded-control text-left transition-colors ${cur ? 'bg-jz-brand/15 ring-1 ring-jz-brand/40' : 'hover:bg-jz-surface-2/60'}`}>
-                  <span className="font-mono text-body font-semibold text-jz-brand tnum flex-none">#{t.id}</span>
-                  <span className="flex-1 min-w-0 truncate text-body text-jz-ink" title={t.app_name || t.package || ''}>
-                    {t.app_name || t.package || '—'}
-                  </span>
-                  <span className="font-mono text-meta text-jz-muted truncate max-w-[160px]" title={t.package}>{t.package || ''}</span>
-                  <span className={`font-mono text-body tnum flex-none ${score == null ? 'text-jz-muted' : score < 60 ? 'text-jz-sev-critical' : score < 85 ? 'text-jz-sev-medium' : 'text-jz-teal'}`}>
-                    {score ?? '—'}
-                  </span>
-                </button>
- );
- })}
- {list.length >= 200 && <div className="px-3 py-1.5 text-meta text-jz-muted">仅显示前 200 条,请继续输入缩小范围</div>}
-          </div>
+                <li key={t.id}>
+                  <button type="button" data-task-switcher-item={t.id} aria-current={cur || undefined}
+                    onClick={() => { onPick(t.id); close(); setQ(''); }}
+                    className={`flex w-full items-center gap-2 rounded-control px-2.5 py-2 text-left max-[760px]:min-h-jz-touch ${cur ? 'bg-jz-brand-soft' : 'hover:bg-jz-surface-2'}`}>
+                    <span className="flex-none font-mono text-label tnum text-jz-muted">#{t.id}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-label text-jz-ink" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
+                      <span className="block truncate font-mono text-meta text-jz-muted" title={t.package}>{t.package || ''}</span>
+                    </span>
+                    <span className={`flex-none font-mono text-label tnum ${scoreCls(score)}`} title="合规分">{score ?? '—'}</span>
+                  </button>
+                </li>
+              );
+            })}
+            {list.length >= 200 && <li className="px-3 py-1.5 text-meta text-jz-muted">仅显示前 200 条,请继续输入以缩小范围</li>}
+          </ul>
         </div>
       )}
-    </div>
+    </Popover>
   );
 };

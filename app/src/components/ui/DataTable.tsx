@@ -145,28 +145,49 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
   );
 }
 
-/** Shared table footer: total, page size, previous / next. Client- or server-side; the page owns the numbers. */
+/** Shared table footer: total, page size, previous / next, optional jump-to-page. The page owns the numbers. */
 export const Pagination: React.FC<{
   page: number; pageSize: number; total: number; onPage: (p: number) => void;
   onPageSize?: (n: number) => void; pageSizes?: number[]; className?: string; dataAttrs?: Record<string, string | number | undefined>;
-}> = ({ page, pageSize, total, onPage, onPageSize, pageSizes = [12, 24, 50, 100], className, dataAttrs }) => {
+  /** Adds a page-number input (Enter to go). Use on long client-side lists. */
+  jump?: boolean;
+  /** data-* hooks for the inner controls, so existing probes keep their targets. */
+  controlAttrs?: {
+    prev?: Record<string, string | number | undefined>; next?: Record<string, string | number | undefined>;
+    jump?: Record<string, string | number | undefined>; size?: (n: number) => Record<string, string | number | undefined>;
+  };
+  /** Replaces the default "共 N 条" summary. */
+  summary?: React.ReactNode;
+}> = ({ page, pageSize, total, onPage, onPageSize, pageSizes = [12, 24, 50, 100], className, dataAttrs, jump, controlAttrs, summary }) => {
   const pages = Math.max(1, Math.ceil(total / pageSize));
+  const [to, setTo] = React.useState('');
   const nav = 'grid h-8 w-8 place-items-center rounded-control border border-jz-border text-jz-ink-2 hover:bg-jz-surface-2 disabled:opacity-45 disabled:pointer-events-none max-[760px]:h-jz-touch max-[760px]:w-jz-touch';
   return (
     <nav aria-label="分页" className={cx('flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-jz-border px-4 py-2.5 text-label text-jz-muted', className)} {...dataAttrs}>
-      <span>共 <span className="tnum text-jz-ink-2">{total}</span> 条</span>
-      <div className="flex items-center gap-2">
+      <span>{summary ?? <>共 <span className="tnum text-jz-ink-2">{total}</span> 条</>}</span>
+      <div className="flex flex-wrap items-center gap-2">
         {onPageSize && (
           <label className="flex items-center gap-2">
             <span className="max-[760px]:sr-only">每页</span>
-            <Select value={pageSize} onChange={(e) => onPageSize(Number(e.target.value))} className="!h-8 !w-auto text-label" aria-label="每页条数">
-              {pageSizes.map((n) => <option key={n} value={n}>{n}</option>)}
-            </Select>
+            <span className="w-20 flex-none">
+              <Select value={pageSize} onChange={(e) => onPageSize(Number(e.target.value))} className="!h-8 text-label" aria-label="每页条数">
+                {pageSizes.map((n) => <option key={n} value={n} {...controlAttrs?.size?.(n)}>{n}</option>)}
+              </Select>
+            </span>
           </label>
         )}
-        <button type="button" className={nav} disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label="上一页" title="上一页"><ChevronLeft size={16} aria-hidden /></button>
+        {jump && pages > 1 && (
+          <label className="flex items-center gap-2">
+            <span className="max-[760px]:sr-only">跳至</span>
+            <input value={to} inputMode="numeric" aria-label="跳至页码" placeholder="页码" {...controlAttrs?.jump}
+              onChange={(e) => setTo(e.target.value.replace(/\D/g, ''))}
+              onKeyDown={(e) => { if (e.key === 'Enter') { const p = Number(to); if (p >= 1 && p <= pages) onPage(p); setTo(''); } }}
+              className="h-8 w-16 rounded-control border border-jz-border-strong bg-jz-surface px-2 text-center font-mono text-label tnum text-jz-ink placeholder:text-jz-muted" />
+          </label>
+        )}
+        <button type="button" className={nav} disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label="上一页" title="上一页" {...controlAttrs?.prev}><ChevronLeft size={16} aria-hidden /></button>
         <span className="tnum text-jz-ink-2" aria-live="polite">{page} / {pages}</span>
-        <button type="button" className={nav} disabled={page >= pages} onClick={() => onPage(page + 1)} aria-label="下一页" title="下一页"><ChevronRight size={16} aria-hidden /></button>
+        <button type="button" className={nav} disabled={page >= pages} onClick={() => onPage(page + 1)} aria-label="下一页" title="下一页" {...controlAttrs?.next}><ChevronRight size={16} aria-hidden /></button>
       </div>
     </nav>
   );

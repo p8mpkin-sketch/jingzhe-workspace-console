@@ -3,6 +3,35 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 6 — Reports
+
+### Changed
+- `/reports` hub (`features/reports/ReportCenterPage.tsx`, `HubView.tsx`): rebuilt on `Page`, `PageHeader` (title from `layout/navigation.ts`), `MetricGrid`, `Panel`, `SearchField`, `SegmentedControl`, `Popover`, `ObjectCard`, `DataTable`, `BulkBar`, `Pagination` and `AsyncBoundary`. The two list requests, the per-task aggregation (three requests per task, four at a time), filtering, sorting, paging, selection, single and batch CSV export and the `?taskId=` / `?sid=&cmp=` deep links are unchanged. A failed task-list request now shows the error or permission state with retry (it rendered as "no tasks" before), and a deep link to a task is kept while the list is failing instead of being dropped.
+- Report detail (`DetailView.tsx`): page header with back link, title, task id, package, task switcher, import and one export menu; section navigation on the left from 1024 px and as a sticky bar below; sections on the right. Section jumps scroll the page's own scroller and respect reduced motion.
+- Exports are grouped in one menu, as `docs/page-specs.md` asks. The per-section copies (matrix CSV / JSON, PDF, summary PDF, evidence JSON, ZIP) are removed; each menu item keeps the `data-*` hook of the button it replaces next to its own. Items that need a session are disabled when the task has none. The handlers, endpoints and file names are the same.
+- Sections (`MatrixSection`, `MasvsSection`, `VulnSection`, `ReportSection`, report files): each is a `Panel` with skeleton, empty, error and, for the matrix, stale states. The matrix is a semantic grid with search, a counted result filter, expandable rows and the shared pagination. Findings use severity badges, a counted state filter and labeled evidence blocks. The session report shows its key facts as a definition list with the source text below. A task without an active session says so once at the top.
+- `ImportModal`, `ManualVulnModal`, `TaskSwitcher`: on `Dialog`, `Field`, `Input`, `Select`, `Textarea`, `Radio`, `SegmentedControl`, `Popover` and `SearchField`. Parsing, validation, merge strategies and the local-only merge are untouched. The manual form marks the missing title on the field as well as in the toast.
+- Print view: a labeled dialog with focus trap and Escape; `report-print-container` and the paper tokens are unchanged.
+- Copy: 发现 for findings, 评估 for audit, matrix verdicts named by what they mean (匿名可访问 / 登录后可见 / 已拒绝 / 未判定) instead of by color, plain statements of what a number counts. The pulsing icon on anonymous-reachable rows is now a static icon.
+- `components/ui`: `Pagination` gains an optional jump-to-page input, a custom summary and `data-*` hooks for its inner controls; its page-size select is sized by a wrapper. `Page` makes its scroller the containing block, so visually hidden text inside a page can no longer extend the document (it let the whole shell scroll by a few hundred pixels on long pages).
+
+### Removed
+- The local `Menu` popover in `features/reports/shared.tsx`, the floating aggregation pill (now a status line in the page header), the always-empty "AI 因果链" block and the permanently disabled "生成修复补丁" button in a finding.
+
+### Verified
+- `tsc --noEmit` and `npm run build` pass. Main chunk 961.9 kB, CSS 161.7 kB.
+- 14 routes at five widths: no overflow, no error boundary; request log identical to baseline; shell checks pass.
+- `/reports` captured in the empty, error, forbidden and slow variants. Hub (cards, table, selection, no match), detail sections, export menu, task switcher, import with a parsed CSV, manual form validation, print view, a task without a session, a failed list on a deep link with retry, and the `?sid=&cmp=` deep link exercised at 1440, 1024, 760 and 390 px in light and 1440 px in dark, with no overflow and no request other than GET.
+- Token lint 184, unchanged: the report files had no findings left; the rest belongs to phases 7 to 9. Contrast check: no failing pair.
+
+### Remaining gaps
+- Exported files and the print view are composed by `reportIo.ts`, which is not edited. Their text still uses the earlier wording (审计, 越权暴露, 红 / 黄 / 绿 / 灰), so a file and the screen name the same verdict differently.
+- The detail header is no longer sticky; the section navigation is. Export and back are one scroll away on long reports.
+- In the hub table, 加固 and the state counts show from 1280 px, 主要域 and 更新 from 1600 px; all of them remain in the cards and in the CSV. The page-size choice is a select and sort is a menu; `data-hub-pagesize` moved to the select's options.
+- Session comparison cannot tell "no differences" from a failed comparison request (both arrive as an empty list); the message says so.
+- `ReportDiffPanel` (shared with the workbench) is embedded as is.
+- The report fixtures (`summary`, `auth_matrix`, `vulns`, report text) are inferred from what the page reads, not from an API contract.
+
 ## Phase 5 — Project workspace
 
 ### Changed

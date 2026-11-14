@@ -7,7 +7,7 @@ import { cx } from './cx';
  */
 export const Page: React.FC<{ children: React.ReactNode; className?: string; scroll?: boolean } & React.HTMLAttributes<HTMLDivElement>> =
   ({ children, className, scroll = true, ...rest }) => (
-    <div className={cx('flex-1 min-h-0 min-w-0', scroll && 'overflow-y-auto')} {...rest}>
+    <div className={cx('relative flex-1 min-h-0 min-w-0', scroll && 'overflow-y-auto')} {...rest}>
       <div className={cx('mx-auto w-full max-w-jz-content px-jz-page py-jz-page flex flex-col gap-6', className)}>{children}</div>
     </div>
   );

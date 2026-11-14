@@ -1,14 +1,17 @@
-// ImportModal.tsx — 导入数据 Modal(纯前端闭环): 目标选择(漏洞明细/鉴权矩阵)→ 格式(json/csv/sarif
-// 拖拽或选择,内容嗅探)→ FileReader 解析 → 预览清单(条数/危级分布/字段校验)→ 合并策略
-// (按标题+路径去重追加 / 覆盖)→ 确认合并入当前任务本地合并层 + Toast。
+// ImportModal.tsx — import dialog (client side only): target, file (json / csv / sarif, sniffed by content),
+// parsed preview with validation, merge strategy, confirm. Rows are merged into the page's local layer by the parent.
 import React, { useRef, useState } from 'react';
 import { UploadCloud, FileDown, Loader2 } from 'lucide-react';
-import { UnifiedModal, Button, StatusBadge } from '@/components/ui';
-import { toast } from '@/components/ui';
+import { Dialog, Button, SegmentedControl, SeverityBadge, Tag, InlineAlert, Radio, toast } from '@/components/ui';
+import type { TabItem } from '@/components/ui';
+import { sevLevel, MX_LABEL, BlockLabel } from './shared';
 import { parseImportText, download, vulnTemplateCsv, matrixTemplateCsv } from './reportIo';
 import type { ImportTarget, ImportPreview } from './reportIo';
 
-const TARGET_LABEL: Record<ImportTarget, string> = { vulns: '漏洞明细', matrix: '鉴权矩阵' };
+const TARGET_ITEMS: TabItem<ImportTarget>[] = [
+  { key: 'vulns', label: '发现明细', dataAttrs: { 'data-import-target': 'vulns' } },
+  { key: 'matrix', label: '鉴权矩阵', dataAttrs: { 'data-import-target': 'matrix' } },
+];
 
 export const ImportModal: React.FC<{
  open: boolean;
@@ -42,118 +45,109 @@ export const ImportModal: React.FC<{
  const total = pv?.rows.length ?? 0;
  const canMerge = total > 0;
 
+  const close = () => { reset(); onClose(); };
+
   return (
-    <UnifiedModal open={open} title={<> 导入数据<span className="text-meta text-jz-muted font-normal ml-2">纯前端闭环: 合并入当前任务本地合并层,零后端写入,导出即持久</span></>}
- onClose={() => { reset(); onClose(); }} widthClass="w-[640px]">
-      {/* ① 目标 */}
-      <div className="space-y-1.5">
-        <div className="text-meta font-semibold text-jz-ink-2">① 导入目标</div>
-        <div className="flex items-center gap-2">
- {(['vulns', 'matrix'] as const).map((k) => (
-            <button key={k} type="button" data-import-target={k}
- onClick={() => { setTarget(k); reset(); }}
- className={`px-4 py-2 rounded-control text-body font-medium transition-colors ${target === k ? 'bg-jz-brand/15 text-jz-brand ring-1 ring-jz-brand/50' : 'bg-jz-surface-2/50 text-jz-muted hover:text-jz-ink'}`}>
-              {TARGET_LABEL[k]}
-            </button>
-          ))}
+    <Dialog open={open} onClose={close} title="导入数据" widthClass="w-full max-w-jz-dialog"
+      description="导入的数据只合并到当前页面,不会写入服务端;导出后才会保留。"
+      footer={(
+        <>
+          <Button variant="secondary" onClick={close}>取消</Button>
+          <Button disabled={!canMerge} data-import-confirm onClick={() => { if (pv) { onMerge(target, pv.rows, strategy); reset(); onClose(); } }}>
+            {canMerge ? `合并 ${total} 条` : '合并'}
+          </Button>
+        </>
+      )}>
+      <div className="space-y-5">
+        <div>
+          <BlockLabel>导入到</BlockLabel>
+          <SegmentedControl items={TARGET_ITEMS} value={target} onChange={(k) => { setTarget(k); reset(); }} label="导入目标" />
         </div>
-      </div>
-      {/* ② 格式与文件 */}
-      <div className="space-y-1.5">
-        <div className="text-meta font-semibold text-jz-ink-2">② 格式与文件(json / csv / sarif,按内容自动嗅探)</div>
-        <div
- onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
- onDragLeave={() => setDragOver(false)}
- onDrop={(e) => {
- e.preventDefault(); setDragOver(false);
- const f = e.dataTransfer.files?.[0];
- if (f) readFile(f);
- }}
- data-import-dropzone
- className={`relative rounded-card border border-dashed px-4 py-6 text-center transition-colors overflow-hidden ${dragOver ? 'border-jz-brand bg-jz-brand/5' : 'border-jz-border hover:border-jz-brand/50'}`}>
-          <input ref={fileRef} type="file" accept=".json,.csv,.sarif,.txt,application/json,text/csv"
- className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) readFile(f); e.target.value = ''; }} />
-          <div className="relative flex items-center justify-center gap-2 text-body text-jz-ink-2">
-            {busy ? <Loader2 size={15} className="animate-spin text-jz-brand" /> : <UploadCloud size={15} className="text-jz-brand" />}
-            {fileName ? <span className="font-mono text-jz-ink truncate max-w-[300px]" title={fileName}>{fileName}</span> : <span>拖拽文件到此处,或</span>}
-            <button type="button" onClick={() => fileRef.current?.click()} data-import-pick
- className="px-2.5 py-1 rounded-control bg-jz-surface-2/70 hover:bg-jz-brand/10 text-meta text-jz-ink">选择文件</button>
+
+        <div>
+          <BlockLabel>文件</BlockLabel>
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault(); setDragOver(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f) readFile(f);
+            }}
+            data-import-dropzone
+            className={`flex flex-col items-center gap-2 rounded-card border border-dashed px-4 py-6 text-center transition-colors duration-hover ${dragOver ? 'border-jz-brand bg-jz-brand-soft' : 'border-jz-border-strong'}`}>
+            <input ref={fileRef} type="file" accept=".json,.csv,.sarif,.txt,application/json,text/csv" tabIndex={-1} aria-hidden
+              className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) readFile(f); e.target.value = ''; }} />
+            {busy ? <Loader2 size={18} className="animate-spin text-jz-muted" aria-hidden /> : <UploadCloud size={18} className="text-jz-muted" aria-hidden />}
+            {fileName
+              ? <span className="max-w-full truncate font-mono text-label text-jz-ink" title={fileName}>{fileName}</span>
+              : <span className="text-label text-jz-ink-2">把文件拖到这里,或从本机选择</span>}
+            <Button size="sm" variant="secondary" onClick={() => fileRef.current?.click()} data-import-pick>{fileName ? '换一个文件' : '选择文件'}</Button>
+            <span className="text-meta text-jz-muted">支持 JSON、CSV、SARIF,按内容自动识别格式</span>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-jz-muted">
+            <Button size="sm" variant="ghost" className="-ml-2" icon={<FileDown size={14} aria-hidden />} data-import-template
+              onClick={() => download(target === 'vulns' ? 'vuln_import_template.csv' : 'matrix_import_template.csv',
+                target === 'vulns' ? vulnTemplateCsv() : matrixTemplateCsv(), 'text/csv;charset=utf-8')}>
+              下载 CSV 模板
+            </Button>
+            <span>{target === 'vulns' ? '列: 标题、等级、组件路径、MASVS、证据、建议' : '列: 端点路径、匿名(红 / 黄 / 绿 / 灰)、普通、提权'}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-meta">
-          <button type="button" data-import-template
- onClick={() => download(target === 'vulns' ? 'vuln_import_template.csv' : 'matrix_import_template.csv',
- target === 'vulns' ? vulnTemplateCsv() : matrixTemplateCsv(), 'text/csv;charset=utf-8')}
- className="inline-flex items-center gap-1 text-jz-brand hover:underline">
-            <FileDown size={12} />下载导入模板
-          </button>
-          <span className="text-jz-muted">({target === 'vulns' ? '列: 标题/等级/组件路径/MASVS/证据/建议' : '列: 端点路径/匿名(红|黄|绿|灰)/普通/提权'})</span>
-        </div>
-      </div>
-      {/* ③ 预览清单 */}
-      <div className="space-y-1.5">
-        <div className="text-meta font-semibold text-jz-ink-2">③ 预览与字段校验</div>
-        {!pv ? (
-          <div className="rounded-card bg-jz-surface-2/40 px-3 py-3 text-meta text-jz-muted">尚未解析文件</div>
-        ) : (
-          <div className="rounded-card bg-jz-surface-2/40 px-3 py-2.5 space-y-1.5 text-meta" data-import-preview>
-            <div className="flex items-center gap-2 flex-wrap">
-              <StatusBadge tone="info">嗅探格式: {pv.format.toUpperCase()}</StatusBadge>
-              <span className="font-mono tnum text-jz-ink">有效 {total} 条</span>
- {pv.invalid > 0 && <span className="font-mono tnum text-jz-sev-medium">无效剔除 {pv.invalid} 条</span>}
- {target === 'vulns' && total > 0 && (
-                <span className="flex items-center gap-1 flex-wrap">
- {Object.entries(pv.sevDist).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0)).map(([sv, n]) => (
-                    <StatusBadge key={sv} tone={sv === 'critical' ? 'critical' : sv === 'high' ? 'high' : sv === 'medium' ? 'medium' : sv === 'low' ? 'low' : 'info'}>{sv} {n}</StatusBadge>
+
+        <div>
+          <BlockLabel>解析结果</BlockLabel>
+          {!pv ? (
+            <p className="rounded-control bg-jz-surface-2 px-3 py-2.5 text-label text-jz-muted">选择文件后在这里显示解析结果。</p>
+          ) : (
+            <div className="space-y-2.5" data-import-preview>
+              <div className="flex flex-wrap items-center gap-2 text-label">
+                <Tag mono>{pv.format.toUpperCase()}</Tag>
+                <span className="tnum text-jz-ink">有效 {total} 条</span>
+                {pv.invalid > 0 && <span className="tnum text-jz-amber">已剔除无效 {pv.invalid} 条</span>}
+                {target === 'vulns' && total > 0 && Object.entries(pv.sevDist).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0)).map(([sv, n]) => (
+                  <SeverityBadge key={sv} level={sevLevel(sv)}>{sv} {n}</SeverityBadge>
+                ))}
+                {target === 'matrix' && total > 0 && (
+                  <span className="tnum text-jz-muted">
+                    {(['red', 'yellow', 'green', 'gray'] as const).map((k) => `${MX_LABEL[k]} ${pv.colorDist[k] || 0}`).join(' · ')}
+                  </span>
+                )}
+              </div>
+              {total === 0 && pv.errors.length === 0 && <InlineAlert tone="attention">文件里没有可导入的行。</InlineAlert>}
+              {pv.errors.length > 0 && (
+                <InlineAlert tone="attention" title="部分内容没有通过校验" data-import-errors>
+                  <ul className="list-disc space-y-0.5 pl-4">
+                    {pv.errors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
+                    {pv.errors.length > 5 && <li>共 {pv.errors.length} 条提示</li>}
+                  </ul>
+                </InlineAlert>
+              )}
+              {total > 0 && (
+                <ol className="max-h-32 divide-y divide-jz-border overflow-auto rounded-control border border-jz-border text-label" data-import-rows>
+                  {pv.rows.slice(0, 8).map((r, i) => (
+                    <li key={i} className="flex min-w-0 items-center gap-2 px-3 py-1.5">
+                      <span className="flex-none font-mono text-meta tnum text-jz-muted">{i + 1}</span>
+                      <span className="truncate text-jz-ink">{target === 'vulns' ? `[${r.severity}] ${r.title}` : `${r.path}(${MX_LABEL[r.color] || r.color})`}</span>
+                    </li>
                   ))}
-                </span>
- )}
- {target === 'matrix' && total > 0 && (
-                <span className="font-mono tnum text-jz-muted">
-                  红 {pv.colorDist.red || 0} · 黄 {pv.colorDist.yellow || 0} · 绿 {pv.colorDist.green || 0} · 灰 {pv.colorDist.gray || 0}
-                </span>
+                  {total > 8 && <li className="px-3 py-1.5 text-meta text-jz-muted">其余 {total - 8} 条未列出</li>}
+                </ol>
               )}
             </div>
- {pv.errors.length > 0 && (
-              <div className="text-jz-sev-medium space-y-0.5" data-import-errors>
- {pv.errors.slice(0, 5).map((e, i) => <div key={i}>· {e}</div>)}
- {pv.errors.length > 5 && <div>… 共 {pv.errors.length} 条校验提示</div>}
-              </div>
- )}
- {total > 0 && (
-              <div className="max-h-28 overflow-auto rounded-control bg-jz-surface/60 divide-y divide-jz-border" data-import-rows>
- {pv.rows.slice(0, 8).map((r, i) => (
-                  <div key={i} className="px-2 py-1 flex items-center gap-2 min-w-0">
-                    <span className="font-mono text-jz-muted tnum flex-none">{i + 1}</span>
-                    <span className="truncate text-jz-ink">{target === 'vulns' ? `[${r.severity}] ${r.title}` : `${r.path}(${r.color})`}</span>
-                  </div>
- ))}
- {total > 8 && <div className="px-2 py-1 text-jz-muted">… 共 {total} 条</div>}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      {/* ④ 合并策略 + 确认 */}
-      <div className="space-y-1.5">
-        <div className="text-meta font-semibold text-jz-ink-2">④ 合并策略</div>
-        <div className="flex items-center gap-2 flex-wrap">
- {([['dedupe', '去重追加(按标题+路径跳过重复)'], ['override', '覆盖(同键本地条目被新数据替换)']] as const).map(([k, label]) => (
-            <button key={k} type="button" data-import-strategy={k}
- onClick={() => setStrategy(k)}
- className={`px-3 py-1.5 rounded-control text-meta transition-colors ${strategy === k ? 'bg-jz-brand/15 text-jz-brand ring-1 ring-jz-brand/50' : 'bg-jz-surface-2/50 text-jz-muted hover:text-jz-ink'}`}>
-              {label}
-            </button>
-          ))}
+          )}
         </div>
+
+        <fieldset>
+          <legend className="mb-1 text-meta font-medium text-jz-ink-2">遇到重复条目时</legend>
+          <div className="flex flex-col gap-1.5">
+            <Radio name="import-strategy" checked={strategy === 'dedupe'} onChange={() => setStrategy('dedupe')} data-import-strategy="dedupe"
+              label="跳过重复" hint="标题和路径都相同的条目保留现有内容,只追加新条目" />
+            <Radio name="import-strategy" checked={strategy === 'override'} onChange={() => setStrategy('override')} data-import-strategy="override"
+              label="用导入内容替换" hint="标题和路径都相同的本地条目会被导入的内容替换" />
+          </div>
+        </fieldset>
       </div>
-      <div className="flex items-center justify-end gap-2 pt-1">
-        <Button variant="subtle" onClick={() => { reset(); onClose(); }}>取消</Button>
-        <Button variant="primary" disabled={!canMerge} data-import-confirm
- onClick={() => { if (pv) { onMerge(target, pv.rows, strategy); reset(); onClose(); } }}>
-          确认合并{canMerge ? `(${total} 条)` : ''}
-        </Button>
-      </div>
-    </UnifiedModal>
+    </Dialog>
   );
 };

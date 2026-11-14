@@ -1,128 +1,101 @@
-// MasvsSection.tsx — MASVS 合规图谱: grid 1/2/3 列九宫格,72×72 评分环(中心分 text-title font-mono),
-// 领域标题 text-section,下钻按钮 text-body;<60 红警示边框 / <85 琥珀;条款清单展开 + 域点击平滑过滤漏洞列表。
-// 得分口径沿用 R103-10①: 该域无违规占比(相对口径);下钻链契约(R103-7)保留。
+// MasvsSection.tsx — findings by MASVS domain. The share shown per domain is relative (see the footnote);
+// the drill-down link contract is unchanged.
 import React, { useState } from 'react';
-import { ExternalLink } from 'lucide-react';
-import { StatusBadge } from '@/components/ui';
-import { ScoreRing, SEV_TONE } from './shared';
+import { ExternalLink, ShieldCheck, X } from 'lucide-react';
+import { Panel, Button, SeverityBadge, EmptyState, ErrorState, SkeletonLoader } from '@/components/ui';
+import { ScoreRing, sevLevel } from './shared';
 import type { CmRow } from './types';
 
+const SEV_DOT: Array<[string, string]> = [['critical', 'bg-jz-sev-critical'], ['high', 'bg-jz-sev-high'], ['medium', 'bg-jz-sev-medium'], ['low', 'bg-jz-sev-low']];
+
 export const MasvsSection: React.FC<{
- cm: { rows: CmRow[]; otherCount: number; total: number } | null;
- selected: number | null;
- cmFilter: string | null;
- onFilter: (name: string) => void;
- clearFilter: () => void;
- onDrill: (name: string) => void;
-  secRef: React.RefObject<HTMLElement>;
-}> = ({ cm, selected, cmFilter, onFilter, clearFilter, onDrill, secRef }) => {
+  cm: { rows: CmRow[]; otherCount: number; total: number } | null;
+  state: 'loading' | 'ok' | 'error';
+  selected: number | null;
+  cmFilter: string | null;
+  onFilter: (name: string) => void;
+  clearFilter: () => void;
+  onDrill: (name: string) => void;
+}> = ({ cm, state, selected, cmFilter, onFilter, clearFilter, onDrill }) => {
   const [cmOpen, setCmOpen] = useState<string | null>(null);
 
   return (
-    <section className="space-y-3" data-compliance-map ref={secRef}>
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-body font-semibold text-jz-ink">MASVS 合规图谱</span>
-        <StatusBadge tone="info">违规计数口径: 规则卡实例数(与雷达一致)</StatusBadge>
-        {cmFilter && (
-          <button type="button" onClick={clearFilter} data-compliance-filter-active
- className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill text-meta font-mono bg-jz-brand/15 text-jz-brand"
- title="点击清除域过滤">
-            过滤: {cmFilter} ✕
-          </button>
-        )}
-        <span className="flex-1" />
-        <span className="text-meta text-jz-muted">会话: #{selected ?? '—'}</span>
-      </div>
-
+    <Panel data-compliance-map title="合规域分布" description={selected ? `按 MASVS 域汇总会话 #${selected} 的发现;计数为规则卡的实例数` : '按 MASVS 域汇总会话的发现'}
+      actions={cmFilter && (
+        <Button size="sm" variant="secondary" icon={<X size={14} aria-hidden />} onClick={clearFilter} data-compliance-filter-active title="清除域筛选">筛选: {cmFilter}</Button>
+      )}>
       {!cm ? (
-        <div className="text-body text-jz-muted px-4 py-3 rounded-panel bg-jz-surface shadow-card">
-          {selected ? '加载中…' : '先在上方切换器选择任务,合规图谱按代表会话发现聚合'}
-        </div>
+        !selected ? <EmptyState compact icon={ShieldCheck} title="没有可汇总的会话" cause="合规域分布按任务的最新会话汇总。" />
+          : state === 'error' ? <ErrorState compact title="合规域分布加载失败" message="服务端没有返回分组后的发现。" />
+            : <SkeletonLoader variant="cards" rows={3} />
       ) : cm.total === 0 ? (
-        <div className="text-body text-jz-muted px-4 py-3 rounded-panel bg-jz-surface shadow-card">
-          该会话暂无漏洞发现,合规图谱空(全域 100% 无违规实例)。
-        </div>
+        <EmptyState compact icon={ShieldCheck} title="该会话没有发现" cause="所有域的实例数都是 0。" />
       ) : (
-        <div className="space-y-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
- {cm.rows.map((r) => {
- const isOther = r.name === '其他';
- // 合规率真算: 全会话违规实例中非本域占比(无 MASVS 检查项目录,绝对合规率=挂账,脚注注明)
- const rate = cm.total > 0 ? Math.max(0, (1 - r.count / cm.total) * 100) : 100;
+        <>
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 desktop:grid-cols-3">
+            {cm.rows.map((r) => {
+              // Share of the session's instances that are NOT in this domain (relative; there is no MASVS checklist to score against).
+              const rate = cm.total > 0 ? Math.max(0, (1 - r.count / cm.total) * 100) : 100;
               const rateStr = rate.toFixed(1);
               const active = cmFilter === r.name;
-              const warn = rate < 60 ? 'ring-1 ring-jz-sev-critical/50 bg-jz-sev-critical/5' : rate < 85 ? 'ring-1 ring-jz-sev-medium/40 bg-jz-sev-medium/5' : '';
-              // 点状违规计数: 按严重级着色点(每级至多 3 点),溢出并入 +N;悬浮 title 为精确分档
-              const dotSpec: Array<{ cls: string; n: number }> = [
-                { cls: 'bg-jz-sev-critical', n: r.sev.critical || 0 },
-                { cls: 'bg-jz-sev-high', n: r.sev.high || 0 },
-                { cls: 'bg-jz-sev-medium', n: r.sev.medium || 0 },
-                { cls: 'bg-jz-sev-low', n: r.sev.low || 0 },
-              ];
-              const dots: string[] = [];
-              for (const d of dotSpec) for (let k = 0; k < Math.min(d.n, 3); k++) dots.push(d.cls);
- const dotTotal = Math.min(dots.length, 6);
- const overflow = r.count - dotTotal;
- const sevTip = ['critical', 'high', 'medium', 'low', 'info'].map((sv) => `${sv}:${r.sev[sv] || 0}`).join(' · ');
               const open = cmOpen === r.name;
+              const sevTip = ['critical', 'high', 'medium', 'low', 'info'].map((sv) => `${sv} ${r.sev[sv] || 0}`).join(' · ');
               return (
-                <div key={r.name} data-compliance-card={r.name}
- className={`relative rounded-panel p-4 space-y-2 transition-all hover:-translate-y-0.5 ${active ? 'bg-jz-brand/5 ' : `${warn || 'bg-jz-surface'} shadow-card`}`}>
-                  <button type="button"
- onClick={() => onFilter(r.name)}
- title={`${r.name} — 合规率 ${rateStr}%(口径见脚注) · ${sevTip}\n点击${active ? '取消' : ''}过滤下方漏洞列表`}
- className="w-full space-y-2 text-left">
-                    <div className="relative mx-auto" data-compliance-gauge={r.name} style={{ width: 72, height: 72 }}>
-                      <ScoreRing rate={rate} size={72} stroke={4.5}>
-                        <span className="text-title font-semibold font-mono tnum text-jz-ink">{rateStr}</span>
+                <li key={r.name} data-compliance-card={r.name}
+                  className={`flex min-w-0 flex-col rounded-card border bg-jz-surface transition-colors duration-hover ${active ? 'border-jz-brand bg-jz-brand-soft' : 'border-jz-border hover:border-jz-border-strong'}`}>
+                  <button type="button" onClick={() => onFilter(r.name)} aria-pressed={active}
+                    title={`${active ? '取消' : ''}按「${r.name}」筛选下方的发现明细`}
+                    className="flex min-w-0 items-center gap-3 rounded-card p-3 text-left">
+                    <span data-compliance-gauge={r.name} className="flex-none">
+                      <ScoreRing rate={rate} size={56} stroke={4.5}>
+                        <span className="font-mono text-meta font-semibold tnum text-jz-ink">{rateStr}</span>
                       </ScoreRing>
-                    </div>
-                    <div className="text-section font-semibold text-jz-ink truncate text-center">{r.name}</div>
-                    <div className="flex items-center justify-center gap-1.5 h-5">
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-body font-semibold text-jz-ink">{r.name}</span>
                       {r.count === 0 ? (
-                        <span className="text-body text-jz-teal">无违规</span>
+                        <span className="mt-0.5 block text-label text-jz-muted">无发现</span>
                       ) : (
-                        <>
-                          <span className="flex items-center gap-0.5" title={sevTip}>
- {dots.slice(0, dotTotal).map((cls, k) => <span key={k} className={`w-1.5 h-1.5 rounded-pill flex-none ${cls}`} />)}
-                          </span>
-                          <span className="font-mono text-body tnum text-jz-muted">×{r.count}{overflow > 0 ? ` +${overflow}` : ''}</span>
-                        </>
+                        <span className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-meta text-jz-ink-2" title={sevTip}>
+                          <span className="tnum">{r.count} 个实例</span>
+                          {SEV_DOT.filter(([k]) => r.sev[k]).map(([k, cls]) => (
+                            <span key={k} className="inline-flex items-center gap-1"><span aria-hidden className={`h-1.5 w-1.5 rounded-pill ${cls}`} /><span className="font-mono tnum">{r.sev[k]}</span><span className="sr-only">{k}</span></span>
+                          ))}
+                        </span>
                       )}
-                    </div>
+                    </span>
                   </button>
-                  <div className="flex items-center justify-between px-0.5">
- {r.cards.length > 0 ? (
-                      <button type="button" onClick={() => setCmOpen(open ? null : r.name)} data-compliance-terms={r.name}
- className="font-mono text-body tnum text-jz-muted hover:text-jz-ink transition-colors"
- title={`条款清单 ${r.cards.length} 条`}>{open ? '收起' : `${r.cards.length}条`}</button>
-                    ) : <span className="text-meta text-jz-muted">无条款</span>}
-                    <button type="button" onClick={() => onDrill(r.name)} data-compliance-drill={r.name}
- className="inline-flex items-center gap-1 text-body text-jz-muted hover:text-jz-brand transition-colors"
- title={isOther ? '下钻工作台(masvs 空)' : '下钻工作台(域过滤)'}>
-                      <ExternalLink size={13} />下钻
-                    </button>
+                  <div className="flex items-center justify-between gap-2 border-t border-jz-border px-3 py-1.5">
+                    {r.cards.length > 0 ? (
+                      <Button size="sm" variant="ghost" className="-ml-2" onClick={() => setCmOpen(open ? null : r.name)} data-compliance-terms={r.name} aria-expanded={open}>
+                        {open ? '收起规则' : `${r.cards.length} 条规则`}
+                      </Button>
+                    ) : <span className="text-meta text-jz-muted">无规则命中</span>}
+                    <Button size="sm" variant="ghost" className="-mr-2" icon={<ExternalLink size={14} aria-hidden />} onClick={() => onDrill(r.name)} data-compliance-drill={r.name}
+                      title="在项目工作区按该域查看发现">在工作区查看</Button>
                   </div>
                   {open && (
-                    <div className="rounded-control bg-jz-surface-2/50 max-h-40 overflow-auto" data-compliance-terms-list={r.name}>
- {r.cards.map((c, i2) => (
-                        <div key={i2} className="px-2 py-1 flex items-center gap-2 text-meta">
-                          <StatusBadge tone={SEV_TONE(c.severity)}>{c.severity}</StatusBadge>
-                          <span className="flex-1 truncate text-jz-ink-2" title={c.title}>{c.title}</span>
+                    <ul className="max-h-40 overflow-auto border-t border-jz-border" data-compliance-terms-list={r.name}>
+                      {r.cards.map((c, i2) => (
+                        <li key={i2} className="flex items-center gap-2 px-3 py-1.5 text-meta">
+                          <SeverityBadge level={sevLevel(c.severity)} />
+                          <span className="min-w-0 flex-1 truncate text-jz-ink-2" title={c.title}>{c.title}</span>
                           <span className="font-mono tnum text-jz-muted">×{c.count}</span>
-                        </div>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   )}
-                </div>
+                </li>
               );
             })}
-          </div>
-          <div className="text-meta text-jz-muted" data-compliance-footnote>
- 得分口径 = 该域无违规占比(全会话违规实例中非本域占比,相对口径,零发现域即 100%);平台无 MASVS 检查项目录,绝对合规率=挂账。点卡片平滑过滤下方漏洞明细,「下钻」跳漏洞列表(域过滤,未归属项目会话不可下钻);{cm.otherCount > 0 && <>「其他」卡={cm.otherCount} 条无标准域归属(masvs=__none__)。</>}{cm.otherCount === 0 && <>零「其他」残留。</>}合规率&lt;60 红 / &lt;85 琥珀警示边框=展示层阈值,非平台判级。
-          </div>
-        </div>
+          </ul>
+          <p className="mt-3 text-meta text-jz-muted" data-compliance-footnote>
+            圆环数值 = 会话全部实例中不属于该域的占比,是相对口径;平台没有 MASVS 检查项目录,无法给出绝对合规率。低于 60 和低于 85 的配色只是显示阈值,不是平台评级。
+            {cm.otherCount > 0 ? ` 「其他」包含 ${cm.otherCount} 个没有标准域归属的实例。` : ' 所有实例都有标准域归属。'}
+            {' '}会话未归属项目时不能在工作区查看。
+          </p>
+        </>
       )}
-    </section>
+    </Panel>
   );
 };

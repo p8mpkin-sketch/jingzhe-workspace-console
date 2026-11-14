@@ -50,6 +50,7 @@ async function open(theme, width, height = 900, login = true) {
     if (variant === 'forbidden' && !isMe) return route.fulfill({ status: 403, contentType: 'application/json', body: '{"detail":"fixture: forbidden"}' });
     if (variant === 'slow' && !isMe) return; // never answered: page stays in its loading state
     let body = fixture(req.method(), url);
+    if (typeof body === 'string') return route.fulfill({ status: 200, contentType: 'text/plain; charset=utf-8', body: variant === 'empty' ? '' : body });
     if (variant === 'empty' && !isMe && req.method() === 'GET') body = Array.isArray(body) ? [] : Object.fromEntries(Object.entries(body).map(([k, v]) => [k, Array.isArray(v) ? [] : typeof v === 'number' ? 0 : v]));
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   });

@@ -30,6 +30,27 @@ const runs = [{ id: 7, status: 'done', total: 63, succeeded: 60, failed: 2, skip
 const sev = { critical: { active: 1, total: 2 }, high: { active: 3, total: 5 }, medium: { active: 6, total: 9 }, low: { active: 4, total: 4 }, info: { active: 2, total: 2 } };
 const providers = { active_id: 'p1', providers: [{ id: 'p1', name: 'Primary', kind: 'openai', base_url: 'https://llm.example.com/v1', model: 'model-large', enabled: true, healthy: true, latency_ms: 420 }, { id: 'p2', name: 'Fallback', kind: 'openai', base_url: 'https://llm2.example.com/v1', model: 'model-small', enabled: true, healthy: false, latency_ms: null }] };
 
+// Report center (inferred shapes: only the fields the page reads).
+const findingsOf = (sid) => {
+  const mk = (id, state, severity, title, masvs, evidence, repro) => ({ id, state, severity, title, masvs, evidence, repro, rule_id: '', phase: 'static' });
+  const confirmed = [
+    mk('f1', 'confirmed', 'high', '示例发现: 明文传输', 'MASVS-NETWORK-1', 'com/example/net/Api.java:42\n    client.newCall(request)\nGET http://api.example.com/v1/profile\nHTTP/1.1 200 OK\n未启用传输加密', '改用 HTTPS 并校验证书'),
+    mk('f2', 'confirmed', 'critical', '示例发现: 硬编码密钥', 'MASVS-CRYPTO-1', 'com/example/util/Keys.java:17\n    static final String KEY = "…"', '把密钥移入系统密钥库'),
+    mk('f4', 'confirmed', 'medium', '示例发现: 可导出组件未设权限', 'MASVS-PLATFORM-1', 'AndroidManifest.xml:88', ''),
+    mk('f5', 'confirmed', 'low', '示例发现: 日志输出敏感字段', 'MASVS-STORAGE-2', '', ''),
+  ];
+  const pending = [mk('f3', 'pending', 'medium', '示例发现: 调试标志开启', '', 'AndroidManifest.xml:12', ''), mk('f6', 'pending', 'low', '示例发现: 备份未关闭', 'MASVS-STORAGE-1', '', '')];
+  const excluded = [mk('f7', 'excluded', 'info', '示例发现: 第三方库版本提示', '', '', '')];
+  if (sid === 42) return { confirmed: [], pending: [], excluded: [], counts: { confirmed: 0, pending: 0, excluded: 0 } };
+  return { confirmed, pending, excluded, counts: { confirmed: confirmed.length, pending: pending.length, excluded: excluded.length } };
+};
+const matrixOf = (sid) => {
+  const colors = ['red', 'green', 'green', 'gray', 'green', 'red', 'green', 'gray', 'green', 'green', 'green', 'gray'];
+  const rows = colors.map((color, i) => ({ path: `/api/v1/${['profile', 'orders', 'orders/{id}', 'static/app.js', 'payments', 'export/users', 'messages', 'health', 'cart', 'coupons', 'address', 'legacy/ping'][i]}`, color, anon_code: color === 'green' ? 401 : 200, ms: 40 + i * 7, final_url: `https://api.example.com/api/v1/${i}`, authed: i === 3 ? 'ui-verified' : 'skip' }));
+  const count = (c) => rows.filter((r) => (r.authed === 'ui-verified' ? 'yellow' : r.color) === c).length;
+  return { status: 'ok', base_url: 'https://api.example.com', rows, counts: { red: count('red'), yellow: count('yellow'), green: count('green'), gray: count('gray') }, stale: sid === 41, watermark: 120, watermark_now: 134 };
+};
+
 /** [method, RegExp on pathname, body | (url) => body] — first match wins. */
 export const routes = [
   ['GET', /^\/api\/me$/, { username: 'demo', role: 'admin' }],
@@ -44,7 +65,11 @@ export const routes = [
   ['GET', /^\/api\/pentest\/sessions$/, sessions],
   ['GET', /^\/api\/pentest\/sessions\/\d+$/, (u) => sessions.find((s) => String(s.id) === u.pathname.split('/')[4]) || sessions[0]],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/vulns\/grouped$/, { status: 'ok', cards: [{ rule_id: 'R-001', title: '示例发现: 明文传输', severity: 'high', masvs: 'MASVS-NETWORK-1', instance_count: 2, states: { confirmed: 2 }, instances: [{ id: 'f1', state: 'confirmed', severity: 'high', evidence: 'GET http://…' }, { id: 'f2', state: 'confirmed', severity: 'high' }] }, { rule_id: 'R-002', title: '示例发现: 调试标志开启', severity: 'medium', instance_count: 1, states: { candidate: 1 }, instances: [{ id: 'f3', state: 'candidate', severity: 'medium' }] }] }],
-  ['GET', /^\/api\/pentest\/sessions\/\d+\/vulns$/, []],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/vulns$/, (u) => findingsOf(Number(u.pathname.split('/')[4]))],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/report\/summary$/, (u) => { const i = Number(u.pathname.split('/')[4]) - 40; return { risk_score: [72, 35, 0, 12, 48, 5][i] ?? 20, risk_level: ['高', '中', '低', '低', '中', '低'][i] ?? '低', confirmed_high: [3, 1, 0, 0, 2, 0][i] ?? 0, counts: { confirmed: 4 + i, pending: 2, excluded: 1 } }; }],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/auth_matrix$/, (u) => { const sid = Number(u.pathname.split('/')[4]); return sid === 43 ? { status: 'error', rows: [] } : matrixOf(sid); }],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/(report|apk-audit-report)$/, (u) => `# ${u.pathname.endsWith('apk-audit-report') ? '应用评估报告' : '动态验证报告'}\n\n- 应用: Example App\n- 包名: com.example.app\n- 版本: 1.0.0\n- 评估时间: 2026-11-14 16:00\n- 确认发现: 4\n- 待复核: 2\n- 风险等级: 高\n\n## 摘要\n\n本次评估共确认 4 条发现,其中 1 条需要优先处理。\n`],
+  ['GET', /^\/api\/tasks\/\d+\/report-file$/, (u) => `# ${u.searchParams.get('name')}\n\n## 概述\n\n评估流程生成的报告文件示例内容。\n\n- 明文传输: 2 处\n- 调试标志开启: 1 处\n`],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/events/, { events: [], cursor: 0, total: 0 }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/graph$/, { status: 'ok', nodes: [], edges: [] }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/api_tree$/, { status: 'ok', groups: [] }],

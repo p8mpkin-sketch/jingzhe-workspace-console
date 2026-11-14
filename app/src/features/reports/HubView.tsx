@@ -1,19 +1,18 @@
-// HubView.tsx — 报告中心 Level 1 项目大厅: KPI 大卡 ×4 / 检索工具栏 / 任务卡网格 + 高密表格 /
-// 分页器(12/24/48 + 页码跳转)/ 多选批量导出汇总 CSV。
-import React, { useState } from 'react';
+// HubView.tsx — report hub: metric row, toolbar (search / risk filter / sort / view), task cards or table,
+// selection with a batch summary export, pagination. Presentation only; every number comes from the parent.
+import React from 'react';
+import { LayoutGrid, Table2, FileDown, ArrowUpDown, Check, FileSearch, SearchX, Plus } from 'lucide-react';
 import {
-  Search, LayoutGrid, Table2, ChevronLeft, ChevronRight, FileDown, Eye, ShieldAlert,
-  ClipboardList, Gauge, FileOutput, Loader2,
-} from 'lucide-react';
-import { Button, StatusBadge, CodePill, Skeleton } from '@/components/ui';
-import type { StatusTone } from '@/components/ui';
-import { ScoreRing, Menu, menuItemCls } from './shared';
+  Button, StatusBadge, CodePill, Panel, Metric, MetricGrid, ObjectCard, DataTable, Pagination, BulkBar,
+  SearchField, SegmentedControl, Popover, MenuItem, AsyncBoundary, EmptyState, Checkbox, IconButton, useMediaQuery, useCompactTable,
+} from '@/components/ui';
+import type { Column, TabItem } from '@/components/ui';
+import { ScoreRing, MX_LABEL, scoreCls } from './shared';
 import type { HubEntry } from './types';
 import { complianceScoreOf } from './types';
 
-// 字号八档口径: 本文件 font 一律 11/12/13/14/16/20/24/28(text-meta/text-meta/text-label/text-body/text-section/text-title/text-title/text-page)
-const RISK_LABEL: Record<string, string> = { all: '全部', highrisk: '有高危', lowscore: '合规分<60' };
-const SORT_LABEL: Record<string, string> = { new: '最新', risk: '风险最高', score: '合规分升序' };
+const RISK_LABEL: Record<HubState['risk'], string> = { all: '全部', highrisk: '有高危发现', lowscore: '合规分低于 60' };
+const SORT_LABEL: Record<HubState['sort'], string> = { new: '最近更新', risk: '风险分从高到低', score: '合规分从低到高' };
 
 export type HubState = {
   q: string;
@@ -25,309 +24,231 @@ export type HubState = {
   checked: Set<number>;
 };
 
-const MxChip: React.FC<{ tone: StatusTone; label: string; n: number | null | 'error' }> = ({ tone, label, n }) => (
-  <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-control font-mono text-meta tnum ${
- n === 'error' ? 'bg-jz-surface-2/60 text-jz-muted' : tone === 'critical' ? 'bg-jz-sev-critical/10 text-jz-sev-critical'
- : tone === 'medium' ? 'bg-jz-sev-medium/10 text-jz-sev-medium' : tone === 'low' ? 'bg-jz-sev-low/10 text-jz-sev-low' : 'bg-jz-surface-2/60 text-jz-ink-2'
- }`} title={`${label}: ${n === 'error' ? '无矩阵(未完成网关推导或未生成)' : n ?? '统计中'}`}>
-    {n === 'error' ? '—' : n ?? '·'}{label}
-  </span>
-);
+const riskTone = (level: string) => (level === '严重' || level === '高' ? 'critical' : level === '中' ? 'medium' : 'low');
+const domainsOf = (agg: HubEntry['agg']) => (agg?.domains?.rows || []).filter((d) => d.count > 0).sort((a, b) => b.count - a.count);
+/** MM-DD HH:mm of the task's last update. The API value is sliced as before; a numeric epoch is formatted the same way. */
+const when = (t: any) => {
+  const v = t.updated_at;
+  if (typeof v === 'number' && v > 0) {
+    const d = new Date(v > 1e12 ? v : v * 1000);
+    const p2 = (n: number) => String(n).padStart(2, '0');
+    return `${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+  }
+  return String(v || '').slice(5, 16).replace('T', ' ');
+};
 
-const KpiCard: React.FC<{ icon: React.ElementType; label: string; value: React.ReactNode; sub: React.ReactNode; title?: string }> =
- ({ icon: Icon, label, value, sub, title }) => (
-    <div className="rounded-panel bg-jz-surface shadow-card p-5 space-y-1.5" data-hub-kpi={label}>
-      <div className="flex items-center gap-2 text-body text-jz-muted" title={title}>
-        <Icon size={15} className="text-jz-brand flex-none" />
-        <span>{label}</span>
-      </div>
-      <div className="text-title md:text-page font-semibold font-mono tnum text-jz-ink leading-none">{value}</div>
-      <div className="text-meta text-jz-muted min-h-[16px]">{sub}</div>
-    </div>
+/** The four matrix verdict counts as "label n" pairs; says so when there is no matrix or it is still loading. */
+const MatrixCounts: React.FC<{ mx: NonNullable<HubEntry['agg']>['mx'] | undefined; compact?: boolean }> = ({ mx, compact }) => {
+  if (mx == null) return <span className="text-jz-muted">统计中</span>;
+  if (mx === 'error') return <span className="text-jz-muted" title="该会话尚未生成鉴权矩阵">无矩阵</span>;
+  const cell = (k: 'red' | 'yellow' | 'green' | 'gray', cls: string) => (
+    <span title={MX_LABEL[k]} className="inline-flex items-center gap-1">
+      <span aria-hidden className={`h-1.5 w-1.5 rounded-pill ${cls}`} />
+      {!compact && <span className="text-jz-muted">{MX_LABEL[k]}</span>}
+      <span className="sr-only">{compact ? MX_LABEL[k] : ''}</span>
+      <span className="font-mono tnum text-jz-ink-2">{mx[k]}</span>
+    </span>
   );
+  return (
+    <span className={`inline-flex items-center gap-x-3 gap-y-1 ${compact ? 'whitespace-nowrap' : 'flex-wrap'}`}>
+      {cell('red', 'bg-jz-red')}{cell('yellow', 'bg-jz-amber')}{cell('green', 'bg-jz-teal')}{cell('gray', 'bg-jz-border-strong')}
+    </span>
+  );
+};
 
 export const HubView: React.FC<{
   loading: boolean;
+  /** Error of the task list request; 401 / 403 renders the permission state. */
+  error?: unknown;
+  onRetry: () => void;
+  onCreate: () => void;
   entries: HubEntry[];
   filtered: HubEntry[];
   paged: HubEntry[];
   kpi: { total: number; highRisk: number | null; avgScore: number | null; exportable: number; aggDone: number; aggTotal: number };
   hub: HubState;
   patch: (p: Partial<HubState>) => void;
- onOpen: (tid: number) => void;
- onExportOne: (tid: number) => void;
- onExportBatch: () => void;
- batchBusy: boolean;
-}> = ({ loading, entries, filtered, paged, kpi, hub, patch, onOpen, onExportOne, onExportBatch, batchBusy }) => {
- const [jump, setJump] = useState('');
- const pages = Math.max(1, Math.ceil(filtered.length / hub.pageSize));
- const page = Math.min(hub.page, pages);
- const allChecked = paged.length > 0 && paged.every((e) => hub.checked.has(e.task.id));
+  onOpen: (tid: number) => void;
+  onExportOne: (tid: number) => void;
+  onExportBatch: () => void;
+  batchBusy: boolean;
+}> = ({ loading, error, onRetry, onCreate, entries, filtered, paged, kpi, hub, patch, onOpen, onExportOne, onExportBatch, batchBusy }) => {
+  const allChecked = paged.length > 0 && paged.every((e) => hub.checked.has(e.task.id));
   const aggRunning = kpi.aggDone < kpi.aggTotal;
+  const failed = !!error && entries.length === 0;
+  const dash = (v: number | null) => (failed || v == null ? '—' : v);
+  const aggHint = aggRunning ? `正在汇总 ${kpi.aggDone}/${kpi.aggTotal}` : undefined;
 
- const toggleAll = () => {
- const next = new Set(hub.checked);
- if (allChecked) paged.forEach((e) => next.delete(e.task.id));
- else paged.forEach((e) => next.add(e.task.id));
- patch({ checked: next });
- };
- const toggleOne = (id: number) => {
+  const toggleAll = () => {
+    const next = new Set(hub.checked);
+    if (allChecked) paged.forEach((e) => next.delete(e.task.id));
+    else paged.forEach((e) => next.add(e.task.id));
+    patch({ checked: next });
+  };
+  const toggleOne = (id: number) => {
     const next = new Set(hub.checked);
     if (next.has(id)) next.delete(id); else next.add(id);
     patch({ checked: next });
   };
 
-  return (
-    <div className="space-y-4" data-reports-hub>
-      {/* KPI 大卡 ×4 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard icon={ClipboardList} label="已审计任务" value={kpi.total}
-          sub={<span>口径: kind=audit 且 status=done</span>} />
-        <KpiCard icon={ShieldAlert} label="累计高危" value={kpi.highRisk == null ? '—' : kpi.highRisk}
-          title="口径: 各任务代表会话 report/summary.confirmed_high 之和(确认的 critical+high)"
-          sub={aggRunning ? <span className="inline-flex items-center gap-1 text-jz-brand"><Loader2 size={11} className="animate-spin" />聚合中 {kpi.aggDone}/{kpi.aggTotal}</span> : <span>{kpi.aggTotal ? '关联会话任务聚合完成' : '暂无关联会话任务'}</span>} />
-        <KpiCard icon={Gauge} label="平均 MASVS 分" value={kpi.avgScore == null ? '—' : kpi.avgScore}
-          title="口径: 各任务合规分均值;合规分=100−risk_score 截断 0-100(平台无 MASVS 绝对分,挂账)"
-          sub={aggRunning ? <span className="inline-flex items-center gap-1 text-jz-brand"><Loader2 size={11} className="animate-spin" />聚合中 {kpi.aggDone}/{kpi.aggTotal}</span> : <span>合规分=100−risk_score(挂账口径)</span>} />
-        <KpiCard icon={FileOutput} label="可导出完整报告" value={kpi.exportable}
-          title="口径: 关联活跃渗透会话的审计任务数(可一键导出 PDF/zip/CSV 全套);其余任务仍可导审计报告 md"
-          sub={<span>关联活跃会话 · 全部任务仍可导报告文件</span>} />
-      </div>
+  const riskItems: TabItem<HubState['risk']>[] = (['all', 'highrisk', 'lowscore'] as const).map((k) => ({ key: k, label: RISK_LABEL[k], dataAttrs: { 'data-hub-risk-btn': k } }));
+  const viewItems: TabItem<HubState['view']>[] = [
+    { key: 'cards', label: <><LayoutGrid size={14} aria-hidden /><span className="max-[760px]:sr-only">卡片</span></>, dataAttrs: { 'data-hub-view-btn': 'cards' } },
+    { key: 'table', label: <><Table2 size={14} aria-hidden /><span className="max-[760px]:sr-only">表格</span></>, dataAttrs: { 'data-hub-view-btn': 'table' } },
+  ];
 
-      {/* 检索工具栏 */}
-      <div className="rounded-panel bg-jz-surface shadow-card p-3 space-y-3" data-hub-toolbar>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[240px]">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-jz-muted" />
-            <input
- value={hub.q}
- onChange={(e) => patch({ q: e.target.value, page: 1 })}
- placeholder="搜索包名 / #任务ID / 应用名…"
- data-hub-search
- className="w-full h-11 pl-11 pr-4 rounded-card bg-jz-surface-2/60 border border-transparent text-section text-jz-ink placeholder:text-jz-muted focus:border-jz-brand/50 outline-none"
- />
-          </div>
-          <div className="flex items-center rounded-card bg-jz-surface-2/50 p-1" data-hub-risk>
- {(['all', 'highrisk', 'lowscore'] as const).map((k) => (
-              <button key={k} type="button" data-hub-risk-btn={k}
- title={k === 'highrisk' ? '有确认高危(confirmed_high>0)' : k === 'lowscore' ? '合规分<60(需聚合完成)' : '不过滤'}
- onClick={() => patch({ risk: k, page: 1 })}
- className={`px-3 py-1.5 rounded-control text-body font-medium transition-colors ${hub.risk === k ? 'bg-jz-brand text-jz-on-brand ' : 'text-jz-muted hover:text-jz-ink'}`}>
-                {RISK_LABEL[k]}
-              </button>
+  const rowActions = (t: any) => (
+    <span className="inline-flex items-center gap-2">
+      <Button size="sm" variant="ghost" icon={<FileDown size={14} aria-hidden />} onClick={() => onExportOne(t.id)} data-hub-export-one={t.id}
+        title="导出该任务的汇总 CSV">汇总 CSV</Button>
+      <Button size="sm" variant="secondary" onClick={() => onOpen(t.id)} data-hub-open={t.id}>查看报告</Button>
+    </span>
+  );
+
+  // Secondary columns appear only where there is room for them; all of them stay in the cards and in the CSV.
+  const mid = useMediaQuery('(min-width: 1280px)');
+  const roomy = useMediaQuery('(min-width: 1600px)');
+  const compact = useCompactTable();
+  const columns: Column<HubEntry>[] = ([
+    { key: 'task', header: '任务', card: 'title', cell: ({ task: t }) => (
+      <span className="flex min-w-0 max-w-64 flex-col">
+        <span className="truncate font-medium text-jz-ink" title={t.app_name || ''}>{t.app_name || t.package || `任务 #${t.id}`}</span>
+        <span className="truncate font-mono text-meta text-jz-muted" title={t.package}>#{t.id} · {t.package || '未返回包名'}</span>
+      </span>
+    ) },
+    { key: 'packer', header: '加固', cell: ({ task: t }) => (t.packer && t.packer !== 'none' ? t.packer : '未识别') },
+    { key: 'score', header: '合规分', align: 'right', mono: true, cell: ({ agg }) => { const s = complianceScoreOf(agg?.summary); return <span className={scoreCls(s)}>{s ?? '—'}</span>; } },
+    { key: 'high', header: '高危', align: 'right', mono: true, cell: ({ agg }) => {
+      const s = agg?.summary;
+      return <span className={s?.confirmed_high ? 'font-semibold text-jz-sev-critical' : 'text-jz-muted'}>{s && typeof s.confirmed_high === 'number' ? s.confirmed_high : '—'}</span>;
+    } },
+    { key: 'counts', header: <span title="已确认 / 待复核 / 已排除">确认 / 复核 / 排除</span>, label: '确认 / 复核 / 排除', align: 'right', mono: true, cell: ({ agg }) => {
+      const s = agg?.summary;
+      return s?.counts ? `${s.counts.confirmed ?? 0} / ${s.counts.pending ?? 0} / ${s.counts.excluded ?? 0}` : '—';
+    } },
+    { key: 'mx', header: '鉴权矩阵', cell: ({ agg }) => <MatrixCounts mx={agg?.mx} compact /> },
+    { key: 'domains', header: '主要域', card: 'hidden', cell: ({ agg }) => {
+      const top = domainsOf(agg);
+      const txt = top.map((d) => `${d.name} ${d.count}`).join(' · ');
+      return <span className="block max-w-56 truncate text-jz-ink-2" title={txt}>{top.length ? top.slice(0, 2).map((d) => `${d.name} ${d.count}`).join(' · ') : agg?.sid ? '无发现' : '—'}</span>;
+    } },
+    { key: 'updated', header: '更新', mono: true, cell: ({ task: t }) => when(t) || '—' },
+    { key: 'actions', header: <span className="sr-only">操作</span>, label: '操作', align: 'right', card: 'action', cell: ({ task: t }) => (
+      <span className="inline-flex items-center gap-1 whitespace-nowrap">
+        <IconButton size="sm" variant="ghost" label="导出该任务的汇总 CSV" onClick={() => onExportOne(t.id)}><FileDown size={14} aria-hidden /></IconButton>
+        <Button size="sm" variant="secondary" onClick={() => onOpen(t.id)}>查看报告</Button>
+      </span>
+    ) },
+  ] as Column<HubEntry>[]).filter((c) => compact || ((roomy || (c.key !== 'domains' && c.key !== 'updated')) && (mid || (c.key !== 'counts' && c.key !== 'packer'))));
+
+  return (
+    <div className="flex flex-col gap-6" data-reports-hub>
+      <MetricGrid>
+        <Metric label="已完成评估任务" value={failed ? '—' : kpi.total} loading={loading} hint="类型为评估且状态为已完成" data-hub-kpi="已审计任务" />
+        <Metric label="确认高危发现" value={dash(kpi.highRisk)} loading={loading} tone={kpi.highRisk ? 'danger' : 'default'}
+          hint={aggHint ?? '各任务最新会话的确认高危之和'} data-hub-kpi="累计高危" />
+        <Metric label="平均合规分" value={dash(kpi.avgScore)} loading={loading}
+          hint={aggHint ?? '合规分 = 100 − 风险分'} title="平台没有 MASVS 绝对合规分;此处为 100 减去会话风险分,限定在 0 到 100" data-hub-kpi="平均 MASVS 分" />
+        <Metric label="可导出完整报告" value={failed ? '—' : kpi.exportable} loading={loading} hint="有关联活跃会话的任务" data-hub-kpi="可导出完整报告" />
+      </MetricGrid>
+
+      <Panel flush>
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3" data-hub-toolbar>
+          <SearchField className="min-w-56 flex-1" value={hub.q} onValueChange={(v) => patch({ q: v, page: 1 })}
+            label="搜索任务" placeholder="搜索包名、任务编号或应用名" data-hub-search />
+          <div data-hub-risk><SegmentedControl items={riskItems} value={hub.risk} onChange={(k) => patch({ risk: k, page: 1 })} label="风险筛选" /></div>
+          <Popover label="排序方式" role="menu" align="end"
+            trigger={(tp) => <Button variant="secondary" icon={<ArrowUpDown size={14} aria-hidden />} data-menu-btn {...tp}>{SORT_LABEL[hub.sort]}</Button>}>
+            {(close) => (['new', 'risk', 'score'] as const).map((k) => (
+              <MenuItem key={k} data-hub-sort={k} aria-checked={hub.sort === k} onClick={() => { patch({ sort: k, page: 1 }); close(); }}
+                icon={<Check size={14} aria-hidden className={hub.sort === k ? 'text-jz-brand' : 'invisible'} />}>{SORT_LABEL[k]}</MenuItem>
             ))}
-          </div>
-          <Menu
-            label={<span className="text-body font-medium">{SORT_LABEL[hub.sort]}</span>}
- btnCls="inline-flex items-center gap-1.5 h-11 px-4 rounded-card bg-jz-surface-2/60 text-jz-ink hover:bg-jz-surface-2"
- align="left" widthCls="w-44">
- {(close) => (
-              <>
- {(['new', 'risk', 'score'] as const).map((k) => (
-                  <button key={k} type="button" className={menuItemCls} data-hub-sort={k}
- onClick={() => { patch({ sort: k, page: 1 }); close(); }}>
-                    {SORT_LABEL[k]}{hub.sort === k && <span className="ml-auto text-jz-brand">✓</span>}
-                  </button>
-                ))}
-              </>
-            )}
-          </Menu>
-          <div className="flex items-center rounded-card bg-jz-surface-2/50 p-1" data-hub-view-toggle>
- {(['cards', 'table'] as const).map((k) => (
-              <button key={k} type="button" data-hub-view-btn={k} title={k === 'cards' ? '卡片网格' : '高密表格'}
- onClick={() => patch({ view: k })}
- className={`px-2.5 py-1.5 rounded-control transition-colors ${hub.view === k ? 'bg-jz-surface shadow-card text-jz-brand' : 'text-jz-muted hover:text-jz-ink'}`}>
-                {k === 'cards' ? <LayoutGrid size={15} /> : <Table2 size={15} />}
-              </button>
-            ))}
-          </div>
+          </Popover>
+          <div data-hub-view-toggle><SegmentedControl items={viewItems} value={hub.view} onChange={(k) => patch({ view: k })} label="视图" /></div>
         </div>
-        {/* 批量条 */}
-        <div className="flex items-center gap-2 flex-wrap text-meta text-jz-muted">
-          <span className="tnum">共 {entries.length} 个审计任务 · 命中 {filtered.length}</span>
-          <button type="button" onClick={toggleAll} data-hub-check-all className="text-jz-brand hover:underline">
-            {allChecked ? '取消本页全选' : '本页全选'}
-          </button>
- {hub.checked.size > 0 && (
-            <>
-              <span className="tnum text-jz-ink">已选 {hub.checked.size}</span>
-              <Button variant="primary" onClick={onExportBatch} disabled={batchBusy} data-hub-batch-export>
-                <FileDown size={13} />{batchBusy ? '聚合导出中…' : '导出汇总 CSV'}
-              </Button>
-              <button type="button" onClick={() => patch({ checked: new Set() })} className="hover:text-jz-ink">清空选择</button>
-            </>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-jz-border px-4 py-2 text-label text-jz-muted">
+          <span className="tnum">共 {entries.length} 个任务,符合条件 {filtered.length} 个</span>
+          {paged.length > 0 && (hub.view === 'cards' || compact) && (
+            <Checkbox className="!items-center" checked={allChecked} onChange={toggleAll} data-hub-check-all label={<span className="text-label text-jz-ink-2">选择本页</span>} />
           )}
         </div>
-      </div>
+        <BulkBar count={hub.checked.size} onClear={() => patch({ checked: new Set() })} className="border-t">
+          <Button size="sm" loading={batchBusy} icon={<FileDown size={14} aria-hidden />} onClick={onExportBatch} data-hub-batch-export>
+            {batchBusy ? '正在汇总' : '导出汇总 CSV'}
+          </Button>
+        </BulkBar>
 
-      {/* 主体: 卡片网格 / 高密表格 */}
-      {loading && entries.length === 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
- {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-44 rounded-panel" />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-panel bg-jz-surface shadow-card p-8 text-center" data-hub-empty>
-          <div className="text-title opacity-30 mb-2"></div>
-          <div className="text-body text-jz-muted">{entries.length === 0 ? '暂无已完成审计任务' : '当前检索条件无匹配任务'}</div>
-        </div>
-      ) : hub.view === 'cards' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4" data-hub-cards>
- {paged.map(({ task: t, agg }) => {
- const score = complianceScoreOf(agg?.summary);
- const s = agg?.summary;
- const mc = agg?.mx;
- const topDom = (agg?.domains?.rows || []).filter((d) => d.count > 0).sort((a, b) => b.count - a.count);
- const domTxt = topDom.length
- ? topDom.slice(0, 3).map((d) => `${d.name}×${d.count}`).join(' · ')
-              : agg?.sid ? '无违规实例' : '无关联会话';
-            return (
-              <div key={t.id} data-hub-card={t.id}
- className="rounded-panel bg-jz-surface shadow-card p-4 space-y-2.5 transition-transform hover:-translate-y-0.5">
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" checked={hub.checked.has(t.id)} onChange={() => toggleOne(t.id)}
- data-hub-check={t.id} title="选择(批量导出)"
- className="w-3.5 h-3.5 rounded-control accent-jz-brand cursor-pointer flex-none" />
-                  <span className="font-mono text-body font-semibold text-jz-brand tnum">#{t.id}</span>
-                  {t.packer && t.packer !== 'none' && <StatusBadge tone="medium" title="壳类型">{t.packer}</StatusBadge>}
-                  <span className="flex-1" />
-                  <span className="text-meta text-jz-muted font-mono tnum" title="任务更新时间">{String(t.updated_at || '').slice(5, 16).replace('T', ' ')}</span>
-                </div>
-                <div className="text-body font-semibold text-jz-ink truncate" title={t.app_name || t.package || ''}>
-                  {t.app_name || t.package || `任务 #${t.id}`}
-                </div>
-                <CodePill value={t.package || `任务#${t.id}未返回包名`} textCls="text-body" maxW="max-w-full" />
-                <div className="flex items-center gap-3">
-                  <ScoreRing rate={score ?? 0} size={48} stroke={4.5}>
-                    <span className={`font-mono font-semibold tnum text-body ${score == null ? 'text-jz-muted' : 'text-jz-ink'}`}>
-                      {score ?? '—'}
-                    </span>
-                  </ScoreRing>
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {s ? <StatusBadge tone={s.risk_level === '严重' || s.risk_level === '高' ? 'critical' : s.risk_level === '中' ? 'medium' : 'low'}>风险{s.risk_level}</StatusBadge> : <StatusBadge tone="info">{agg?.loading ? '统计中…' : '无会话数据'}</StatusBadge>}
-                      <span className="font-mono text-meta tnum text-jz-muted">高危 {s ? s.confirmed_high : '—'}</span>
-                    </div>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <MxChip tone="critical" label="红" n={mc == null ? null : mc === 'error' ? 'error' : mc.red} />
-                      <MxChip tone="medium" label="黄" n={mc == null ? null : mc === 'error' ? 'error' : mc.yellow} />
-                      <MxChip tone="low" label="绿" n={mc == null ? null : mc === 'error' ? 'error' : mc.green} />
-                      <MxChip tone="info" label="灰" n={mc == null ? null : mc === 'error' ? 'error' : mc.gray} />
-                    </div>
-                  </div>
-                </div>
-                <div className="text-meta text-jz-ink-2 truncate" title={`域违规摘要: ${domTxt}`} data-hub-domains={t.id}>
-                  域违规: {domTxt}
-                </div>
-                <div className="flex items-center gap-2 pt-0.5">
-                  <button type="button" onClick={() => onExportOne(t.id)} data-hub-export-one={t.id}
- title="快速导出该任务汇总 CSV(实时聚合代表会话数据)"
- className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-jz-surface-2/60 hover:bg-jz-brand/10 text-meta text-jz-ink transition-colors">
-                    <FileDown size={12} className="text-jz-brand" />快速导出 CSV
-                  </button>
-                  <button type="button" onClick={() => onOpen(t.id)} data-hub-open={t.id}
- className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-jz-brand/15 hover:bg-jz-brand/25 text-meta text-jz-brand font-medium transition-colors">
-                    <Eye size={12} />查看详细报告
-                  </button>
-                </div>
+        <div className="border-t border-jz-border">
+          <AsyncBoundary loading={loading && entries.length === 0} error={error} stale={!!error && entries.length > 0} onRetry={onRetry}
+            skeleton={hub.view === 'cards' ? 'cards' : 'table'}
+            empty={filtered.length === 0}
+            emptyState={entries.length === 0 ? (
+              <div data-hub-empty>
+                <EmptyState icon={FileSearch} title="还没有已完成的评估任务" cause="评估任务完成后,它的报告会出现在这里。"
+                  action={<Button icon={<Plus size={16} aria-hidden />} onClick={onCreate}>新建评估</Button>} />
               </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="divided-card-list overflow-x-auto" data-hub-table>
-          <table className="w-full text-meta">
-            <thead>
-              <tr className="text-jz-muted">
-                <th className="px-3 py-2.5 text-left w-8"><input type="checkbox" checked={allChecked} onChange={toggleAll} className="w-3.5 h-3.5 accent-jz-brand cursor-pointer" /></th>
-                <th className="px-2 py-2.5 text-left">任务</th>
-                <th className="px-2 py-2.5 text-left">应用 / 包名</th>
-                <th className="px-2 py-2.5 text-left">壳</th>
-                <th className="px-2 py-2.5 text-right">合规分</th>
-                <th className="px-2 py-2.5 text-right">高危</th>
-                <th className="px-2 py-2.5 text-right">确认/待复核/排除</th>
-                <th className="px-2 py-2.5 text-center">红/黄/绿/灰</th>
-                <th className="px-2 py-2.5 text-left">域违规</th>
-                <th className="px-2 py-2.5 text-right">操作</th>
-              </tr>
-            </thead>
-            <tbody>
- {paged.map(({ task: t, agg }) => {
- const score = complianceScoreOf(agg?.summary);
- const s = agg?.summary;
- const mc = agg?.mx;
- const counts = mc && mc !== 'error' ? mc : null;
- const topDom = (agg?.domains?.rows || []).filter((d) => d.count > 0).sort((a, b) => b.count - a.count);
-                return (
-                  <tr key={t.id} data-hub-row={t.id} className="hover:bg-jz-surface-2/30 transition-colors">
-                    <td className="px-3 py-2">
-                      <input type="checkbox" checked={hub.checked.has(t.id)} onChange={() => toggleOne(t.id)} className="w-3.5 h-3.5 accent-jz-brand cursor-pointer" />
-                    </td>
-                    <td className="px-2 py-2 font-mono text-jz-brand tnum whitespace-nowrap">#{t.id}</td>
-                    <td className="px-2 py-2 max-w-[260px]">
-                      <div className="truncate text-jz-ink" title={t.app_name || ''}>{t.app_name || '—'}</div>
-                      <div className="font-mono text-meta text-jz-muted truncate" title={t.package}>{t.package || '—'}</div>
-                    </td>
-                    <td className="px-2 py-2 text-jz-ink-2 whitespace-nowrap">{t.packer && t.packer !== 'none' ? t.packer : '无'}</td>
-                    <td className={`px-2 py-2 text-right font-mono tnum ${score == null ? 'text-jz-muted' : score < 60 ? 'text-jz-sev-critical' : score < 85 ? 'text-jz-sev-medium' : 'text-jz-teal'}`}>
-                      {score ?? '—'}
-                    </td>
-                    <td className={`px-2 py-2 text-right font-mono tnum ${s?.confirmed_high ? 'text-jz-sev-critical font-semibold' : 'text-jz-muted'}`}>{s ? s.confirmed_high : '—'}</td>
-                    <td className="px-2 py-2 text-right font-mono tnum text-jz-ink-2 whitespace-nowrap">
-                      {s ? `${s.counts?.confirmed ?? 0} / ${s.counts?.pending ?? 0} / ${s.counts?.excluded ?? 0}` : '—'}
-                    </td>
-                    <td className="px-2 py-2 text-center font-mono tnum whitespace-nowrap">
-                      {counts ? (
-                        <><span className="text-jz-sev-critical">{counts.red}</span>/<span className="text-jz-sev-medium">{counts.yellow}</span>/<span className="text-jz-teal">{counts.green}</span>/<span className="text-jz-muted">{counts.gray}</span></>
-                      ) : mc === 'error' ? <span className="text-jz-muted">无矩阵</span> : <span className="text-jz-muted">…</span>}
-                    </td>
-                    <td className="px-2 py-2 max-w-[180px] truncate text-jz-ink-2" title={topDom.map((d) => `${d.name}×${d.count}`).join(' · ')}>
- {topDom.length ? topDom.slice(0, 3).map((d) => `${d.name}×${d.count}`).join(' ') : agg?.sid ? '无违规' : '—'}
-                    </td>
-                    <td className="px-2 py-2 text-right whitespace-nowrap">
-                      <button type="button" onClick={() => onExportOne(t.id)} title="快速导出该任务汇总 CSV" className="p-1 rounded-control hover:bg-jz-surface-2 text-jz-muted hover:text-jz-brand"><FileDown size={13} /></button>
-                      <button type="button" onClick={() => onOpen(t.id)} title="查看详细报告" className="p-1 rounded-control hover:bg-jz-surface-2 text-jz-muted hover:text-jz-brand"><Eye size={13} /></button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
- )}
-
- {/* 分页器 */}
- {filtered.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap text-meta text-jz-muted" data-hub-pager>
-          <span className="tnum">第 {page}/{pages} 页 · 共 {filtered.length} 条</span>
-          <Menu
-            label={<span className="font-mono tnum">{hub.pageSize}/页</span>}
- btnCls="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink hover:bg-jz-surface-2"
- align="left" widthCls="w-32">
- {(close) => (
-              <> {[12, 24, 48].map((n) => (
-                <button key={n} type="button" className={menuItemCls} data-hub-pagesize={n}
- onClick={() => { patch({ pageSize: n, page: 1 }); close(); }}>
-                  每页 {n}{hub.pageSize === n && <span className="ml-auto text-jz-brand">✓</span>}
-                </button>))}</>
+            ) : (
+              <div data-hub-empty>
+                <EmptyState icon={SearchX} title="没有符合条件的任务" cause="当前的搜索词或风险筛选没有匹配结果。"
+                  action={<Button variant="secondary" onClick={() => patch({ q: '', risk: 'all', page: 1 })}>清除筛选</Button>} />
+              </div>
+            )}>
+            {hub.view === 'cards' ? (
+              <div className="grid grid-cols-1 gap-4 p-4 table:grid-cols-2 desktop:grid-cols-3 wide:grid-cols-4" data-hub-cards>
+                {paged.map(({ task: t, agg }) => {
+                  const score = complianceScoreOf(agg?.summary);
+                  const s = agg?.summary;
+                  const top = domainsOf(agg);
+                  const domTxt = top.length ? top.slice(0, 3).map((d) => `${d.name} ${d.count}`).join(' · ') : agg?.sid ? '无发现' : '无关联会话';
+                  return (
+                    <ObjectCard key={t.id} data-hub-card={t.id}
+                      title={<span className="block truncate" title={t.app_name || t.package || ''}>{t.app_name || t.package || `任务 #${t.id}`}</span>}
+                      subtitle={<span className="font-mono tnum">#{t.id} · 更新于 {when(t) || '—'}</span>}
+                      media={(
+                        <ScoreRing rate={score ?? 0} size={48} stroke={4.5}>
+                          <span className={`font-mono text-label font-semibold tnum ${score == null ? 'text-jz-muted' : 'text-jz-ink'}`} title="合规分">{score ?? '—'}</span>
+                        </ScoreRing>
+                      )}
+                      badge={s?.risk_level
+                        ? <StatusBadge tone={riskTone(s.risk_level)}>风险 {s.risk_level}</StatusBadge>
+                        : <StatusBadge tone="neutral">{agg?.loading ? '统计中' : '无会话数据'}</StatusBadge>}
+                      footer={(
+                        <>
+                          <Checkbox className="!items-center" checked={hub.checked.has(t.id)} onChange={() => toggleOne(t.id)} data-hub-check={t.id}
+                            label={<span className="text-label text-jz-ink-2">选择</span>} />
+                          {rowActions(t)}
+                        </>
+                      )}>
+                      <CodePill value={t.package || `任务#${t.id}未返回包名`} maxW="max-w-full" />
+                      <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-label">
+                        <dt className="text-jz-muted">确认高危</dt>
+                        <dd className={`font-mono tnum ${s?.confirmed_high ? 'font-semibold text-jz-sev-critical' : 'text-jz-ink-2'}`}>{s && typeof s.confirmed_high === 'number' ? s.confirmed_high : '—'}</dd>
+                        <dt className="text-jz-muted">加固</dt>
+                        <dd className="text-jz-ink-2">{t.packer && t.packer !== 'none' ? t.packer : '未识别'}</dd>
+                        <dt className="text-jz-muted">鉴权矩阵</dt>
+                        <dd className="text-meta"><MatrixCounts mx={agg?.mx} compact /></dd>
+                        <dt className="text-jz-muted">主要域</dt>
+                        <dd className="truncate text-jz-ink-2" title={domTxt} data-hub-domains={t.id}>{domTxt}</dd>
+                      </dl>
+                    </ObjectCard>
+                  );
+                })}
+              </div>
+            ) : (
+              <div data-hub-table>
+                <DataTable<HubEntry> label="已完成评估任务" columns={columns} rows={paged} rowKey={(e) => e.task.id}
+                  selected={hub.checked as Set<string | number>} onToggle={(k) => toggleOne(Number(k))} onToggleAll={toggleAll}
+                  rowDataAttrs={(e) => ({ 'data-hub-row': e.task.id })} stickyHeader={false} />
+              </div>
             )}
-          </Menu>
-          <div className="flex items-center gap-1">
-            <button type="button" disabled={page <= 1} onClick={() => patch({ page: page - 1 })} data-hub-page-prev
- className="p-1.5 rounded-control bg-jz-surface-2/60 disabled:opacity-40 hover:bg-jz-surface-2"><ChevronLeft size={13} /></button>
-            <span className="px-1 font-mono tnum">{page}</span>
-            <button type="button" disabled={page >= pages} onClick={() => patch({ page: page + 1 })} data-hub-page-next
- className="p-1.5 rounded-control bg-jz-surface-2/60 disabled:opacity-40 hover:bg-jz-surface-2"><ChevronRight size={13} /></button>
-          </div>
-          <span className="inline-flex items-center gap-1">
-            跳至
-            <input value={jump} onChange={(e) => setJump(e.target.value.replace(/\D/g, ''))}
- onKeyDown={(e) => { if (e.key === 'Enter') { const p = Number(jump); if (p >= 1 && p <= pages) patch({ page: p }); setJump(''); } }}
- placeholder="页码" data-hub-page-jump
- className="w-14 h-7 px-2 rounded-control bg-jz-surface-2/60 text-center font-mono tnum text-jz-ink outline-none focus:border-jz-brand/50 border border-transparent" />
-            页
-          </span>
+          </AsyncBoundary>
         </div>
-      )}
+        {filtered.length > 0 && (
+          <Pagination page={hub.page} pageSize={hub.pageSize} total={filtered.length} onPage={(p) => patch({ page: p })}
+            onPageSize={(n) => patch({ pageSize: n, page: 1 })} pageSizes={[12, 24, 48]} jump dataAttrs={{ 'data-hub-pager': '' }}
+            controlAttrs={{ prev: { 'data-hub-page-prev': '' }, next: { 'data-hub-page-next': '' }, jump: { 'data-hub-page-jump': '' }, size: (n) => ({ 'data-hub-pagesize': n }) }} />
+        )}
+      </Panel>
     </div>
   );
 };

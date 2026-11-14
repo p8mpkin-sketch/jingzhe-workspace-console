@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Printer, X, Loader2 } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { api } from '@/services/api';
-import { Button, toast } from '@/components/ui';
+import { Button, Page, PageHeader, PermissionState, ErrorState, toast, useOverlay } from '@/components/ui';
+import { moduleLabel } from '@/layout/navigation';
 import { DOMAINS, domainOf } from '@/features/pentest/masvsDomains';
 import { HubView } from './HubView';
 import type { HubState } from './HubView';
 import { DetailView } from './DetailView';
+import type { TextPreview } from './DetailView';
 import { SEV_WEIGHT } from './shared';
 import type { TaskAgg, HubEntry, DomainAgg, LocalVuln, MxCounts } from './types';
 import { emptyAgg, complianceScoreOf } from './types';
@@ -50,6 +52,15 @@ export const ReportCenterPage: React.FC = () => {
   const [tasksLoaded, setTasksLoaded] = useState(false);
   const [taskId, setTaskId] = useState<number | null>(null);
   const viewMode: 'hub' | 'detail' = taskId != null ? 'detail' : 'hub';
+  // Error of the task list request (same request as before; only its failure is now kept for the error / permission state).
+  const [loadErr, setLoadErr] = useState<unknown>(null);
+  const loadTasks = useCallback(() => {
+    api<any[]>('/api/tasks?limit=500').then((rows) => {
+      setTasks((rows || []).filter((r: any) => r.kind === 'audit' && r.status === 'done'));
+      setLoadErr(null);
+      setTasksLoaded(true);
+    }).catch((e) => { setLoadErr(e || new Error('请求失败')); setTasksLoaded(true); });
+  }, []);
 
   // ---- 大厅状态(提升至根,详情往返不丢检索/分页) ----
   const [hub, setHub] = useState<HubState>({ q: '', risk: 'all', sort: 'new', view: 'cards', page: 1, pageSize: 12, checked: new Set() });
@@ -148,22 +159,19 @@ export const ReportCenterPage: React.FC = () => {
  setSelected(live[0].id);
  }
  }).catch(() => { setSessLoaded(true); });
-    api<any[]>('/api/tasks?limit=500').then((rows) => {
- setTasks((rows || []).filter((r: any) => r.kind === 'audit' && r.status === 'done'));
- setTasksLoaded(true);
- }).catch(() => { setTasksLoaded(true); });
+    loadTasks();
  }, []); // eslint-disable-line — 深链只在挂载时消费一次(searchParams/setSearchParams 稳定)
 
  const hubTasks = tasks;
  const taskById = useMemo(() => new Map(hubTasks.map((t) => [t.id, t])), [hubTasks]);
  // ?taskId= 深链指向不存在/非审计完成任务 → 回落大厅
  useEffect(() => {
- if (taskId != null && tasksLoaded && !taskById.has(taskId)) {
+ if (taskId != null && tasksLoaded && !loadErr && !taskById.has(taskId)) {
  setTaskId(null);
  setSearchParams({}, { replace: true });
- toast.info('任务不存在或非已完成审计任务,已返回报告大厅');
+ toast.info('任务不存在,或不是已完成的评估任务,已返回报告列表');
  }
- }, [taskId, tasksLoaded, taskById, setSearchParams]);
+ }, [taskId, tasksLoaded, loadErr, taskById, setSearchParams]);
 
  // 大厅聚合: 任务清单就绪即全量后台聚合(队列限流;无会话任务零请求即刻 done)
  const hubTaskIds = hubTasks.map((t) => t.id).join(',');
@@ -215,19 +223,20 @@ export const ReportCenterPage: React.FC = () => {
   const [showDiff, setShowDiff] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
   const [fileName, setFileName] = useState('executive_summary.md');
-  const [preview, setPreview] = useState<string>('');
+  const [preview, setPreview] = useState<TextPreview>({ state: 'loading', text: '' });
 
   // R60 指令4: 会话报告在线预览(含高管摘要段)——R104-2④ 解析为 KV 看板
-  const [sessPreview, setSessPreview] = useState('');
+  const [sessPreview, setSessPreview] = useState<TextPreview>({ state: 'loading', text: '' });
   // R110-3: 报告类型入口卡(渗透测试报告 / APK 级审计报告,三段=审计信息/漏洞信息/提取信息)
   const [sessKind, setSessKind] = useState<'pentest' | 'apk_audit'>('pentest');
  useEffect(() => {
- if (viewMode !== 'detail' || !selected) { setSessPreview(''); return; }
+ if (viewMode !== 'detail' || !selected) { setSessPreview({ state: 'loading', text: '' }); return; }
+ setSessPreview({ state: 'loading', text: '' });
  const tt = localStorage.getItem('token') || '';
  fetch(`/api/pentest/sessions/${selected}/${sessKind === 'apk_audit' ? 'apk-audit-report' : 'report'}`, { headers: { Authorization: `Bearer ${tt}` } })
  .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
- .then(setSessPreview)
- .catch((e) => setSessPreview('(预览失败: ' + e.message + ')'));
+ .then((text) => setSessPreview({ state: 'ok', text }))
+ .catch((e) => setSessPreview({ state: 'error', text: '', message: e.message }));
   }, [selected, sessKind, viewMode]);
 
   // R84-3 建/R103-10① 升级/R104-2② 网格化: 详情页域聚合(8 标准域+其他,同源 masvsDomains.ts)
@@ -235,8 +244,11 @@ export const ReportCenterPage: React.FC = () => {
   type CmRow = { name: string; count: number; sev: Record<string, number>; cards: CmCard[] };
   const [cm, setCm] = useState<{ rows: CmRow[]; otherCount: number; total: number } | null>(null);
   const [cmFilter, setCmFilter] = useState<string | null>(null);
+  const [cmState, setCmState] = useState<'loading' | 'ok' | 'error'>('loading');
+  const [vmState, setVmState] = useState<'loading' | 'ok' | 'error'>('loading');
  useEffect(() => {
  if (viewMode !== 'detail' || !selected) { setCm(null); return; }
+ setCmState('loading');
  const tt = localStorage.getItem('token') || '';
  fetch(`/api/pentest/sessions/${selected}/vulns/grouped`, { headers: { Authorization: `Bearer ${tt}` } })
  .then((r) => r.json())
@@ -255,12 +267,13 @@ export const ReportCenterPage: React.FC = () => {
  }
  const total = aggRows.reduce((a2, b2) => a2 + b2.count, 0) + other.count;
  setCm({ rows: [...aggRows, other], otherCount: other.count, total });
+ setCmState('ok');
  })
- .catch(() => setCm(null));
+ .catch(() => { setCm(null); setCmState('error'); });
  }, [selected, viewMode]);
  const goDrill = (name: string) => {
  const sess = sessions.find((x) => x.id === selected);
- if (!sess?.project_id) { toast.info('该会话未归属项目,域下钻不可用'); return; } // R79-2 同规矩
+ if (!sess?.project_id) { toast.info('该会话没有归属项目,不能在工作区查看'); return; } // R79-2 同规矩
  const dom = DOMAINS.find((x) => x.name === name);
     const masvs = dom ? [...dom.masvs, ...(dom.cwe || [])].join(',') : '__none__';   // 「其他」行 → __none__
     nav(`/pentest/project/${sess.project_id}/session/${selected}?tab=vulns&masvs=${encodeURIComponent(masvs)}`);
@@ -270,11 +283,12 @@ export const ReportCenterPage: React.FC = () => {
   const [vm, setVm] = useState<{ confirmed: any[]; pending: any[]; excluded: any[]; counts: Record<string, number> } | null>(null);
  useEffect(() => {
  if (viewMode !== 'detail' || !selected) { setVm(null); return; }
+ setVmState('loading');
  const tt = localStorage.getItem('token') || '';
  fetch(`/api/pentest/sessions/${selected}/vulns`, { headers: { Authorization: `Bearer ${tt}` } })
  .then((r) => r.json())
- .then((d) => setVm({ confirmed: d.confirmed || [], pending: d.pending || [], excluded: d.excluded || [], counts: d.counts || {} }))
- .catch(() => setVm(null));
+ .then((d) => { setVm({ confirmed: d.confirmed || [], pending: d.pending || [], excluded: d.excluded || [], counts: d.counts || {} }); setVmState('ok'); })
+ .catch(() => { setVm(null); setVmState('error'); });
   }, [selected, viewMode]);
   // 鉴权矩阵状态(声明前置于 effMx;获取实现 loadMatrix 见下,随 selected 会话)
   const [mx, setMx] = useState<any>(null);
@@ -314,11 +328,11 @@ export const ReportCenterPage: React.FC = () => {
  // 本地合并层只存本地条目(导入/手动);与后端行的去重已按 标题+组件路径 键完成
  const keep = merged.filter((v: any) => v.source === 'import' || v.source === 'manual') as LocalVuln[];
  setLocalVulnsMap((m) => ({ ...m, [selected]: keep }));
- toast.ok(`漏洞明细合并完成: 追加 ${added} 条${replaced ? ` · 覆盖 ${replaced} 条` : ''}(本地合并层,导出即持久)`);
+ toast.ok(`发现明细已合并: 新增 ${added} 条${replaced ? `,替换 ${replaced} 条` : ''}。数据只在当前页面,导出后保留`);
  } else {
  const { rows: mergedRows, added, replaced } = mergeMatrixRows(effMx?.rows || null, rows, strategy);
  setLocalMxMap((m) => ({ ...m, [selected]: mergedRows }));
-      toast.ok(`鉴权矩阵合并完成: 追加 ${added} 条${replaced ? ` · 覆盖 ${replaced} 条` : ''}(本地合并层,导出即持久)`);
+      toast.ok(`鉴权矩阵已合并: 新增 ${added} 条${replaced ? `,替换 ${replaced} 条` : ''}。数据只在当前页面,导出后保留`);
     }
   };
 
@@ -345,7 +359,7 @@ export const ReportCenterPage: React.FC = () => {
  const rows: DiffRow[] = [];
  for (const [title, f] of mb) {
  const old = ma.get(title);
- if (!old) rows.push({ kind: 'added', title, sev: f.severity, note: `B 会话新增(状态 ${f.state})` });
+ if (!old) rows.push({ kind: 'added', title, sev: f.severity, note: `仅存在于 B 会话(状态 ${f.state})` });
  else if (old.state !== f.state || old.severity !== f.severity) {
  // R79-1②: severity 变化也算 changed;状态/严重度双变合并写
  const parts: string[] = [];
@@ -379,12 +393,13 @@ export const ReportCenterPage: React.FC = () => {
 
  // 审计报告(pipeline)——锚定当前任务
  useEffect(() => {
- if (viewMode !== 'detail' || !taskId) { setPreview(''); return; }
+ if (viewMode !== 'detail' || !taskId) { setPreview({ state: 'loading', text: '' }); return; }
+ setPreview({ state: 'loading', text: '' });
  const H = { Authorization: `Bearer ${localStorage.getItem('token') || ''}` };
  fetch(`/api/tasks/${taskId}/report-file?name=${fileName}`, { headers: H })
  .then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status)))))
- .then(setPreview)
- .catch((e) => setPreview('(报告文件不可用: ' + e.message + ')'));
+ .then((text) => setPreview({ state: 'ok', text }))
+ .catch((e) => setPreview({ state: 'error', text: '', message: e.message }));
  }, [taskId, fileName, viewMode]);
 
  // ---- 导出/下载(端点既有能力 + 纯前端合成) ----
@@ -444,12 +459,12 @@ export const ReportCenterPage: React.FC = () => {
  compliance: complianceScoreOf(detailAgg?.summary),
  }), [detailTask, sessions, selected, detailAgg, effVm, effMx]);
 
- const guardVm = () => { if (!effVm) { toast.info('漏洞明细尚未加载(等列表渲染后再导出)'); return false; } return true; };
- const guardMx = () => { if (!effMx?.rows?.length) { toast.info('鉴权矩阵尚未加载或该会话无矩阵'); return false; } return true; };
+ const guardVm = () => { if (!effVm) { toast.info('发现明细还没有加载完成,稍后再导出'); return false; } return true; };
+ const guardMx = () => { if (!effMx?.rows?.length) { toast.info('鉴权矩阵还没有加载,或该会话没有矩阵'); return false; } return true; };
  const onExportVulnsCsv = () => {
  if (!guardVm() || selected == null) return;
  downloadCsv(`vulns_${selected}.csv`, vulnsCsvRows([...effVm!.confirmed, ...effVm!.pending, ...effVm!.excluded]));
- toast.ok(`漏洞明细 CSV 已导出(${effVm!.confirmed.length + effVm!.pending.length + effVm!.excluded.length} 条)`);
+ toast.ok(`发现明细 CSV 已导出(${effVm!.confirmed.length + effVm!.pending.length + effVm!.excluded.length} 条)`);
  };
  const onExportMatrixCsv = () => {
  if (!guardMx()) return;
@@ -461,8 +476,8 @@ export const ReportCenterPage: React.FC = () => {
  downloadJson(`auth_matrix_${selected}.json`, matrixExportJson(effMx, selected));
  toast.ok('鉴权矩阵 JSON 已导出');
  };
- const onExportFullJson = () => { downloadJson(`full_audit_report_task${taskId}.json`, buildFullReportJson(buildCtx())); toast.ok('完整审计报告 JSON 已导出'); };
- const onExportFullMd = () => { downloadText(`full_audit_report_task${taskId}.md`, buildFullReportMarkdown(buildCtx())); toast.ok('完整审计报告 Markdown 已导出'); };
+ const onExportFullJson = () => { downloadJson(`full_audit_report_task${taskId}.json`, buildFullReportJson(buildCtx())); toast.ok('完整报告 JSON 已导出'); };
+ const onExportFullMd = () => { downloadText(`full_audit_report_task${taskId}.md`, buildFullReportMarkdown(buildCtx())); toast.ok('完整报告 Markdown 已导出'); };
  const [printMd, setPrintMd] = useState('');
  const [printMode, setPrintMode] = useState(false);
  const onPrint = () => { setPrintMd(buildFullReportMarkdown(buildCtx())); setPrintMode(true); };
@@ -500,73 +515,73 @@ export const ReportCenterPage: React.FC = () => {
     setSearchParams({}, { replace: true });
   };
 
+  const printRef = useOverlay(printMode, () => setPrintMode(false));
+  const detailBlocked = viewMode === 'detail' && !detailTask && !!loadErr;
+  const errStatus = loadErr && typeof loadErr === 'object' && 'status' in (loadErr as any) ? Number((loadErr as any).status) : undefined;
+
   return (
     <>
-      <div className={`p-4 md:p-5 h-full overflow-auto space-y-4 ${printMode ? 'hidden' : ''}`}>
+      <Page className={printMode ? 'hidden' : undefined} data-reports-page>
         {viewMode === 'hub' || !detailTask ? (
           <>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-section font-semibold text-jz-ink">报告中心 · 项目大厅</h2>
-              <span className="text-meta text-jz-muted">已完成审计任务的全景检索与批量导出;点卡片进详情(鉴权矩阵/MASVS 图谱/漏洞明细/报告导出)</span>
-            </div>
-            <HubView
- loading={!tasksLoaded}
- entries={entries} filtered={filtered} paged={paged} kpi={kpi}
- hub={{ ...hub, page }} patch={patchHub}
- onOpen={openTask} onExportOne={onExportOne} onExportBatch={onExportBatch} batchBusy={batchBusy}
- />
-            {tasksLoaded && hubTasks.length === 0 && (
-              <div className="rounded-panel bg-jz-surface shadow-card p-6 text-center">
-                <div className="text-title opacity-30 mb-2"></div>
-                <div className="text-body text-jz-muted mb-3">暂无已完成审计任务</div>
-                <Button variant="primary" onClick={() => nav('/new-audit')}>去新建审计</Button>
-              </div>
+            <PageHeader title={moduleLabel('/reports')}
+              description="已完成评估任务的报告。打开任务可以查看鉴权矩阵、合规域分布、发现明细,并导出报告。"
+              meta={kpi.aggDone < kpi.aggTotal && kpi.aggTotal > 0 ? (
+                <span role="status" data-agg-progress className="tnum">正在汇总各任务的会话指标 {kpi.aggDone}/{kpi.aggTotal}</span>
+              ) : undefined} />
+            {detailBlocked ? (
+              errStatus === 401 || errStatus === 403 ? <PermissionState /> : <ErrorState title="报告加载失败" message="任务列表请求没有成功,无法打开这份报告。" onRetry={loadTasks} />
+            ) : (
+              <HubView
+                loading={!tasksLoaded} error={loadErr} onRetry={loadTasks} onCreate={() => nav('/new-audit')}
+                entries={entries} filtered={filtered} paged={paged} kpi={kpi}
+                hub={{ ...hub, page }} patch={patchHub}
+                onOpen={openTask} onExportOne={onExportOne} onExportBatch={onExportBatch} batchBusy={batchBusy}
+              />
             )}
           </>
         ) : (
           <DetailView
- task={detailTask} entries={entries} taskSessions={taskSessions}
- selected={selected ?? repSid} aggLoading={!tasksLoaded || !sessLoaded}
- onPickSession={(sid) => setSelected(sid)}
- onBack={backToHub} onPickTask={openTask}
- mx={effMx} mxState={effMx ? 'ok' : mxState} reloadMatrix={loadMatrix}
- cm={cm} cmFilter={cmFilter} setCmFilter={setCmFilter} goDrill={goDrill}
- vm={effVm} localVulns={localVulns}
- onMergeImport={onMergeImport} onAddManualVuln={onAddManualVuln}
- sessKind={sessKind} setSessKind={setSessKind} sessPreview={sessPreview} sessions={sessions}
- fileName={fileName} setFileName={setFileName} preview={preview}
- showDiff={showDiff} setShowDiff={setShowDiff}
- showCompare={showCompare} setShowCompare={setShowCompare}
- cmpSid={cmpSid} setCmpSid={setCmpSid} cmp={cmp} diffRows={diffRows}
- onDl={dl} onDlExec={dlExec} onExportEvidenceJson={exportEvidenceJson}
- onExportVulnsCsv={onExportVulnsCsv}
- onExportMatrixCsv={onExportMatrixCsv} onExportMatrixJson={onExportMatrixJson}
- onExportFullJson={onExportFullJson} onExportFullMd={onExportFullMd} onPrint={onPrint}
- />
+            task={detailTask} entries={entries} taskSessions={taskSessions}
+            selected={selected ?? repSid} aggLoading={!tasksLoaded || !sessLoaded}
+            onPickSession={(sid) => setSelected(sid)}
+            onBack={backToHub} onPickTask={openTask}
+            mx={effMx} mxState={effMx ? 'ok' : mxState} reloadMatrix={loadMatrix}
+            cm={cm} cmState={cmState} cmFilter={cmFilter} setCmFilter={setCmFilter} goDrill={goDrill}
+            vm={effVm} vmState={vmState} localVulns={localVulns}
+            onMergeImport={onMergeImport} onAddManualVuln={onAddManualVuln}
+            sessKind={sessKind} setSessKind={setSessKind} sessPreview={sessPreview} sessions={sessions}
+            fileName={fileName} setFileName={setFileName} preview={preview}
+            showDiff={showDiff} setShowDiff={setShowDiff}
+            showCompare={showCompare} setShowCompare={setShowCompare}
+            cmpSid={cmpSid} setCmpSid={setCmpSid} cmp={cmp} diffRows={diffRows}
+            onDl={dl} onDlExec={dlExec} onExportEvidenceJson={exportEvidenceJson}
+            onExportVulnsCsv={onExportVulnsCsv}
+            onExportMatrixCsv={onExportMatrixCsv} onExportMatrixJson={onExportMatrixJson}
+            onExportFullJson={onExportFullJson} onExportFullMd={onExportFullMd} onPrint={onPrint}
+          />
         )}
-      </div>
+      </Page>
 
-      {/* 打印 / PDF 视图(完整审计报告;window.print 走既有 report-print-container 打印隔离) */}
+      {/* Print view of the full report. window.print() uses the existing report-print-container isolation and the paper tokens. */}
       {printMode && (
-        <div className="fixed inset-0 z-[70] overflow-auto bg-jz-scrim/70 p-6 print:static print:overflow-visible print:bg-transparent print:p-0" data-print-view>
-          <div className="mx-auto w-[860px] max-w-[94vw] print:max-w-none print:w-auto">
-            <div className="no-print flex items-center justify-end gap-2 mb-3">
-              <span className="text-meta text-jz-ink mr-auto">打印预览 — 完整审计报告(浏览器「另存为 PDF」即得文档)</span>
-              <Button variant="subtle" onClick={() => setPrintMode(false)}><X size={13} />关闭</Button>
-              <Button variant="primary" onClick={() => window.print()} data-print-go><Printer size={13} />打印 / 保存为 PDF</Button>
+        <div ref={printRef} role="dialog" aria-modal="true" aria-label="打印预览" tabIndex={-1} data-print-view
+          className="fixed inset-0 z-50 overflow-auto bg-jz-scrim/50 p-4 tablet:p-6 print:static print:overflow-visible print:bg-transparent print:p-0">
+          <div className="mx-auto w-full max-w-4xl print:max-w-none">
+            <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-3 rounded-card border border-jz-border bg-jz-surface px-4 py-3 shadow-card">
+              <div className="min-w-0">
+                <div className="text-body font-semibold text-jz-ink">打印预览</div>
+                <div className="text-meta text-jz-muted">完整报告。在浏览器的打印对话框里选择「另存为 PDF」可以得到文件。</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" onClick={() => setPrintMode(false)}>关闭</Button>
+                <Button icon={<Printer size={16} aria-hidden />} onClick={() => window.print()} data-print-go>打印</Button>
+              </div>
             </div>
-            <div className="report-print-container rounded-card bg-jz-surface shadow-card p-6 print:rounded-none print:shadow-none print:p-0">
-              <pre className="whitespace-pre-wrap break-words font-mono text-label leading-5 text-jz-ink">{printMd}</pre>
+            <div className="report-print-container rounded-card border border-jz-border bg-jz-surface p-6 shadow-card print:rounded-none print:border-0 print:p-0 print:shadow-none">
+              <pre className="whitespace-pre-wrap break-words font-mono text-label text-jz-ink">{printMd}</pre>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* 聚合后台进行中的悬浮提示(hub;零打断) */}
-      {viewMode === 'hub' && kpi.aggDone < kpi.aggTotal && kpi.aggTotal > 0 && (
-        <div className="fixed bottom-4 left-4 z-40 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill bg-jz-surface/95 shadow-card text-meta text-jz-ink-2" data-agg-progress>
-          <Loader2 size={12} className="animate-spin text-jz-brand" />
-          会话指标聚合中 {kpi.aggDone}/{kpi.aggTotal}(纯前端拉取既有端点)
         </div>
       )}
     </>
