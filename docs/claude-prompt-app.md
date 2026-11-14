@@ -4,7 +4,7 @@
 You are the frontend design lead for Jingzhe Workspace.
 
 Repository:
-[paste the private repository URL]
+https://github.com/p8mpkin-sketch/jingzhe-workspace-console
 
 Start by reading:
 - README.md
