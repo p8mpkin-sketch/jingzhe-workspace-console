@@ -37,6 +37,10 @@ export interface DataTableProps<T> {
   stickyHeader?: boolean;
   rowDataAttrs?: (row: T) => Record<string, string | number | undefined>;
   rowClassName?: (row: T) => string | undefined;
+  /** data-* hooks for the selection checkboxes, so existing probes keep their targets. */
+  /** `cards` forces the record-card layout above 900 px, for tables too wide for their container. */
+  layout?: 'auto' | 'cards';
+  selectAttrs?: { all?: Record<string, string | number | undefined>; row?: (row: T) => Record<string, string | number | undefined> };
   /** Rendered instead of rows (loading / empty / error states supplied by the page, usually via AsyncBoundary). */
   state?: React.ReactNode;
   footer?: React.ReactNode;
@@ -50,8 +54,9 @@ const alignCls = (a?: 'left' | 'right' | 'center') => (a === 'right' ? 'text-rig
  * Below 900 px it renders the same columns as stacked record cards; never a horizontally scrolling table.
  */
 export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact', onRowClick, selected, onToggle, onToggleAll,
-  stickyHeader = true, rowDataAttrs, rowClassName, state, footer, className }: DataTableProps<T>) {
-  const compact = useCompactTable();
+  stickyHeader = true, rowDataAttrs, rowClassName, selectAttrs, layout = 'auto', state, footer, className }: DataTableProps<T>) {
+  const narrow = useCompactTable();
+  const compact = narrow || layout === 'cards';
   const selectable = !!(selected && onToggle);
   const keys = rows.map(rowKey);
   const allSelected = selectable && keys.length > 0 && keys.every((k) => selected!.has(k));
@@ -73,7 +78,7 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
                 <li key={k} {...rowDataAttrs?.(row)} className={cx('flex gap-3 px-4 py-3', rowClassName?.(row))}>
                   {selectable && (
                     <label className="flex h-jz-touch w-6 flex-none items-start justify-center pt-1">
-                      <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand" checked={selected!.has(k)} onChange={() => onToggle!(k, row)} aria-label="选择此行" />
+                      <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand" checked={selected!.has(k)} onChange={() => onToggle!(k, row)} aria-label="选择此行" {...selectAttrs?.row?.(row)} />
                     </label>
                   )}
                   <div className="min-w-0 flex-1">
@@ -110,7 +115,7 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
               <th scope="col" className="w-10 pl-4 text-left">
                 <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand align-middle" checked={allSelected}
                   ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
-                  onChange={() => onToggleAll?.(keys, allSelected)} aria-label="选择本页全部" />
+                  onChange={() => onToggleAll?.(keys, allSelected)} aria-label="选择本页全部" {...selectAttrs?.all} />
               </th>
             )}
             {columns.map((c) => <th key={c.key} scope="col" className={cx('px-4 font-medium whitespace-nowrap', alignCls(c.align), c.width)}>{c.header}</th>)}
@@ -127,7 +132,7 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
                   className={cx(rowH, 'border-t border-jz-border text-jz-ink transition-colors duration-hover hover:bg-jz-surface-2', on && 'bg-jz-brand-soft', onRowClick && 'cursor-pointer', rowClassName?.(row))}>
                   {selectable && (
                     <td className="w-10 pl-4" onClick={(e) => e.stopPropagation()}>
-                      <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand align-middle" checked={on} onChange={() => onToggle!(k, row)} aria-label="选择此行" />
+                      <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand align-middle" checked={on} onChange={() => onToggle!(k, row)} aria-label="选择此行" {...selectAttrs?.row?.(row)} />
                     </td>
                   )}
                   {columns.map((c) => (
@@ -169,7 +174,7 @@ export const Pagination: React.FC<{
         {onPageSize && (
           <label className="flex items-center gap-2">
             <span className="max-[760px]:sr-only">每页</span>
-            <span className="w-20 flex-none">
+            <span className="w-24 flex-none">
               <Select value={pageSize} onChange={(e) => onPageSize(Number(e.target.value))} className="!h-8 text-label" aria-label="每页条数">
                 {pageSizes.map((n) => <option key={n} value={n} {...controlAttrs?.size?.(n)}>{n}</option>)}
               </Select>

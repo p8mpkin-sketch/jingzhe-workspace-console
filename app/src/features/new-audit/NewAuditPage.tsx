@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api, getToken } from '@/services/api';
-import { toast } from '@/components/ui';
-import { UniversalImportModal } from '@/components/ui';
+import { Check } from 'lucide-react';
+import { toast, UniversalImportModal, Page, PageHeader, ConfirmDialog, cx } from '@/components/ui';
+import { moduleLabel } from '@/layout/navigation';
 import { downloadJson } from '@/features/reports/reportIo';
 import type { StepperPhase } from '@/components/ui/PipelineStepper';
 import { AssetSection, ScopeModeSection, DeviceSection, PROFILES, MODES, SCOPE_ITEMS } from './NewAuditSections';
@@ -116,8 +117,8 @@ export const NewAuditPage: React.FC = () => {
  if (next) { refreshPool(); loadPoolTasks(); }
  };
  const reusePoolRow = async (c: PoolRow) => {
- setStatus(`已挂载缓存样本: ${c.path}(${c.size ? `${(c.size / 1048576).toFixed(1)}MB` : '未知体积'})`);
- toast.info('已挂载历史样本 — 直接使用审计池缓存,不重复上传/下载');
+ setStatus(`已使用缓存样本:${c.path}(${c.size ? `${(c.size / 1048576).toFixed(1)}MB` : '大小未知'})`);
+ toast.info('已使用缓存的样本,不会重复上传或下载');
  await runPreview(c.path);
  };
  // 审计配置模板 导出/导入(JSON,前端 localStorage+文件;零后端)
@@ -137,11 +138,12 @@ export const NewAuditPage: React.FC = () => {
     if (typeof cfg.device === 'string') setDevice(cfg.device);
     try { localStorage.setItem(TPL_KEY, JSON.stringify(cfg)); } catch { /* 配额静默 */ }
     setTplOpen(false);
-    setStatus('审计配置模板已应用(策略预选已更新;localStorage 留档,下次可直接复用)');
+    setStatus('配置模板已应用,并已保存在本机浏览器');
   };
   // 批量目录(既有能力原样保留)
   const [batchDir, setBatchDir] = useState('');
   const [batchList, setBatchList] = useState<any[]>([]);
+  const [unpackAsk, setUnpackAsk] = useState(false);
   // ③ 设备池
   const [devices, setDevices] = useState<any[]>([]);
   const [device, setDevice] = useState('');
@@ -166,7 +168,7 @@ export const NewAuditPage: React.FC = () => {
     try {
       const d = await api<any>('/api/upload/preview', { method: 'POST', body: JSON.stringify({ apk_path: p }) });
  setPreview(d); setApkPath(d.apk_path || p);
- setStatus(d.meta ? '预检完成' : `预检部分降级: ${d.meta_error || 'manifest 解析失败'}`);
+ setStatus(d.meta ? '预检完成' : `预检部分完成:${d.meta_error || 'manifest 解析失败'}`);
  } catch (e: any) { setPreview(null); setStatus('预检失败: ' + e.message); }
  setPreviewing(false);
  };
@@ -192,7 +194,7 @@ export const NewAuditPage: React.FC = () => {
  const uploadMany = async (files: File[]) => {
  const okFiles = files.filter((f) => APK_FILE_RE.test(f.name));
  const bad = files.length - okFiles.length;
- if (bad > 0) toast.err(`${bad} 个非安装包文件已跳过(仅 APK/XAPK/HAP/APP/IPA)`);
+ if (bad > 0) toast.err(`已跳过 ${bad} 个不是安装包的文件(仅支持 APK/XAPK/HAP/APP/IPA)`);
  if (!okFiles.length) return;
  setBatchAuthorized(false);
  const items: BatchItem[] = okFiles.map((f) => ({ name: f.name, size: f.size, status: 'uploading' }));
@@ -212,7 +214,7 @@ export const NewAuditPage: React.FC = () => {
  }
  const okN = items.filter((it) => it.status === 'done').length;
  const failN = items.length - okN;
- setStatus(`批量上传完成: 成功 ${okN}${failN ? ` · 失败 ${failN}` : ''} — 勾选批量授权后可一键创建审计任务`);
+ setStatus(`批量上传完成: 成功 ${okN}${failN ? ` · 失败 ${failN}` : ''} 。确认授权后可以批量创建任务`);
  };
  const batchCreate = async () => {
  const paths = (batchUp || []).filter((it) => it.status === 'done' && it.apkPath);
@@ -226,8 +228,8 @@ export const NewAuditPage: React.FC = () => {
           ok++;
         } catch { fail++; }
       }
-      setStatus(`批量创建完成: 成功 ${ok}${fail ? ` · 失败 ${fail}` : ''} — 任务中心查看进度`);
-      toast.ok(`批量创建 ${ok} 个审计任务`);
+      setStatus(`批量创建完成: 成功 ${ok}${fail ? ` · 失败 ${fail}` : ''} 。可在任务页查看进度`);
+      toast.ok(`已创建 ${ok} 个评估任务`);
     } finally { setBatchCreating(false); }
   };
   const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -260,8 +262,8 @@ export const NewAuditPage: React.FC = () => {
  const doDownload = async (r: any, i: number) => {
     if (dlIdx !== null) return;
     const label = r?.name || String(r);
-    setDlIdx(i); setStatus(`正在通过最快渠道下载: ${label}(四源竞速)…`);
-    toast.info('正在通过最快渠道下载…');
+    setDlIdx(i); setStatus(`正在下载:${label}…`);
+    toast.info('正在下载,会自动选择最快的来源');
     try {
       // ① 发起异步下载 → 后端立即返回 {ok, job_id, status:"started"}
       const start = await api<any>('/api/apk/download', { method: 'POST', body: JSON.stringify({ name: label }) });
@@ -282,9 +284,9 @@ export const NewAuditPage: React.FC = () => {
  if (!apkPath_) throw new Error('apk_path 缺失');
  refreshPool(); // 完成后行内徽章翻「已下载✓」
  const raceTxt = result.result?.race && Object.keys(result.result.race).length
- ? `最快通道 ${SRC_LABELS[result.result.source] || result.result.source} ${result.result.race_sec ?? '?'}s 胜出`
+ ? `来源 ${SRC_LABELS[result.result.source] || result.result.source},用时 ${result.result.race_sec ?? '?'}s`
  : (result.result.cached ? '缓存命中' : '');
- toast.ok(`下载完成,已自动预检 — ${result.result.name || label}[${SRC_LABELS[result.result.source] || result.result.source}]${result.result.size_mb ? ` · ${result.result.size_mb}MB` : ''}${raceTxt ? ` · ${raceTxt}` : ''}`);
+ toast.ok(`下载完成,已开始预检:${result.result.name || label}[${SRC_LABELS[result.result.source] || result.result.source}]${result.result.size_mb ? ` · ${result.result.size_mb}MB` : ''}${raceTxt ? ` · ${raceTxt}` : ''}`);
  setStatus(`下载完成: ${result.result.name || label}${raceTxt ? `(${raceTxt})` : ''}`);
  await runPreview(apkPath_);
  } catch (e: any) {
@@ -296,10 +298,12 @@ export const NewAuditPage: React.FC = () => {
  // 批量目录一键脱壳(既有能力原样保留)
  const batchUnpack = async () => {
     if (!batchList.length) return;
-    if (!window.confirm(`对目录内 ${batchList.length} 个 APK 全部创建脱壳任务?`)) return;
+    setUnpackAsk(true);
+  };
+  const runBatchUnpack = async () => {
     try {
       const d = await api<any>('/api/tasks/batch', { method: 'POST', body: JSON.stringify({ paths: batchList.map((f: any) => f.path), kind: 'unpack', authorized: '批量脱壳(自有样本目录)', ...(device ? { device_serial: device } : {}) }) });
- setStatus(`已创建 ${d.count} 个脱壳任务(任务中心查看进度与产物)`);
+ setStatus(`已创建 ${d.count} 个脱壳任务,可在任务页查看进度和产物`);
  } catch (e: any) { setStatus('批量脱壳创建失败: ' + e.message); }
  };
  const scanBatchDir = async () => {
@@ -308,7 +312,7 @@ export const NewAuditPage: React.FC = () => {
       const d = await api<any>('/api/batch/scan-dir', { method: 'POST', body: JSON.stringify({ dir: batchDir }) });
  const list = d.apks || d.files || []; // 后端键为 files,旧键 apks 兜底
  setBatchList(list);
- setStatus(list.length ? `发现 ${list.length} 个 APK(${d.dir || batchDir})` : '目录内无 APK(支持 .apk/.xapk)');
+ setStatus(list.length ? `发现 ${list.length} 个 APK(${d.dir || batchDir})` : '目录内没有安装包(支持 .apk 和 .xapk)');
  } catch (e: any) { setBatchList([]); setStatus('扫描失败: ' + e.message); }
  setBusy(false);
  };
@@ -323,31 +327,31 @@ export const NewAuditPage: React.FC = () => {
  setDevErr('');
  if (via === 'refresh') {
  setStatus(`设备刷新完成: ${list.length} 台在线`);
- toast.ok(`设备清单已刷新: ${list.length} 台在线(/api/pentest/devices 真值)`);
+ toast.ok(`设备列表已刷新:${list.length} 台在线`);
  } else if (via === 'frida') {
  const ready = list.filter((d: any) => d?.frida);
- if (!list.length) toast.info('无在线设备,Frida 检测未执行(静态审计不依赖设备)');
- else if (ready.length) toast.ok(`Frida 检测: ${ready.length}/${list.length} 台 frida-server 在跑(${ready.map((d: any) => d.serial).join(', ')})`);
- else toast.info(`Frida 检测: 0/${list.length} 台就绪——未探测到 frida-server 进程;任务阶段无独立拉起端点(拉起通道在渗透会话 gadget 预备),此处仅真值检测`);
+ if (!list.length) toast.info('没有在线设备,未执行 Frida 检测。静态评估不需要设备。');
+ else if (ready.length) toast.ok(`Frida 检测:${ready.length}/${list.length} 台正在运行 frida-server(${ready.map((d: any) => d.serial).join(', ')})`);
+ else toast.info(`Frida 检测:0/${list.length} 台就绪,没有发现 frida-server 进程。这里只做检测,启动在渗透会话中进行。`);
  }
  } catch (e: any) {
  setDevices([]);
  setDevErr(e?.status === 403 ? '403' : (e?.message || 'error')); // 权限边界诚实降级(与 0 台在线区分)
- if (via !== 'mount') toast.err(e?.status === 403 ? '设备端点返回 403(权限边界),操作未执行' : `设备操作失败: ${e?.message || e}`);
+ if (via !== 'mount') toast.err(e?.status === 403 ? '没有访问设备的权限(403),操作未执行' : `设备操作失败: ${e?.message || e}`);
  }
  if (via !== 'mount') setDevBusy(false);
  };
  useEffect(() => { fetchDevices('mount'); }, []);
  const fixWrap = async () => {
     if (!device) return;
-    setDevBusy(true); setWrapFixMsg('适配中：检查并修复 wrap 前置环境…');
+    setDevBusy(true); setWrapFixMsg('正在检查并修复 wrap 所需的环境…');
     try {
       const r = await api<any>('/api/pentest/devices/' + encodeURIComponent(device) + '/wrap-fix', { method: 'POST' });
       const checks = r?.checks || {};
       const checkTxt = Object.entries(checks).map(([k, v]) => k + '=' + (v ? '✓' : '✗')).join(' · ');
       const steps = Array.isArray(r?.manual_steps) ? r.manual_steps : [];
-      setWrapFixMsg((r?.ok ? '适配完成：' : '仍需处理：') + (checkTxt || '无检查项') + (steps.length ? '；' + steps.join('；') : ''));
-      if (r?.ok) toast.ok('当前设备 wrap 环境已就绪'); else toast.info('自动修复已尝试；Zygisk 等需要手动重启');
+      setWrapFixMsg((r?.ok ? '环境已就绪:' : '仍需处理:') + (checkTxt || '无检查项') + (steps.length ? '；' + steps.join('；') : ''));
+      if (r?.ok) toast.ok('当前设备 wrap 环境已就绪'); else toast.info('已尝试自动修复。Zygisk 等组件需要手动重启设备。');
       await fetchDevices('refresh');
     } catch (e: any) {
       setWrapFixMsg('适配失败: ' + (e?.message || e));
@@ -358,7 +362,7 @@ export const NewAuditPage: React.FC = () => {
  // Web 目标非法值边界阻断(submit 直接拒发,与启动钮置灰双闸)。
  const submit = async (gotoPentest: boolean) => {
     if (!apkPath || !authorized || webTargetErr) return;
-    setBusy(true); setStatus('创建审计任务…');
+    setBusy(true); setStatus('正在创建评估任务…');
     try {
       const d = await api<any>('/api/tasks', { method: 'POST', body: JSON.stringify({
  kind: 'audit',
@@ -370,7 +374,7 @@ export const NewAuditPage: React.FC = () => {
  const tid = d?.id ?? d?.task_id ?? null;
  localStorage.setItem(PREFILL_KEY, JSON.stringify({ device, scope, mode, apk_path: apkPath, task_id: tid, user_prompt: userPrompt.trim(), web_target: webTarget.trim(), baseline, rate_limit: rateLimit, ts: Date.now() }));
  setCreatedId(tid);
- setStatus(`审计任务 #${tid ?? '?'} 已创建;设备/范围/模式预选已写入向导 prefill`);
+ setStatus(`评估任务 #${tid ?? '?'} 已创建,设备、范围和模式的预选已保存`);
  setTimeout(() => {
  window.location.hash = gotoPentest ? '/pentest' : `/tasks?focus=${tid ?? ''}`;
  }, 900);
@@ -389,14 +393,14 @@ export const NewAuditPage: React.FC = () => {
  ? (['activity', 'service', 'receiver', 'provider'] as const).reduce((s, t) => s + (comp[t]?.exported ?? 0), 0)
  : null;
  const recs: RecItem[] = [
- { name: '组件暴露面分析', rec: exportedTotal != null && exportedTotal > 0, basis: exportedTotal != null ? `导出组件 ${exportedTotal} 个(预检真值)` : '预检元数据缺失,无判定依据' },
- { name: '敏感信息与硬编码扫描', rec: false, basis: '预检不含代码扫描数据,无判定依据' },
- { name: '网络通信分析', rec: false, basis: '预检不含权限清单/流量数据,无判定依据' },
- { name: 'WebView 配置分析', rec: false, basis: '预检不含代码扫描数据,无判定依据' },
+ { name: '组件暴露面分析', rec: exportedTotal != null && exportedTotal > 0, basis: exportedTotal != null ? `导出组件 ${exportedTotal} 个` : '缺少预检元数据,无法判断' },
+ { name: '敏感信息与硬编码扫描', rec: false, basis: '预检不包含代码扫描,无法判断' },
+ { name: '网络通信分析', rec: false, basis: '预检不包含流量数据,无法判断' },
+ { name: 'WebView 配置分析', rec: false, basis: '预检不包含代码扫描,无法判断' },
  ];
  const applyRecs = () => {
  const recNames = recs.filter((r) => r.rec).map((r) => r.name);
- if (!recNames.length) { toast.info('预检无可判定推荐项(导出组件为 0 或元数据缺失),保持默认全纳入'); return; }
+ if (!recNames.length) { toast.info('预检结果里没有可推荐的模块(导出组件为 0 或缺少元数据),保持全部纳入'); return; }
  setScope(recNames);
  toast.ok(`已应用 ${recNames.length} 个推荐模块: ${recNames.join('、')}`);
  setStatus(`已按预检推荐更新模块勾选: ${recNames.join('、')}`);
@@ -407,7 +411,7 @@ export const NewAuditPage: React.FC = () => {
  // 执行蓝图——静态审计任务真实执行链(预检/壳检测=本页已完成真值;其余=提交后按平台全量规则执行的待执行阶段,0/1 非假进度)
  const blueprint: StepperPhase[] = [
  { key: 'preview', name: '静态预检', done: preview ? 1 : 0, total: 1 },
- ...(preview?.strong_shell ? [{ key: 'unpack', name: '脱壳(壳时)', done: 0, total: 1 } as StepperPhase] : []),
+ ...(preview?.strong_shell ? [{ key: 'unpack', name: '脱壳', done: 0, total: 1 } as StepperPhase] : []),
  { key: 'decompile', name: '反编译', done: 0, total: 1 },
  { key: 'scan', name: '规则扫描', done: 0, total: 1 },
  { key: 'report', name: '报告生成', done: 0, total: 1 },
@@ -416,47 +420,52 @@ export const NewAuditPage: React.FC = () => {
  const staticOnly = mode === STATIC_MODE;
  const assetReady = !!preview && !!apkPath && !previewing;
  const strategyReady = scope.length > 0 && !webTargetErr;
- const jumpTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+ // Scroll the page scroller itself; scrollIntoView would also move clipped ancestors.
+ const jumpTo = (id: string) => {
+   const el = document.getElementById(id);
+   const sc = document.querySelector<HTMLElement>('[data-new-audit-page]');
+   if (!el || !sc) return;
+   const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - 16;
+   sc.scrollTo({ top, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+ };
   const readiness = [
-    { key: 'asset', no: '①', target: 'na-section-asset', label: '资产就绪', state: previewing ? 'busy' : assetReady ? 'ok' : 'todo', sub: previewing ? '预检中…' : assetReady ? '预检完成' : '待接入' },
-    { key: 'strategy', no: '②', target: 'na-section-scope', label: '策略已配', state: strategyReady ? 'ok' : 'todo', sub: strategyReady ? mode : '待配置' },
-    { key: 'device', no: '③', target: 'na-section-device', label: device ? '设备就绪' : staticOnly ? '静态免设备' : '设备待选', state: device ? 'ok' : staticOnly ? 'static' : 'todo', sub: device || (staticOnly ? '无需真机' : '可选挂载') },
+    { key: 'asset', no: '1', target: 'na-section-asset', label: '资产', state: previewing ? 'busy' : assetReady ? 'ok' : 'todo', sub: previewing ? '预检中' : assetReady ? '预检完成' : '未提供' },
+    { key: 'strategy', no: '2', target: 'na-section-scope', label: '范围与模式', state: strategyReady ? 'ok' : 'todo', sub: strategyReady ? mode : '未完成' },
+    { key: 'device', no: '3', target: 'na-section-device', label: '设备', state: device ? 'ok' : staticOnly ? 'static' : 'todo', sub: device || (staticOnly ? '静态评估不需要' : '未选择') },
   ];
 
   return (
-    <div className="p-4 lg:p-5 space-y-5 h-full overflow-auto">
-      {/* 页头: 标题 + 实时就绪状态指示条(① 资产就绪 → ② 策略已配 → ③ 设备就绪,按完成度点亮) */}
-      <header className="space-y-2.5">
-        <div className="flex items-end gap-3 flex-wrap">
-          <h2 className="text-title md:text-title font-semibold text-jz-ink">新建安全审计任务</h2>
-          <p className="text-body text-jz-muted">多源 APK 样本接入 · 静态秒级预检 · AI 自动化渗透编排</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap" data-wizard-steps data-readiness-bar>
- {readiness.map((r, i) => (
-            <React.Fragment key={r.key}>
-              <button onClick={() => jumpTo(r.target)} data-ready-item={r.key} data-ready-state={r.state}
- title="点击定位到对应模块"
- className={`inline-flex items-center gap-1.5 px-3 h-8 rounded-pill border text-body transition-colors
- ${r.state === 'ok' ? 'bg-jz-teal/10 text-jz-teal border-jz-teal/40'
- : r.state === 'static' ? 'bg-jz-brand/10 text-jz-brand border-jz-brand/40'
- : r.state === 'busy' ? 'bg-jz-brand/10 text-jz-brand border-jz-brand/50'
- : 'text-jz-muted border-jz-border hover:border-jz-brand/30'}`}>
-                <span className="w-[18px] h-[18px] rounded-pill border border-current grid place-items-center text-meta font-mono flex-none">
-                  {r.state === 'ok' ? '✓' : r.no}
-                </span>
-                {r.label}
-                <span className={`text-meta max-w-[140px] truncate ${r.state === 'ok' ? 'text-jz-teal/80' : 'opacity-70'}`}>· {r.sub}</span>
-              </button>
-              {i < readiness.length - 1 && <span className="w-5 h-px bg-jz-border" aria-hidden />}
-            </React.Fragment>
-          ))}
-        </div>
-      </header>
+    <Page data-new-audit-page>
+      <PageHeader title={moduleLabel('/new-audit')}
+        description="提供安装包,选择范围和模式,按需挂载设备,然后创建评估任务。" />
 
-      {/* ─── 双栏主体: 左 7(三模块全展开) / 右 5(吸顶两舱,一屏闭环) ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* 左栏: ① 资产获取 → ② 审计范围与模式 → ③ 目标设备调度(无分步按钮,全展开) */}
-        <div className="lg:col-span-7 space-y-6">
+      {/* Readiness steps: each links to its section and shows whether it is complete. */}
+      <nav aria-label="准备步骤">
+        <ol className="flex flex-wrap items-center gap-2" data-wizard-steps data-readiness-bar>
+          {readiness.map((r, i) => {
+            const done = r.state === 'ok' || r.state === 'static';
+            return (
+              <li key={r.key} className="flex items-center gap-2">
+                <button type="button" onClick={() => jumpTo(r.target)} data-ready-item={r.key} data-ready-state={r.state}
+                  title="跳到对应的部分"
+                  className={cx('jz-focus inline-flex min-h-jz-control items-center gap-2 rounded-pill border px-3 text-label transition-colors duration-hover max-[760px]:min-h-jz-touch',
+                    done ? 'border-jz-border bg-jz-surface text-jz-ink' : r.state === 'busy' ? 'border-jz-brand bg-jz-brand-soft text-jz-ink' : 'border-jz-border bg-jz-surface text-jz-ink-2 hover:border-jz-border-strong')}>
+                  <span aria-hidden className={cx('grid h-5 w-5 flex-none place-items-center rounded-pill font-mono text-meta font-semibold',
+                    r.state === 'ok' ? 'bg-jz-teal text-jz-surface' : 'bg-jz-surface-2 text-jz-ink-2')}>
+                    {r.state === 'ok' ? <Check size={12} /> : r.no}
+                  </span>
+                  <span className="font-semibold">{r.label}</span>
+                  <span className="max-w-36 truncate text-meta text-jz-muted">{r.sub}</span>
+                </button>
+                {i < readiness.length - 1 && <span className="hidden h-px w-4 bg-jz-border sm:block" aria-hidden />}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        <div className="min-w-0 space-y-6 lg:col-span-7">
           <AssetSection
  channel={channel} setChannel={setChannel}
  busy={busy} previewing={previewing}
@@ -499,8 +508,7 @@ export const NewAuditPage: React.FC = () => {
  />
         </div>
 
-        {/* 右栏: 吸顶两舱(上: 即时解析看板 / 下: 执行蓝图与一键启动底座) */}
-        <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-6">
+        <div className="min-w-0 space-y-6 lg:col-span-5">
           <ParseBoard preview={preview} previewing={previewing} recs={recs} applyRecs={applyRecs} />
           <LaunchDock
  preview={preview} apkPath={apkPath}
@@ -515,16 +523,23 @@ export const NewAuditPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 审计配置模板导入(前端解析 JSON,即时应用策略预选;localStorage 留档) */}
       <UniversalImportModal
- open={tplOpen}
- title="导入审计配置模板(JSON)"
- hint="字段: scope[](范围)/mode(介入级别)/baseline(基线)/rate_limit/web_target/user_prompt/device——导入即时应用到「审计范围与模式」并 localStorage 留档"
- onClose={() => setTplOpen(false)}
- validateRow={() => ''}
- onImportSuccess={(r) => { applyTpl(r.rows[0]?.config || r.rows[0] || {}); }}
- />
-    </div>
+        open={tplOpen}
+        title="导入配置模板(JSON)"
+        hint="字段:scope[](范围)、mode(模式)、baseline(基线)、rate_limit、web_target、user_prompt、device。导入后立即应用到“范围与模式”,并保存在本机浏览器。"
+        onClose={() => setTplOpen(false)}
+        validateRow={() => ''}
+        onImportSuccess={(r) => { applyTpl(r.rows[0]?.config || r.rows[0] || {}); }}
+      />
+
+      <ConfirmDialog open={unpackAsk} title="创建批量脱壳任务"
+        confirmLabel={`创建 ${batchList.length} 个任务`}
+        outcome="任务创建后可在任务页查看进度,也可以在那里逐个停止。"
+        onCancel={() => setUnpackAsk(false)}
+        onConfirm={() => { setUnpackAsk(false); runBatchUnpack(); }}>
+        将为目录内的 {batchList.length} 个安装包各创建一个脱壳任务。
+      </ConfirmDialog>
+    </Page>
   );
 };
 

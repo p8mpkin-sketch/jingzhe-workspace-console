@@ -20,7 +20,10 @@ const sessions = pkgs.slice(0, 6).map((p, i) => ({
 const tasks = pkgs.map((p, i) => ({
   id: 100 + i, kind: i % 3 === 2 ? 'unpack' : 'audit', app_name: names[i], package: p, apk_path: `/data/in/${p}.apk`, status: st[i] === 'discovered' ? 'queued' : st[i],
   created_at: now - 7200 * (i + 1), updated_at: now - 3000 * (i + 1), finished_at: st[i] === 'done' ? now - 2000 * (i + 1) : null, started_at: now - 7000 * (i + 1),
-  result_id: st[i] === 'done' ? 500 + i : null, progress: st[i] === 'running' ? 42 : st[i] === 'done' ? 100 : 0, user: 'demo', operator: 'demo', error: st[i] === 'failed' ? 'timeout while unpacking' : '',
+  result_id: st[i] === 'done' ? 500 + i : null,
+  progress: st[i] === 'running' ? 'Unpack: 100% · 3 dex → Decompile: 42% · jadx 4200/10000 classes' : st[i] === 'done' ? (i % 4 === 1 ? '评估完成(脱壳不完整: 业务代码未脱出)' : '评估完成') : st[i] === 'failed' ? 'timeout while unpacking' : '',
+  user: 'demo', operator: 'demo', user_id: 1 + (i % 2), error: st[i] === 'failed' ? 'timeout while unpacking' : '', error_msg: st[i] === 'failed' ? 'timeout while unpacking: device did not respond within 600s' : '',
+  unpack_outcome: st[i] === 'done' ? (i % 4 === 1 ? { verdict: 'blocked', defined_biz: 0, code_recovered: 0, unpack_method: 'frida', diagnosis: { reason: 'dex dump returned stub classes only', checks: { zygisk_off: false, debuggable: true } } } : { biz_classes: 120 + i * 17, code_recovered: 1 }) : null,
   packer: i % 2 ? 'vendor-a' : 'none', version: `1.${i}.0`, size_mb: 12 + i,
 }));
 const apps = pkgs.map((p, i) => ({ id: i + 1, package: p, app_name: names[i], version: `1.${i}.0`, brand: ['Alpha', 'Beta', 'Gamma'][i % 3], ownership_tier: ['owned', 'affiliate', 'unknown'][i % 3], status: st[i], report_status: st[i] === 'done' ? 'ready' : '' }));
@@ -79,11 +82,13 @@ export const routes = [
   ['GET', /^\/api\/pentest\/vulns\/domain-summary$/, { domains: [], items: [] }],
   ['GET', /^\/api\/pentest\/events\/recent$/, { events: [] }],
   ['GET', /^\/api\/tasks$/, (u) => { const s = u.searchParams.get('status'); return s ? tasks.filter((t) => t.status === s) : tasks; }],
-  ['GET', /^\/api\/tasks\/counts$/, { counts: {} }],
+  ['GET', /^\/api\/tasks\/counts$/, (u) => ({ items: Object.fromEntries((u.searchParams.get('ids') || '').split(',').filter(Boolean).map((id, i) => [id, i % 3 === 2 ? { total: 0, critical: 0, high: 0, medium: 0, low: 0, sources: [] } : { total: 3 + i * 4, critical: i % 2, high: 1 + i, medium: 1 + i * 2, low: 1 + i - (i % 2), sources: ['audit', 'pentest'] }])), users: { 1: 'demo', 2: 'reviewer' } })],
   ['GET', /^\/api\/tasks-summary$/, { total: 128, running: 2, failed: 3, done: 110, queued: 13 }],
-  ['GET', /^\/api\/tasks\/batch-unpack-summary$/, { count: 0, items: [] }],
+  ['GET', /^\/api\/tasks\/batch-unpack-summary$/, { count: 4, done: 2, failed: 1, avg_dur_s: 412, dex_total: 9, items: [{ task_id: 102, app_name: names[2], status: 'done', packer: 'vendor-a', method: 'frida', dex: 5, dur_s: 380 }, { task_id: 105, app_name: names[5], status: 'done', packer: 'none', method: 'static', dex: 4, dur_s: 444 }, { task_id: 108, app_name: 'Sample C', status: 'failed', packer: 'vendor-b', method: null, dex: null, dur_s: null }, { task_id: 109, app_name: 'Sample D', status: 'queued', packer: null, method: null, dex: null, dur_s: null }] }],
   ['GET', /^\/api\/tasks\/\d+\/skills$/, []],
-  ['GET', /^\/api\/tasks\/\d+\/artifacts$/, { files: [] }],
+  ['GET', /^\/api\/tasks\/\d+\/artifacts$/, (u) => { const pre = u.searchParams.get('prefix') || ''; if (!pre) return { run_dir: '/data/runs/task_100', entries: [{ type: 'dir', name: 'report', rel: 'report', files: 3 }, { type: 'dir', name: 'unpacked', rel: 'unpacked', files: 2 }, { type: 'file', name: 'run.log', rel: 'run.log', size_kb: 48 }] }; if (pre === 'report') return { entries: [{ type: 'file', name: 'security_report.md', rel: 'report/security_report.md', size_kb: 86 }, { type: 'file', name: 'executive_summary.md', rel: 'report/executive_summary.md', size_kb: 12 }, { type: 'file', name: 'security_report.json', rel: 'report/security_report.json', size_kb: 240 }] }; if (pre === 'unpacked') return { entries: [{ type: 'file', name: 'classes.dex', rel: 'unpacked/classes.dex', size_kb: 8420 }, { type: 'file', name: 'AndroidManifest.xml', rel: 'unpacked/AndroidManifest.xml', size_kb: 22 }] }; return { entries: [] }; }],
+  ['GET', /^\/api\/tasks\/\d+\/artifact$/, (u) => `# ${u.searchParams.get('path')}\n\n示例文件内容。\n`],
+  ['POST', /^\/api\/upload\/preview$/, { apk_path: '/data/in/com.example.compass.apk', filename: 'com.example.compass.apk', platform: 'android', size_mb: 48.2, sha256: '9f2c1a7b3d5e8f60a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718', abis: ['arm64-v8a', 'armeabi-v7a'], strong_shell: true, packer: 'vendor-a', meta: { app_name: 'Compass', package: 'com.example.compass', version_name: '3.2.1', version_code: 321, min_sdk: 24, target_sdk: 34, permissions_count: 18, components: { activity: { total: 42, exported: 3 }, service: { total: 9, exported: 1 }, receiver: { total: 6, exported: 2 }, provider: { total: 3, exported: 0 } } } }],
   ['GET', /^\/api\/org$/, { usage: { running: 2, quota_concurrent: 4 } }],
   ['GET', /^\/api\/nodes$/, { items: [{ id: 'n1', name: 'worker-1', status: 'online', running: 2, capacity: 4 }] }],
   ['GET', /^\/api\/notifications$/, { unread: 2, items: [{ id: 1, kind: 'task', level: 'success', title: '任务已完成', body: 'Compass 评估完成', created_at: now - 300, read_at: null, link: '/tasks' }, { id: 2, kind: 'system', level: 'info', title: '报告已就绪', body: '#32 项目总报告', created_at: now - 900, read_at: null, link: '/reports' }, { id: 3, kind: 'task', level: 'danger', title: '任务失败', body: 'Wallet 评估在静态分析阶段停止', created_at: now - 4000, read_at: now - 3000, link: '/tasks?focus=103' }] }],
@@ -108,7 +113,7 @@ export const routes = [
   ['GET', /^\/api\/audit-log$/, { items: [{ id: 1, ts: now - 100, user: 'demo', action: 'login', target: '', ip: '127.0.0.1' }], total: 1 }],
   ['GET', /^\/api\/tokens$/, { items: [] }],
   ['GET', /^\/api\/webhooks$/, { items: [] }],
-  ['GET', /^\/api\/apk\/pool-state$/, { items: [], total: 0 }],
+  ['GET', /^\/api\/apk\/pool-state$/, { cached: [{ pkg: 'com.example.compass', path: '/data/in/com.example.compass.apk', size: 50541363 }, { pkg: 'com.example.wallet', path: '/data/pool/com.example.wallet.apk', size: 31457280 }], parts: [] }],
 ];
 
 export function resolve(method, url) {

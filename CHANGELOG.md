@@ -3,6 +3,39 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 7 — Tasks and discovery
+
+### Changed
+- `/tasks` (`features/tasks/TaskCenterPage.tsx`): rebuilt on `Page`, `PageHeader` (title from `layout/navigation.ts`), `MetricGrid`, `Panel`, `SearchField`, `Select`, `Checkbox`, `Tabs`, `DataTable`, `BulkBar`, `Pagination`, `Popover`, `Dialog`, `ConfirmDialog` and `Drawer`. Order on the page: header actions, four metrics (concurrency, running, queued, online devices), then the list, then running tasks, linked sessions and the batch-unpack summary. Columns follow `docs/page-specs.md`: task, target, status, duration, result, owner, actions.
+- Task detail is a drawer with fields, progress log, failure reason, unpack result and the artifact and retry actions. It opens from the row menu for every status (before: failed, running and queued only).
+- Status cell: one badge per state (完成 / 部分完成 / 失败 / 运行中 / 排队) with the reason underneath. The decision of what counts as partially complete (`honestDone`, `outcomeProbe`, `bizOf`) moved unchanged into `features/tasks/taskParts.tsx` together with the formatters and the live-progress cell.
+- Row actions: 会话, 重试, 报告 and 产物 inline from 1440 px; between 1280 and 1440 px only the first stays inline and the rest sit in the row menu with the same `data-*` hooks; below 1280 px the list is record cards. The inline delete button and the menu delete are one menu item; single delete uses `ConfirmDialog` instead of `window.confirm`.
+- Bulk bar: rerun, export (CSV / JSON in one menu), compare, delete. The three confirmations are dialogs that list the affected tasks and say what cannot be undone; the result line reports succeeded and skipped counts.
+- A failed refresh keeps the last list and shows a stale notice with a refresh action; a failed first load shows the error state with retry. Before, both rendered as an empty list. A refresh button is added to the header (same `loadAll` requests).
+- `ArtifactsModal`, `RerunTaskModal`: on `Dialog`, `SearchField`, `Field`, `Select`, `IconButton`, `EmptyState`, `ErrorState`. Traversal limits, preview rules, download endpoints and the rerun payload are untouched.
+- `/discovery` (`features/discovery/DiscoveryPage.tsx`): metrics, pipeline steps as an ordered list with a text state per step, confirmed evidence in a `DataTable` with a counted source filter, provenance and unresolved panels. The fixed "2 / 15 APK" text is replaced by `apk_with_confirmed / tasks_total` from the response. Loading, empty, error (with retry) states.
+- `/new-audit` (`NewAuditPage.tsx`, `NewAuditSections.tsx`, `NewAuditDock.tsx`): three numbered panels on the left (asset, scope and mode, device), pre-check result and the create panel on the right. Readiness steps in the header link to their panel and scroll the page's own scroller. Channels, presets, baselines and devices are selectable cards with radio semantics; inputs use `Field`, `Input`, `Textarea`, `Checkbox`, `Radio`. The create button states what is still missing.
+- Batch unpack from a directory asks through `ConfirmDialog` instead of `window.confirm`; the request is the same.
+- Copy: 评估 for audit, 加固 for shell, 负责人 for operator, plain statements of what a number counts. Stored values (mode and baseline names, `authorized` strings, `app_name` fallback, export column names) are unchanged.
+- `components/ui`: `DataTable` gains `selectAttrs` (hooks for its checkboxes) and `layout="cards"`; `PipelineStepper` steps are narrower so five phases fit the create panel.
+
+### Removed
+- `ScanLine` icon and emoji in the pre-check panel, the dashed "raster" scan placeholder, pulsing dots on running rows and session cards, the inline hex colors of the result bar (now severity tokens), the permanent "/api/download 未接通" note in the artifacts footer, the visible `status=` chip next to the status tabs (kept for assistive tech and existing hooks).
+
+### Verified
+- `tsc --noEmit` and `npm run build` pass. Main chunk 934.5 kB, CSS 159.5 kB.
+- 14 routes at five widths: no overflow, no error boundary; request log identical to baseline; shell checks pass.
+- `/tasks`, `/discovery`, `/new-audit` captured in the empty, error, forbidden and slow variants. Interactions at 1440, 1024, 760, 390 and dark 1440: status filter, no match, row menu, detail drawer, rerun dialog, selection and the three confirmations, a real bulk rerun (two `POST /api/tasks`), export menu, artifacts with preview, `/` focusing search, `?focus=` deep link; discovery source filter; new assessment by server path through pre-check to an enabled create button.
+- The bulk rerun and the pre-check send the same bodies as before (`authorized: '任务中心重跑'`, `{ apk_path }`).
+- Token lint 178 (from 184): the task and new-assessment files have no findings left. Contrast check: no failing pair.
+
+### Remaining gaps
+- No visible stale indicator on `/discovery` and `/new-audit`: both load once and have no refresh failure path other than the error state.
+- The disabled 会话 button on finished tasks without a linked session is kept because the page has always shown it; it can never be enabled from this page.
+- Running tasks appear twice (in the list and in the running panel below it), as before.
+- `/tasks` loads up to 2000 rows and filters on the client, as before; there is no server paging contract to move to.
+- The task, count, batch-summary, artifact and pre-check fixtures are inferred from what the pages read, not from an API contract.
+
 ## Phase 6 — Reports
 
 ### Changed

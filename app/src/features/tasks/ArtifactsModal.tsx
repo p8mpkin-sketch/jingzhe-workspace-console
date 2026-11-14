@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronLeft, Copy, Check, Download, Eye, FileArchive, FileCode2, FileText, FlaskConical,
-  FolderOpen, PackageOpen, ScrollText, Search, Upload, X,
+  FolderOpen, PackageOpen, ScrollText, Upload, X,
 } from 'lucide-react';
 import { api, getToken } from '@/services/api';
-import { StatusBadge, UnifiedModal } from '@/components/ui';
+import { StatusBadge, Dialog, Button, IconButton, SearchField, EmptyState, ErrorState, InlineAlert, SkeletonLoader, cx } from '@/components/ui';
 import { downloadJson } from '@/features/reports/reportIo';
 
 /**
@@ -42,29 +42,29 @@ const FLATTEN_MAX_DEPTH = 3;
 
 // 分类彩色文件夹图标(四类;其余真实目录走 FolderOpen 兜底)
 const CAT: Record<string, { Icon: React.ElementType; cls: string }> = {
-  analysis: { Icon: FlaskConical, cls: 'text-jz-brand' },
-  decompiled: { Icon: FileCode2, cls: 'text-jz-brand' },
-  report: { Icon: ScrollText, cls: 'text-jz-amber' },
-  unpacked: { Icon: PackageOpen, cls: 'text-jz-teal' },
+  analysis: { Icon: FlaskConical, cls: '' },
+  decompiled: { Icon: FileCode2, cls: '' },
+  report: { Icon: ScrollText, cls: '' },
+  unpacked: { Icon: PackageOpen, cls: '' },
 };
 
 // 扩展名分类过滤(动态由清单真实扩展名派生,不假造分组)
 const EXT_GROUPS: Array<{ key: string; label: string; test: (n: string) => boolean }> = [
- { key: 'md', label: '报告 .md', test: (n) => /\.md$/i.test(n) },
- { key: 'json', label: '数据 .json', test: (n) => /\.json$/i.test(n) },
- { key: 'xml', label: '清单 .xml', test: (n) => /\.xml$/i.test(n) },
- { key: 'logtxt', label: '日志 .log/.txt', test: (n) => /\.(log|txt)$/i.test(n) },
- { key: 'code', label: '代码 .java/.kt/.smali/.py', test: (n) => /\.(java|kt|smali|py|js|html)$/i.test(n) },
- { key: 'db', label: '库 .db', test: (n) => /\.(db|sqlite)$/i.test(n) },
+ { key: 'md', label: '.md', test: (n) => /\.md$/i.test(n) },
+ { key: 'json', label: '.json', test: (n) => /\.json$/i.test(n) },
+ { key: 'xml', label: '.xml', test: (n) => /\.xml$/i.test(n) },
+ { key: 'logtxt', label: '.log / .txt', test: (n) => /\.(log|txt)$/i.test(n) },
+ { key: 'code', label: '代码文件', test: (n) => /\.(java|kt|smali|py|js|html)$/i.test(n) },
+ { key: 'db', label: '.db', test: (n) => /\.(db|sqlite)$/i.test(n) },
 ];
 
 // 本轮升级: 语义类型分类胶囊(规格: 全部|DEX脱壳|Manifest配置|审计报告|日志)——
 // 谓词=相对路径+文件名既有真值(unpacked/ 目录与 .dex=脱壳产物;manifest 路径/.xml=配置;
 // report/ 目录与 .md/.html=报告;.log/.txt=日志),首中归类(互斥),都不中=仅「全部」可见不硬塞
 const ART_CATS: Array<{ key: string; label: string; test: (rel: string, name: string) => boolean }> = [
- { key: 'dex', label: 'DEX脱壳', test: (rel, name) => /(^|\/)unpacked(\/|$)/i.test(rel) || /\.dex$/i.test(name) },
- { key: 'manifest', label: 'Manifest配置', test: (rel, name) => /manifest/i.test(rel) || /\.xml$/i.test(name) },
- { key: 'report', label: '审计报告', test: (rel, name) => /(^|\/)report(\/|$)/i.test(rel) || /\.(md|html)$/i.test(name) },
+ { key: 'dex', label: '脱壳 DEX', test: (rel, name) => /(^|\/)unpacked(\/|$)/i.test(rel) || /\.dex$/i.test(name) },
+ { key: 'manifest', label: 'Manifest', test: (rel, name) => /manifest/i.test(rel) || /\.xml$/i.test(name) },
+ { key: 'report', label: '报告', test: (rel, name) => /(^|\/)report(\/|$)/i.test(rel) || /\.(md|html)$/i.test(name) },
  { key: 'log', label: '日志', test: (_rel, name) => /\.(log|txt)$/i.test(name) },
 ];
 const catOf = (rel: string, name: string): string | null => ART_CATS.find((c) => c.test(rel, name))?.key || null;
@@ -153,10 +153,10 @@ export const ArtifactsModal: React.FC<{
  const r = await fetch(url, { headers: { Authorization: `Bearer ${getToken()}` } });
  if (!r.ok) throw new Error(`HTTP ${r.status}`);
  let text = await r.text();
- if (text.length > 300 * 1024) text = text.slice(0, 300 * 1024) + `\n…(超长截断,原文约 ${text.length} 字符,完整内容请下载)`;
+ if (text.length > 300 * 1024) text = text.slice(0, 300 * 1024) + `\n…(内容过长已截断,原文约 ${text.length} 个字符,完整内容请下载)`;
  setPreview({ name, rel, text: text || '(空文件)', via: viaReport ? 'report' : 'artifact' });
  } catch (e: any) {
- setPreview({ name, rel, text: `(预览失败: ${e.message})`, via: viaReport ? 'report' : 'artifact' });
+ setPreview({ name, rel, text: `预览失败:${e.message}`, via: viaReport ? 'report' : 'artifact' });
  } finally { setBusy(null); }
  };
 
@@ -186,12 +186,12 @@ export const ArtifactsModal: React.FC<{
  const dlSourceApk = () => dlBlob(
    `/api/tasks/${taskId}/source-apk`,
    `${(taskName || 'task' + taskId).replace(/[\\/:*?"<>|]/g, '_')}.apk`,
-   'source-apk', '已下载原始 APK',
+   'source-apk', '已下载原始安装包',
  );
  const dlDexBundle = () => dlBlob(
    `/api/tasks/${taskId}/dex-package`,
    `task${taskId}_dex.zip`,
-   'dex-package', '已下载脱壳 DEX ZIP（unpacked + fixed_dex）',
+   'dex-package', '已下载脱壳 DEX 压缩包',
  );
 
  const dlFile = async (rel: string, name: string) => {
@@ -226,7 +226,7 @@ export const ArtifactsModal: React.FC<{
  a.download = `report_${linked.sid}.zip`;
  a.click();
  URL.revokeObjectURL(a.href);
- setNote(`已下载会话 #${linked.sid} 报告包 zip`);
+ setNote(`已下载会话 #${linked.sid} 的报告包`);
  } catch (e: any) {
  setNote(`打包下载失败: ${e.message}`);
  } finally { setBusy(null); }
@@ -240,7 +240,7 @@ export const ArtifactsModal: React.FC<{
  const r = await fetch('/api/upload', { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` }, body: fd });
  const d = await r.json();
  if (!r.ok || !d.apk_path) throw new Error(d.detail || '上传失败');
- setNote(`已上传审计池: ${d.apk_path}(落点=审计池非本任务产物目录——后端无写入 run_dir 端点,如实标注)`);
+ setNote(`已上传到样本库:${d.apk_path}。文件没有写入这个任务的产物目录。`);
  } catch (e: any) {
  setNote(`上传失败: ${e.message}`);
  } finally { setBusy(null); }
@@ -254,7 +254,7 @@ export const ArtifactsModal: React.FC<{
  run_dir: data?.run_dir || '', exported_at: new Date().toISOString(),
  count: flat.length, files: flat,
  });
- setNote(`已导出产物清单 JSON(${flat.length} 个文件)`);
+ setNote(`已导出文件清单(${flat.length} 个文件)`);
  };
 
  const entries: any[] = data?.entries || [];
@@ -283,223 +283,152 @@ export const ArtifactsModal: React.FC<{
     return present;
   }, [flat]);
 
+  const chip = (on: boolean) => cx('rounded-pill border px-2.5 py-1 text-meta transition-colors duration-hover',
+    on ? 'border-jz-brand bg-jz-brand-soft font-semibold text-jz-ink' : 'border-jz-border text-jz-ink-2 hover:border-jz-border-strong hover:bg-jz-surface-2');
+
   return (
-    <UnifiedModal
-      open
-      widthClass="w-[min(1152px,94vw)]"
-      onClose={onClose}
+    <Dialog open onClose={onClose} widthClass="w-full max-w-jz-content"
       title={(
-        <span className="inline-flex items-center gap-2 min-w-0" data-art-header>
-          <StatusBadge tone="custom" className="bg-jz-surface-2 text-jz-ink">#{taskId}</StatusBadge>
+        <span className="flex min-w-0 items-center gap-2" data-art-header>
+          <span className="flex-none font-mono text-label tnum text-jz-muted">#{taskId}</span>
           <span className="truncate" title={taskName}>{taskName || '产物'}</span>
-          <StatusBadge tone="info">双栏资源管理器 · {flat ? `${flat.length} 文件` : '清点中…'}</StatusBadge>
+          <StatusBadge tone="neutral">{flat ? `${flat.length} 个文件` : '正在清点'}</StatusBadge>
         </span>
       )}
       footer={(
-        <div className="flex items-center gap-2 flex-wrap" data-art-footer>
+        <div className="flex w-full flex-wrap items-center gap-2" data-art-footer>
           <input ref={upRef} type="file" accept=".apk,.xapk,.hap,.app,.ipa" className="hidden"
- onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadSupplement(f); e.target.value = ''; }} data-art-upload-input />
-          <button onClick={() => upRef.current?.click()} disabled={busy === 'upload'} data-art-upload-btn
- title="上传补充走既有 POST /api/upload(落点=审计池,新审计可直接用);后端无「写入本任务产物目录」端点——如实标注,不假造落点"
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-surface-2 text-jz-ink-2 border border-jz-border/60 hover:text-jz-brand hover:border-jz-brand/40 disabled:opacity-50 transition-colors">
-            <Upload size={13} /> {busy === 'upload' ? '上传中…' : '上传补充(→审计池)'}
-          </button>
-          <button onClick={dlSourceApk} disabled={busy === 'source-apk'} data-art-source-apk
- title="下载本任务原始 APK（独立 source-apk 端点）"
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-surface-2 text-jz-ink-2 border border-jz-border/60 hover:text-jz-brand hover:border-jz-brand/40 disabled:opacity-50 transition-colors">
-            <Download size={13} /> {busy === 'source-apk' ? '下载中…' : '下载原始 APK'}
-          </button>
-          <button onClick={dlDexBundle} disabled={busy === 'dex-package'} data-art-dex-package
- title="打包下载本任务脱壳后的 DEX（unpacked + decompiled/fixed_dex）"
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-brand/15 text-jz-brand border border-jz-brand/40 hover:bg-jz-brand/25 disabled:opacity-50 transition-colors">
-            <FileArchive size={13} /> {busy === 'dex-package' ? '打包中…' : '下载脱壳 DEX ZIP'}
-          </button>
-          <button onClick={exportList} disabled={!flat?.length} data-art-export-list
- title="导出产物清单 JSON(数据=扁平遍历真值,本地 Blob 下载)"
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-surface-2 text-jz-ink-2 border border-jz-border/60 hover:text-jz-brand hover:border-jz-brand/40 disabled:opacity-50 transition-colors">
-            <FileText size={13} /> 导出清单 JSON
-          </button>
-          {linked ? (
-            <button onClick={dlZip} disabled={busy === 'zip'} data-art-zip="ready"
- title={`一键打包下载会话 #${linked.sid} 报告包 zip(既有端点 /api/pentest/sessions/${linked.sid}/report/package,R60)`}
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-brand/15 text-jz-brand border border-jz-brand/40 hover:bg-jz-brand/25 disabled:opacity-50 transition-colors">
-              <FileArchive size={13} /> 一键打包下载 ZIP
-            </button>
-          ) : (
-            <button disabled data-art-zip="disabled"
- title="该任务无关联渗透会话——报告包端点为会话域(/api/pentest/sessions/{sid}/report/package),一键打包置灰=挂账,不假造"
- className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-meta font-medium bg-jz-surface-2 text-jz-muted border border-transparent opacity-60 cursor-not-allowed">
-              <FileArchive size={13} /> 一键打包下载 ZIP(无打包端点)
-            </button>
-          )}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadSupplement(f); e.target.value = ''; }} data-art-upload-input />
+          <Button size="sm" variant="ghost" icon={<Upload size={14} aria-hidden />} onClick={() => upRef.current?.click()} loading={busy === 'upload'} data-art-upload-btn
+            title="上传一个安装包到样本库,新的评估可以直接使用。文件不会写入这个任务的产物目录。">
+            {busy === 'upload' ? '上传中…' : '上传到样本库'}
+          </Button>
           <span className="flex-1" />
-          {/* 数据真实性红线1 选项②: 通用 /api/download 未接通=挂账照记;单文件下载走既有真实端点 */}
-          <span className="text-meta text-jz-muted"
- title="通用 /api/download 端点后端不存在(A-4 同族外部依赖)=挂账;本弹窗单文件下载走既有 /api/tasks/{tid}/artifact">
-            /api/download 未接通=挂账
-          </span>
+          <Button size="sm" variant="secondary" icon={<FileText size={14} aria-hidden />} onClick={exportList} disabled={!flat?.length} data-art-export-list
+            title="把文件清单导出为 JSON">导出清单</Button>
+          <Button size="sm" variant="secondary" icon={<Download size={14} aria-hidden />} onClick={dlSourceApk} loading={busy === 'source-apk'} data-art-source-apk
+            title="下载这个任务的原始安装包">原始安装包</Button>
+          <Button size="sm" variant="secondary" icon={<FileArchive size={14} aria-hidden />} onClick={dlDexBundle} loading={busy === 'dex-package'} data-art-dex-package
+            title="打包下载脱壳得到的 DEX">脱壳 DEX</Button>
+          {linked ? (
+            <Button size="sm" variant="secondary" icon={<FileArchive size={14} aria-hidden />} onClick={dlZip} loading={busy === 'zip'} data-art-zip="ready"
+              title={`下载渗透会话 #${linked.sid} 的报告包`}>报告包</Button>
+          ) : (
+            <Button size="sm" variant="secondary" icon={<FileArchive size={14} aria-hidden />} disabled data-art-zip="disabled"
+              title="这个任务没有关联的渗透会话,没有报告包可以下载">报告包</Button>
+          )}
         </div>
- )}
- >
-      <div className="flex flex-col h-[76vh]">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-0">
-          {/* ── 左栏: 文件资源浏览器(搜索+扩展名分类+扁平清单;保留既有目录导航) ── */}
-          <div className="flex flex-col min-h-0 rounded-card bg-jz-surface-2/30 border border-jz-border/50" data-art-explorer>
-            <div className="flex-none p-2 space-y-1.5 border-b border-jz-border/60">
-              <div className="relative">
-                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-jz-muted pointer-events-none" />
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="搜索文件名 / 相对路径…"
- data-art-search
- className="w-full pl-8 pr-2 h-8 rounded-control bg-jz-surface text-meta text-jz-ink
- placeholder:text-jz-muted outline-none focus:ring-2 focus:ring-jz-brand/30" />
-              </div>
-              {/* 语义类型分类胶囊(规格: 全部|DEX脱壳|Manifest配置|审计报告|日志;计数=全量清单真值) */}
-              <div className="flex items-center gap-1 flex-wrap" data-art-cat-filter>
-                <button onClick={() => setCatF('all')} data-art-cat-chip="all"
- className={`px-2 py-0.5 rounded-pill text-meta transition-colors ${catF === 'all' ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface'}`}>
-                  全部 {flat?.length ?? 0}
+      )}>
+      <div className="flex h-[68vh] min-h-80 flex-col gap-3">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="flex min-h-0 flex-col rounded-card border border-jz-border" data-art-explorer>
+            <div className="flex-none space-y-2 border-b border-jz-border p-3">
+              <SearchField value={q} onValueChange={setQ} label="搜索文件" placeholder="搜索文件名或路径" data-art-search />
+              <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="按类型筛选" data-art-cat-filter>
+                <button type="button" aria-pressed={catF === 'all'} onClick={() => setCatF('all')} data-art-cat-chip="all" className={chip(catF === 'all')}>
+                  全部 <span className="tnum">{flat?.length ?? 0}</span>
                 </button>
                 {ART_CATS.map((c) => (
-                  <button key={c.key} onClick={() => setCatF(catF === c.key ? 'all' : c.key)} data-art-cat-chip={c.key}
- title={`谓词: ${c.key === 'dex' ? 'unpacked/ 目录或 .dex' : c.key === 'manifest' ? 'manifest 路径或 .xml' : c.key === 'report' ? 'report/ 目录或 .md/.html' : '.log/.txt'};不归类文件仅在「全部」可见`}
- className={`px-2 py-0.5 rounded-pill text-meta transition-colors ${catF === c.key ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface'}`}>
-                    {c.label} {catCounts[c.key] || 0}
+                  <button type="button" key={c.key} aria-pressed={catF === c.key} onClick={() => setCatF(catF === c.key ? 'all' : c.key)} data-art-cat-chip={c.key}
+                    title={c.key === 'dex' ? 'unpacked/ 目录下的文件或 .dex' : c.key === 'manifest' ? '路径含 manifest 或 .xml' : c.key === 'report' ? 'report/ 目录下的文件或 .md、.html' : '.log 和 .txt'}
+                    className={chip(catF === c.key)}>
+                    {c.label} <span className="tnum">{catCounts[c.key] || 0}</span>
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-1 flex-wrap" data-art-ext-filter>
-                <button onClick={() => setExtF('all')} data-art-ext-chip="all"
- className={`px-2 py-0.5 rounded-pill text-meta transition-colors ${extF === 'all' ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface'}`}>
-                  全部 {flat?.length ?? 0}
-                </button>
- {extOptions.map(([k, label]) => (
-                  <button key={k} onClick={() => setExtF(extF === k ? 'all' : k)} data-art-ext-chip={k}
- className={`px-2 py-0.5 rounded-pill text-meta transition-colors ${extF === k ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:bg-jz-surface'}`}>
-                    {label}
-                  </button>
-                ))}
-                {flatBusy && <span className="text-meta text-jz-muted">清点中…</span>}
-              </div>
-              {/* 既有目录导航(面包屑/上级)保留 */}
-              <div className="flex items-center gap-2 text-meta min-h-[20px]">
+              {extOptions.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="按扩展名筛选" data-art-ext-filter>
+                  <button type="button" aria-pressed={extF === 'all'} onClick={() => setExtF('all')} data-art-ext-chip="all" className={chip(extF === 'all')}>全部扩展名</button>
+                  {extOptions.map(([k, label]) => (
+                    <button type="button" key={k} aria-pressed={extF === k} onClick={() => setExtF(extF === k ? 'all' : k)} data-art-ext-chip={k} className={chip(extF === k)}>{label}</button>
+                  ))}
+                </div>
+              )}
+              <div className="flex min-h-6 items-center gap-2 text-meta">
                 {prefix ? (
-                  <button onClick={goUp} data-art-up className="inline-flex items-center gap-0.5 text-jz-brand hover:underline">
-                    <ChevronLeft size={12} /> 上级
-                  </button>
+                  <Button size="sm" variant="ghost" icon={<ChevronLeft size={14} aria-hidden />} onClick={goUp} data-art-up>上一级</Button>
                 ) : (
-                  <span className="text-jz-muted">run_dir 根目录</span>
+                  <span className="text-jz-muted">根目录</span>
                 )}
-                {prefix && <span className="font-mono text-jz-muted truncate" title={prefix}>{prefix}</span>}
+                {prefix && <span className="truncate font-mono text-jz-muted" title={prefix}>{prefix}</span>}
+                {flatBusy && <span className="ml-auto text-jz-muted" role="status">正在清点文件…</span>}
               </div>
             </div>
-            <div className="flex-1 min-h-0 overflow-auto divided-card-list" data-art-tree>
-              {err && <div className="text-meta text-jz-sev-critical p-2">加载失败: {err}</div>}
-              {data?.empty_reason && !prefix && <div className="text-meta text-jz-muted p-2">{data.empty_reason}</div>}
- {/* 目录(树浏览;真实存在才渲染,不假造分类) */}
- {entries.filter((e: any) => e.type === 'dir').map((e: any) => {
+            <div className="min-h-0 flex-1 divide-y divide-jz-border overflow-auto" data-art-tree>
+              {err && <ErrorState compact title="产物列表加载失败" message={err} onRetry={() => { load(taskId, prefix); flatten(taskId); }} />}
+              {data?.empty_reason && !prefix && <p className="px-3 py-2 text-meta text-jz-muted">{data.empty_reason}</p>}
+              {!data && !err && <div className="p-3"><SkeletonLoader variant="table" rows={5} /></div>}
+              {entries.filter((e: any) => e.type === 'dir').map((e: any) => {
                 const cat = CAT[e.name];
+                const Icon = cat ? cat.Icon : FolderOpen;
                 return (
-                  <button key={e.rel} onClick={() => enter(e.rel)} data-art-dir={e.name}
- title={`进入 ${e.rel}(${e.files} 文件)`}
- className="w-full flex items-center gap-2 px-2 py-1.5 text-meta min-h-[32px] text-left hover:bg-jz-surface/60">
-                    {cat
-                      ? <cat.Icon size={14} className={`flex-none ${cat.cls}`} />
-                      : <FolderOpen size={14} className="flex-none text-jz-muted" />}
-                    <span className="truncate text-jz-ink">{e.name}</span>
-                    <span className="flex-none font-mono text-jz-muted tnum">{e.files} 文件</span>
+                  <button type="button" key={e.rel} onClick={() => enter(e.rel)} data-art-dir={e.name} title={`打开 ${e.rel}`}
+                    className="flex min-h-jz-control w-full items-center gap-2 px-3 py-1.5 text-left text-label hover:bg-jz-surface-2">
+                    <Icon size={16} aria-hidden className="flex-none text-jz-muted" />
+                    <span className="min-w-0 flex-1 truncate text-jz-ink">{e.name}</span>
+                    <span className="flex-none font-mono text-meta tnum text-jz-muted">{e.files} 个文件</span>
                   </button>
- );
- })}
- {/* 扁平文件清单(搜索+分类过滤后) */}
- {shownFlat.map((f) => {
+                );
+              })}
+              {shownFlat.map((f) => {
                 const canPreview = !!PREVIEWABLE[f.name] || (TEXT_PREVIEW_RE.test(f.name) && f.size_kb <= PREVIEW_MAX_KB);
- const previewTip = PREVIEWABLE[f.name]
- ? `预览 ${f.name}(既有报告预览能力 R55 G7)`
- : canPreview
- ? `在线预览 ${f.name}(文本类 ≤${PREVIEW_MAX_KB}KB,经既有单文件产物端点取文本)`
- : `不可在线预览(二进制/未识别格式或 >${PREVIEW_MAX_KB}KB)=诚实置灰,可下载后查看`;
                 const active = preview?.rel === f.rel;
                 return (
-                  <div key={f.rel} data-art-file={f.rel}
- className={`flex items-center gap-2 px-2 py-1.5 text-meta min-h-[32px] ${active ? 'bg-jz-brand/10' : 'hover:bg-jz-surface/60'}`}>
-                    <FileText size={13} className="flex-none text-jz-muted" />
-                    <button onClick={() => openPreview(f.name, f.rel, f.size_kb)} disabled={!canPreview || busy === f.name}
- data-art-file-name={f.name}
- title={`${f.rel} · ${f.size_kb}KB${canPreview ? '(点击预览)' : ''}`}
- className="flex-1 min-w-0 truncate text-left text-jz-ink-2 disabled:cursor-default disabled:text-jz-muted hover:text-jz-brand transition-colors">
+                  <div key={f.rel} data-art-file={f.rel} className={cx('flex min-h-jz-control items-center gap-2 px-3 py-1', active ? 'bg-jz-brand-soft' : 'hover:bg-jz-surface-2')}>
+                    <FileText size={14} aria-hidden className="flex-none text-jz-muted" />
+                    <button type="button" onClick={() => openPreview(f.name, f.rel, f.size_kb)} disabled={!canPreview || busy === f.name}
+                      data-art-file-name={f.name} title={`${f.rel} · ${f.size_kb}KB`}
+                      className="min-w-0 flex-1 truncate text-left font-mono text-meta text-jz-ink enabled:hover:text-jz-brand disabled:cursor-default disabled:text-jz-ink-2">
                       {f.rel}
                     </button>
-                    <span className="flex-none font-mono tnum text-jz-muted" data-art-size>{f.size_kb}KB</span>
-                    <button onClick={() => openPreview(f.name, f.rel, f.size_kb)} disabled={!canPreview || busy === f.name}
- data-art-preview-btn={f.name}
- title={previewTip}
- className="p-1 rounded-control text-jz-brand hover:bg-jz-surface/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                      <Eye size={13} />
-                    </button>
-                    <button onClick={() => dlFile(f.rel, f.name)} disabled={busy === f.rel}
- data-art-dl-btn={f.name}
- title={`下载 ${f.name}(经既有单文件产物端点 /api/tasks/{tid}/artifact,携带 Authorization 头;通用 /api/download 未接通=挂账)`}
- className="p-1 rounded-control text-jz-brand hover:bg-jz-surface/80 disabled:opacity-30 transition-colors">
-                      <Download size={13} className={busy === f.rel ? 'animate-spin' : ''} />
-                    </button>
+                    <span className="flex-none font-mono text-meta tnum text-jz-muted" data-art-size>{f.size_kb}KB</span>
+                    <IconButton size="sm" label={canPreview ? `预览 ${f.name}` : `不能在线预览:二进制文件或超过 ${PREVIEW_MAX_KB}KB,可以下载后查看`}
+                      onClick={() => openPreview(f.name, f.rel, f.size_kb)} disabled={!canPreview || busy === f.name} data-art-preview-btn={f.name}>
+                      <Eye size={14} aria-hidden />
+                    </IconButton>
+                    <IconButton size="sm" label={`下载 ${f.name}`} onClick={() => dlFile(f.rel, f.name)} disabled={busy === f.rel} data-art-dl-btn={f.name}>
+                      <Download size={14} aria-hidden />
+                    </IconButton>
                   </div>
                 );
               })}
               {!shownFlat.length && !flatBusy && !err && (
-                <div className="px-3 py-6 text-center text-meta text-jz-muted" data-art-empty>
-                  {flat && flat.length ? '无匹配文件(调整搜索词/分类过滤)' : '产物目录为空(如实空态)'}
+                <div data-art-empty>
+                  <EmptyState compact icon={FolderOpen}
+                    title={flat && flat.length ? '没有符合条件的文件' : '没有产物文件'}
+                    cause={flat && flat.length ? '换一个搜索词,或者调整类型和扩展名筛选。' : '这个任务的产物目录是空的。'} />
                 </div>
               )}
             </div>
           </div>
 
-          {/* ── 右栏: 等宽大字号预览/复制/下载 ── */}
-          <div className="flex flex-col min-h-0 rounded-card bg-jz-surface-2/30 border border-jz-border/50" data-art-preview>
+          <div className="flex min-h-0 flex-col rounded-card border border-jz-border" data-art-preview>
             {!preview ? (
-              <div className="flex-1 grid place-items-center p-4 text-center">
-                <div className="space-y-1.5">
-                  <Eye size={20} className="mx-auto text-jz-muted" />
-                  <div className="text-meta text-jz-muted">点击左侧文件名 / 预览钮查看内容</div>
-                  <div className="text-meta text-jz-muted">报告白名单走报告端点;其余文本类 ≤{PREVIEW_MAX_KB}KB 走产物端点(真值闸)</div>
-                </div>
-              </div>
+              <EmptyState icon={Eye} title="选择一个文件预览" cause={`报告和不超过 ${PREVIEW_MAX_KB}KB 的文本文件可以在线预览,其余文件请下载后查看。`} className="flex-1" />
             ) : (
               <>
-                <div className="flex items-center gap-2 text-meta flex-none p-2 border-b border-jz-border/60">
-                  <Eye size={12} className="text-jz-brand flex-none" />
-                  <span className="font-mono text-jz-ink-2 truncate flex-1" title={preview.rel}>{preview.rel}</span>
-                  <StatusBadge tone="info" title={preview.via === 'report'
- ? '预览源=既有报告预览端点 /api/tasks/{tid}/report-file(白名单恒等)'
- : '预览源=既有单文件产物端点 /api/tasks/{tid}/artifact(文本类 ≤512KB 真值闸)'}>
-                    {preview.via === 'report' ? '报告端点' : '产物端点'}
-                  </StatusBadge>
-                  <button onClick={copyPreview} data-art-copy title="复制全文到剪贴板"
- className="p-1 rounded-control text-jz-ink-2 hover:text-jz-brand transition-colors">
-                    {copied ? <Check size={13} className="text-jz-teal" /> : <Copy size={13} />}
-                  </button>
-                  <button onClick={() => dlFile(preview.rel, preview.name)} disabled={busy === preview.rel} data-art-preview-dl
- title="下载当前预览文件" className="p-1 rounded-control text-jz-brand hover:bg-jz-surface/80 transition-colors">
-                    <Download size={13} />
-                  </button>
-                  <button onClick={() => setPreview(null)} aria-label="关闭预览" className="text-jz-muted hover:text-jz-ink"><X size={12} /></button>
+                <div className="flex flex-none items-center gap-1 border-b border-jz-border py-1.5 pl-3 pr-1.5">
+                  <span className="min-w-0 flex-1 truncate font-mono text-meta text-jz-ink" title={preview.rel}>{preview.rel}</span>
+                  <IconButton size="sm" label={copied ? '已复制' : '复制全文'} onClick={copyPreview} data-art-copy>
+                    {copied ? <Check size={14} aria-hidden className="text-jz-teal" /> : <Copy size={14} aria-hidden />}
+                  </IconButton>
+                  <IconButton size="sm" label="下载这个文件" onClick={() => dlFile(preview.rel, preview.name)} disabled={busy === preview.rel} data-art-preview-dl>
+                    <Download size={14} aria-hidden />
+                  </IconButton>
+                  <IconButton size="sm" label="关闭预览" onClick={() => setPreview(null)}><X size={14} aria-hidden /></IconButton>
                 </div>
-                {/* 等宽大字号预览(text-body=14px mono,行高 6) */}
-                <pre className="flex-1 min-h-0 overflow-auto m-0 p-3 text-body leading-6 text-jz-ink-2 whitespace-pre-wrap break-all font-mono" data-art-preview-body>{preview.text}</pre>
+                <pre tabIndex={0} className="m-0 min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-all p-3 font-mono text-label text-jz-ink-2" data-art-preview-body>{preview.text}</pre>
               </>
             )}
           </div>
         </div>
 
         {note && (
-          <div className="flex-none mt-1.5 text-meta text-jz-ink-2" data-art-note>
-            {note}<button onClick={() => setNote(null)} className="ml-1.5 text-jz-muted hover:text-jz-ink">✕</button>
-          </div>
+          <InlineAlert tone="info" className="flex-none" data-art-note
+            action={<Button size="sm" variant="ghost" onClick={() => setNote(null)}>知道了</Button>}>{note}</InlineAlert>
         )}
-
-        <div className="flex-none mt-1 text-meta text-jz-muted truncate font-mono" title={data?.run_dir || ''}>
-          {data?.run_dir || ''}
-        </div>
+        {data?.run_dir && <p className="flex-none truncate font-mono text-meta text-jz-muted" title={data.run_dir}>{data.run_dir}</p>}
       </div>
-    </UnifiedModal>
+    </Dialog>
   );
 };

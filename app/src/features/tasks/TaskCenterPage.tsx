@@ -1,183 +1,23 @@
-import React, {useEffect, useMemo, useRef, useState , useCallback} from 'react';
+// TaskCenterPage.tsx — task list: search, status, owner; bulk rerun and delete; detail drawer.
+// Requests, payloads, query params, timers and data-* hooks are unchanged; only the presentation is new.
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ClipboardList, Download, ExternalLink, MessageSquare, MoreHorizontal, Plus, RefreshCw, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardList, Download, ExternalLink, FileText, FolderOpen, Info, MessageSquare, MoreHorizontal, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { api } from '@/services/api';
 import { usePentest } from '@/stores/pentest';
-// R108-2①②: 三件套接入——tasks===null(首载)呈 SkeletonLoader 表格骨架;非加载且过滤后为空呈 EmptyStatePlaceholder
-// (文案沿既有诚实空文案逐字保留);数据获取逻辑零动(loadAll 原样)。
-// 本轮重构(并发槽位算术修复+双态势舱+检索工具栏+诚实状态列+显性操作列):
-//  - R614 存量全保留: DataToolbar 接入/批量勾选操作栏/底部分页器/全部 data-* 探针(只增不删)
-//  - 诚实纪律: 「完成」≠业务码脱出——done 任务按 unpack_outcome+progress 文本解析三分渲染
-//    (完整完成/部分完成(脱壳受阻)/失败),解析不到业务码类数=只显状态不编数
-// 本轮渲染修复五处(浏览器实-rendering 实证):
-//  ①会话滑轨改上下两层(顶部横条标题+翻页/收起,底部卡片区)——旧左侧 9px 竖排文字条一字一行=移除
-//  ②顶部 12 列网格左 5 右 7,左卡补卡头+四等高数字指标+全宽进度条(与右卡 p-5 对称)
-//  ③清理失败项/导出/新建上移页头右端;检索卡严格两行(搜索+下拉+Checkbox 开关 / 纯状态胶囊)
-//  ④honestDone 判定收紧: 业务码类数真实统计严禁覆盖;「脱壳受阻」=明确有壳 且 (类数=0 或 文本明确未脱出)
-//    (实证 #785 17类/#786 1类 均无壳=正常完成+真实类数;旧「≤20 类即受阻」规则废除)
-//  ⑤操作列统一 px-2.5 py-1 text-meta rounded-control border 胶囊(接力同高同圆角,禁用态同尺寸)
-import { Badge, DataToolbar, EmptyStatePlaceholder, exportDataFile, Modal, SkeletonLoader, StatusBadge } from '@/components/ui';
+import {
+  Page, PageHeader, Panel, Metric, MetricGrid, DataTable, Pagination, BulkBar, Tabs, Button, IconButton, Select, Checkbox, SearchField,
+  StatusBadge, Tag, Dialog, ConfirmDialog, Drawer, Popover, MenuItem, EmptyState, StaleNotice, InlineAlert, AsyncBoundary,
+  exportDataFile, useMediaQuery, cx,
+} from '@/components/ui';
+import type { Column, TabItem } from '@/components/ui';
+import { moduleLabel } from '@/layout/navigation';
 import { ArtifactsModal } from './ArtifactsModal';
 import { RerunTaskModal } from './RerunTaskModal';
-
-const ST_CN: Record<string, string> = { done: '完成', running: '运行中', failed: '失败', queued: '排队' };
-// R120-2 脱壳语义透出: 「完成」=管线跑完≠业务码脱出(754 东莞银行 ijiami 实证)。判定输入=
-// 后端 /api/tasks 既有字段: unpack_outcome(verdict/defined_biz/code_recovered/biz_classes)+progress 文本
-// (runner 实证: 阻塞任务 progress=「审计完成(⚠ 脱壳不完整: 业务代码 X 未脱出,…)」);
-// 渲染见 honestDone/outcomeProbe——data-unpack-outcome 探针值域与原徽章恒等
-// (pass/small_app/32bit_only/install_failed/verdict 原词/recovered/no_biz_code)。
-// R103-1: 状态色改双模 CSS 变量(原硬编码 hex 亮色模式不换肤)
-const ST_COL: Record<string, string> = { done: 'rgb(var(--jz-teal))', running: 'rgb(var(--jz-brand))', failed: 'rgb(var(--jz-red))', queued: 'rgb(var(--jz-muted))' };
-// R103-8②: 类型四色徽章(unpack 紫/audit 蓝/fuzz 琥珀/recon 灰;其余灰兜底)——双模 CSS 变量
-const KIND_CLS: Record<string, string> = {
- unpack: 'text-jz-brand bg-jz-brand/10',
- audit: 'text-jz-brand bg-jz-brand/10',
- fuzz: 'text-jz-amber bg-jz-amber/10',
- recon: 'text-jz-muted bg-jz-surface-2',
-};
-// 操作列按钮统一样式(本轮修复⑤): [接力][报告][产物][重试][详情][删除] 同高同圆角胶囊
-// px-2.5 py-1 text-meta rounded-control border;禁用态保留 disabled 视觉但同尺寸;全部 whitespace-nowrap
-const ACT_BTN = 'inline-flex items-center justify-center whitespace-nowrap px-2.5 py-1 rounded-control border text-meta font-medium transition-colors';
-// R103-9③: 每页条数可选(原固定 20)
-const PAGE_SIZES = [20, 50, 100, 200];
-// 慢任务标线(规格): 耗时 >15m 琥珀慢任务标
-const SLOW_S = 15 * 60;
-// 0s 冒烟失败隐藏胶囊口径: 失败且耗时<2s(后端无 svc_smoke 专用标记——诚实降级为本地耗时判据,
-// 实测库内 0.02s~0.84s 即时失败族: 「未找到待审 APK」等)
-const SMOKE_FAIL_S = 2;
-
-// R103-8②: 耗时格式化(2m 14s / 1h 03m);实时耗时由调用方传 now 驱动
-// R103-9④: floor→round(亚秒均值 0.8s 不再显「0s」;59.7s→1m 00s 由 s>=60 分支自然承接)
-const fmtDur = (sec: number): string => {
-  if (!isFinite(sec) || sec < 0) return '—';
-  const s = Math.round(sec);
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ${String(s % 60).padStart(2, '0')}s`;
-  const h = Math.floor(m / 60);
-  return `${h}h ${String(m % 60).padStart(2, '0')}m`;
-};
-// 时间列副行: created_at/updated_at(epoch 秒,后端 tasks 表两列实存)→ MM-DD HH:mm;悬停显全量
-const fmtTime = (ts?: number | null): string => {
-  if (!ts) return '—';
-  const d = new Date(ts * 1000);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
-
-// R103-8②: 壳标签(packer 字段实存;none=无壳,未知值原样显不编造)
-const PACKER_NAMES: Record<string, string> = {
-  bangcle: '梆梆安全', ijiami: '爱加密', jiagu: '360加固', qihoo: '360加固', '360_jiagu': '360加固',
-  naqiu: '娜迦', wrap: '渠道壳', 'wrap-channel': '渠道壳',
-};
-const STAGE_CN: Record<string, string> = {
-  'Security Analysis': '安全分析', 'Symbol Analysis': '符号分析',
-  'Struct Analysis': '结构分析', 'Report Generation': '报告生成',
-};
-
-const TaskLiveProgress: React.FC<{ progress: string }> = ({ progress }) => {
-  const segs = String(progress).split('→').map(s => s.trim()).filter(Boolean);
-  const unpack = segs.find(s => /^Unpack:/i.test(s));
-  const decomp = segs.find(s => /^Decompile:/i.test(s));
-  const last = segs[segs.length - 1] || '';
-  const post = decomp ? segs[segs.indexOf(decomp) + 1] : null;
-  const pctOf = (s: string): number | null => {
-    const m = /(\d+)%/.exec(s || '');
-    return m ? Math.max(0, Math.min(100, parseInt(m[1], 10))) : null;
-  };
-  const dp = decomp ? pctOf(decomp) : null;
-  const detail = decomp
-    ? decomp.replace(/^Decompile:\s*\d+%\s*(·\s*)?/i, '').trim()
-    : last.replace(/^(Security Analysis|Symbol Analysis|Struct Analysis|Report Generation):\s*/i, '').trim();
-  return (
-    <div className="mt-1.5 w-[270px] max-w-[270px] space-y-1" data-task-progress>
-      {unpack && (
-        <div className="flex items-start gap-1 text-meta leading-snug text-jz-teal" title={unpack}>
-          <span className="flex-none">✓ 脱壳 100%</span>
-          <span className="min-w-0 break-words text-jz-teal/80">
-            {unpack.replace(/^Unpack:\s*100%\s*(·\s*)?/i, '')}
-          </span>
-        </div>
-      )}
-      {decomp ? (
-        <div>
-          <div className="flex items-baseline justify-between gap-2 text-meta">
-            <span className="flex-none font-medium text-jz-brand">反编译 {dp ?? 0}%</span>
-            <span className="min-w-0 truncate text-jz-muted" title={detail}>{detail || 'jadx…'}</span>
-          </div>
-          <div className="mt-0.5 h-1 w-full rounded-pill bg-jz-surface-2 overflow-hidden" data-progress-bar={dp ?? 0}>
-            <div className="h-full bg-jz-brand transition-all" style={{ width: String(dp ?? 0) + '%' }} />
-          </div>
-          {post && <div className="text-meta text-jz-muted">当前：{STAGE_CN[post.split(':')[0]] || post}</div>}
-        </div>
-      ) : (
-        <div className="text-meta text-jz-muted">当前：{STAGE_CN[last.split(':')[0]] || last}</div>
-      )}
-    </div>
-  );
-};
-
-const PackerChip: React.FC<{ packer?: string | null }> = ({ packer }) => {
-  if (!packer) return null;
-  const name = PACKER_NAMES[packer] || packer;
-  if (packer === 'none') return <span className="flex-none rounded-control px-1.5 py-0.5 text-meta font-mono bg-jz-surface-2 text-jz-muted" title="未检出加固防护">无壳</span>;
-  return <span className="inline-flex flex-none items-center rounded-control px-1.5 py-0.5 text-meta font-mono font-medium bg-jz-sev-medium/10 text-jz-sev-medium" title={`防护指纹: ${packer}`}>
-    {name}
-  </span>;
-};
-
-// ── 诚实状态列解析(本轮新增)────────────────────────────────────────────
-// 业务码类数: 仅从 /api/tasks 既有 unpack_outcome 解析(unpack 通道=defined_biz / audit 通道=biz_classes);
-// 解析不到返回 null=只显状态不编数(诚实纪律)
-const bizOf = (o: any): number | null => {
-  if (!o) return null;
-  const v = o.verdict != null ? o.defined_biz : o.biz_classes;
-  return typeof v === 'number' && v >= 0 ? v : null;
-};
-// done 任务阻塞判定(本轮修正: 业务码误判 bug):
-//   ①真实业务统计优先: 任务解析出业务码类数(哪怕 1 类/17 类)=后端真实统计,严禁被受阻判定覆盖——
-//     一律正常完成并原样显示「业务码 X 类」;
-//   ②「脱壳受阻」收紧: 仅当任务明确存在加固壳(packer 非空且非 none)且(业务码类数===0 或 progress 原文
-//     明确「未脱出/脱壳不完整」或 code_recovered===0 结构化证据)才判受阻;
-//   ③凡无壳(packer=none/缺失=未检出)或已解析出业务码类的完成任务,一律 🟢 完成+✓业务码 X 类。
-//   实证: #785 业务码 17 类 / #786 业务码 1 类 均为无壳——正常完成+真实类数,不再琥珀受阻;
-//   旧「业务码 ≤20 即受阻」规则废除(类数低≠未脱出,以真实统计为准;verdict 例外词仅作受阻时的标签措辞)
-const honestDone = (t: any): { blocked: boolean; label: string; biz: number | null; positive: boolean; shell: boolean } => {
-  const o = t.unpack_outcome || null;
-  const biz = bizOf(o);
-  const shell = !!t.packer && t.packer !== 'none';   // 明确存在加固壳(none/缺失=无壳/未检出)
-  const prog = typeof t.progress === 'string' ? t.progress : '';
-  const progNoBiz = /未脱出|脱壳不完整/.test(prog);   // runner 实证阻塞文案:「⚠ 脱壳不完整: 业务代码 X 未脱出」
-  const positive = !!(o && (o.verdict === 'pass' || o.code_recovered === 1));
-  let blocked = false;
-  let label = '';
-  if (biz != null && biz > 0) {
-    blocked = false;   // ① 有真实业务码类数=权威正向,任何其他信号不得覆盖
-  } else if (shell && (biz === 0 || progNoBiz || (o != null && o.code_recovered === 0))) {
-    // ② 收紧后的受阻判定: 必须明确有壳 + 明确「未脱出业务码」证据(类数=0/文本/结构化)三者同存
-    blocked = true;
-    label = o && o.verdict && o.verdict !== 'pass'
-      ? (o.verdict === 'small_app' ? '非能力项 small_app'
-        : o.verdict === '32bit_only' ? '非能力项 32bit_only'
-        : o.verdict === 'install_failed' ? '未装上 install_failed'
-        : `未脱出(${o.verdict})`)
-      : '未脱出业务码';
-  }
-  return { blocked, label, biz, positive, shell };
-};
-// done 任务 data-unpack-outcome 探针值(R120-2 原值域恒等: pass/small_app/32bit_only/install_failed/verdict 原词/recovered/no_biz_code)
-const outcomeProbe = (o: any): string | null => {
-  if (!o) return null;
-  if (o.verdict) return o.verdict;
-  if (o.strict_ok === true || o.code_recovered === 1) return 'recovered';
-  return 'no_biz_code';
-};
-
-// 设备标签(会话卡): emulator-* 序列=模拟器,其余非空=真机,空=无设备(本地启发,真值来自既有 device 字段)
-const devTagOf = (d?: string | null): { label: string; cls: string } =>
-  !d ? { label: '无设备', cls: 'text-jz-muted bg-jz-surface-2' }
-    : /^emulator/i.test(d) ? { label: '模拟器', cls: 'text-jz-brand bg-jz-brand/10' }
-    : { label: '真机', cls: 'text-jz-teal bg-jz-teal/10' };
+import {
+  ST_CN, PAGE_SIZES, SLOW_S, SMOKE_FAIL_S, PACKER_NAMES, fmtDur, fmtTime, whenFull, honestDone, outcomeProbe,
+  TaskLiveProgress, PackerChip, devKind,
+} from './taskParts';
 
 export const TaskCenterPage: React.FC = () => {
   const nav = useNavigate();
@@ -192,7 +32,12 @@ export const TaskCenterPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);   // R103-9③
   const [sessMap, setSessMap] = useState<Record<number, { pid: number; sid: number }>>({});
-  const [menuFor, setMenuFor] = useState<number | null>(null);
+  const [delAsk, setDelAsk] = useState<any | null>(null);   // single-task delete confirmation
+  const [loadErr, setLoadErr] = useState<unknown>(null);
+  // Width tiers: owner column from 1600, all row actions inline from 1440, record cards below 1280.
+  const showOwner = useMediaQuery('(min-width: 1600px)');
+  const wide = useMediaQuery('(min-width: 1440px)');
+  const tableFits = useMediaQuery('(min-width: 1280px)');
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
   // R103-9①: 勾选批量(跨页累计;底部批量条)
   const [sel, setSel] = useState<Set<number>>(new Set());
@@ -209,21 +54,11 @@ export const TaskCenterPage: React.FC = () => {
   const [sessRailOpen, setSessRailOpen] = useState(true);
   const railRef = useRef<HTMLDivElement>(null);
   const [railNav, setRailNav] = useState<{ prev: boolean; next: boolean }>({ prev: false, next: false });
-  // 本轮修复③: 导出▾下拉自 DataToolbar 上移至页头操作区(自带外点关闭)
-  const [expOpen, setExpOpen] = useState(false);
-  const expRef = useRef<HTMLDivElement>(null);
   // 本轮修复②: 在线设备真值=usePentest.devices(TopBar 8s 单点轮询 /api/pentest/devices 写入的共享 store,
   // 仅 state='device' 的在线设备入池——零二次轮询,勿再直连端点)
   const liveDevices = usePentest((s) => s.devices);
 
  useEffect(() => { if (searchTimer.current) clearTimeout(searchTimer.current); searchTimer.current = setTimeout(() => setSearchDeb(search), 200); return () => clearTimeout(searchTimer.current); }, [search]);
- // 导出▾外点关闭(DataToolbar 同款交互,随钮上移页头)
- useEffect(() => {
-   if (!expOpen) return;
-   const onDown = (e: MouseEvent) => { if (expRef.current && !expRef.current.contains(e.target as Node)) setExpOpen(false); };
-   document.addEventListener('mousedown', onDown);
-   return () => document.removeEventListener('mousedown', onDown);
- }, [expOpen]);
  useEffect(() => { setPage(1); }, [searchDeb, pageSize, filter, packerF, operatorF, hideSmokeFail]); // R103-9③: 口径变化回第一页
  // 全平台升级 Step2②: 深链 status 参数变化即同步过滤器(侧栏引擎负载警示卡 → /tasks?status=failed 落点)
  useEffect(() => { setFilter(statusParam); setPage(1); }, [statusParam]);
@@ -252,13 +87,14 @@ export const TaskCenterPage: React.FC = () => {
  setSessMap(m);
  }).catch(() => {});
     api<any[]>('/api/tasks?limit=2000').then((rows) => {
+ setLoadErr(null);
  setTasks(rows || []);
  setSel((prev) => { // R103-9①: 勾选集随列表修剪(被删行不再滞留)
  const ids = new Set((rows || []).map((r: any) => r.id));
  const nx = new Set([...prev].filter((id) => ids.has(id)));
  return nx.size === prev.size ? prev : nx;
  });
- }).catch(() => setTasks([]));
+ }).catch((e) => { setTasks((prev) => prev ?? []); setLoadErr(e || new Error('加载失败')); }); // keep the last list on a failed refresh
  }, []);
  // R121: focus 深链(通知中心跳转/AI 助手出处卡)变化即重载列表——否则点击「任务失败 #N」通知
  // 落地时新任务行尚不在挂载时拉取的列表里,聚焦落空
@@ -315,7 +151,7 @@ export const TaskCenterPage: React.FC = () => {
  try { await api('/api/tasks', { method: 'POST', body: JSON.stringify({ kind: t.kind || 'audit', app_name: t.app_name, apk_path: t.apk_path, authorized: '任务中心重跑' }) }); ok++; }
  catch { fail++; }
  }
- setBatchMsg(`批量重跑已发起 ${ok} 个${fail ? ` · 失败 ${fail} 个` : ''}`); setSel(new Set()); setTimeout(loadAll, 800);
+ setBatchMsg(`已重新运行 ${ok} 个任务${fail ? `,${fail} 个没有成功` : ''}`); setSel(new Set()); setTimeout(loadAll, 800);
  } finally { setBatchBusy(false); }
  };
  const batchDelete = async () => {
@@ -327,7 +163,7 @@ export const TaskCenterPage: React.FC = () => {
  for (const t of selTasks) {
  try { await api(`/api/tasks/${t.id}`, { method: 'DELETE' }); ok++; } catch { skip++; }
  }
- setBatchMsg(`批量清理已删除 ${ok} 个${skip ? ` · 跳过 ${skip} 个(运行中/排队后端拒绝删除)` : ''}`); setSel(new Set()); loadAll();
+ setBatchMsg(`已删除 ${ok} 个任务${skip ? `,跳过 ${skip} 个(运行中或排队中的任务不能删除)` : ''}`); setSel(new Set()); loadAll();
  } finally { setBatchBusy(false); }
  };
  // 本轮新增: 清理失败项——范围=当前过滤视图内 status=failed(所见即所删,二次确认列明细);
@@ -417,17 +253,17 @@ export const TaskCenterPage: React.FC = () => {
  for (const t of failedInView) {
  try { await api(`/api/tasks/${t.id}`, { method: 'DELETE' }); ok++; } catch { skip++; }
  }
- setBatchMsg(`已清理失败任务 ${ok} 个${skip ? ` · 跳过 ${skip} 个(后端拒绝)` : ''}(范围=当前过滤视图)`); loadAll();
+ setBatchMsg(`已删除 ${ok} 个失败任务${skip ? `,跳过 ${skip} 个(服务端拒绝)` : ''}`); loadAll();
  } finally { setBatchBusy(false); }
  };
  // 导出所选(底部批量条): 与工具栏导出同字段(exportRows 真值;缺加载的计数留空不编造)
  const exportSelCsv = () => {
  exportDataFile('tasks_export', 'csv', exportRows(selTasks));
- setBatchMsg(`已导出所选 ${selTasks.length} 行 CSV`);
+ setBatchMsg(`已导出选中的 ${selTasks.length} 行(CSV)`);
  };
  const exportSelJson = () => {
  exportDataFile('tasks_export', 'json', exportRows(selTasks));
- setBatchMsg(`已导出所选 ${selTasks.length} 行 JSON`);
+ setBatchMsg(`已导出选中的 ${selTasks.length} 行(JSON)`);
  };
 
  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -465,702 +301,560 @@ export const TaskCenterPage: React.FC = () => {
  if (!el) return;
  el.scrollBy({ left: dir * Math.max(240, el.clientWidth * 0.8), behavior: 'smooth' });
  };
-
-  // ── 顶部态势舱①: 调度引擎与并发槽位(本轮修复②: 左卡补齐,与右卡同构对称)──
-  // 旧 bug1: used=0 时显示「0% 空闲」语义颠倒(占用/负载/空闲三值各显各义);
-  // 旧 bug2: 左卡仅一行横排,lg 宽屏下 ~85% 空白失衡——改为与右侧批卡同构:
-  //   卡头标题栏(左「调度引擎与并发槽位」纯文字 + 右状态徽章「空闲 N 槽」)+
-  //   四个等高数字指标(0/99 并发占用 · N 运行中 · N 排队中 · N 在线设备)+ 底部全宽进度条;双卡 p-5 对称。
-  // 真值源: 并发占用/配额=/api/org → usage.running(running+queued COUNT)/usage.quota_concurrent(429 配额闸同源);
-  // 运行中/排队中=/api/tasks 状态计数真值;在线设备=usePentest.devices 共享真值(见 liveDevices 注)
-  const slotPod = slots ? (() => {
- const used = slots.running;
- const quota = slots.quota;
- const unlim = quota == null || quota < 0;
- const load = !unlim && quota > 0 ? Math.round((used / quota) * 100) : null;
- const free = unlim ? null : Math.max(0, quota - used);
- const full = !unlim && quota > 0 && used >= quota;
- const hot = full || (load != null && load >= 80);
- const warm = !hot && load != null && load >= 50;
- const runningN = runningTasks.length;
- const queuedN = (tasks || []).filter((t: any) => t.status === 'queued').length;
- const devN = liveDevices.length;
- const metrics: Array<{ v: string; label: string; title: string }> = [
-   { v: `${used}/${unlim ? '∞' : quota}`, label: '并发占用', title: '统计口径: 当前正在执行或排队的审计任务数(running+queued 真值) / 组织套餐最大并发数(quota_concurrent)。达上限新建任务将被 429 拒绝(M4 配额闸)' },
-   { v: String(runningN), label: '运行中', title: '统计口径: status=running 任务计数真值' },
-   { v: String(queuedN), label: '排队中', title: '统计口径: status=queued 任务计数真值' },
-   { v: String(devN), label: '在线设备', title: '在线设备数(adb device 态入池;数据=TopBar 8s 轮询 /api/pentest/devices 写入的共享真值)' },
- ];
-    return (
-      <div className="rounded-panel bg-jz-surface shadow-card p-5 h-full flex flex-col" data-slot-pod>
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-body font-semibold text-jz-ink whitespace-nowrap">调度引擎与并发槽位</span>
-          <span className="inline-flex items-center gap-1.5 flex-none">
-            <span className="relative flex h-2 w-2" aria-hidden>
-              <span className={` absolute inline-flex h-full w-full rounded-pill opacity-60 ${hot ? 'bg-jz-sev-critical' : warm ? 'bg-jz-amber' : 'bg-jz-teal'}`} />
-              <span className={`relative inline-flex rounded-pill h-2 w-2 ${hot ? 'bg-jz-sev-critical' : warm ? 'bg-jz-amber' : 'bg-jz-teal'}`} />
-            </span>
-            <span data-slot-indicator
- title={`统计口径: 当前正在执行或排队的审计任务数(running+queued 真值) / 组织套餐最大并发数(quota_concurrent)。达上限新建任务将被 429 拒绝(M4 配额闸)`}
- className={`px-1.5 rounded-control font-mono text-meta tnum whitespace-nowrap ${hot ? 'bg-jz-sev-critical/10 text-jz-sev-critical' : warm ? 'bg-jz-amber/10 text-jz-amber' : 'bg-jz-teal/10 text-jz-teal'}`}>
-              空闲 {unlim ? '不限' : `${free} 槽`}
-            </span>
-          </span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 flex-1 items-stretch">
-          {metrics.map((m) => (
-            <div key={m.label} className="rounded-card bg-jz-surface-2/40 px-3 py-2.5 flex flex-col justify-center min-w-0" title={m.title}>
-              <div className="text-title font-semibold font-mono tnum text-jz-ink leading-none truncate">{m.v}</div>
-              <div className="mt-1.5 text-meta text-jz-muted whitespace-nowrap">{m.label}</div>
-            </div>
-          ))}
-        </div>
-        {!unlim && quota > 0 && (
-          <div className="mt-4 flex items-center gap-2">
-            <div className="h-1.5 flex-1 rounded-pill bg-jz-surface-2 overflow-hidden" aria-hidden>
-              <span className="block h-full rounded-pill transition-all" style={{ width: `${Math.min(100, Math.round((used / quota) * 100))}%`, background: hot ? 'rgb(var(--jz-red))' : warm ? 'rgb(var(--jz-amber))' : 'rgb(var(--jz-teal))' }} />
-            </div>
-            <span className="text-meta font-mono tnum text-jz-muted whitespace-nowrap">负载 {load == null ? '—' : `${load}%`}</span>
-          </div>
-        )}
-      </div>
-    );
+  // ── Derived display values ──
+  const queuedN = allTasks.filter((t: any) => t.status === 'queued').length;
+  const slotInfo = slots ? (() => {
+    const used = slots.running;
+    const quota = slots.quota;
+    const unlim = quota == null || quota < 0;
+    const load = !unlim && quota > 0 ? Math.round((used / quota) * 100) : null;
+    const free = unlim ? null : Math.max(0, quota - used);
+    const full = !unlim && quota > 0 && used >= quota;
+    const hot = full || (load != null && load >= 80);
+    const warm = !hot && load != null && load >= 50;
+    return { used, quota, unlim, load, free, hot, warm };
   })() : null;
 
-  // ── 顶部态势舱②: 批量脱壳聚合仪表板(升级: 完成/失败/待执行/均值/DEX 高对比瓦片+双色分段进度条)──
-  const batchPod = batchSum && batchSum.count > 0 ? (() => {
- const doneN = batchSum.done || 0;
- const failN = batchSum.failed || 0;
- const pendingN = Math.max(0, batchSum.count - doneN - failN);
- const donePct = batchSum.count ? Math.round((doneN / batchSum.count) * 100) : 0;
+  const durOf = (t: any) => (t.status === 'done' || t.status === 'failed') ? (t.updated_at || t.created_at) - t.created_at : now - t.created_at;
+  const artifactsReadyOf = (t: any) => (t.kind === 'unpack' || t.kind === 'audit') && t.status === 'done';
+  const canAskOf = (t: any) => t.kind === 'audit' && t.status === 'done' && !!t.result_id;
+  const gotoSession = (hit: { pid: number; sid: number }) => { window.location.hash = `/pentest/project/${hit.pid}/session/${hit.sid}`; };
+  // Row click: linked session first, then artifacts. Rows with neither do nothing.
+  const openRow = (t: any) => {
+    const hit = sessMap[t.id];
+    if (hit) { gotoSession(hit); return; }
+    if (artifactsReadyOf(t)) setArtTask(t.id);
+  };
+  const operatorOf = (t: any) => usersMap[String(t.user_id)] || (t.user_id != null ? `#${t.user_id}` : '—');
+  const taskLine = (t: any) => `#${t.id} ${t.app_name || t.package || ''} [${ST_CN[t.status] || t.status}]`;
+
+  const statusTabs: TabItem<string>[] = ([
+    { key: '', label: '全部', count: focusTasks.length },
+    { key: 'done', label: '完成', count: focusTasks.filter((t: any) => t.status === 'done').length },
+    { key: 'running', label: '运行中', count: focusTasks.filter((t: any) => t.status === 'running').length, dot: hasRunning },
+    { key: 'failed', label: '失败', count: focusTasks.filter((t: any) => t.status === 'failed').length },
+    { key: 'queued', label: '排队', count: focusTasks.filter((t: any) => t.status === 'queued').length },
+    { key: 'degraded', label: '部分完成', count: degradedCount, title: '已完成但有加固且业务代码没有脱出的任务' },
+  ] as Array<{ key: string; label: string; count: number; dot?: boolean; title?: string }>).map((f) => ({
+    key: f.key, count: f.count,
+    label: <>{f.dot && <span aria-hidden className="h-1.5 w-1.5 rounded-pill bg-jz-brand" data-toolbar-dot />}{f.label}</>,
+    dataAttrs: { 'data-toolbar-filter': f.key, 'data-active': filter === f.key ? '1' : '', title: f.title },
+  }));
+  const filtersOn = !!filter || !!searchDeb || packerF !== 'all' || !!operatorF || hideSmokeFail;
+  const clearFilters = () => { setFilter(''); setSearchParams({}); setSearch(''); setPackerF('all'); setOperatorF(''); setHideSmokeFail(false); };
+
+  const statusCell = (t: any) => {
+    const h = honestDone(t);
+    const probeVal = outcomeProbe(t.unpack_outcome);
+    if (t.status === 'failed') {
+      return (
+        <div className="flex max-w-56 flex-col items-start gap-1" data-honest-status="failed">
+          <StatusBadge tone="danger">失败</StatusBadge>
+          <span className="line-clamp-2 break-all text-meta text-jz-ink-2" title={t.error_msg || '服务端没有返回失败原因'}>
+            {t.error_msg || t.progress || '服务端没有返回失败原因'}
+          </span>
+        </div>
+      );
+    }
+    if (t.status === 'done' && h.blocked) {
+      const d = t.unpack_outcome?.diagnosis || {};
+      const checks = d.checks || {};
+      const labelMap: Record<string, string> = { zygisk_off: 'Zygisk 关闭', debuggable: 'debuggable', permissive: 'SELinux', libzzp: 'libzzp' };
+      const unmet = Object.entries(checks).filter(([, v]) => !v).map(([k]) => labelMap[k] || k);
+      const reason = d.reason || t.progress || '';
+      const channel = t.unpack_outcome?.unpack_method || '';
+      const engine = t.unpack_outcome?.engine_commit || '';
+      return (
+        <div className="flex max-w-56 flex-col items-start gap-1" data-honest-status="degraded">
+          <StatusBadge tone="attention" title="流程已跑完,但有加固且业务代码没有脱出。结论只覆盖部分代码。">部分完成</StatusBadge>
+          <span data-unpack-outcome={probeVal || undefined} className="break-all text-meta text-jz-ink-2"
+            title={t.unpack_outcome?.diagnosis?.reason || t.progress || '依据任务的脱壳结果判断'}>{h.label}</span>
+          <span data-unpack-reason className="line-clamp-2 break-words text-meta text-jz-muted" title={reason}>
+            {[channel && `通道 ${channel}`, unmet.length ? `未满足:${unmet.join('、')}` : '', reason ? reason.slice(0, 140) : '没有返回具体原因', engine && `engine ${engine}`].filter(Boolean).join(' · ')}
+          </span>
+        </div>
+      );
+    }
+    if (t.status === 'done') {
+      return (
+        <div className="flex flex-col items-start gap-1" data-honest-status="complete" data-unpack-outcome={probeVal || undefined}>
+          <StatusBadge tone="success">完成</StatusBadge>
+          <span className="whitespace-nowrap text-meta text-jz-muted">
+            {h.biz != null ? <>业务代码 <span className="font-mono tnum text-jz-ink-2">{h.biz}</span> 类</>
+              : h.shell ? (h.positive ? '没有上报业务代码类数' : '没有脱壳结果数据') : '无加固,不需要脱壳'}
+          </span>
+        </div>
+      );
+    }
     return (
-      <div className="rounded-panel bg-jz-surface shadow-card p-5 h-full" data-batch-summary data-batch-dashboard>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-meta font-semibold text-jz-ink">批量脱壳聚合</span>
-          {/* R117-4④: 完成率计数器口径注(方案 4.4 槽位指标不存在,映射到本页并发槽位舱) */}
-          <span title="统计口径: 批量脱壳任务群 done 数/总任务数(updated_at 落定即计 done, failed 单列不计入 done)"><Badge level="safe">完成率 {donePct}%</Badge></span>
-          <span className="flex-1" />
-          <button onClick={() => setBatchOpen(!batchOpen)} className="text-jz-muted hover:text-jz-ink text-meta">{batchOpen ? '收起' : '明细'}</button>
-          <button onClick={loadBatch} className="text-jz-muted hover:text-jz-ink text-meta">刷新</button>
-        </div>
-        <div className="mt-2 flex items-stretch gap-3 flex-wrap">
-          <div className="min-w-[64px]">
-            <div className="text-title font-semibold font-mono tnum text-jz-teal leading-none">{doneN}<span className="text-meta text-jz-muted font-normal">/{batchSum.count}</span></div>
-            <div className="mt-1 text-meta text-jz-muted">完成</div>
-          </div>
-          <div className="w-px bg-jz-border/60" aria-hidden />
-          <div className="min-w-[64px]">
-            <div className={`text-title font-semibold font-mono tnum leading-none ${failN > 0 ? 'text-jz-sev-critical' : 'text-jz-muted'}`}>{failN}</div>
-            <div className="mt-1 text-meta text-jz-muted">失败</div>
-          </div>
-          <div className="w-px bg-jz-border/60" aria-hidden />
-          <div className="min-w-[64px]">
-            <div className="text-title font-semibold font-mono tnum text-jz-ink-2 leading-none">{pendingN}</div>
-            <div className="mt-1 text-meta text-jz-muted">待执行</div>
-          </div>
-          <div className="w-px bg-jz-border/60" aria-hidden />
-          <div className="min-w-[64px]">
-            <div className="text-title font-semibold font-mono tnum text-jz-ink leading-none">{batchSum.avg_dur_s != null ? fmtDur(batchSum.avg_dur_s) : '—'}</div>
-            <div className="mt-1 text-meta text-jz-muted" title={`done 任务耗时均值(updated_at−created_at, n 项)`}>均值</div>
-          </div>
-          <div className="w-px bg-jz-border/60" aria-hidden />
-          <div className="min-w-[64px]">
-            {/* R103-9④: 后端无体积字段(batch-unpack-summary 仅 dex_files_count 条数)——如实显条数并更正文案,不冒充体积 */}
-            <div className="text-title font-semibold font-mono tnum text-jz-ink leading-none">{batchSum.dex_total}</div>
-            <div className="mt-1 text-meta text-jz-muted" title="后端无体积字段,此处为 DEX 文件条数(非总体积);体积采集=挂账">DEX 个数</div>
-          </div>
-          <span className="flex-1" />
-          <div className="flex flex-col justify-center gap-1 min-w-[200px]">
-            {/* 双色分段进度条(规格): 翠绿=成功占比 + 玫红=失败占比,余段=待执行 */}
-            <span className="inline-flex h-2 w-full rounded-pill bg-jz-surface-2 overflow-hidden" data-batch-bar-track title={`完成 ${doneN} · 失败 ${failN} · 待执行 ${pendingN}`}>
-              {doneN > 0 && <span className="block h-full" style={{ width: `${(doneN / batchSum.count) * 100}%`, background: 'rgb(var(--jz-teal))' }} data-batch-bar-fill />}
-              {failN > 0 && <span className="block h-full" style={{ width: `${(failN / batchSum.count) * 100}%`, background: 'rgb(var(--jz-red))' }} data-batch-bar-fail />}
-            </span>
-            <span className="text-meta font-mono tnum text-jz-muted">完成 {donePct}%{failN > 0 ? ` · 失败 ${Math.round((failN / batchSum.count) * 100)}%` : ''}</span>
-          </div>
-        </div>
-        {batchOpen && (
-          <table className="w-full mt-2 text-meta">
-            <thead><tr className="text-meta font-semibold text-jz-ink-2 bg-jz-surface-2/40"><th className="text-left py-1">#</th><th className="text-left">APP</th><th className="text-left">状态</th><th className="text-left">壳</th><th className="text-left">方式</th><th className="text-left">DEX</th><th className="text-left" title="done=updated_at−created_at;运行中/失败无耗时">耗时</th></tr></thead>
-            <tbody>
- {(batchSum.items || []).map((it: any) => (
-                <tr key={it.task_id} className="hover:bg-jz-surface-2/30 rounded-control">
-                  <td className="py-1 font-mono">{it.task_id}</td>
-                  <td className="truncate max-w-[180px]">{it.app_name}</td>
-                  <td>{it.status}</td>
-                  <td>{it.packer ?? '—'}</td>
-                  <td>{it.method ?? '—'}</td>
-                  <td className="font-mono">{it.dex ?? '—'}</td>
-                  <td className="font-mono tnum">{it.dur_s != null ? fmtDur(it.dur_s) : '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <div className="flex flex-col items-start">
+        <StatusBadge tone={t.status === 'running' ? 'brand' : 'neutral'}>{ST_CN[t.status] || t.status}</StatusBadge>
+        {t.status === 'running' && t.progress && <TaskLiveProgress progress={t.progress} />}
       </div>
     );
-  })() : (
-    <div className="rounded-panel bg-jz-surface shadow-card p-5 h-full text-meta text-jz-muted" data-batch-dashboard-empty>
-      批量脱壳聚合 · 暂无批量任务群(口径: kind=unpack 且 params.batch 标记;有批量任务后此处呈现 完成/失败/均值/DEX 仪表板)
-    </div>
-  );
+  };
+
+  const SEV: Array<[string, string, string, string]> = [
+    ['critical', 'C', '严重', 'bg-jz-sev-critical'], ['high', 'H', '高', 'bg-jz-sev-high'],
+    ['medium', 'M', '中', 'bg-jz-sev-medium'], ['low', 'L', '低', 'bg-jz-sev-low'],
+  ];
+  const resultCell = (t: any) => {
+    const c = counts[String(t.id)];
+    if (!c) return <span className="text-jz-muted" aria-label="加载中">…</span>;
+    if (!(c.total > 0)) return <span className="text-meta text-jz-muted" title="评估和渗透两边都没有发现记录">没有发现</span>;
+    return (
+      <span className="inline-flex flex-col gap-1.5">
+        <span className="inline-flex items-center gap-2 font-mono text-meta tnum"
+          title={`来源:${(c.sources || []).join(' + ') || '无'}。渗透部分只计待确认和已确认。`
+            + (c.contract ? `\n原始命中 ${c.contract.raw ?? '—'},去重后 ${c.contract.kept ?? '—'},已确认 ${c.contract.confirmed ?? '—'},候选 ${c.contract.candidate ?? '—'},已排除 ${c.contract.suppressed ?? '—'},写入报告 ${c.contract.report_total ?? '—'}(模型复核 ${c.contract.reviewed ?? '—'})` : '')}>
+          {SEV.map(([k, short, name]) => (
+            <span key={k} title={name} className={c[k] > 0 ? 'font-semibold text-jz-ink' : 'text-jz-muted'}>{short}{c[k]}</span>
+          ))}
+        </span>
+        <span className="inline-flex h-1 w-24 overflow-hidden rounded-pill bg-jz-surface-2" data-vuln-bar aria-hidden
+          title={`严重 ${c.critical} · 高 ${c.high} · 中 ${c.medium} · 低 ${c.low}(共 ${c.total})`}>
+          {SEV.map(([k, , , cls]) => c[k] > 0 && <span key={k} className={cx('block h-full', cls)} style={{ width: `${(c[k] / c.total) * 100}%` }} />)}
+        </span>
+      </span>
+    );
+  };
+
+  const actionCell = (t: any) => {
+    const hit = sessMap[t.id];
+    const canAsk = canAskOf(t);
+    const arts = artifactsReadyOf(t);
+    // Between 1280 and 1440 only the first action stays inline; the rest move into the menu with their hooks.
+    const fold = tableFits && !wide;
+    const inline: Array<{ key: string; node: React.ReactNode; item: (close: () => void) => React.ReactNode }> = [];
+    if (hit) inline.push({ key: 'session',
+      node: <Button size="sm" variant="secondary" onClick={() => gotoSession(hit)} data-goto-session title={`打开渗透会话 #${hit.sid}`}>会话</Button>,
+      item: (close) => <MenuItem icon={<ExternalLink size={14} aria-hidden />} onClick={() => { close(); gotoSession(hit); }} data-goto-session>打开渗透会话</MenuItem> });
+    if (t.status === 'failed') inline.push({ key: 'retry',
+      node: <Button size="sm" variant="secondary" onClick={() => setRerunTask(t)} data-act-retry title="重新运行,可以重选设备、模式和深度">重试</Button>,
+      item: (close) => <MenuItem icon={<RefreshCw size={14} aria-hidden />} onClick={() => { close(); setRerunTask(t); }} data-act-retry>重试</MenuItem> });
+    if (t.status === 'done' && canAsk) inline.push({ key: 'report',
+      node: <Button size="sm" variant="ghost" onClick={() => nav(`/reports?taskId=${t.id}`)} data-act-report title="打开这个任务的报告">报告</Button>,
+      item: (close) => <MenuItem icon={<FileText size={14} aria-hidden />} onClick={() => { close(); nav(`/reports?taskId=${t.id}`); }} data-act-report>打开报告</MenuItem> });
+    if (arts) inline.push({ key: 'artifacts',
+      node: <Button size="sm" variant="ghost" onClick={() => setArtTask(t.id)} data-artifacts-btn title="浏览任务产物">产物</Button>,
+      item: (close) => <MenuItem icon={<FolderOpen size={14} aria-hidden />} onClick={() => { close(); setArtTask(t.id); }} data-artifacts-btn>浏览产物</MenuItem> });
+    const shown = fold ? inline.slice(0, 1) : inline;
+    const folded = fold ? inline.slice(1) : [];
+    return (
+      <span className="inline-flex flex-wrap items-center justify-end gap-1 desktop:flex-nowrap" onClick={(e) => e.stopPropagation()}>
+        {t.status === 'done' && !hit && !fold && (
+          <Button size="sm" variant="ghost" disabled onClick={() => relay(t)} data-relay-btn title="没有关联的项目,无法进入渗透会话">会话</Button>
+        )}
+        {shown.map((a) => <React.Fragment key={a.key}>{a.node}</React.Fragment>)}
+        <Popover role="menu" align="end" label={`任务 #${t.id} 的更多操作`}
+          trigger={(tp) => <IconButton size="sm" label="更多操作" data-more-btn {...tp}><MoreHorizontal size={16} aria-hidden /></IconButton>}>
+          {(close) => (
+            <div data-more-menu>
+              {folded.map((a) => <React.Fragment key={a.key}>{a.item(close)}</React.Fragment>)}
+              <MenuItem icon={<Info size={14} aria-hidden />} onClick={() => { close(); setDetailTask(t); }} data-act-detail>详情</MenuItem>
+              {canAsk && <MenuItem icon={<MessageSquare size={14} aria-hidden />} onClick={() => { close(); window.location.hash = `/agent?task=${t.id}`; }} data-ask-btn>向智能体提问</MenuItem>}
+              {t.status !== 'failed' && <MenuItem icon={<RefreshCw size={14} aria-hidden />} onClick={() => { close(); setRerunTask(t); }}>重新运行</MenuItem>}
+              <MenuItem danger icon={<Trash2 size={14} aria-hidden />} onClick={() => { close(); setDelAsk(t); }} data-act-del>删除</MenuItem>
+            </div>
+          )}
+        </Popover>
+      </span>
+    );
+  };
+
+  const columns: Column<any>[] = [
+    { key: 'task', header: '任务', width: 'w-20', cell: (t) => (
+      <span className="flex flex-col items-start gap-1">
+        <span className="font-mono text-meta tnum text-jz-muted">#{t.id}</span>
+        <Tag mono>{t.kind || t.type || 'audit'}</Tag>
+      </span>
+    ) },
+    { key: 'target', header: '目标', card: 'title', cell: (t) => (
+      <span className="flex min-w-0 max-w-56 flex-col">
+        <span className="truncate text-label font-semibold text-jz-ink" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
+        <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
+          <span className="min-w-0 truncate font-mono text-meta font-normal text-jz-muted" title={t.package || '服务端没有返回包名'}>{t.package || '没有包名'}</span>
+          {t.packer ? <PackerChip packer={t.packer} /> : t.status === 'running' ? <Tag title="正在识别加固类型">识别中</Tag> : null}
+        </span>
+      </span>
+    ) },
+    { key: 'status', header: '状态', cell: statusCell },
+    { key: 'dur', header: '耗时', cell: (t) => {
+      const dur = durOf(t);
+      return (
+        <span className="flex flex-col whitespace-nowrap" data-dur title={`${Math.round(dur)} 秒(${t.status === 'running' ? '从创建到现在' : '从创建到最后更新'})`}>
+          <span className="font-mono tnum text-jz-ink">
+            {fmtDur(dur)}
+            {dur > SLOW_S && <StatusBadge tone="attention" className="ml-1.5" title="已超过 15 分钟">慢</StatusBadge>}
+          </span>
+          <span className="font-mono text-meta text-jz-muted" title={`创建 ${whenFull(t.created_at)} · 更新 ${whenFull(t.updated_at)}`}>{fmtTime(t.created_at)}</span>
+        </span>
+      );
+    } },
+    { key: 'result', header: <span title="评估和渗透两部分的发现数。C/H/M/L 为严重、高、中、低。">结果</span>, label: '结果', cell: (t) => <span data-vuln-counts>{resultCell(t)}</span> },
+    ...(showOwner ? [{ key: 'owner', header: '负责人', cell: (t: any) => (
+      <span className="block max-w-24 truncate font-mono text-meta text-jz-ink-2" data-operator title={t.user_id != null ? `uid=${t.user_id}` : ''}>{operatorOf(t)}</span>
+    ) } as Column<any>] : []),
+    { key: 'actions', header: '操作', align: 'right', card: 'action', cell: actionCell },
+  ];
+
+  const detailRows: Array<[string, React.ReactNode]> = detailTask ? [
+    ['类型', detailTask.kind || 'audit'],
+    ['目标', detailTask.app_name || '—'],
+    ['包名', detailTask.package || '服务端没有返回包名'],
+    ['状态', ST_CN[detailTask.status] || detailTask.status],
+    ['加固', detailTask.packer ? `${PACKER_NAMES[detailTask.packer] || detailTask.packer} (${detailTask.packer})` : '未检测到'],
+    ['负责人', operatorOf(detailTask)],
+    ['创建时间', whenFull(detailTask.created_at)],
+    ['更新时间', whenFull(detailTask.updated_at)],
+    ['安装包路径', detailTask.apk_path || '—'],
+    ['结果 ID', detailTask.result_id != null ? `#${detailTask.result_id}` : '无'],
+  ] : [];
 
   return (
-    <div className="p-4 space-y-3 h-full overflow-auto">
-      {/* 页头(本轮修复③): 「任务中心」大标题 + 右侧常驻操作区 [清理失败项][导出▾][新建审计任务]——
-          原三钮挤在检索工具栏行尾窄容器内折行悬空,上移至页头与标题两端对齐(全部 whitespace-nowrap shrink-0) */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-title font-semibold text-jz-ink whitespace-nowrap">任务中心</h2>
-        <div className="flex items-center gap-2 flex-none" data-toolbar-actions>
-          <button onClick={() => setCleanOpen(true)} disabled={batchBusy || failedInView.length === 0} data-clean-failed
- title="清理当前过滤视图内全部失败任务(所见即所删,先二次确认;运行中/排队不受影响)"
- className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control bg-jz-sev-critical/10 text-meta text-jz-sev-critical hover:bg-jz-sev-critical/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap shrink-0">
-            清理失败项({failedInView.length})
-          </button>
-          <div className="relative shrink-0" ref={expRef} data-toolbar-export>
-            <button onClick={() => setExpOpen((v) => !v)} data-toolbar-export-toggle
- className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink-2 hover:text-jz-brand transition-colors whitespace-nowrap">
-              <Download size={12} /> 导出 ▾
-            </button>
-            {expOpen && (
-              <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-card bg-jz-surface border border-jz-border shadow-card py-1" data-toolbar-export-panel>
-                {([{ id: 'csv', label: '导出任务列表 CSV' }, { id: 'json', label: '导出任务列表 JSON' }]).map((it) => (
-                  <button key={it.id} onClick={() => { const rows = exportRows(filtered); exportDataFile('tasks_export', it.id as 'csv' | 'json', rows); setBatchMsg(`已导出当前过滤视图 ${rows.length} 行 ${it.id.toUpperCase()}`); setExpOpen(false); }}
- data-toolbar-export-item={it.id}
- className="w-full text-left px-2.5 py-1.5 text-meta text-jz-ink-2 hover:bg-jz-surface-2/60 whitespace-nowrap">
-                    {it.label}
-                  </button>
-                ))}
-              </div>
+    <Page data-tasks-page>
+      <PageHeader title={moduleLabel('/tasks')} description="评估和脱壳任务的状态、结果与产物。"
+        actions={(
+          <div className="flex flex-wrap items-center gap-2" data-toolbar-actions>
+            <IconButton label="刷新任务列表" variant="secondary" onClick={loadAll} data-tasks-refresh><RefreshCw size={16} aria-hidden /></IconButton>
+            <span data-toolbar-export>
+              <Popover role="menu" align="end" label="导出任务列表"
+                trigger={(tp) => <Button variant="secondary" icon={<Download size={16} aria-hidden />} data-toolbar-export-toggle {...tp}>导出</Button>}>
+                {(close) => (
+                  <div data-toolbar-export-panel>
+                    {(['csv', 'json'] as const).map((id) => (
+                      <MenuItem key={id} data-toolbar-export-item={id}
+                        onClick={() => { const rows = exportRows(filtered); exportDataFile('tasks_export', id, rows); setBatchMsg(`已导出当前筛选结果 ${rows.length} 行(${id.toUpperCase()})`); close(); }}>
+                        导出为 {id.toUpperCase()}
+                      </MenuItem>
+                    ))}
+                  </div>
+                )}
+              </Popover>
+            </span>
+            <Button variant="secondary" onClick={() => setCleanOpen(true)} disabled={batchBusy || failedInView.length === 0} data-clean-failed
+              title="删除当前筛选结果里的全部失败任务,会先请你确认">
+              清理失败任务 ({failedInView.length})
+            </Button>
+            <Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-audit')} data-toolbar-create>新建评估</Button>
+          </div>
+        )} />
+
+      {loadErr && tasks !== null && allTasks.length > 0 && <StaleNotice onRefresh={loadAll} />}
+
+      <div data-situation-pods>
+        <div {...(slotInfo ? { 'data-slot-pod': '' } : {})}>
+          <MetricGrid>
+            <Metric label="并发占用" loading={!slotInfo && tasks === null}
+              tone={slotInfo?.hot ? 'danger' : slotInfo?.warm ? 'attention' : 'default'}
+              title="正在运行和排队的任务数,对比组织的最大并发数。达到上限后新任务会被拒绝。"
+              value={slotInfo ? `${slotInfo.used}/${slotInfo.unlim ? '∞' : slotInfo.quota}` : '—'}
+              hint={slotInfo
+                ? <span data-slot-indicator>空闲 {slotInfo.unlim ? '不限' : `${slotInfo.free} 个`}{slotInfo.load != null ? ` · 负载 ${slotInfo.load}%` : ''}</span>
+                : '无法读取并发配额'} />
+            <Metric label="运行中" loading={tasks === null} value={runningTasks.length} />
+            <Metric label="排队中" loading={tasks === null} value={queuedN} />
+            <Metric label="在线设备" value={liveDevices.length} hint="与顶栏的设备状态一致" />
+          </MetricGrid>
+        </div>
+        {!(batchSum && batchSum.count > 0) && <span className="sr-only" data-batch-dashboard-empty>没有批量脱壳任务</span>}
+      </div>
+
+      <Panel flush data-tasks-list>
+        <div className="space-y-3 px-4 pt-4" data-toolbar="tasks">
+          <div className="flex flex-wrap items-center gap-2" data-toolbar-main>
+            <SearchField className="min-w-56 flex-1 max-[760px]:basis-full" value={search} onValueChange={setSearch} label="搜索任务"
+              placeholder="搜索应用名、包名、任务 ID、负责人或失败原因" data-task-search="" data-toolbar-search />
+            <div className="w-40 flex-none max-[760px]:w-full max-[760px]:flex-1">
+              <Select value={packerF} onChange={(e) => setPackerF(e.target.value)} data-packer-filter aria-label="按加固类型筛选">
+                <option value="all">全部加固类型</option>
+                {packerOptions.length > 0 && <option value="__packed">有加固</option>}
+                {allTasks.some((t: any) => t.packer === 'none') && <option value="none">无加固</option>}
+                {packerOptions.map(([v, n]) => <option key={v} value={v}>{PACKER_NAMES[v] || v} ({n})</option>)}
+              </Select>
+            </div>
+            <div className="w-40 flex-none max-[760px]:w-full max-[760px]:flex-1">
+              <Select value={operatorF} onChange={(e) => setOperatorF(e.target.value)} data-operator-filter aria-label="按负责人筛选">
+                <option value="">全部负责人</option>
+                {operatorOptions.map(([uid, n]) => <option key={uid} value={uid}>{usersMap[uid] ? `${usersMap[uid]} (#${uid})` : `#${uid}`} · {n}</option>)}
+              </Select>
+            </div>
+            <span data-smoke-toggle data-active={hideSmokeFail ? '1' : ''} title={`隐藏在 ${SMOKE_FAIL_S} 秒内就失败的任务。这类任务通常没有真正开始。`}>
+              <Checkbox checked={hideSmokeFail} onChange={() => setHideSmokeFail((v) => !v)} label={<>隐藏即时失败 (<span className="font-mono tnum">{smokeFailCount}</span>)</>} />
+            </span>
+          </div>
+          <div className="flex items-end gap-2" data-toolbar-filters {...(hasFilterChip ? { 'data-filter-chip-row': statusParam ? `status=${statusParam}` : `status=${filter}` } : {})}>
+            <Tabs className="min-w-0 flex-1" label="按状态筛选" items={statusTabs} value={filter} onChange={(k) => { setFilter(k); if (!k) setSearchParams({}); }} />
+            {hasFilterChip && (
+              <span data-filter-chip className="sr-only">
+                {statusParam ? `status=${statusParam}` : `status=${filter}`}
+                <button type="button" tabIndex={-1} onClick={() => { setFilter(''); setSearchParams({}); }}>清除状态筛选</button>
+              </span>
             )}
           </div>
-          <button onClick={() => nav('/new-audit')} data-toolbar-create
- className="inline-flex items-center gap-1 h-8 px-2.5 rounded-control bg-jz-brand/15 text-meta text-jz-brand font-semibold hover:bg-jz-brand/25 transition-colors whitespace-nowrap shrink-0">
-            <Plus size={12} /> 新建审计任务
-          </button>
         </div>
-      </div>
 
-      {/* ── 顶部双态势舱(本轮修复②): lg 12 列网格 左卡 col-span-5 / 右卡 col-span-7(旧 md 两等列致左卡 85% 空白
-          失衡),双卡 p-5 等高对称: ①调度引擎与并发槽位 ②批量脱壳聚合仪表板 ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch" data-situation-pods>
-        <div className="lg:col-span-5 min-w-0">{slotPod}</div>
-        <div className="lg:col-span-7 min-w-0">{batchPod}</div>
-      </div>
-
- {/* R597(六模块优化-任务中心 P2): 运行中任务泳道——running 任务置顶卡片,与历史表格分离;
- 耗时=created_at→now 实时时钟(10s 粒度既有真值),进度=后端 progress 文本真值(无结构化子阶段=如实不画子步骤) */}
- {runningTasks.length > 0 && (
-        <div className="space-y-1.5" data-running-lanes>
-          <div className="flex items-center gap-2">
-            <span className="text-meta font-semibold text-jz-ink">运行中任务</span>
-            <StatusBadge tone="info" title="统计口径: status=running 任务计数真值;耗时=created_at→now 实时时钟;进度=后端 progress 文本真值,无结构化子阶段=如实不画子步骤">{runningTasks.length} 个</StatusBadge>
+        <div data-batch-bar={sel.size > 0 ? '' : undefined}>
+          <BulkBar count={sel.size} onClear={() => setSel(new Set())}>
+            <Button size="sm" variant="secondary" icon={<RefreshCw size={14} aria-hidden />} onClick={() => setRetryOpen(true)} disabled={batchBusy} data-batch-retry
+              title={batchBusy ? '批量操作进行中' : '重新运行选中的任务,会先请你确认'}>重新运行</Button>
+            <Popover role="menu" label="导出选中的任务"
+              trigger={(tp) => <Button size="sm" variant="secondary" icon={<Download size={14} aria-hidden />} disabled={batchBusy} data-batch-export {...tp}>导出</Button>}>
+              {(close) => (
+                <>
+                  <MenuItem onClick={() => { exportSelCsv(); close(); }} data-batch-csv>导出为 CSV</MenuItem>
+                  <MenuItem onClick={() => { exportSelJson(); close(); }} data-batch-json>导出为 JSON</MenuItem>
+                </>
+              )}
+            </Popover>
+            {cmpPair && (
+              <Button size="sm" variant="secondary" onClick={() => nav(`/reports?sid=${cmpPair.a}&cmp=${cmpPair.b}`)} data-batch-compare
+                title={`在报告页对比会话 #${cmpPair.a} 和 #${cmpPair.b}`}>对比报告</Button>
+            )}
+            <Button size="sm" variant="danger" icon={<Trash2 size={14} aria-hidden />} onClick={() => setDelOpen(true)} disabled={batchBusy} data-batch-del
+              title={batchBusy ? '批量操作进行中' : '删除选中的任务,会先请你确认'}>删除</Button>
+          </BulkBar>
+        </div>
+        {batchMsg && (
+          <div className="px-4 pt-3">
+            <InlineAlert tone="info" data-batch-msg
+              action={<Button size="sm" variant="ghost" onClick={() => setBatchMsg(null)}>知道了</Button>}>{batchMsg}</InlineAlert>
           </div>
-          <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1">
- {runningTasks.map((t: any) => {
+        )}
+
+        <div className="overflow-x-auto">
+        <AsyncBoundary loading={tasks === null} error={loadErr && allTasks.length === 0 ? loadErr : null} onRetry={loadAll} skeleton="table">
+          <DataTable<any> label="任务列表" columns={columns} rows={pageRows} rowKey={(t) => t.id} density="comfortable" stickyHeader={false} layout={tableFits ? 'auto' : 'cards'}
+            selected={sel as Set<string | number>} onToggle={(k) => toggleRow(k as number)} onToggleAll={toggleAllPage}
+            selectAttrs={{ all: { 'data-sel-all': '' }, row: (t) => ({ 'data-sel-row': t.id }) }}
+            onRowClick={openRow}
+            rowDataAttrs={(t) => ({
+              'data-task-row': t.id,
+              'data-focused': focusParam && String(t.id) === focusParam ? '1' : undefined,
+              title: sessMap[t.id] ? `打开渗透会话 #${sessMap[t.id].sid}` : artifactsReadyOf(t) ? '浏览任务产物' : undefined,
+            })}
+            rowClassName={(t) => cx(focusParam && String(t.id) === focusParam && 'bg-jz-brand-soft', !sessMap[t.id] && !artifactsReadyOf(t) && '!cursor-default')}
+            state={filtered.length === 0 ? (
+              allTasks.length === 0
+                ? <EmptyState icon={ClipboardList} title="还没有任务" cause="创建评估后,任务会出现在这里。"
+                    action={<Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-audit')}>新建评估</Button>} />
+                : <EmptyState icon={ClipboardList} title="没有符合条件的任务" cause="当前的搜索或筛选条件下没有任务。"
+                    action={filtersOn ? <Button variant="secondary" onClick={clearFilters}>清除筛选</Button> : undefined} />
+            ) : undefined} />
+        </AsyncBoundary>
+        </div>
+        <Pagination total={filtered.length} page={safePage} pageSize={pageSize} onPage={setPage} onPageSize={(n) => setPageSize(n)} pageSizes={PAGE_SIZES} jump
+          dataAttrs={{ 'data-v3-pagination': '', 'data-jump-input': 'present' }} />
+      </Panel>
+
+      {runningTasks.length > 0 && (
+        <Panel title="运行中的任务" actions={<StatusBadge tone="brand">{runningTasks.length} 个</StatusBadge>} data-running-lanes>
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 desktop:grid-cols-4">
+            {runningTasks.map((t: any) => {
               const hit = sessMap[t.id];
               return (
-                <div key={t.id} data-running-lane={t.id}
- className="flex-none w-72 rounded-panel bg-jz-surface shadow-card px-3 py-2 space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-pill bg-jz-brand animate-pulse flex-none" />
-                    <span className="font-mono text-meta text-jz-muted tnum flex-none">{t.id}</span>
-                    <span className="text-meta font-semibold text-jz-ink truncate flex-1" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
-                    <span className="flex-none font-mono text-meta text-jz-ink-2 tnum" title="created_at→now 实时耗时">{fmtDur(now - t.created_at)}</span>
+                <li key={t.id} data-running-lane={t.id} className="min-w-0 rounded-card border border-jz-border px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex-none font-mono text-meta tnum text-jz-muted">#{t.id}</span>
+                    <span className="min-w-0 flex-1 truncate text-label font-semibold text-jz-ink" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
+                    <span className="flex-none font-mono text-meta tnum text-jz-ink-2" title="从创建到现在">{fmtDur(now - t.created_at)}</span>
                   </div>
-                  <div className="text-meta text-jz-muted truncate" title={t.progress || '后端暂无进度文本'}>
-                    {t.progress ? t.progress : '执行中(后端未上报进度文本)'}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-control text-meta font-mono font-semibold ${KIND_CLS[t.kind || 'audit'] || 'text-jz-muted bg-jz-surface-2'}`}>{t.kind || 'audit'}</span>
+                  <p className="mt-1 truncate text-meta text-jz-muted" title={t.progress || '服务端还没有上报进度'}>{t.progress || '正在执行,还没有上报进度'}</p>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <Tag mono>{t.kind || 'audit'}</Tag>
                     {t.packer && <PackerChip packer={t.packer} />}
                     <span className="flex-1" />
-                    {hit && (
-                      <button onClick={() => { window.location.hash = `/pentest/project/${hit.pid}/session/${hit.sid}`; }}
- data-lane-goto={t.id} title={`进入渗透会话 #${hit.sid}`}
- className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-control text-meta text-jz-brand hover:bg-jz-brand/10">
-                        <ExternalLink size={11} /> 工作台
-                      </button>
-                    )}
+                    {hit && <Button size="sm" variant="ghost" icon={<ExternalLink size={14} aria-hidden />} onClick={() => gotoSession(hit)} data-lane-goto={t.id} title={`打开渗透会话 #${hit.sid}`}>会话</Button>}
                   </div>
-                </div>
+                </li>
               );
             })}
-          </div>
-        </div>
- )}
- {/* 中部活跃会话卡(本轮修复①): 上下两层结构——顶部横条=左「近期关联渗透会话 (N)」水平标题+
-     右 [◀][▶] 翻页与 [收起▲/展开▼];底部=展开时卡片区(grid 响应式 1/2/5 列水平排列,
-     横滚容器 80% 步进翻页,到头如实禁用)。旧左侧 9px 竖排文字条(writing-mode:vertical-rl)被挤成
-     一字一行=彻底移除;每卡 #会话ID/应用名/设备标签(真机/模拟器,device 序列本地启发),
-     点击跳对应会话(R76-2 无项目禁跳) */}
- {activeSids.length>0 && (
-        <div className="rounded-panel bg-jz-surface shadow-card flex flex-col overflow-hidden" data-session-rail>
-          <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-jz-border/60">
-            <span className="whitespace-nowrap font-semibold text-body text-jz-ink">近期关联渗透会话 ({activeSids.length})</span>
-            <div className="flex items-center gap-1.5 flex-none">
-              <button onClick={()=>scrollRail(-1)} disabled={!railNav.prev} data-sess-prev title="向左翻页"
- className="w-7 h-7 grid place-items-center rounded-control border border-jz-border/60 bg-jz-surface text-jz-ink-2 hover:bg-jz-surface-2/40 hover:text-jz-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                <ChevronLeft size={14} />
-              </button>
-              <button onClick={()=>scrollRail(1)} disabled={!railNav.next} data-sess-next title="向右翻页"
- className="w-7 h-7 grid place-items-center rounded-control border border-jz-border/60 bg-jz-surface text-jz-ink-2 hover:bg-jz-surface-2/40 hover:text-jz-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                <ChevronRight size={14} />
-              </button>
-              <button onClick={()=>setSessRailOpen(v=>!v)} data-sess-rail-collapse title={sessRailOpen?'收起会话栏':'展开会话栏'}
- className="h-7 px-2 rounded-control border border-jz-border/60 text-meta text-jz-ink-2 hover:bg-jz-surface-2/40 hover:text-jz-ink transition-colors whitespace-nowrap">
-                {sessRailOpen?'收起 ▲':'展开 ▼'}
-              </button>
-            </div>
-          </div>
+          </ul>
+        </Panel>
+      )}
+
+      {activeSids.length > 0 && (
+        <Panel flush title={`关联的渗透会话 (${activeSids.length})`} data-session-rail
+          actions={(
+            <>
+              <IconButton size="sm" label="向前翻" onClick={() => scrollRail(-1)} disabled={!railNav.prev || !sessRailOpen} data-sess-prev><ChevronLeft size={16} aria-hidden /></IconButton>
+              <IconButton size="sm" label="向后翻" onClick={() => scrollRail(1)} disabled={!railNav.next || !sessRailOpen} data-sess-next><ChevronRight size={16} aria-hidden /></IconButton>
+              <Button size="sm" variant="ghost" onClick={() => setSessRailOpen((v) => !v)} aria-expanded={sessRailOpen} data-sess-rail-collapse>{sessRailOpen ? '收起' : '展开'}</Button>
+            </>
+          )}>
           {sessRailOpen && (
-            <div ref={railRef} onScroll={updateRailNav} className="overflow-x-auto scroll-smooth">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-3.5">
- {/* 数据=既有会话列表真值(后端 /api/pentest/sessions 联表回填 app_name;缺失回落 package 真值) */}
- {activeSids.map((s:any)=>{
-                  const canGo = s.project_id!=null;
-                  const dev = devTagOf(s.device);
+            <div ref={railRef} onScroll={updateRailNav} className="overflow-x-auto">
+              <ul className="flex gap-3 p-4">
+                {activeSids.map((s: any) => {
+                  const canGo = s.project_id != null;
+                  const go = () => { if (canGo) window.location.hash = `/pentest/project/${s.project_id}/session/${s.id}`; };
                   return (
-                    <div key={s.id} data-running-session={s.id} data-sess-card={canGo?'go':'blocked'}
- role="button" tabIndex={canGo?0:-1} aria-disabled={!canGo}
- onClick={()=>{ if(canGo) window.location.hash=`/pentest/project/${s.project_id}/session/${s.id}`; }}
- onKeyDown={(e)=>{ if(canGo&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); window.location.hash=`/pentest/project/${s.project_id}/session/${s.id}`; } }}
- title={canGo?`点击进入渗透会话 #${s.id}`:'无关联项目(R76-2 禁跳)'}
- className={`min-w-0 rounded-card bg-jz-surface-2/40 border border-jz-border/40 px-3 h-16 flex items-center gap-2 outline-none transition-all
- ${canGo?'cursor-pointer hover:bg-jz-surface-2/60':'opacity-50 cursor-not-allowed'}`}>
-                      <span data-sess-pulse className="h-1.5 w-1.5 rounded-pill bg-jz-teal animate-pulse flex-none" title="活动会话" />
-                      <span className="flex-1 min-w-0 leading-tight">
+                    <li key={s.id} data-running-session={s.id} data-sess-card={canGo ? 'go' : 'blocked'}
+                      className="flex w-64 flex-none items-center gap-3 rounded-card border border-jz-border px-3 py-2.5">
+                      <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1.5">
-                          <span className="font-mono text-meta text-jz-ink tnum">#{s.id}</span>
-                          <span className={`flex-none px-1 rounded-control text-meta ${dev.cls}`}>{dev.label}</span>
+                          <span data-sess-pulse aria-hidden className="h-1.5 w-1.5 flex-none rounded-pill bg-jz-teal" />
+                          <span className="font-mono text-meta tnum text-jz-ink">#{s.id}</span>
+                          <Tag>{devKind(s.device)}</Tag>
                         </span>
-                        <span className="block text-meta text-jz-ink-2 truncate mt-0.5" title={s.app_name||s.package||''}>{s.app_name||s.package||'—'}</span>
-                        <span className="block font-mono text-meta text-jz-muted truncate" title={s.device||''}>{s.device||'无设备'}</span>
+                        <span className="mt-1 block truncate text-label text-jz-ink-2" title={s.app_name || s.package || ''}>{s.app_name || s.package || '—'}</span>
+                        <span className="block truncate font-mono text-meta text-jz-muted" title={s.device || ''}>{s.device || '无设备'}</span>
                       </span>
-                      <button onClick={(e)=>{ e.stopPropagation(); if(canGo) window.location.hash=`/pentest/project/${s.project_id}/session/${s.id}`; }}
- disabled={!canGo} data-sess-go
- title={canGo?`进入渗透会话 #${s.id}`:'无关联项目(R76-2 禁跳)'}
- className={`flex-none text-meta px-1.5 py-0.5 rounded-control transition-colors whitespace-nowrap ${canGo?'text-jz-brand hover:bg-jz-brand/10':'text-jz-muted cursor-not-allowed'}`}>
-                        进入
-                      </button>
-                    </div>
+                      <Button size="sm" variant="secondary" onClick={go} disabled={!canGo} data-sess-go
+                        title={canGo ? `打开渗透会话 #${s.id}` : '没有关联的项目,无法打开'}>打开</Button>
+                    </li>
                   );
                 })}
+              </ul>
+            </div>
+          )}
+        </Panel>
+      )}
+
+      {batchSum && batchSum.count > 0 && (() => {
+        const doneN = batchSum.done || 0;
+        const failN = batchSum.failed || 0;
+        const pendingN = Math.max(0, batchSum.count - doneN - failN);
+        const donePct = batchSum.count ? Math.round((doneN / batchSum.count) * 100) : 0;
+        const stats: Array<[string, React.ReactNode, string?]> = [
+          ['完成', <>{doneN}<span className="text-label font-normal text-jz-muted">/{batchSum.count}</span></>],
+          ['失败', failN],
+          ['待执行', pendingN],
+          ['平均耗时', batchSum.avg_dur_s != null ? fmtDur(batchSum.avg_dur_s) : '—', '已完成任务从创建到最后更新的平均时间'],
+          ['DEX 文件数', batchSum.dex_total, '脱出的 DEX 文件个数,不是体积'],
+        ];
+        return (
+          <Panel title="批量脱壳" description={`完成率 ${donePct}%`} data-batch-summary data-batch-dashboard flush={false}
+            actions={(
+              <>
+                <Button size="sm" variant="ghost" onClick={() => setBatchOpen(!batchOpen)} aria-expanded={batchOpen}>{batchOpen ? '收起明细' : '查看明细'}</Button>
+                <Button size="sm" variant="ghost" icon={<RefreshCw size={14} aria-hidden />} onClick={loadBatch}>刷新</Button>
+              </>
+            )}>
+            <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
+              <dl className="flex flex-wrap gap-x-8 gap-y-3">
+                {stats.map(([k, v, tip]) => (
+                  <div key={k} title={tip}>
+                    <dt className="text-meta text-jz-muted">{k}</dt>
+                    <dd className={cx('mt-1 font-display text-title font-semibold tnum', k === '失败' && failN > 0 ? 'text-jz-red' : 'text-jz-ink')}>{v}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="min-w-48 flex-1 basis-48">
+                <span className="flex h-2 w-full overflow-hidden rounded-pill bg-jz-surface-2" data-batch-bar-track title={`完成 ${doneN} · 失败 ${failN} · 待执行 ${pendingN}`}>
+                  {doneN > 0 && <span className="block h-full bg-jz-teal" style={{ width: `${(doneN / batchSum.count) * 100}%` }} data-batch-bar-fill />}
+                  {failN > 0 && <span className="block h-full bg-jz-red" style={{ width: `${(failN / batchSum.count) * 100}%` }} data-batch-bar-fail />}
+                </span>
+                <p className="mt-1 text-meta tnum text-jz-muted">完成 {donePct}%{failN > 0 ? ` · 失败 ${Math.round((failN / batchSum.count) * 100)}%` : ''}</p>
               </div>
             </div>
-          )}
-        </div>
-      )}
-      {/* 检索筛选卡(本轮修复③): 严格两行——
-          第 1 行=宽搜索框(flex-1 min-w-[280px],应用名/包名/#ID/操作员/失败原因)+ 右侧「全部壳态」「全部操作员」下拉 +
-          独立 Checkbox 开关「隐藏 0s 冒烟失败(svc_smoke · N)」(开关样式,不与状态胶囊混排);
-          第 2 行=纯状态单选胶囊 [全部][完成][运行中][失败][排队][脱壳受阻](计数真值,全部 whitespace-nowrap)。
-          [清理失败项][导出▾][新建审计任务] 已上移页头右端(见页头)。
-          (data-toolbar/data-task-search/data-toolbar-search/data-toolbar-filter/data-toolbar-dot/
-           data-filter-chip-row/data-filter-chip/data-smoke-toggle/data-packer-filter/data-operator-filter
-           存量探针原样保留,存量资产闸只增不删) */}
-      <div className="rounded-panel bg-jz-surface shadow-card p-3 space-y-2" data-toolbar="tasks">
-        <div className="flex items-center gap-2 flex-wrap min-h-10" data-toolbar-main>
-          <div className="relative flex-1 min-w-[280px]">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-jz-muted pointer-events-none" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜索 APP 名 / 包名 / #ID / 操作员 / 失败原因…"
- data-task-search="" data-toolbar-search
- className="h-10 w-full pl-8 pr-3 rounded-card bg-jz-surface-2/60 text-body text-jz-ink placeholder:text-jz-muted outline-none focus:ring-2 focus:ring-jz-brand/30" />
-          </div>
-          {/* 加固壳筛选(选项=已加载任务真实 packer 值派生;库外值原样显) */}
-          <select value={packerF} onChange={(e) => setPackerF(e.target.value)} data-packer-filter title="按加固壳指纹筛选(选项来自当前列表真实 packer 值)"
- className="h-8 px-2 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink-2 outline-none focus:ring-2 focus:ring-jz-brand/30 cursor-pointer whitespace-nowrap shrink-0">
-            <option value="all">全部壳态</option>
-            {packerOptions.length > 0 && <option value="__packed">有壳(任意)</option>}
-            {allTasks.some((t: any) => t.packer === 'none') && <option value="none">无壳</option>}
-            {packerOptions.map(([v, n]) => <option key={v} value={v}>{PACKER_NAMES[v] || v}({n})</option>)}
-          </select>
-          {/* 操作员筛选(名字=/api/tasks/counts users 映射;未加载到名字的先显 #uid,不编名) */}
-          <select value={operatorF} onChange={(e) => setOperatorF(e.target.value)} data-operator-filter title="按操作员筛选(名字来自任务计数端点 id→username 只读映射)"
- className="h-8 px-2 rounded-control bg-jz-surface-2/60 text-meta text-jz-ink-2 outline-none focus:ring-2 focus:ring-jz-brand/30 cursor-pointer whitespace-nowrap shrink-0">
-            <option value="">全部操作员</option>
-            {operatorOptions.map(([uid, n]) => <option key={uid} value={uid}>{usersMap[uid] ? `${usersMap[uid]}(#${uid})` : `#${uid}`}·{n}</option>)}
-          </select>
-          {/* 0s 冒烟失败隐藏开关(独立 Checkbox 开关): 后端无 svc_smoke 专用标记——诚实降级为本地耗时判据(failed 且耗时<2s) */}
-          <label data-smoke-toggle data-active={hideSmokeFail ? '1' : ''}
- title={`口径: status=failed 且耗时<${SMOKE_FAIL_S}s(0s 冒烟失败特征,实测 0.02s~0.84s 即时失败族)。后端无 svc_smoke 专用标记=本地耗时判据,诚实降级`}
- className="inline-flex items-center gap-2 h-8 pl-2.5 pr-2.5 rounded-pill border border-jz-border/60 cursor-pointer select-none whitespace-nowrap shrink-0 hover:bg-jz-surface-2/40 transition-colors">
-            <span className={`relative inline-flex h-4 w-7 flex-none rounded-pill transition-colors ${hideSmokeFail ? 'bg-jz-amber' : 'bg-jz-border'}`}>
-              <input type="checkbox" checked={hideSmokeFail} onChange={() => setHideSmokeFail((v) => !v)} className="sr-only" />
-              <span className={`absolute top-0.5 left-0.5 h-3 w-3 rounded-pill bg-jz-surface shadow-card transition-transform ${hideSmokeFail ? 'translate-x-3' : ''}`} />
-            </span>
-            <span className={`text-meta whitespace-nowrap ${hideSmokeFail ? 'text-jz-amber font-semibold' : 'text-jz-muted'}`}>
-              隐藏 0s 冒烟失败 (svc_smoke · <span className="font-mono tnum">{smokeFailCount}</span>)
-            </span>
-          </label>
-        </div>
-        {/* 第 2 行: 纯状态单选胶囊(计数=当前已加载列表真值;degraded=脱壳受阻,honestDone 收紧判定) */}
-        <div className="flex items-center gap-1.5 flex-wrap" data-toolbar-filters {...(hasFilterChip ? { 'data-filter-chip-row': statusParam ? `status=${statusParam}` : `status=${filter}` } : {})}>
-          {([
-            { key: '', label: '全部', count: focusTasks.length, title: '统计口径: 已加载任务总数', dot: false },
-            { key: 'done', label: '完成', count: focusTasks.filter((t: any) => t.status === 'done').length, title: undefined, dot: false },
-            { key: 'running', label: '运行中', count: focusTasks.filter((t: any) => t.status === 'running').length, title: '统计口径: status=running 任务计数真值', dot: hasRunning },
-            { key: 'failed', label: '失败', count: focusTasks.filter((t: any) => t.status === 'failed').length, title: undefined, dot: false },
-            { key: 'queued', label: '排队', count: focusTasks.filter((t: any) => t.status === 'queued').length, title: undefined, dot: false },
-            { key: 'degraded', label: '脱壳受阻', count: degradedCount, title: '伪状态筛: 明确有壳且(业务码=0 或文本明确未脱出)的受阻完成任务(honestDone 收紧判定)', dot: false },
-          ] as Array<{ key: string; label: string; count: number; title?: string; dot?: boolean }>).map((f) => {
-            const on = filter === f.key;
-            return (
-              <button key={f.key || 'all'} onClick={() => { setFilter(f.key); if (!f.key) setSearchParams({}); }} title={f.title}
- data-toolbar-filter={f.key} data-active={on ? '1' : ''}
- className={`flex items-center gap-1.5 h-8 px-3 rounded-pill text-meta font-medium transition-colors whitespace-nowrap
- ${on ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/50'}`}>
-                {f.dot && <span className="inline-block h-1.5 w-1.5 rounded-pill bg-jz-brand animate-pulse" data-toolbar-dot />}
-                {f.label}
-                <span className={`px-1.5 rounded-pill font-mono tnum text-meta ${on ? 'bg-jz-brand/15 text-jz-brand' : 'bg-jz-surface-2 text-jz-muted'}`}>{f.count}</span>
-              </button>
-            );
-          })}
-          {hasFilterChip && (
-            <span data-filter-chip className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill bg-jz-brand/15 text-jz-brand text-meta font-mono">
-              {statusParam ? `status=${statusParam}` : `status=${filter}`}<button onClick={()=>{setFilter('');setSearchParams({});}} className="ml-0.5 hover:text-jz-ink">✕</button>
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="rounded-panel bg-jz-surface shadow-card overflow-hidden flex flex-col">
-        {/* R108-2①②: 首载(tasks===null)呈表格骨架;加载完成且过滤后为空呈统一空态(文案沿既有逐字) */}
-        {tasks === null && (<div className="p-4"><SkeletonLoader variant="table" rows={6} /></div>)}
-        {tasks !== null && !filtered.length && (
-          <EmptyStatePlaceholder icon={ClipboardList} title="暂无任务" subtitle="从「新建审计」开始第一个扫描" />
-        )}
-        {/* 核心表格(规格): 应用名 text-body font-semibold/包名 #ID mono/行 py-3.5/诚实状态列/耗时+时间双行/
-            漏洞四色胶囊+微缩比例条/显性文字操作列 */}
-        <table className="w-full text-body">
-          <thead><tr className="text-meta font-semibold text-jz-ink-2 bg-jz-surface-2/40">
-            <th className="px-3 py-1.5 text-left w-8"><input type="checkbox" checked={allPageSel} onChange={toggleAllPage} data-sel-all title="全选/取消本页" className="align-middle accent-[rgb(var(--jz-brand))] cursor-pointer" /></th>
-            <th className="px-3 py-1.5 text-left">#</th><th className="px-3 py-1.5 text-left">类型</th><th className="px-3 py-1.5 text-left">目标应用</th>
-            <th className="px-3 py-1.5 text-left">状态</th><th className="px-3 py-1.5 text-left">耗时 / 时间</th><th className="px-3 py-1.5 text-left">
-              <span className="inline-flex items-center gap-1" title="漏洞计数=审计+渗透两域真算(审计域=security_report.json findings 全量;渗透域=findings.db active=pending+confirmed);C/H/M/L=Critical/High/Medium/Low">
-                漏洞态势 <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-pill bg-jz-surface-2 text-jz-muted text-meta font-mono cursor-help hover:bg-jz-border hover:text-jz-ink-2 transition-colors">?</span>
-              </span>
-            </th>
-            <th className="px-3 py-1.5 text-left">操作员</th><th className="px-3 py-1.5 text-right">操作</th>
-          </tr></thead>
-          <tbody>
- {(pageRows||[]).map((t:any,i:number)=>{
- const dur = (t.status==='done'||t.status==='failed') ? (t.updated_at||t.created_at)-t.created_at : now-t.created_at;
- const c = counts[String(t.id)];
- const kind = t.kind||t.type||'audit';
- const canAsk = t.kind==='audit'&&t.status==='done'&&!!t.result_id;
- const artifactsReady = (t.kind==='unpack'||t.kind==='audit')&&t.status==='done';
- const h = honestDone(t);
- const slow = dur > SLOW_S;
- // 行点击: 有渗透会话→工作台;无会话且产物可用→产物/报告弹窗;两者皆无=不动作(诚实)
- const openRow = () => {
-                const hit = sessMap[t.id];
-                if (hit) { window.location.hash = `/pentest/project/${hit.pid}/session/${hit.sid}`; return; }
-                if (artifactsReady) setArtTask(t.id);
-              };
-              const probeVal = outcomeProbe(t.unpack_outcome);
-              return (
-              <tr key={t.id||i} data-task-row={t.id}
- onClick={openRow}
- title={sessMap[t.id] ? `点击进入渗透会话 #${sessMap[t.id].sid} 工作台` : artifactsReady ? '点击浏览产物/报告' : undefined}
- className={`cursor-pointer ${(focusParam&&String(t.id)===focusParam?'ring-1 ring-jz-brand/60 bg-jz-brand/10 ':(i%2?'bg-jz-canvas/40 ':''))+'hover:bg-jz-surface-2/30'}`}>
-                <td className="px-3 py-3.5" onClick={(e)=>e.stopPropagation()}><input type="checkbox" checked={sel.has(t.id)} onChange={()=>toggleRow(t.id)} data-sel-row={t.id} className="align-middle accent-[rgb(var(--jz-brand))] cursor-pointer" /></td>
-                <td className="px-3 py-3.5 font-mono text-jz-muted tnum">{t.id}</td>
-                <td className="px-3 py-3.5">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-control text-meta font-mono font-semibold ${KIND_CLS[kind]||'text-jz-muted bg-jz-surface-2'}`}>{kind}</span>
-                </td>
-                <td className="px-3 py-3.5 max-w-[240px]">
-                  {/* 排版层级(规格): 主标=产品名 text-body font-semibold;副标=包名 mono 11px+防护徽章;缺包名=占位符保 Baseline 统一 */}
-                  <div className="flex flex-col justify-center min-h-[36px] py-0.5 min-w-0">
-                    <div className="flex items-center">
-                      <span className="text-body font-semibold text-jz-ink truncate leading-snug" title={t.app_name||t.package||''}>{t.app_name||t.package||'—'}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5 min-w-0">
-                      <span className="font-mono text-meta font-normal text-jz-muted truncate max-w-[200px]" title={t.package||'后端未返回包名'}>{t.package||'包名待解析'}</span>
-                      {t.packer ? <PackerChip packer={t.packer} /> : t.status==='running' ? (
-                        <span className="flex-none rounded-control px-1.5 py-0.5 text-meta font-mono bg-jz-surface-2 text-jz-muted" title="壳识别中；完成后写入真实壳型">识别中</span>
-                      ) : null}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-3 py-3.5">
-                  {t.status==='failed' ? (
-                    /* 失败态(规格): 红「失败」+完整失败原因(换行不截断;悬停显全文;后端无 error_msg=如实标注) */
-                    <div className="flex flex-col gap-1 max-w-[280px]" data-honest-status="failed">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-control text-meta font-medium bg-jz-sev-critical/10 text-jz-sev-critical border border-jz-sev-critical/25 self-start flex-shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-pill bg-jz-sev-critical animate-pulse" />
-                        失败
-                      </span>
-                      <span className="text-meta font-mono text-jz-sev-critical bg-jz-sev-critical/5 border border-jz-sev-critical/15 px-2 py-0.5 rounded-control break-all cursor-help"
- title={t.error_msg || '后端未返回失败原因(Progress 列为空)'}>
-                        {t.error_msg || t.progress || '后端未返回失败原因'}
-                      </span>
-                    </div>
-                  ) : t.status==='done' ? (
-                    /* 诚实状态列(本轮修复④): ①业务码类数=后端真实统计,哪怕 1 类/17 类一律原样显示,
-                       严禁被受阻判定覆盖;②「脱壳受阻」收紧=明确有壳 且(业务码=0 或文本明确未脱出);
-                       ③凡无壳或已解析出业务码类=🟢 完成+✓业务码 X 类(实证 #785 17类/#786 1类 均无壳正常完成) */
-                    h.blocked ? (
-                      <div className="flex flex-col gap-1 max-w-[280px]" data-honest-status="degraded">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-control text-meta font-medium bg-jz-amber/10 text-jz-amber border border-jz-amber/25 self-start flex-shrink-0 whitespace-nowrap" title="管线跑完≠业务码脱出——明确有壳且未脱出业务码,风险结论仅覆盖部分层,严禁当纯绿完整完成消费">
-                          <span className="w-1.5 h-1.5 rounded-pill bg-jz-amber" />
-                          完成(脱壳受阻)
-                        </span>
-                        <span data-unpack-outcome={probeVal || undefined} className="text-meta font-mono text-jz-amber bg-jz-amber/5 border border-jz-amber/15 px-2 py-0.5 rounded-control break-all cursor-help self-start"
- title={t.unpack_outcome?.diagnosis?.reason || t.progress || '阻塞判定来自 unpack_outcome 结果摘要'}>
-                          {h.label}
-                        </span>
-                        {(() => {
-                          const d = t.unpack_outcome?.diagnosis || {};
-                          const checks = d.checks || {};
-                          const labelMap: Record<string, string> = {
-                            zygisk_off: 'Zygisk关闭', debuggable: 'debuggable', permissive: 'SELinux', libzzp: 'libzzp',
-                          };
-                          const failed = Object.entries(checks).filter(([, v]) => !v).map(([k]) => labelMap[k] || k);
-                          const checkTxt = failed.length ? '未满足: ' + failed.join('、') : '';
-                          const reason = d.reason || t.progress || '';
-                          const channel = t.unpack_outcome?.unpack_method || '';
-                          const engine = t.unpack_outcome?.engine_commit || '';
-                          return (
-                            <span data-unpack-reason className="text-meta font-mono text-jz-muted break-words max-w-[280px]" title={reason}>
-                              {channel && <span className="text-jz-ink-2">通道 {channel}</span>}
-                              {channel && (checkTxt || reason) ? ' · ' : ''}
-                              {checkTxt && <span className="text-jz-amber">{checkTxt}</span>}
-                              {checkTxt && reason ? ' · ' : ''}
-                              {reason ? reason.slice(0, 140) : '未返回具体失败原因'}
-                              {engine && <span className="text-jz-muted"> · engine {engine}</span>}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-0.5" data-honest-status="complete" data-unpack-outcome={probeVal || undefined}>
-                        <span className="inline-flex items-center gap-1.5 text-body font-medium text-jz-teal whitespace-nowrap">
-                          <span className="w-1.5 h-1.5 rounded-pill flex-none bg-jz-teal" />
-                          完成 <span title={h.biz != null ? '后端真实业务码统计(严禁受阻覆盖)' : '脱壳判定无阻塞'}>✓</span>
-                          {h.biz != null && <span className="text-meta font-mono tnum">业务码 {h.biz} 类</span>}
-                        </span>
-                        {h.biz == null && (
-                          <span className="text-meta text-jz-muted font-mono whitespace-nowrap">
-                            {h.shell ? (h.positive ? '业务码类数未上报' : '无脱壳判定数据(不编数)') : '无壳应用(无脱壳环节)'}
-                          </span>
-                        )}
-                      </div>
-                    )
-                  ) : (
-                  <span className="inline-flex items-center gap-1.5 font-medium" style={{color:ST_COL[t.status]||'rgb(var(--jz-muted))'}}>
-                    <span className="w-1.5 h-1.5 rounded-pill flex-none" style={{ background: ST_COL[t.status] || 'rgb(var(--jz-muted))' }} />
-                    {ST_CN[t.status]||t.status}
-                  </span>
-                  )}
-                  {t.status==='running' && t.progress && <TaskLiveProgress progress={t.progress} />}
-                </td>
-                <td className="px-3 py-3.5 font-mono tnum text-jz-ink-2 whitespace-nowrap" data-dur
- title={`精确耗时: ${Math.round(dur)}s(${t.status === 'running' ? 'created_at→now 实时' : 'created_at→updated_at'} 端点真值)`}>
-                  <div className="flex flex-col leading-tight">
-                    <span>
-                      {t.status==='running'&&<span className="inline-block h-1.5 w-1.5 rounded-pill bg-jz-brand animate-pulse mr-1 align-middle" />}{fmtDur(dur)}
-                      {slow && <span className="ml-1.5 px-1 rounded-control text-meta font-medium bg-jz-amber/10 text-jz-amber align-middle" title={`耗时 ${Math.round(dur)}s 超 15m 慢任务标线`}>慢</span>}
-                    </span>
-                    {/* 时间副行(规格): 创建/更新时间格式化——两字段后端 tasks 表实存(NOT NULL),优雅回退 '—' */}
-                    <span className="text-meta text-jz-muted font-mono" title={`创建 ${t.created_at ? new Date(t.created_at*1000).toLocaleString('zh-CN', { hour12: false }) : '—'} · 更新 ${t.updated_at ? new Date(t.updated_at*1000).toLocaleString('zh-CN', { hour12: false }) : '—'}`}>
-                      {fmtTime(t.created_at)} → {fmtTime(t.updated_at)}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-3 py-3.5" data-vuln-counts>
-                  {!c ? <span className="text-jz-muted">…</span>
- : c.total>0 ? (
-                    <span className="inline-flex flex-col gap-1">
-                      <span className="inline-flex items-center gap-1 font-mono text-meta" title={`审计域+渗透域(${(c.sources||[]).join('+')||'无'}); active=pending+confirmed`
-                        + (c.contract ? `\n引擎口径: 原始命中 ${c.contract.raw ?? '—'} → 去重 ${c.contract.kept ?? '—'} → 确认 ${c.contract.confirmed ?? '—'} · 候选 ${c.contract.candidate ?? '—'} · 压制 ${c.contract.suppressed ?? '—'} · 主报告 ${c.contract.report_total ?? '—'}(LLM 实审 ${c.contract.reviewed ?? '—'})` : '')}>
-                        <span className={`px-1.5 py-0.5 rounded-control border ${c.critical > 0 ? 'bg-jz-sev-critical/10 text-jz-sev-critical border-jz-sev-critical/25 font-semibold' : 'bg-jz-surface-2/60 text-jz-muted border-transparent'}`} title="致命 Critical">C:{c.critical}</span>
-                        <span className={`px-1.5 py-0.5 rounded-control border ${c.high > 0 ? 'bg-jz-sev-high/10 text-jz-sev-high border-jz-sev-high/25 font-semibold' : 'bg-jz-surface-2/60 text-jz-muted border-transparent'}`} title="高危 High">H:{c.high}</span>
-                        <span className={`px-1.5 py-0.5 rounded-control border ${c.medium > 0 ? 'bg-jz-sev-medium/10 text-jz-sev-medium border-jz-sev-medium/25' : 'bg-jz-surface-2/60 text-jz-muted border-transparent'}`} title="中危 Medium">M:{c.medium}</span>
-                        <span className={`px-1.5 py-0.5 rounded-control border ${c.low > 0 ? 'bg-jz-brand/10 text-jz-brand border-jz-brand/25' : 'bg-jz-surface-2/60 text-jz-muted border-transparent'}`} title="低危 Low">L:{c.low}</span>
-                      </span>
-                      {/* 4 色微缩比例条(规格): C/H/M/L 占比,h-1 等宽分段(色值=vuln token 同源 hex) */}
-                      <span className="inline-flex h-1 w-28 rounded-pill bg-jz-surface-2 overflow-hidden" data-vuln-bar
- title={`占比: C ${c.critical} · H ${c.high} · M ${c.medium} · L ${c.low}(共 ${c.total})`}>
-                        {c.critical > 0 && <span className="block h-full" style={{ width: `${(c.critical / c.total) * 100}%`, background: '#EF4444' }} />}
-                        {c.high > 0 && <span className="block h-full" style={{ width: `${(c.high / c.total) * 100}%`, background: '#F97316' }} />}
-                        {c.medium > 0 && <span className="block h-full" style={{ width: `${(c.medium / c.total) * 100}%`, background: '#F59E0B' }} />}
-                        {c.low > 0 && <span className="block h-full" style={{ width: `${(c.low / c.total) * 100}%`, background: '#06B6D4' }} />}
-                      </span>
-                    </span>
-                  ) : <span className="inline-flex px-2 py-0.5 rounded-control bg-jz-surface-2/60 text-jz-muted font-mono text-meta" title="脱壳任务不执行漏洞检测(两域均无记录)">未涉及审计</span>}
-                </td>
-                <td className="px-3 py-3.5 font-mono text-body text-jz-ink-2 truncate max-w-[90px]" data-operator title={t.user_id!=null?`uid=${t.user_id}`:''}>{usersMap[String(t.user_id)]||(t.user_id!=null?`#${t.user_id}`:'—')}</td>
-                <td className="px-3 py-3.5 whitespace-nowrap text-right relative" onClick={(e)=>e.stopPropagation()}>
-                  {/* 操作列显性化+样式统一(本轮修复⑤): 全部按钮同高同圆角胶囊(ACT_BTN: px-2.5 py-1 text-meta
-                      rounded-control border,whitespace-nowrap);接力禁用态保留 disabled 视觉但同尺寸;
-                      完成=[工作台/接力][报告][产物][⋯] 失败=[重试][详情][删除];会话跳转/接力占位探针原样保留 */}
-                  <span className="inline-flex items-center gap-1">
-                    {sessMap[t.id]&&(
-                      <button onClick={()=>window.location.hash=`/pentest/project/${sessMap[t.id].pid}/session/${sessMap[t.id].sid}`} data-goto-session
- className={`${ACT_BTN} text-jz-brand bg-jz-brand/10 border-jz-brand/25 hover:bg-jz-brand/20`} title="查看渗透会话">工作台</button>
-                    )}
-                    {t.status==='done'&&!sessMap[t.id]&&(
-                      <button disabled title="无关联项目(R76-2 禁跳)" onClick={()=>relay(t)} data-relay-btn className={`${ACT_BTN} text-jz-muted bg-jz-surface-2/40 border-jz-border/40 cursor-not-allowed`}>接力</button>
-                    )}
-                    {t.status==='done'&&canAsk&&(
-                      <button onClick={()=>nav(`/reports?taskId=${t.id}`)} data-act-report title="打开报告中心(该任务审计报告)"
- className={`${ACT_BTN} text-jz-brand bg-jz-brand/10 border-jz-brand/25 hover:bg-jz-brand/20`}>报告</button>
-                    )}
-                    {artifactsReady&&(
-                      <button onClick={()=>setArtTask(t.id)} data-artifacts-btn title="产物浏览"
- className={`${ACT_BTN} text-jz-brand bg-jz-brand/10 border-jz-brand/25 hover:bg-jz-brand/20`}>产物</button>
-                    )}
-                    {t.status==='failed'&&(
-                      <button onClick={()=>setRerunTask(t)} data-act-retry title="重跑任务（可重选设备/模式/深度）"
- className={`${ACT_BTN} text-jz-ink-2 bg-jz-surface-2/60 border-jz-border/50 hover:text-jz-brand`}>重试</button>
-                    )}
-                    {(t.status==='failed'||t.status==='running'||t.status==='queued')&&(
-                      <button onClick={()=>setDetailTask(t)} data-act-detail title="任务详情(后端原始字段,失败原因全文)"
- className={`${ACT_BTN} text-jz-ink-2 bg-jz-surface-2/60 border-jz-border/50 hover:text-jz-ink`}>详情</button>
-                    )}
-                    {t.status==='failed'&&(
-                      <button onClick={()=>{ if(window.confirm(`确认删除任务 #${t.id}?`))removeTask(t); }} data-act-del title="删除该任务(不可恢复)"
- className={`${ACT_BTN} text-jz-sev-critical bg-jz-sev-critical/10 border-jz-sev-critical/25 hover:bg-jz-sev-critical/20`}>删除</button>
-                    )}
-                    <button onClick={()=>setMenuFor(menuFor===t.id?null:t.id)} data-more-btn className="inline-flex items-center justify-center whitespace-nowrap p-1 rounded-control text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/40" title="更多操作"><MoreHorizontal size={14} /></button>
-                  </span>
-                  {menuFor===t.id&&(
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={()=>setMenuFor(null)} />
-                      <div className="absolute right-2 top-7 z-50 w-32 rounded-card bg-jz-surface shadow-card py-1 text-left" data-more-menu>
-                        {canAsk&&(
-                          <button onClick={()=>{setMenuFor(null);window.location.hash=`/agent?task=${t.id}`;}} data-ask-btn className="w-full px-3 py-1.5 text-meta text-jz-teal hover:bg-jz-surface-2/40 flex items-center gap-1.5"><MessageSquare size={12} /> 追问 AI</button>
-                        )}
-                        <button onClick={()=>{setMenuFor(null);setRerunTask(t);}} className="w-full px-3 py-1.5 text-meta text-jz-ink-2 hover:bg-jz-surface-2/40 flex items-center gap-1.5">重跑</button>
-                        <button onClick={()=>{setMenuFor(null);if(window.confirm(`确认删除任务 #${t.id}?`))removeTask(t);}} className="w-full px-3 py-1.5 text-meta text-jz-sev-critical hover:bg-jz-surface-2/40 flex items-center gap-1.5">删除</button>
-                      </div>
-                    </>
-                  )}
-                </td>
-              </tr>
-            );})}
-          </tbody>
-        </table>
-        {/* 底部分页器(规格): 20/50/100+页码+跳页——DataToolbar 纯 pager 实例,位置=表格底部
-            (data-v3-pagination/data-jump-input 存量探针透传保留) */}
-        <div className="flex-none px-4 py-2.5 bg-jz-surface-2/30">
-          <DataToolbar
- pager={{ total: filtered.length, page: safePage, pageSize, onPage: setPage, onPageSize: (n) => setPageSize(n) }}
- pageSizes={PAGE_SIZES}
- pagerDataAttrs={{ 'data-v3-pagination': '', 'data-jump-input': 'present' }}
- />
-        </div>
-      </div>
- {/* R103-9①: 底部已选批量条(选中行>0 时出现;规格文案对齐: 已选择 N 项/批量重新扫描/导出所选 CSV/JSON/批量删除/取消选择) */}
- {sel.size>0&&(
-        <div className="sticky bottom-0 z-30 flex items-center gap-2 flex-wrap px-3 py-2 rounded-panel bg-jz-surface/95 shadow-card text-meta" data-batch-bar>
-          <span className="font-semibold text-jz-ink">已选择 {sel.size} 项:</span>
-          <button onClick={()=>setRetryOpen(true)} disabled={batchBusy} data-batch-retry
- title={batchBusy ? '批量操作进行中,已锁定防重复提交' : '对选中任务发起批量重跑(先二次确认)'}
- className="inline-flex items-center gap-1 px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-ink-2 hover:text-jz-brand disabled:opacity-40 disabled:cursor-not-allowed"><RefreshCw size={12} /> 批量重新扫描</button>
-          <button onClick={exportSelCsv} disabled={batchBusy} data-batch-csv
- title="导出所选任务 CSV(字段=表格列;业务码/漏洞计数缺加载时留空不编造)"
- className="inline-flex items-center gap-1 px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-ink-2 hover:text-jz-brand disabled:opacity-40 disabled:cursor-not-allowed">导出所选 CSV</button>
-          <button onClick={exportSelJson} disabled={batchBusy} data-batch-json
- title="导出所选任务 JSON(字段=表格列;业务码/漏洞计数缺加载时留空不编造)"
- className="inline-flex items-center gap-1 px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-ink-2 hover:text-jz-brand disabled:opacity-40 disabled:cursor-not-allowed">导出所选 JSON</button>
-          <button onClick={()=>setDelOpen(true)} disabled={batchBusy} data-batch-del
- title={batchBusy ? '批量操作进行中,已锁定防重复提交' : '批量清理选中任务(先二次确认)'}
- className="inline-flex items-center gap-1 px-2 py-1 rounded-control bg-jz-sev-critical/10 text-jz-sev-critical hover:bg-jz-sev-critical/20 disabled:opacity-40 disabled:cursor-not-allowed">批量删除</button>
-          {/* R602: 恰选 2 个有关联会话的任务 → 报告中心对比(URL 参数驱动既有发现级 Diff 面板) */}
-          {cmpPair && (
-            <button onClick={() => nav(`/reports?sid=${cmpPair.a}&cmp=${cmpPair.b}`)} data-batch-compare
- title={`跳转报告中心对比会话 #${cmpPair.a} vs #${cmpPair.b}(发现级 added/removed/changed Diff)`}
- className="inline-flex items-center gap-1 px-2 py-1 rounded-control bg-jz-surface-2/60 text-jz-ink-2 hover:text-jz-brand">对比报告</button>
-          )}
-          <button onClick={()=>setSel(new Set())} className="text-jz-muted hover:text-jz-ink">取消选择</button>
-        </div>
-      )}
-      {batchMsg&&(
-        <div className="text-meta text-jz-ink-2" data-batch-msg>{batchMsg}<button onClick={()=>setBatchMsg(null)} className="ml-1.5 text-jz-muted hover:text-jz-ink">✕</button></div>
-      )}
-      {/* R117-4③: 批量重跑统一模态二次确认(明示条数+不可逆提示;确认后锁定) */}
-      <Modal open={retryOpen} title={`确认批量重跑 ${sel.size} 个任务?`} onClose={()=>setRetryOpen(false)}>
-        <div className="text-meta text-jz-ink-2 space-y-2" data-batch-retry-modal>
-          <div>将对以下 {selTasks.length} 个任务逐个创建重跑任务(新增任务,原任务保留):</div>
-          <div className="max-h-32 overflow-auto rounded-control bg-jz-canvas p-2 font-mono text-meta text-jz-muted">
- {selTasks.map((t:any)=>(`#${t.id} ${t.app_name||t.package||''} [${t.status}]`)).join('\n')}
-          </div>
-          <div className="flex justify-end gap-2 pt-1">
-            <button onClick={()=>setRetryOpen(false)} className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:bg-jz-surface-2">取消</button>
-            <button onClick={batchRetry} disabled={batchBusy} data-batch-retry-confirm
- className="px-3 py-1.5 rounded-control bg-jz-brand/15 text-jz-brand text-meta font-semibold hover:bg-jz-brand/25 disabled:opacity-40 disabled:cursor-not-allowed">确认重跑</button>
-          </div>
-        </div>
-      </Modal>
-      <Modal open={delOpen} title={`确认批量清理 ${sel.size} 个任务?`} onClose={()=>setDelOpen(false)}>
-        <div className="text-meta text-jz-ink-2 space-y-2" data-batch-del-modal>
-          <div>将循环调用 DELETE 逐个删除以下任务(不可恢复):</div>
-          <div className="max-h-32 overflow-auto rounded-control bg-jz-canvas p-2 font-mono text-meta text-jz-muted">
- {selTasks.map((t:any)=>(`#${t.id} ${t.app_name||t.package||''} [${t.status}]`)).join('\n')}
-          </div>
-          <div className="text-jz-sev-critical">运行中/排队状态的任务后端会拒绝删除,将如实跳过并回显数量。</div>
-          <div className="flex justify-end gap-2 pt-1">
-            <button onClick={()=>setDelOpen(false)} className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:bg-jz-surface-2">取消</button>
-            <button onClick={batchDelete} disabled={batchBusy} data-batch-del-confirm className="px-3 py-1.5 rounded-control bg-jz-sev-critical/15 text-jz-sev-critical text-meta font-semibold hover:bg-jz-sev-critical/25 disabled:opacity-40 disabled:cursor-not-allowed">确认删除</button>
-          </div>
-        </div>
-      </Modal>
-      {/* 清理失败项二次确认(范围=当前过滤视图内 failed;所见即所删) */}
-      <Modal open={cleanOpen} title={`确认清理当前视图内 ${failedInView.length} 个失败任务?`} onClose={()=>setCleanOpen(false)}>
-        <div className="text-meta text-jz-ink-2 space-y-2" data-clean-failed-modal>
-          <div>删除范围=当前过滤视图(含搜索/筛选)内 status=failed 的任务,不可恢复;运行中/排队任务不在范围内。</div>
-          <div className="max-h-32 overflow-auto rounded-control bg-jz-canvas p-2 font-mono text-meta text-jz-muted">
- {failedInView.slice(0, 12).map((t:any)=>(`#${t.id} ${t.app_name||t.package||''} ${(t.error_msg||'').slice(0,40)}`)).join('\n')}
- {failedInView.length > 12 ? `\n… 共 ${failedInView.length} 个` : ''}
-          </div>
-          <div className="flex justify-end gap-2 pt-1">
-            <button onClick={()=>setCleanOpen(false)} className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:bg-jz-surface-2">取消</button>
-            <button onClick={cleanFailed} disabled={batchBusy} data-clean-failed-confirm className="px-3 py-1.5 rounded-control bg-jz-sev-critical/15 text-jz-sev-critical text-meta font-semibold hover:bg-jz-sev-critical/25 disabled:opacity-40 disabled:cursor-not-allowed">确认清理</button>
-          </div>
-        </div>
-      </Modal>
-      {/* 行内任务详情(规格失败态 [详情]): 后端原始字段如实呈现,失败原因全文不截断 */}
-      <Modal open={!!detailTask} title={`任务 #${detailTask?.id ?? ''} 详情`} onClose={()=>setDetailTask(null)}>
-        {detailTask && (
-          <div className="text-meta text-jz-ink-2 space-y-1.5 max-h-[60vh] overflow-auto" data-detail-modal>
-            {([
-              ['ID / 类型', `#${detailTask.id} · ${detailTask.kind || 'audit'}`],
-              ['目标应用', detailTask.app_name || '—'],
-              ['包名', detailTask.package || '后端未返回包名'],
-              ['状态', ST_CN[detailTask.status] || detailTask.status],
-              ['壳', detailTask.packer ? `${PACKER_NAMES[detailTask.packer] || detailTask.packer}(${detailTask.packer})` : '未检出'],
-              ['操作员', usersMap[String(detailTask.user_id)] || (detailTask.user_id != null ? `#${detailTask.user_id}` : '—')],
-              ['创建时间', detailTask.created_at ? new Date(detailTask.created_at * 1000).toLocaleString('zh-CN', { hour12: false }) : '—'],
-              ['更新时间', detailTask.updated_at ? new Date(detailTask.updated_at * 1000).toLocaleString('zh-CN', { hour12: false }) : '—'],
-              ['APK 路径', detailTask.apk_path || '—'],
-              ['结果 ID', detailTask.result_id != null ? `#${detailTask.result_id}` : '无'],
-            ] as Array<[string, string]>).map(([k, v]) => (
-              <div key={k} className="flex gap-2"><span className="flex-none w-16 text-jz-muted">{k}</span><span className="font-mono break-all">{v}</span></div>
-            ))}
-            <div className="pt-1"><span className="text-jz-muted">进度全文</span><pre className="mt-1 p-2 rounded-control bg-jz-canvas font-mono whitespace-pre-wrap break-all text-jz-ink-2">{detailTask.progress || '(后端无进度文本)'}</pre></div>
+            {batchOpen && (
+              <div className="mt-4 overflow-x-auto rounded-card border border-jz-border">
+                <DataTable<any> label="批量脱壳明细" stickyHeader={false} rows={batchSum.items || []} rowKey={(it) => it.task_id}
+                  columns={[
+                    { key: 'id', header: '任务', mono: true, cell: (it) => `#${it.task_id}` },
+                    { key: 'app', header: '应用', card: 'title', cell: (it) => <span className="block max-w-48 truncate">{it.app_name}</span> },
+                    { key: 'st', header: '状态', cell: (it) => ST_CN[it.status] || it.status },
+                    { key: 'packer', header: '加固', cell: (it) => it.packer ?? '—' },
+                    { key: 'method', header: '方式', cell: (it) => it.method ?? '—' },
+                    { key: 'dex', header: 'DEX', mono: true, align: 'right', cell: (it) => it.dex ?? '—' },
+                    { key: 'dur', header: '耗时', mono: true, align: 'right', cell: (it) => it.dur_s != null ? fmtDur(it.dur_s) : '—' },
+                  ]}
+                  state={(batchSum.items || []).length === 0 ? <EmptyState compact title="没有明细" cause="服务端没有返回任务明细。" /> : undefined} />
+              </div>
+            )}
+          </Panel>
+        );
+      })()}
+
+      <Dialog open={retryOpen} onClose={() => setRetryOpen(false)} title={`重新运行 ${sel.size} 个任务`}
+        description="会为每个任务新建一个任务,原任务和它的报告保持不变。" dataAttrs={{ 'data-batch-retry-modal': '' }}
+        footer={(
+          <>
+            <Button variant="secondary" onClick={() => setRetryOpen(false)}>取消</Button>
+            <Button variant="primary" onClick={batchRetry} disabled={batchBusy} data-batch-retry-confirm>重新运行</Button>
+          </>
+        )}>
+        <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-control bg-jz-surface-2 p-3 font-mono text-meta text-jz-ink-2">{selTasks.map(taskLine).join('\n')}</pre>
+      </Dialog>
+
+      <Dialog open={delOpen} onClose={() => setDelOpen(false)} title={`删除 ${sel.size} 个任务`} role="alertdialog"
+        description="删除后无法恢复。运行中和排队中的任务不会被删除,结果里会说明跳过了几个。" dataAttrs={{ 'data-batch-del-modal': '' }}
+        footer={(
+          <>
+            <Button variant="secondary" onClick={() => setDelOpen(false)}>取消</Button>
+            <Button variant="danger-solid" onClick={batchDelete} disabled={batchBusy} data-batch-del-confirm>删除</Button>
+          </>
+        )}>
+        <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-control bg-jz-surface-2 p-3 font-mono text-meta text-jz-ink-2">{selTasks.map(taskLine).join('\n')}</pre>
+      </Dialog>
+
+      <Dialog open={cleanOpen} onClose={() => setCleanOpen(false)} title={`删除 ${failedInView.length} 个失败任务`} role="alertdialog"
+        description="范围是当前搜索和筛选结果里的失败任务。删除后无法恢复,运行中和排队中的任务不受影响。" dataAttrs={{ 'data-clean-failed-modal': '' }}
+        footer={(
+          <>
+            <Button variant="secondary" onClick={() => setCleanOpen(false)}>取消</Button>
+            <Button variant="danger-solid" onClick={cleanFailed} disabled={batchBusy} data-clean-failed-confirm>删除</Button>
+          </>
+        )}>
+        <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-control bg-jz-surface-2 p-3 font-mono text-meta text-jz-ink-2">
+          {failedInView.slice(0, 12).map((t: any) => `#${t.id} ${t.app_name || t.package || ''} ${(t.error_msg || '').slice(0, 40)}`).join('\n')}
+          {failedInView.length > 12 ? `\n… 共 ${failedInView.length} 个` : ''}
+        </pre>
+      </Dialog>
+
+      <ConfirmDialog open={!!delAsk} destructive title={`删除任务 #${delAsk?.id ?? ''}`} confirmLabel="删除"
+        outcome="删除后无法恢复。"
+        onCancel={() => setDelAsk(null)}
+        onConfirm={() => { const t = delAsk; setDelAsk(null); if (t) removeTask(t); }}>
+        {delAsk ? (delAsk.app_name || delAsk.package || '这个任务') : ''} 的任务记录将被删除。
+      </ConfirmDialog>
+
+      <Drawer open={!!detailTask} title={`任务 #${detailTask?.id ?? ''}`} onClose={() => setDetailTask(null)} width={520}
+        footer={detailTask && (
+          <>
+            {artifactsReadyOf(detailTask) && <Button variant="secondary" onClick={() => { const id = detailTask.id; setDetailTask(null); setArtTask(id); }}>浏览产物</Button>}
             {detailTask.status === 'failed' && (
-              <div><span className="text-jz-muted">失败原因全文(不截断)</span><pre className="mt-1 p-2 rounded-control bg-jz-canvas font-mono whitespace-pre-wrap break-all text-jz-sev-critical" data-detail-error>{detailTask.error_msg || detailTask.progress || '(后端未返回失败原因)'}</pre></div>
+              <Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} onClick={() => { const t = detailTask; setDetailTask(null); setRerunTask(t); }} data-detail-retry>重试</Button>
+            )}
+            <Button variant="primary" onClick={() => setDetailTask(null)}>关闭</Button>
+          </>
+        )}>
+        {detailTask && (
+          <div className="space-y-4" data-detail-modal>
+            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-label">
+              {detailRows.map(([k, v]) => (
+                <React.Fragment key={k}>
+                  <dt className="text-jz-muted">{k}</dt>
+                  <dd className="break-all font-mono text-meta text-jz-ink">{v}</dd>
+                </React.Fragment>
+              ))}
+            </dl>
+            <section>
+              <h3 className="text-label font-semibold text-jz-ink">进度日志</h3>
+              <pre className="mt-1.5 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-control bg-jz-surface-2 p-3 font-mono text-meta text-jz-ink-2">{detailTask.progress || '服务端没有进度记录'}</pre>
+            </section>
+            {detailTask.status === 'failed' && (
+              <section>
+                <h3 className="text-label font-semibold text-jz-ink">失败原因</h3>
+                <pre className="mt-1.5 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-control border border-jz-red/40 bg-jz-red/10 p-3 font-mono text-meta text-jz-ink" data-detail-error>{detailTask.error_msg || detailTask.progress || '服务端没有返回失败原因'}</pre>
+              </section>
             )}
             {detailTask.unpack_outcome && (
-              <div><span className="text-jz-muted">脱壳判定(unpack_outcome 原值)</span><pre className="mt-1 p-2 rounded-control bg-jz-canvas font-mono whitespace-pre-wrap break-all text-jz-ink-2">{JSON.stringify(detailTask.unpack_outcome, null, 2)}</pre></div>
+              <section>
+                <h3 className="text-label font-semibold text-jz-ink">脱壳结果</h3>
+                <pre className="mt-1.5 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-control bg-jz-surface-2 p-3 font-mono text-meta text-jz-ink-2">{JSON.stringify(detailTask.unpack_outcome, null, 2)}</pre>
+              </section>
             )}
-            <div className="flex justify-end gap-2 pt-1">
-              {detailTask.status === 'failed' && (
-                <button onClick={()=>{ const t = detailTask; setDetailTask(null); setRerunTask(t); }} data-detail-retry
- className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:text-jz-brand">重试该任务</button>
-              )}
-              <button onClick={()=>setDetailTask(null)} className="px-3 py-1.5 rounded-control bg-jz-surface-2/60 text-jz-ink-2 text-meta hover:bg-jz-surface-2">关闭</button>
-            </div>
           </div>
         )}
-      </Modal>
-      {/* R104-5②: 产物弹窗=ArtifactsModal(UnifiedModal 基底+文件树+预览/下载+ZIP, 语义见组件头注) */}
+      </Drawer>
+
       {artTask != null && (
         <ArtifactsModal taskId={artTask}
- taskName={(() => { const t = allTasks.find((x: any) => x.id === artTask); return t?.app_name || t?.package || `任务 #${artTask}`; })()}
- linked={sessMap[artTask] ?? null}
- onClose={() => setArtTask(null)} />
+          taskName={(() => { const t = allTasks.find((x: any) => x.id === artTask); return t?.app_name || t?.package || `任务 #${artTask}`; })()}
+          linked={sessMap[artTask] ?? null}
+          onClose={() => setArtTask(null)} />
       )}
       {rerunTask && (
         <RerunTaskModal task={rerunTask} devices={liveDevices || []}
@@ -1171,6 +865,6 @@ export const TaskCenterPage: React.FC = () => {
             setTimeout(loadAll, 600);
           }} />
       )}
-    </div>
+    </Page>
   );
 };

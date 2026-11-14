@@ -1,9 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Activity, ArrowRight, CheckCircle2, CircleAlert, FlaskConical,
-  GitBranch, Radar, ShieldCheck, Smartphone, Sparkles,
-} from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChevronRight, FlaskConical, ShieldCheck, ListChecks } from 'lucide-react';
 import { api } from '@/services/api';
+import {
+  Page, PageHeader, MetricGrid, Metric, Panel, DataTable, SegmentedControl, StatusBadge, Tag, AsyncBoundary, EmptyState, InlineAlert,
+} from '@/components/ui';
+import type { Column, TabItem } from '@/components/ui';
+import { moduleLabel } from '@/layout/navigation';
 
 type Confirmed = {
   hypothesis_id: string;
@@ -33,206 +35,161 @@ type Overview = {
 };
 
 const KPI = [
-  { key: 'tasks_total', label: '接入 APK', hint: '可读 V2 task', icon: GitBranch, tone: 'text-jz-brand' },
-  { key: 'candidates_total', label: '候选路径', hint: 'Property-gated', icon: Radar, tone: 'text-jz-brand' },
-  { key: 'confirmed_total', label: 'Confirmed', hint: 'Verifier passed', icon: ShieldCheck, tone: 'text-jz-teal' },
-  { key: 'unresolved_total', label: '未决', hint: 'No dynamic evidence', icon: CircleAlert, tone: 'text-jz-sev-medium' },
+  { key: 'tasks_total', label: '已接入应用', hint: '可读取的评估任务' },
+  { key: 'candidates_total', label: '候选路径', hint: '由数据流假设生成' },
+  { key: 'confirmed_total', label: '已确认', hint: '通过独立核验' },
+  { key: 'unresolved_total', label: '未决', hint: '缺少动态证据' },
 ] as const;
 
-const toneForStage = (state: string) =>
-  state === 'done' ? 'bg-jz-teal/15 text-jz-teal border-jz-teal/40'
-    : state === 'active' ? 'bg-jz-brand/15 text-jz-brand border-jz-brand/40'
-      : 'bg-jz-surface-2 text-jz-muted border-jz-border/50';
+type Filter = 'all' | 'real' | 'synthetic';
+const STAGE_TONE: Record<string, 'success' | 'brand' | 'neutral'> = { done: 'success', active: 'brand' };
+const STAGE_STATE: Record<string, string> = { done: '已完成', active: '进行中' };
 
 const shortTask = (s: string) => s.replace(/^com\./, '').replace(/\.(consultant|zhenbaoxian|browser)$/, '');
 const shortId = (s: string) => s.length > 22 ? s.slice(0, 12) + '…' + s.slice(-6) : s;
 
 export const DiscoveryPage: React.FC = () => {
   const [data, setData] = useState<Overview | null>(null);
-  const [error, setError] = useState('');
-  const [filter, setFilter] = useState<'all' | 'real' | 'synthetic'>('all');
+  const [error, setError] = useState<unknown>(null);
+  const [filter, setFilter] = useState<Filter>('all');
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setError(null);
     api<Overview>('/api/v2/overview')
       .then(setData)
-      .catch((e) => setError(e?.message || '加载失败'));
+      .catch((e) => setError(e || new Error('加载失败')));
   }, []);
+  useEffect(() => { load(); }, [load]);
 
-  const rows = useMemo(() => {
-    if (!data) return [];
-    return data.confirmed.filter((r) => filter === 'all' || (filter === 'synthetic' ? r.synthetic : !r.synthetic));
-  }, [data, filter]);
+  const confirmed = data?.confirmed ?? [];
+  const rows = useMemo(
+    () => confirmed.filter((r) => filter === 'all' || (filter === 'synthetic' ? r.synthetic : !r.synthetic)),
+    [confirmed, filter],
+  );
 
-  if (error) {
-    return <div className="p-6 text-body text-jz-sev-critical" data-discovery-error>{error}</div>;
-  }
-  if (!data) {
-    return <div className="p-6 text-body text-jz-muted" data-discovery-loading>加载 V2 discovery…</div>;
-  }
+  const real = data?.real_confirmed ?? 0;
+  const synthetic = data?.synthetic_confirmed ?? 0;
+  const pipeline = data?.pipeline ?? [];
+  const tasks = data?.tasks ?? [];
 
-  const real = data.real_confirmed;
-  const synthetic = data.synthetic_confirmed;
+  const filterItems: TabItem<Filter>[] = [
+    { key: 'all', label: '全部', count: confirmed.length, dataAttrs: { 'data-discovery-filter': 'all' } },
+    { key: 'real', label: '真实设备', count: confirmed.filter((r) => !r.synthetic).length, dataAttrs: { 'data-discovery-filter': 'real' } },
+    { key: 'synthetic', label: '合成数据', count: confirmed.filter((r) => r.synthetic).length, dataAttrs: { 'data-discovery-filter': 'synthetic' } },
+  ];
+
+  const columns: Column<Confirmed>[] = [
+    { key: 'hyp', header: '假设', card: 'title', cell: (r) => (
+      <span className="flex min-w-0 flex-col">
+        <span className="font-mono text-label text-jz-ink" title={r.hypothesis_id}>{shortId(r.hypothesis_id)}</span>
+        <span className="max-w-56 truncate text-meta text-jz-muted">{r.source || '设备来源'}</span>
+      </span>
+    ) },
+    { key: 'task', header: '应用', cell: (r) => <span title={r.task}>{shortTask(r.task)}</span> },
+    { key: 'evidence', header: '证据来源', cell: (r) => (
+      r.synthetic
+        ? <Tag title="证据来自合成数据,不代表真实设备上的取值"><FlaskConical size={12} aria-hidden className="mr-1 inline" />合成数据</Tag>
+        : <Tag mono title="证据来自真实设备"><ShieldCheck size={12} aria-hidden className="mr-1 inline text-jz-teal" />{r.provenance}</Tag>
+    ) },
+    { key: 'device', header: '设备', mono: true, cell: (r) => r.device || '—' },
+    { key: 'proof', header: '证明级别', align: 'right', mono: true, cell: (r) => r.proof_level || '—' },
+  ];
 
   return (
-    <div className="h-full overflow-y-auto" data-discovery-page>
-      <div className="max-w-[1320px] mx-auto px-5 py-5 space-y-4">
-        <header className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <div className="flex items-center gap-2 text-meta font-mono text-jz-brand">
-              <Sparkles size={12} /> AGENT / V2 DISCOVERY
-            </div>
-            <h1 className="mt-1 text-title leading-8 font-semibold text-jz-ink">
-              漏洞发现管线
-            </h1>
-            <p className="mt-1 text-meta text-jz-muted">
-              Property → Hypothesis → Graph → Planner → Oracle → Verifier。只有通过证据门的候选才进入 confirmed。
-            </p>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-card bg-jz-surface border border-jz-border/50 shadow-card">
-            <span className="w-2 h-2 rounded-pill bg-jz-teal" />
-            <span className="text-meta text-jz-ink-2">证据门开启</span>
-            <span className="text-meta font-mono text-jz-teal">{real} real</span>
-            <span className="text-jz-muted">/</span>
-            <span className="text-meta font-mono text-jz-muted">{synthetic} synthetic</span>
-          </div>
-        </header>
+    <Page data-discovery-page>
+      <PageHeader title={moduleLabel('/discovery')}
+        description="候选路径经过性质、假设、调用图、规划、判定和核验几个环节;只有通过判定并经独立核验的候选才计为已确认。"
+        meta={data && (
+          <>
+            <StatusBadge tone="success">真实设备 {real}</StatusBadge>
+            <StatusBadge tone="neutral">合成数据 {synthetic}</StatusBadge>
+          </>
+        )} />
 
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-discovery-kpis>
-          {KPI.map(({ key, label, hint, icon: Icon, tone }) => (
-            <div key={key} className="rounded-panel bg-jz-surface border border-jz-border/50 p-3.5 shadow-card" data-discovery-kpi={key}>
-              <div className="flex items-center justify-between">
-                <span className="text-meta uppercase text-jz-muted">{label}</span>
-                <Icon size={15} className={tone} />
-              </div>
-              <div className={`mt-2 text-page leading-7 font-semibold font-mono tnum ${tone}`} data-discovery-value={key}>
-                {data[key as keyof Overview] as number}
-              </div>
-              <div className="mt-1 text-meta text-jz-muted">{hint}</div>
-            </div>
+      {!!error && !data && <span className="sr-only" data-discovery-error>加载失败</span>}
+      {!error && !data && <span className="sr-only" data-discovery-loading>加载中</span>}
+
+      <div data-discovery-kpis>
+        <MetricGrid>
+          {KPI.map(({ key, label, hint }) => (
+            <Metric key={key} label={label} hint={hint} loading={!data && !error} data-discovery-kpi={key}
+              tone={key === 'unresolved_total' && data && data.unresolved_total > 0 ? 'attention' : 'default'}
+              value={<span data-discovery-value={key}>{data ? (data[key as keyof Overview] as number) : '—'}</span>} />
           ))}
-        </section>
-
-        <section className="rounded-panel bg-jz-surface border border-jz-border/50 p-4 shadow-card" data-discovery-pipeline>
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-meta font-semibold text-jz-ink">Agent Pipeline</div>
-            <div className="text-meta font-mono text-jz-muted">2 / 15 APK 有真实 confirmed</div>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 gap-y-1.5 pb-1">
-            {data.pipeline.map((s, i) => (
-              <React.Fragment key={s.id}>
-                <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-control border text-meta whitespace-nowrap ${toneForStage(s.state)}`} data-discovery-stage={s.id}>
-                  <span className="font-mono text-meta opacity-70">{String(i + 1).padStart(2, '0')}</span>
-                  {s.label}
-                </div>
-                {i < data.pipeline.length - 1 && <ArrowRight size={12} className="text-jz-muted flex-none" />}
-              </React.Fragment>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-4">
-          <div className="rounded-panel bg-jz-surface border border-jz-border/50 shadow-card overflow-hidden" data-discovery-confirmed>
-            <div className="px-4 py-3 border-b border-jz-border/40 flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={15} className="text-jz-teal" />
-                <span className="text-label font-semibold text-jz-ink">Confirmed Evidence</span>
-                <span className="text-meta font-mono text-jz-muted">{rows.length}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                {([['all', '全部'], ['real', 'Real'], ['synthetic', 'Synthetic']] as const).map(([k, label]) => (
-                  <button key={k} onClick={() => setFilter(k)} data-discovery-filter={k}
-                    className={`px-2 py-1 rounded-control text-meta ${filter === k ? 'bg-jz-brand/15 text-jz-brand' : 'text-jz-muted hover:bg-jz-surface-2'}`}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="text-meta uppercase text-jz-muted">
-                  <tr>
-                    <th className="px-4 py-2 font-medium">Hypothesis</th>
-                    <th className="px-3 py-2 font-medium">Task</th>
-                    <th className="px-3 py-2 font-medium">Evidence</th>
-                    <th className="hidden lg:table-cell px-3 py-2 font-medium">Device</th>
-                    <th className="hidden lg:table-cell px-4 py-2 font-medium text-right">Proof</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.length === 0 && (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-meta text-jz-muted">当前筛选无 confirmed</td></tr>
-                  )}
-                  {rows.map((r) => (
-                    <tr key={r.finding_id || r.hypothesis_id} className="border-t border-jz-border/30 hover:bg-jz-surface-2/40" data-discovery-row={r.hypothesis_id}>
-                      <td className="px-4 py-2.5">
-                        <div className="text-meta font-mono text-jz-ink">{shortId(r.hypothesis_id)}</div>
-                        <div className="text-meta text-jz-muted truncate max-w-[220px]">{r.source || 'device source'}</div>
-                      </td>
-                      <td className="px-3 py-2.5 text-meta text-jz-ink-2">{shortTask(r.task)}</td>
-                      <td className="px-3 py-2.5">
-                        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-control text-meta font-semibold ${r.synthetic ? 'bg-jz-sev-medium/15 text-jz-sev-medium' : 'bg-jz-teal/15 text-jz-teal'}`}>
-                          {r.synthetic ? <FlaskConical size={10} /> : <ShieldCheck size={10} />}
-                          {r.synthetic ? 'synthetic' : r.provenance}
-                        </span>
-                      </td>
-                      <td className="hidden lg:table-cell px-3 py-2.5 text-meta text-jz-muted">
-                        <span className="inline-flex items-center gap-1"><Smartphone size={10} /> {r.device || '—'}</span>
-                      </td>
-                      <td className="hidden lg:table-cell px-4 py-2.5 text-right text-meta font-mono text-jz-muted">{r.proof_level || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="rounded-panel bg-jz-surface border border-jz-border/50 p-4 shadow-card" data-discovery-provenance>
-              <div className="flex items-center gap-2 text-meta font-semibold text-jz-ink">
-                <Activity size={14} className="text-jz-brand" /> Provenance
-              </div>
-              <div className="mt-3 space-y-2">
-                {[
-                  ['real', real, 'bg-jz-teal'],
-                  ['synthetic', synthetic, 'bg-jz-sev-medium'],
-                  ['silver', data.silver_total, 'bg-jz-brand/60'],
-                ].map(([label, n, cls]) => (
-                  <div key={String(label)} className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-pill ${cls}`} />
-                    <span className="text-meta text-jz-ink-2 capitalize">{label}</span>
-                    <span className="flex-1" />
-                    <span className="text-meta font-mono text-jz-muted">{n as number}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 pt-3 border-t border-jz-border/30 text-meta text-jz-muted leading-relaxed">
-                confirmed 只来自 Oracle + Verifier；synthetic 已标记，未当真实设备值。
-              </div>
-            </div>
-
-            <div className="rounded-panel bg-jz-surface border border-jz-border/50 p-4 shadow-card" data-discovery-unresolved>
-              <div className="flex items-center gap-2 text-meta font-semibold text-jz-ink">
-                <CircleAlert size={14} className="text-jz-sev-medium" /> 未决候选
-              </div>
-              <div className="mt-2 text-page font-mono font-semibold text-jz-sev-medium tnum">{data.unresolved_total}</div>
-              <div className="text-meta text-jz-muted">缺少动态证据；不进入 confirmed</div>
-              <div className="mt-3 space-y-1.5">
-                {data.tasks.slice(0, 4).map((t) => (
-                  <div key={t.task} className="flex items-center gap-2 text-meta">
-                    <span className="text-jz-ink-2 truncate">{shortTask(t.task)}</span>
-                    <span className="flex-1" />
-                    <span className="font-mono text-jz-muted">{t.dataflow}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div className="text-meta text-jz-muted px-1 pb-2">
-          口径：candidates = dataflow hypotheses；confirmed = Oracle pass + independent verifier；real/synthetic 按证据来源区分。
-        </div>
+        </MetricGrid>
       </div>
-    </div>
+
+      <AsyncBoundary loading={!data && !error} error={error} onRetry={load} skeleton="table">
+        {data && (
+          <>
+            <Panel title="处理环节" data-discovery-pipeline
+              description={`${data.apk_with_confirmed} / ${data.tasks_total} 个应用有已确认的结果`}>
+              {pipeline.length === 0 ? <EmptyState compact title="没有环节信息" cause="服务端没有返回处理环节。" /> : (
+                <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
+                  {pipeline.map((s, i) => (
+                    <li key={s.id} className="flex items-center gap-1.5">
+                      <StatusBadge tone={STAGE_TONE[s.state] ?? 'neutral'} title={STAGE_STATE[s.state] ?? '未开始'}>
+                        <span data-discovery-stage={s.id}><span className="mr-1 font-mono tnum text-jz-muted">{String(i + 1).padStart(2, '0')}</span>{s.label}</span>
+                        <span className="sr-only">({STAGE_STATE[s.state] ?? '未开始'})</span>
+                      </StatusBadge>
+                      {i < pipeline.length - 1 && <ChevronRight size={14} className="flex-none text-jz-muted" aria-hidden />}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </Panel>
+
+            <div className="grid grid-cols-1 gap-6 desktop:grid-cols-3">
+              <Panel flush className="desktop:col-span-2" title="已确认的证据" data-discovery-confirmed
+                actions={<SegmentedControl items={filterItems} value={filter} onChange={setFilter} label="按证据来源筛选" />}>
+                <DataTable<Confirmed> label="已确认的证据" columns={columns} rows={rows} rowKey={(r) => r.finding_id || r.hypothesis_id}
+                  rowDataAttrs={(r) => ({ 'data-discovery-row': r.hypothesis_id })} stickyHeader={false}
+                  state={rows.length === 0 ? (
+                    <EmptyState compact icon={ListChecks} title={confirmed.length === 0 ? '还没有已确认的结果' : '没有符合条件的结果'}
+                      cause={confirmed.length === 0 ? '候选通过判定和独立核验后会出现在这里。' : '当前筛选下没有已确认的结果。'} />
+                  ) : undefined} />
+              </Panel>
+
+              <div className="flex min-w-0 flex-col gap-6">
+                <Panel title="证据来源" data-discovery-provenance>
+                  <dl className="space-y-2 text-label">
+                    {([['真实设备', real, 'bg-jz-teal'], ['合成数据', synthetic, 'bg-jz-amber'], ['待核验(silver)', data.silver_total, 'bg-jz-border-strong']] as const).map(([label, n, cls]) => (
+                      <div key={label} className="flex items-center gap-2">
+                        <span aria-hidden className={`h-2 w-2 flex-none rounded-pill ${cls}`} />
+                        <dt className="flex-1 text-jz-ink-2">{label}</dt>
+                        <dd className="font-mono tnum text-jz-ink">{n}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <p className="mt-3 border-t border-jz-border pt-3 text-meta text-jz-muted">已确认只来自判定加独立核验。合成数据已单独标记,不当作真实设备上的取值。</p>
+                </Panel>
+
+                <Panel title="未决候选" description="缺少动态证据,不计入已确认" data-discovery-unresolved>
+                  <div className="font-display text-metric font-semibold tnum text-jz-ink">{data.unresolved_total}</div>
+                  {tasks.length > 0 && (
+                    <>
+                      <div className="mt-3 flex items-center justify-between text-meta text-jz-muted"><span>应用</span><span>数据流假设</span></div>
+                      <ul className="mt-1 space-y-1.5 text-label">
+                        {tasks.slice(0, 4).map((t) => (
+                          <li key={t.task} className="flex items-center gap-2">
+                            <span className="min-w-0 flex-1 truncate text-jz-ink-2" title={t.task}>{shortTask(t.task)}</span>
+                            <span className="font-mono tnum text-jz-muted">{t.dataflow}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {tasks.length > 4 && <p className="mt-2 text-meta text-jz-muted">只列出前 4 个,共 {tasks.length} 个应用。</p>}
+                    </>
+                  )}
+                </Panel>
+              </div>
+            </div>
+
+            <InlineAlert tone="info">
+              候选 = 数据流假设;已确认 = 通过判定并经独立核验;真实设备与合成数据按证据来源区分。这些数字只反映已接入的应用,不代表覆盖完整。
+            </InlineAlert>
+          </>
+        )}
+      </AsyncBoundary>
+    </Page>
   );
 };

@@ -21,7 +21,7 @@ export const PipelineStepper: React.FC<{ phases: StepperPhase[] }> = ({ phases }
         const ring = failed ? 'border-jz-sev-critical' : complete ? 'border-jz-teal' : running ? 'border-jz-brand' : 'border-jz-border';
         return (
           <React.Fragment key={ph.key}>
-            <div className="flex flex-col items-center min-w-[92px] px-1">
+            <div className="flex flex-col items-center min-w-16 flex-none px-1">
               <div className={`w-8 h-8 rounded-pill border-2 grid place-items-center bg-jz-surface ${ring} ${col}`}>
                 {complete ? <Check className="w-4 h-4" />
                   : failed ? <X className="w-4 h-4" />
@@ -34,7 +34,7 @@ export const PipelineStepper: React.FC<{ phases: StepperPhase[] }> = ({ phases }
               <span className="text-meta font-mono text-jz-muted tnum">{ph.done}/{ph.total}</span>
             </div>
             {i < phases.length - 1 && (
-              <div className={`flex-1 min-w-[24px] h-0.5 mt-4 ${complete ? 'bg-jz-teal/60' : 'bg-jz-border'}`} />
+              <div className={`flex-1 min-w-3 h-0.5 mt-4 ${complete ? 'bg-jz-teal/60' : 'bg-jz-border'}`} />
             )}
           </React.Fragment>
         );
