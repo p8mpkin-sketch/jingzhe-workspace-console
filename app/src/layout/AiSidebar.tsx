@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { pressable } from '@/components/ui';
 import { Bot, Cpu } from 'lucide-react';
 import { useAuth } from '@/stores/auth';
 import { usePentest } from '@/stores/pentest';
@@ -236,7 +237,7 @@ export const AiSidebar: React.FC = () => {
  }));
  location.hash = '/ai-assistant';
  }}
- className="rounded-control border border-jz-brand/40 bg-jz-brand/10 p-2 text-meta leading-4 text-jz-brand cursor-pointer hover:bg-jz-brand/20">
+ {...pressable()} className="rounded-control border border-jz-brand/40 bg-jz-brand/10 p-2 text-meta leading-4 text-jz-brand cursor-pointer hover:bg-jz-brand/20">
               <div className="flex items-center gap-1">
                 <span className="flex-1">R59 {c.rule}({c.sev}) — {c.action}</span>
                 <button data-fb-up={i} onClick={(e) => { e.stopPropagation(); sendFb('suggest-' + i, 'up'); }}
@@ -253,7 +254,7 @@ export const AiSidebar: React.FC = () => {
  const api = (window as any).__dvApi;
  const t = api && api.getPanel('terminal');
  if (t) t.api.setActive();
- }} className="rounded-control bg-jz-surface-2 p-2 cursor-pointer hover:ring-1 hover:ring-jz-brand/50 transition-all">
+ }} {...pressable()} className="rounded-control bg-jz-surface-2 p-2 cursor-pointer hover:ring-1 hover:ring-jz-brand/50 transition-all">
             <div className="flex items-center justify-between text-meta font-mono text-jz-muted">
               <span className={c.kind === '阻断' ? 'text-jz-sev-critical font-semibold'
  : c.kind === '发现' ? 'text-jz-sev-medium font-semibold' : 'text-jz-brand font-semibold'}>

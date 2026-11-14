@@ -6,7 +6,7 @@ import { useAuth } from '@/stores/auth';
 // Rxxx 重构: 顶层 KPI 卡 + 一级双工作台 Tab(资产库/候选审核台);卡片拆 SkillCard/CandidateCard 子组件。
 import { DataToolbar, UniversalImportModal, exportDataFile } from '@/components/ui';
 import type { UniversalImportResult } from '@/components/ui';
-import { Badge, Button, ConfirmDialog, Input, Panel, Drawer, EmptyState, ErrorState, SkeletonLoader, EmptyStatePlaceholder, Page, PageHeader, Skeleton, Tabs, toast, tokenColor, useThemeVersion } from '@/components/ui';
+import { Badge, Button, ConfirmDialog, Input, Panel, SegmentedControl, Drawer, EmptyState, ErrorState, SkeletonLoader, EmptyStatePlaceholder, Page, PageHeader, Skeleton, Tabs, toast, tokenColor, useThemeVersion } from '@/components/ui';
 import { moduleLabel } from '@/layout/navigation';
 import type { ColorToken } from '@/components/ui';
 import { SkillCard } from './SkillCard';
@@ -420,7 +420,7 @@ export const SkillsPage: React.FC = () => {
           </Button>
         </>} />
 
-      <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 desktop:grid-cols-5 desktop:gap-4">
+      <div className="grid grid-cols-2 gap-3 tablet:grid-cols-3 desktop:grid-cols-5 desktop:gap-4 [&>*:last-child]:col-span-2 tablet:[&>*:last-child]:col-span-1">
         <KpiCard icon={Braces} label="总技能" value={rows ? allRows.length : err ? '—' : '…'}
           sub={`${cats.length} 个来源分类`} active={kpiActive.total}
           title="/api/skills 列表加本地自定义条目,按列表实际计数"
@@ -654,64 +654,41 @@ export const SkillsPage: React.FC = () => {
       )}
 
       {/* ② 候选审核台(工作台 Tab2,admin): 结构化宽幅卡 2 列(治文字墙);审核端点/探针零回退 */}
+      {isAdmin && effectiveWb === 'review' && !cands && <SkeletonLoader variant="card" rows={2} />}
       {isAdmin && effectiveWb === 'review' && cands && (
-        <div className="rounded-panel bg-jz-surface shadow-card p-4 space-y-3" data-kb-candidates-group>
-          <div className="flex items-center gap-2 flex-wrap">
-            <GraduationCap className="w-3.5 h-3.5 text-jz-brand" />
-            <span className="text-body font-semibold text-jz-ink">待审核候选(自学习)</span>
-            <Badge level={pendingCands.length ? 'medium' : 'safe'}>待审 {pendingCands.length}</Badge>
-            <Badge level="safe">已通过 {decidedCounts.approved}</Badge>
-            <Badge level="info">已拒绝 {decidedCounts.rejected}</Badge>
-            <span className="text-meta text-jz-muted">post_mortem 复盘产出 · 零自动转正 · 通过写入知识库 / 拒绝留档</span>
-            <span className="flex-1" />
- {(() => {
- const pre = pendingCands.filter((c) => (c.note || '').startsWith('[预审]'));
- const adoptN = pre.filter((c) => (c.note || '').includes('[预审] adopt')).length;
-              return <>
-                <span className="text-meta font-mono text-jz-muted" data-kb-pre-count>
-                  预审 {pre.length}(建议通过 {adoptN}/拒绝 {pre.length - adoptN})
-                </span>
-                <button
- onClick={async () => {
-                    try {
-                      setPrerevBusy(true);
-                      const d = await api<any>('/api/kb/candidates/pre-review', { method: 'POST', body: JSON.stringify({ limit: 20 }) });
-                      toast.ok(`LLM 预审 ${d.reviewed} 条: 建议 ${d.adopt} 通过 / ${d.reject} 拒绝`);
-                      const l = await api<{ items: KBCandidate[] }>('/api/kb/candidates');
- setCands(l.items || []);
- } catch { toast.err('预审失败(LLM 未配置或网络)'); }
- finally { setPrerevBusy(false); }
- }}
- disabled={prerevBusy}
- data-kb-prereview-btn
- title="LLM 批量预审 pending 候选(建议写 note,不替 admin 决定)"
- className="px-1.5 py-0.5 rounded-control bg-jz-brand/10 text-jz-brand text-meta hover:bg-jz-brand/20 disabled:opacity-40">
-                  {prerevBusy ? '预审中…' : ' LLM 预审'}
-                </button>
-              </>;
-            })()}
+ (() => {
+          const pre = pendingCands.filter((c) => (c.note || '').startsWith('[预审]'));
+          const adoptN = pre.filter((c) => (c.note || '').includes('[预审] adopt')).length;
+          const kinds: [typeof preFilter, string][] = [['all', '全部'], ['adopt', '建议通过'], ['reject', '建议拒绝'], ['needs', '需补充信息'], ['none', '未预审']];
+          const cnt = (k: typeof preFilter) => pendingCands.filter((c) => {
+            const n = c.note || '';
+            if (k === 'all') return true;
+            if (k === 'none') return !n.startsWith('[预审]');
+            return n.startsWith(`[预审] ${k === 'needs' ? 'needs_info' : k}`);
+          }).length;
+          const prereview = async () => {
+            try {
+              setPrerevBusy(true);
+              const d = await api<any>('/api/kb/candidates/pre-review', { method: 'POST', body: JSON.stringify({ limit: 20 }) });
+              toast.ok(`LLM 预审 ${d.reviewed} 条:建议通过 ${d.adopt},建议拒绝 ${d.reject}`);
+              const l = await api<{ items: KBCandidate[] }>('/api/kb/candidates');
+              setCands(l.items || []);
+            } catch { toast.err('预审失败(LLM 未配置或网络不可用)'); }
+            finally { setPrerevBusy(false); }
+          };
+          return (
+        <Panel title="待审核候选" data-kb-candidates-group
+          description="任务复盘时产出的候选,不会自动入库。通过后写入知识库;拒绝的保留记录。"
+          actions={<>
+            <span className="font-mono text-meta tnum text-jz-muted" data-kb-pre-count>预审 {pre.length}(建议通过 {adoptN} / 拒绝 {pre.length - adoptN})</span>
+            <Button size="sm" variant="secondary" onClick={prereview} loading={prerevBusy} disabled={prerevBusy} data-kb-prereview-btn
+              title="用 LLM 批量预审待审候选;只写建议,决定仍由管理员做">{prerevBusy ? '预审中…' : 'LLM 预审'}</Button>
+          </>}>
+          <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2" data-kb-pre-filter>
+            <SegmentedControl<typeof preFilter> label="按预审建议筛选" value={preFilter} onChange={setPreFilter}
+              items={kinds.map(([k, label]) => ({ key: k, label, count: cnt(k), dataAttrs: { 'data-kb-pre-filter-btn': k } }))} />
           </div>
- {(() => {
- const kinds: [typeof preFilter, string][] = [['all', '全部'], ['adopt', '建议通过'], ['reject', '建议拒绝'], ['needs', '待信息'], ['none', '未预审']];
- const cnt = (k: typeof preFilter) => pendingCands.filter((c) => {
-              const n = c.note || '';
-              if (k === 'all') return true;
-              if (k === 'none') return !n.startsWith('[预审]');
-              return n.startsWith(`[预审] ${k === 'needs' ? 'needs_info' : k}`);
-            }).length;
-            return (
-              <div className="flex items-center gap-1 flex-wrap" data-kb-pre-filter>
- {kinds.map(([k, label]) => (
-                  <button key={k} onClick={() => setPreFilter(k)} data-kb-pre-filter-btn={k}
- className={`px-1.5 py-0.5 rounded-control text-meta transition-colors ${preFilter === k
- ? 'bg-jz-brand/10 text-jz-brand font-semibold'
- : 'bg-jz-surface-2/50 text-jz-muted hover:bg-jz-surface-2'}`}>
-                    {label} <span className="tnum">{cnt(k)}</span>
-                  </button>
-                ))}
-              </div>
- );
- })()}
  {selCands.size > 0 && (
             <div role="region" aria-label="批量审核" className="flex flex-wrap items-center gap-2 rounded-control border border-jz-border bg-jz-brand-soft px-3 py-2 text-label" data-kb-bulk-bar>
               <span className="text-jz-ink">已选 <span className="font-semibold tnum">{selCands.size}</span> 条</span>
@@ -721,10 +698,10 @@ export const SkillsPage: React.FC = () => {
             </div>
           )}
           {pendingCands.length === 0 && (
-            <div className="text-meta text-jz-muted" data-kb-candidates-empty>暂无待审核候选(pentest 会话跑 post_mortem 复盘后在此人工审核)</div>
+            <div data-kb-candidates-empty><EmptyState compact icon={GraduationCap} title="没有待审核的候选" cause="评估会话完成复盘后,产出的候选会出现在这里等待审核。" /></div>
           )}
           {/* 结构化宽幅卡 2 列(治文字墙): 解析/渲染见 CandidateCard(卡高均匀 360px) */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6" data-kb-cand-grid>
+          <div className="grid grid-cols-1 gap-4 desktop:grid-cols-2" data-kb-cand-grid>
  {filteredCands.map((c) => (
               <CandidateCard key={c.id} cand={c}
  checked={selCands.has(c.id)}
@@ -739,12 +716,16 @@ export const SkillsPage: React.FC = () => {
  />
  ))}
  {pendingCands.length > 0 && filteredCands.length === 0 && (
-              <div className="col-span-full text-meta text-jz-muted py-6 text-center" data-kb-pre-filter-empty>
-                当前预审过滤下无候选(切回「全部」查看 {pendingCands.length} 条)
+              <div className="col-span-full" data-kb-pre-filter-empty>
+                <EmptyState compact title="这个筛选下没有候选" cause={`切回“全部”可查看 ${pendingCands.length} 条待审候选。`}
+                  action={<Button size="sm" variant="secondary" onClick={() => setPreFilter('all')}>查看全部</Button>} />
               </div>
             )}
           </div>
-        </div>
+          </div>
+        </Panel>
+          );
+        })()
       )}
 
       {/* 全平台升级 Step4①: 技能包导入(前端解析 json/csv;本地层合并,行需含 name 字段) */}

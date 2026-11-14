@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Bug, DoorOpen, KeyRound, Link2, ShieldOff, X } from 'lucide-react';
+import { Bug, DoorOpen, KeyRound, Link2, PanelLeft, ShieldOff, X } from 'lucide-react';
 import { api } from '@/services/api';
 import { Badge, ModelSelectorChip, ExportMenu, SearchableTaskCombobox, UniversalImportModal } from '@/components/ui';
 import type { ModelOption, ComboTaskItem, UniversalImportResult } from '@/components/ui';
@@ -58,6 +58,7 @@ export const AiAssistantPage: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [tokens, setTokens] = useState(0);
   const [devMode, setDevMode] = useState(false);          // C-UI-3: 开发者模式(默认关)
+  const [sessOpen, setSessOpen] = useState(false);   // below 1024 px the session list is a drawer
   const [inspOpen, setInspOpen] = useState(false);        // P2-②: 检视器面板(顶栏胶囊/开关唤起)
   const [live, setLive] = useState<{ phase: StreamPhase; hitCount?: number; historyMsgs?: number; promptChars?: number; routeModel?: string }>({ phase: 'idle' });
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -463,19 +464,26 @@ export const AiAssistantPage: React.FC = () => {
   );
 
   return (
-    <div className="flex h-full">
-      {/* 左列: 会话工作台(P2-④: 搜索/任务树折叠/批量管理) */}
-      <SessionSidebar
+    <div className="flex h-full min-h-0">
+      {/* Session list: a column from 1024 px, a drawer below. */}
+      {sessOpen && <div className="fixed inset-0 top-jz-topbar z-40 bg-jz-scrim/30 lg:hidden" onClick={() => setSessOpen(false)} data-ai-session-overlay />}
+      <div className={`${sessOpen ? 'fixed bottom-0 left-0 top-jz-topbar z-50 flex shadow-dialog tablet:left-jz-sidebar-collapsed' : 'hidden'} lg:static lg:flex lg:shadow-none`} data-ai-session-pane>
+        <SessionSidebar
  sessions={sessions} current={current} taskMap={taskMap} grp={grp} setGrp={setGrp} searchRef={searchRef}
- onSelect={setCurrent} onNew={newChat} onTogglePin={togglePin} onRename={renameChat} onDelete={delChat}
+ onSelect={(id) => { setCurrent(id); setSessOpen(false); }} onNew={newChat} onTogglePin={togglePin} onRename={renameChat} onDelete={delChat}
  onBatchDelete={batchDelete}
  />
+      </div>
 
       {/* 中列: 对话 */}
       <div className="flex-1 min-w-0 flex flex-col relative">
         {/* 顶栏: 遥测胶囊 + 关联任务 + 开发者模式 */}
-        <div className="flex items-center gap-2 px-4 py-1.5">
-          <span className="text-meta text-jz-muted">{auditTids.length ? `任务追问模式 #${auditTids.join('+')}` : 'APK 安全审计助手'}</span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-jz-border px-4 py-1.5 [&>*]:whitespace-nowrap">
+          <button type="button" onClick={() => setSessOpen(true)} data-ai-session-toggle aria-label="打开会话列表" title="会话列表"
+            className="grid h-8 w-8 place-items-center rounded-control text-jz-muted hover:bg-jz-surface-2 hover:text-jz-ink lg:hidden max-[760px]:h-jz-touch max-[760px]:w-jz-touch">
+            <PanelLeft size={16} aria-hidden />
+          </button>
+          <span className="min-w-0 truncate text-meta text-jz-muted">{auditTids.length ? `任务追问模式 #${auditTids.join('+')}` : 'APK 安全审计助手'}</span>
           <span className="flex-1" />
           {/* P2-②: 会话遥测胶囊(usage-summary 真值;点击唤起检视器) */}
           <button onClick={() => setInspOpen((v) => !v)} data-usage-pill
@@ -661,13 +669,15 @@ export const AiAssistantPage: React.FC = () => {
       </div>
 
       {/* 右列: 溯源对照双栏(P3-①: citation ⤢ → kb-chunk 全文,Markdown 渲染) */}
+      {chunkPreview && <div className="fixed inset-0 top-jz-topbar z-40 bg-jz-scrim/30 lg:hidden" onClick={() => setChunkPreview(null)} data-chunk-overlay />}
       {chunkPreview && (
-        <div className="w-[380px] flex-none border-l border-jz-border bg-jz-surface-2/40 flex flex-col hidden lg:flex" data-chunk-pane>
+        <div role="complementary" aria-label="引用原文"
+          className="fixed bottom-0 right-0 top-jz-topbar z-50 flex w-full max-w-[380px] flex-col border-l border-jz-border bg-jz-surface shadow-dialog lg:static lg:z-auto lg:w-[380px] lg:flex-none lg:bg-jz-surface-2 lg:shadow-none" data-chunk-pane>
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 border-b border-jz-border/60">
             <span className="text-meta font-semibold text-jz-ink truncate flex-1" title={chunkPreview.title}>{chunkPreview.title}</span>
             <span className="text-meta font-mono text-jz-muted whitespace-nowrap">task{chunkPreview.task_id}</span>
-            <button onClick={() => setChunkPreview(null)} data-chunk-close title="关闭对照"
- className="text-meta text-jz-muted hover:text-jz-ink px-1">✕</button>
+            <button type="button" onClick={() => setChunkPreview(null)} data-chunk-close title="关闭对照" aria-label="关闭引用原文"
+ className="grid h-8 w-8 place-items-center rounded-control text-jz-muted hover:bg-jz-surface-2 hover:text-jz-ink"><X size={14} aria-hidden /></button>
           </div>
           <div className="flex-1 overflow-auto px-2.5 py-2">
             <div className="text-meta font-mono text-jz-muted mb-1.5 truncate">{chunkPreview.ref}</div>

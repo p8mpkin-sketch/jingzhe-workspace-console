@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { pressable } from '@/components/ui';
 import { Bot, Check, CheckSquare, ChevronDown, ChevronRight, MessageSquarePlus, Search, Trash2 } from 'lucide-react';
 import type { AgentSession } from '../types';
 import { sessionMeta } from '../model/sessionMeta';
@@ -141,20 +142,23 @@ export const AgentSidebar: React.FC<{
         </button>
       </div>
 
-      <div className="flex items-center gap-1 mb-2 px-1 text-meta text-jz-muted" data-agent-group-switch>
-        <span>分组</span>
-        <button onClick={() => setGroupBy('time')} data-agent-group-time
-          className={`px-1.5 py-0.5 rounded-control ${groupBy === 'time' ? 'bg-jz-surface text-jz-ink-2' : 'hover:text-jz-ink-2'}`}>按时间</button>
-        <span className="opacity-30">/</span>
-        <button onClick={() => setGroupBy('task')} data-agent-group-task
-          className={`px-1.5 py-0.5 rounded-control ${groupBy === 'task' ? 'bg-jz-surface text-jz-ink-2' : 'hover:text-jz-ink-2'}`}>按任务</button>
-        <button onClick={() => setSortBy('risk')} data-agent-sort-risk
-          className={`px-1.5 py-0.5 rounded-control ${sortBy === 'risk' ? 'bg-jz-sev-critical/10 text-jz-sev-critical' : 'hover:text-jz-ink-2'}`}>风险</button>
-        <span className="flex-1" />
-        <button onClick={() => setOnlyRisk((v) => !v)} data-agent-only-risk
-          className={`px-1.5 py-0.5 rounded-control ${onlyRisk ? 'bg-jz-sev-critical/10 text-jz-sev-critical' : 'hover:text-jz-ink-2'}`}>高危</button>
-        <button onClick={() => setOnlyOpen((v) => !v)} data-agent-only-open
-          className={`px-1.5 py-0.5 rounded-control ${onlyOpen ? 'bg-jz-brand/10 text-jz-brand' : 'hover:text-jz-ink-2'}`}>未完成</button>
+      <div className="mb-2 space-y-1 px-1 text-meta text-jz-muted" data-agent-group-switch>
+        <div className="flex items-center gap-1">
+          <span className="w-8 flex-none">分组</span>
+          <button type="button" onClick={() => setGroupBy('time')} data-agent-group-time aria-pressed={groupBy === 'time'}
+            className={`whitespace-nowrap rounded-control px-2 py-0.5 ${groupBy === 'time' ? 'bg-jz-surface text-jz-ink' : 'hover:text-jz-ink-2'}`}>按时间</button>
+          <button type="button" onClick={() => setGroupBy('task')} data-agent-group-task aria-pressed={groupBy === 'task'}
+            className={`whitespace-nowrap rounded-control px-2 py-0.5 ${groupBy === 'task' ? 'bg-jz-surface text-jz-ink' : 'hover:text-jz-ink-2'}`}>按任务</button>
+          <button type="button" onClick={() => setSortBy('risk')} data-agent-sort-risk aria-pressed={sortBy === 'risk'} title="按风险排序"
+            className={`whitespace-nowrap rounded-control px-2 py-0.5 ${sortBy === 'risk' ? 'bg-jz-surface text-jz-ink' : 'hover:text-jz-ink-2'}`}>按风险</button>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="w-8 flex-none">筛选</span>
+          <button type="button" onClick={() => setOnlyRisk((v) => !v)} data-agent-only-risk aria-pressed={onlyRisk}
+            className={`whitespace-nowrap rounded-control px-2 py-0.5 ${onlyRisk ? 'bg-jz-surface text-jz-red' : 'hover:text-jz-ink-2'}`}>只看高危</button>
+          <button type="button" onClick={() => setOnlyOpen((v) => !v)} data-agent-only-open aria-pressed={onlyOpen}
+            className={`whitespace-nowrap rounded-control px-2 py-0.5 ${onlyOpen ? 'bg-jz-surface text-jz-brand' : 'hover:text-jz-ink-2'}`}>只看未完成</button>
+        </div>
       </div>
 
       <div className="space-y-3" data-agent-task-tree={groupBy === 'task' ? '1' : '0'}>
@@ -199,7 +203,7 @@ export const AgentSidebar: React.FC<{
                     const active = current === s.id;
                     return (
                       <div key={s.id} data-agent-session-item={s.id} data-agent-selected={selected.has(s.id) ? '1' : '0'}
-                        onClick={() => { if (manage) setSelected((prev) => { const n = new Set(prev); if (n.has(s.id)) n.delete(s.id); else n.add(s.id); return n; }); else onSelect(s.id); }}
+                        onClick={() => { if (manage) setSelected((prev) => { const n = new Set(prev); if (n.has(s.id)) n.delete(s.id); else n.add(s.id); return n; }); else onSelect(s.id); }} {...pressable()} aria-current={active ? 'true' : undefined} aria-pressed={manage ? selected.has(s.id) : undefined}
                         data-agent-session-index={si + 1}
                         className={`group relative flex items-start gap-2 pl-3 pr-2.5 py-2.5 mb-1.5 rounded-card cursor-pointer transition-all border
                           ${selected.has(s.id) ? 'bg-jz-brand/10 border-jz-brand/45' : active ? 'bg-jz-surface border-jz-brand/55 shadow-card' : 'bg-jz-surface/45 border-jz-border/25 hover:bg-jz-surface/80 hover:border-jz-border/55'}`}>

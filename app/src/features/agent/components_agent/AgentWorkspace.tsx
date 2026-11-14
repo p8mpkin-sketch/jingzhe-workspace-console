@@ -24,7 +24,7 @@ export const AgentWorkspace: React.FC<{
       <>
         <div className="fixed inset-0 top-jz-topbar bg-jz-scrim/25 z-40"
           onClick={onCloseInspector} data-agent-inspector-overlay />
-        <aside className="fixed right-0 top-jz-topbar bottom-0 w-[360px] z-50 shadow-dialog border-l border-jz-border/50">
+        <aside className="fixed right-0 top-jz-topbar bottom-0 w-[360px] max-w-full z-50 shadow-dialog border-l border-jz-border" role="complementary" aria-label="运行详情">
           {inspector}
         </aside>
       </>

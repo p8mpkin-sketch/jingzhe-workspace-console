@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { pressable } from '@/components/ui';
 import { AppWindow, MoreHorizontal, Network, ShieldAlert, ShieldCheck, Syringe } from 'lucide-react';
 import { usePentest } from '@/stores/pentest';
 
@@ -143,7 +144,7 @@ export const EnvBar: React.FC<{ hide?: string[] }> = ({ hide = [] }) => {
     };
     return (
       <span key={id} {...(opts.measAttr ? { [opts.measAttr]: id } : { 'data-env-pill': id })}
- title={opts.title} onClick={opts.onClick}
+ title={opts.title} onClick={opts.onClick} {...pressable(!!opts.onClick)}
  className={`flex-none h-[26px] px-2 rounded-pill border text-meta flex items-center gap-1 whitespace-nowrap ${toneCls[opts.tone]} ${opts.onClick ? 'cursor-pointer hover:border-jz-border-strong transition-colors' : ''} ${opts.maxW || ''}`}>
         {opts.icon}
         <span className={id === 'app' || id === 'device' ? 'font-mono truncate' : 'truncate'}>{opts.text}</span>

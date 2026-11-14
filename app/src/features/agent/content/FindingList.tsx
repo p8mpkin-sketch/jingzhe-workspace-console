@@ -1,4 +1,5 @@
 import React from 'react';
+import { pressable } from '@/components/ui';
 import { AlertTriangle, CircleCheck } from 'lucide-react';
 import type { EvidenceView, FindingView } from './types';
 
@@ -73,7 +74,7 @@ export const FindingList: React.FC<{ items: FindingView[]; sessionId?: string; e
       </div>
       <div className="space-y-1.5">
         {items.map((it, i) => (
-          <div key={`${it.index}-${i}`} onClick={() => focusTool(it)} className={`group cursor-pointer rounded-card border border-jz-border/40 border-l-2 ${barClass(it.severity)} bg-jz-surface/45 px-3 py-2 hover:border-jz-brand/40`} data-finding-row={it.index} data-finding-file={it.fileLine}>
+          <div key={`${it.index}-${i}`} onClick={() => focusTool(it)} {...pressable()} className={`group cursor-pointer rounded-card border border-jz-border/40 border-l-2 ${barClass(it.severity)} bg-jz-surface/45 px-3 py-2 hover:border-jz-brand/40`} data-finding-row={it.index} data-finding-file={it.fileLine}>
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`flex-none px-1.5 py-0.5 rounded-control border text-meta font-semibold uppercase ${sevClass(it.severity)}`}>{it.severity || 'info'}</span>
               <code className="text-meta text-jz-brand break-all">{it.fileLine}</code>

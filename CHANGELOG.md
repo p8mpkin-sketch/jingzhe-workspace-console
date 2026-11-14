@@ -3,6 +3,29 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 9 — Responsive and accessibility
+
+### Changed
+- `/ai-assistant`: below 1024 px the session list is a drawer opened from a new button in the conversation bar (`data-ai-session-toggle`); choosing a session closes it. The citation source pane and the inspector were hidden below 1024 px, so opening them did nothing; they are now drawers there and stay columns from 1024 px. The conversation bar wraps instead of breaking words.
+- `/agent`: the run-details drawer is capped at the viewport width; the composer's model select no longer pushes the send button out of the card on phones (the shortcut hint is hidden below 761 px). The session sidebar filters are two labeled rows (group and sort, then filters) with pressed states instead of one wrapping row.
+- `/skills`: the candidate review header is a `Panel` with the pre-review count and action, and a counted `SegmentedControl` for the pre-review filter. Loading, empty and filtered-empty states added; candidate checkboxes have labels. The fifth metric spans the row on phones.
+- Keyboard: a shared `pressable()` helper (`components/ui/pressable.ts`) gives clickable rows and cards one Tab stop and Enter / Space activation. Applied to agent and assistant session items, assistant group headers (with `aria-expanded`), evidence and finding rows, API tree rows, Burp flow rows, environment chips and the AI sidebar cards. Session hover actions also show on keyboard focus.
+- Session workbench and attack graph (`features/pentest`, `features/attack-canvas`): node, severity, step and method colors read the `jz` tokens instead of hex and `rgb()` literals; the old `accent-*` classes are gone; the glow box shadow, drop-shadow edge filter, gradient approval orb, blurred minimap and the pulsing running dots are removed. Exported PNGs use the canvas token as background.
+- Motion: skeleton pulse is `motion-safe` only; indeterminate progress bars stay (system feedback) and the global reduced-motion rule still applies.
+
+### Verified
+- `tsc --noEmit` and `npm run build` pass. Main chunk 928.1 kB, CSS 154.0 kB.
+- 14 routes at 1680 / 1440 / 1024 / 760 / 390 in both themes: no overflow, no page errors; request log identical to baseline; shell checks pass.
+- `/agent`, `/ai-assistant`, `/skills` and the session workbench in the empty, error, forbidden and slow variants at 1440 and 390.
+- Drawer script at 390, 760, 1024 (dark) and 1440: assistant session drawer opens and closes, inspector opens at every width, agent run details fit. Phase 8 interactions re-run. No write requests.
+- Keyboard pass: tabbing through all 14 routes reaches 545 distinct controls, each with a visible focus ring. A scan for pointer-only clickable elements on the rendered routes finds none.
+- Token lint 19 (from 120). The remainder: task numbers in prompt text read as hex (6), chart font sizes passed to ECharts (6), `@font-face` and `box-shadow: none` declarations (7). Contrast check: no failing pair.
+
+### Remaining gaps
+- The agent and assistant composers keep their own markup; their model select stretches wide on desktop.
+- ECharts label sizes are numbers in JS; there is no token accessor for font sizes yet.
+- Fixtures are inferred; the attack graph and candidate bodies are thin in screenshots because the fixtures carry little data.
+
 ## Phase 8 — Knowledge, agent and system
 
 ### Changed

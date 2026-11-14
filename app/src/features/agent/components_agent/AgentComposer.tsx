@@ -79,12 +79,12 @@ export const AgentComposer: React.FC<{
         className="block w-full resize-none bg-transparent text-label leading-[1.6] text-jz-ink placeholder:text-jz-muted outline-none"
         style={{ minHeight: 56, maxHeight: 180 }} />
       <div className="flex items-center gap-2 mt-1 pt-1.5">
-        <select value={model} onChange={(e) => setModel(e.target.value)} data-agent-model
-          className="px-1.5 py-0.5 rounded-control bg-jz-surface-2/60 text-meta font-mono text-jz-muted outline-none">
+        <select value={model} onChange={(e) => setModel(e.target.value)} data-agent-model aria-label="模型"
+          className="w-auto min-w-0 max-w-[60%] flex-initial rounded-control bg-jz-surface-2 px-1.5 py-0.5 font-mono text-meta text-jz-muted">
           <option value="">跟随路由</option>
           {models.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
-        <span className="text-meta text-jz-muted">Enter 发送 · Shift+Enter 换行</span>
+        <span className="hidden whitespace-nowrap text-meta text-jz-muted tablet:inline">Enter 发送 · Shift+Enter 换行</span>
         <span className="flex-1" />
         {running ? (
           <button onClick={onStop} data-agent-stop title="停止当前 Agent"

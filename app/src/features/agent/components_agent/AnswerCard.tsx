@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { pressable } from '@/components/ui';
 import { Copy, ExternalLink, FileCode2, Link2, ShieldCheck, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import { ContentRenderer } from '../content/ContentRenderer';
 import type { ContentBlock, EvidenceView } from '../content/types';
@@ -178,7 +179,7 @@ export const AnswerCard: React.FC<{
                 return (
                   <div key={e.key} data-evidence-key={e.key} data-evidence-kind={e.kind} data-evidence-path={e.path || ''} data-evidence-tool={e.toolId || ''}
                     className={`min-w-0 rounded-control bg-jz-surface/55 border border-jz-border/30 px-2 py-1.5 ${!e.url ? 'cursor-pointer hover:border-jz-brand/40' : ''}`}
-                    onClick={() => { if (!e.url) focusEvidence(e); }}
+                    onClick={() => { if (!e.url) focusEvidence(e); }} {...pressable(!e.url)}
                     title={!e.url ? '定位到对应 finding / tool' : '预览链接证据'}>
                     {e.url ? (
                       <button type="button" onClick={(ev) => { ev.stopPropagation(); setPreviewUrl(e.url || ''); }}

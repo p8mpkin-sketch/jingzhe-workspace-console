@@ -112,7 +112,7 @@ export const DataToolbar: React.FC<{
  data-toolbar-filter={f.key} data-active={on ? '1' : ''}
  className={`flex items-center gap-1.5 h-8 px-3 rounded-pill text-meta font-medium transition-colors whitespace-nowrap
  ${on ? 'bg-jz-brand/10 text-jz-brand font-semibold' : 'text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/50'}`}>
-                  {f.dot && <span className="inline-block h-1.5 w-1.5 rounded-pill bg-jz-brand animate-pulse" data-toolbar-dot />}
+                  {f.dot && <span className="inline-block h-1.5 w-1.5 rounded-pill bg-jz-brand" data-toolbar-dot />}
                   {f.label}
                   {f.count != null && (
                     <span className={`px-1.5 rounded-pill font-mono tnum text-meta ${on ? 'bg-jz-brand/15 text-jz-brand' : 'bg-jz-surface-2 text-jz-muted'}`}>{f.count}</span>

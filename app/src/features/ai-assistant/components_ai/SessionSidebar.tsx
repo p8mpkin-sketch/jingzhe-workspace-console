@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { pressable } from '@/components/ui';
 import { ChevronDown, ChevronRight, Pin, Search } from 'lucide-react';
 import { Button } from '@/components/ui';
 
@@ -85,7 +86,7 @@ export const SessionSidebar: React.FC<{
   const renderItem = (s: ChatSession) => (
     <div key={s.id} className={`group flex items-center gap-1 px-2.5 py-2 mb-1.5 rounded-card bg-jz-surface shadow-card cursor-pointer transition-all
       ${current === s.id ? 'ring-1 ring-jz-brand/60' : 'hover:ring-1 hover:ring-jz-border'}`}
-      onClick={() => { if (!batch) onSelect(s.id); }} data-chat-item={s.title}>
+      onClick={() => { if (!batch) onSelect(s.id); }} {...pressable(!batch)} aria-current={current === s.id ? 'true' : undefined} data-chat-item={s.title}>
       {batch && (
         <input type="checkbox" checked={picked.has(s.id)} onChange={() => togglePick(s.id)}
           onClick={(e) => e.stopPropagation()} data-batch-check={s.id} className="flex-none accent-jz-brand" />
@@ -98,14 +99,14 @@ export const SessionSidebar: React.FC<{
       </div>
       {s.pinned ? <Pin size={10} className="flex-none text-jz-brand fill-current group-hover:hidden" /> : null}
       {!batch && (
-        <span className="hidden group-hover:flex gap-0.5 flex-none" data-chat-actions>
+        <span className="hidden group-hover:flex group-focus-within:flex gap-0.5 flex-none" data-chat-actions>
           <button onClick={(e) => { e.stopPropagation(); onTogglePin(s); }} data-pin-btn
             className={`px-0.5 ${s.pinned ? 'text-jz-brand' : 'text-jz-muted hover:text-jz-brand'}`}
-            title={s.pinned ? '取消置顶' : '置顶'}>
+            title={s.pinned ? '取消置顶' : '置顶'} aria-label={s.pinned ? '取消置顶' : '置顶'}>
             <Pin size={11} className={s.pinned ? 'fill-current' : ''} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onRename(s); }} className="text-meta text-jz-muted hover:text-jz-brand px-0.5" title="重命名">✎</button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="text-meta text-jz-muted hover:text-jz-sev-critical px-0.5" title="删除">✕</button>
+          <button onClick={(e) => { e.stopPropagation(); onRename(s); }} className="text-meta text-jz-muted hover:text-jz-brand px-0.5" title="重命名" aria-label="重命名">✎</button>
+          <button onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="text-meta text-jz-muted hover:text-jz-sev-critical px-0.5" title="删除" aria-label="删除会话">✕</button>
         </span>
       )}
     </div>
@@ -115,7 +116,7 @@ export const SessionSidebar: React.FC<{
     const isCollapsed = key ? collapsed.has(key) : false;
     return (
       <div className={`text-meta text-jz-muted px-1.5 mb-1 ${key ? 'cursor-pointer flex items-center gap-0.5 select-none hover:text-jz-ink-2' : ''}`}
-        onClick={key ? () => toggleCollapse(key) : undefined}
+        onClick={key ? () => toggleCollapse(key) : undefined} {...pressable(!!key)} aria-expanded={key ? !isCollapsed : undefined}
         data-grp-head={key}>
         {key && (isCollapsed ? <ChevronRight size={11} /> : <ChevronDown size={11} />)}
         <span className="truncate" title={label}>{label}{count != null ? `(${count})` : ''}</span>

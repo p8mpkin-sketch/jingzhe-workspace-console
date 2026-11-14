@@ -100,7 +100,7 @@ export const CandidateCard: React.FC<{
           <input type="checkbox" data-kb-cand-check={cand.id}
  checked={checked}
  onChange={(e) => onCheck(cand.id, e.target.checked)}
- className="w-3 h-3 accent-jz-brand" title="勾选加入批量终审" />
+ className="h-4 w-4 accent-jz-brand" title="勾选加入批量审核" aria-label={`选择候选 #${cand.id}`} />
         </div>
       </div>
 

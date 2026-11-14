@@ -30,7 +30,7 @@ export const Metric: React.FC<{
   <div className={cx('min-w-0 rounded-card border border-jz-border bg-jz-surface p-4', className)} {...rest}>
     <div className="text-meta text-jz-muted truncate">{label}</div>
     {loading
-      ? <div className="mt-2 h-8 w-20 rounded-control bg-jz-surface-2 animate-pulse" role="status" aria-label="加载中" />
+      ? <div className="mt-2 h-8 w-20 rounded-control bg-jz-surface-2 motion-safe:animate-pulse" role="status" aria-label="加载中" />
       : <div className={cx('mt-1.5 font-display text-metric font-semibold tnum tracking-display truncate',
           tone === 'success' ? 'text-jz-teal' : tone === 'attention' ? 'text-jz-amber' : tone === 'danger' ? 'text-jz-red' : 'text-jz-ink')}>{value}</div>}
     {hint && <div className="mt-1 text-meta text-jz-muted truncate">{hint}</div>}

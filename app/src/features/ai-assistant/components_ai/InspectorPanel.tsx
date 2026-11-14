@@ -34,7 +34,10 @@ export const InspectorPanel: React.FC<{
   }, [askOpen]);
   if (!open) return null;
   return (
-    <div className="w-[340px] flex-none border-l border-jz-border bg-jz-surface-2/40 p-2 overflow-auto hidden lg:block transition-all" data-inspector-panel>
+    <>
+    <div className="fixed inset-0 top-jz-topbar z-40 bg-jz-scrim/30 lg:hidden" onClick={onClose} data-inspector-overlay />
+    <div role="complementary" aria-label="检视器"
+      className="fixed bottom-0 right-0 top-jz-topbar z-50 w-full max-w-[340px] overflow-auto border-l border-jz-border bg-jz-surface p-2 shadow-dialog lg:static lg:z-auto lg:w-[340px] lg:flex-none lg:bg-jz-surface-2 lg:shadow-none" data-inspector-panel>
       <div className="flex items-center gap-1 mb-1.5">
         <span className="text-meta font-semibold text-jz-ink">检视器</span>
         <span className="text-meta text-jz-muted">会话遥测{devMode ? ' + 调试' : ''}</span>
@@ -130,6 +133,7 @@ export const InspectorPanel: React.FC<{
         </div>
       )}
     </div>
+    </>
   );
 };
 

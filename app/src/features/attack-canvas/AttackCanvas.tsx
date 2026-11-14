@@ -32,17 +32,17 @@ import { EmptyStatePlaceholder, SkeletonLoader, UnifiedModal } from '@/component
 
 // ───────────────────────── 数据面(冻结) ─────────────────────────
 const TYPE_STYLE: Record<string, { col: string; kind: string; dash?: boolean; mono?: boolean }> = {
-  app: { col: '#3b82f6', kind: '目标' },
-  component: { col: '#06b6d4', kind: '组件' },
-  deeplink: { col: '#22d3ee', kind: '深链', dash: true },
-  api_group: { col: '#8b5cf6', kind: '接口组', mono: true },
-  key: { col: '#f59e0b', kind: '密钥', mono: true },
-  approval: { col: '#fb923c', kind: '审批' },
-  finding: { col: '#475569', kind: '发现' },
-  more: { col: '#64748b', kind: '更多', dash: true },
+  app: { col: 'rgb(var(--jz-brand))', kind: '目标' },
+  component: { col: 'rgb(var(--jz-teal))', kind: '组件' },
+  deeplink: { col: 'rgb(var(--jz-teal))', kind: '深链', dash: true },
+  api_group: { col: 'rgb(var(--jz-brand))', kind: '接口组', mono: true },
+  key: { col: 'rgb(var(--jz-amber))', kind: '密钥', mono: true },
+  approval: { col: 'rgb(var(--jz-orange))', kind: '审批' },
+  finding: { col: 'rgb(var(--jz-ink-2))', kind: '发现' },
+  more: { col: 'rgb(var(--jz-muted))', kind: '更多', dash: true },
 };
 const TYPE_ICON: Record<string, string> = { app: '📱', component: '🧩', deeplink: '🔗', api_group: '🔌', key: '🔑', approval: '🛡', finding: '🎯', more: '…' };
-const SEV: Record<string, string> = { critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e', info: '#3b82f6' };
+const SEV: Record<string, string> = { critical: 'rgb(var(--jz-sev-critical))', high: 'rgb(var(--jz-sev-high))', medium: 'rgb(var(--jz-sev-medium))', low: 'rgb(var(--jz-sev-low))', info: 'rgb(var(--jz-sev-info))' };
 const SEV_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 const LAYERS = [
   { key: 'target', title: '目标', types: ['app'] },
@@ -82,13 +82,13 @@ const PACKER_LABEL: Record<string, string> = { none: '无壳', '360_jiagu': '360
 
 // ── ② 节点卡(RF 自定义节点;全部只读消费 GNode 真值) ──
 interface CardData { g: GNode; dim?: boolean; sel?: boolean; }
-const NCard: React.FC<{ children: React.ReactNode; d: CardData; accent: string; glow?: boolean; dash?: boolean; style?: React.CSSProperties }> =
-({ children, d, accent, glow, dash, style }) => (
+const NCard: React.FC<{ children: React.ReactNode; d: CardData; accent: string; emphasis?: boolean; dash?: boolean; style?: React.CSSProperties }> =
+({ children, d, accent, emphasis, dash, style }) => (
   <div data-node-id={d.g.id}
     style={{
       width: 'var(--ac-nw, 220px)', border: `1.3px ${dash ? 'dashed' : 'solid'} ${accent}`,
-      borderLeftWidth: 4, borderRadius: 10, opacity: d.dim ? 0.16 : 1,
-      boxShadow: glow ? `0 0 10px ${accent}55, inset 0 0 6px ${accent}22` : d.sel ? '0 0 0 2px rgb(var(--jz-brand))' : undefined,
+      borderLeftWidth: 4, borderRadius: 'var(--jz-radius-card)', opacity: d.dim ? 0.16 : 1,
+      boxShadow: d.sel ? '0 0 0 2px rgb(var(--jz-brand))' : undefined, borderWidth: emphasis ? 2 : undefined,
       transition: 'opacity .2s, box-shadow .2s',
       ...style,
     }}
@@ -152,8 +152,8 @@ const CompCard = ({ data }: NodeProps) => {
       <CardTitle t={d.g.label} />
       <CardRow>
         <span className="px-1 rounded-control text-meta" title="exported=true(真值: 画布仅绘 manifest.exported_components 导出组件)"
-          style={{ border: '1px solid #f59e0b', color: '#f59e0b' }}>exported</span>
-        {unprot && <span className="text-meta" style={{ color: '#f87171' }} title="permission_protected=false(真值)">● 无权限保护</span>}
+          style={{ border: '1px solid rgb(var(--jz-amber))', color: 'rgb(var(--jz-amber-ink))' }}>exported</span>
+        {unprot && <span className="text-meta" style={{ color: 'rgb(var(--jz-red))' }} title="permission_protected=false(真值)">● 无权限保护</span>}
       </CardRow>
     </NCard>
   );
@@ -196,7 +196,7 @@ const KeyCard = ({ data }: NodeProps) => {
   return (
     <NCard d={d} accent={st.col}>
       <CardHead label={<>🔑 密钥</>} color={st.col}
-        right={m.verified != null ? <span className="ml-auto text-meta" style={{ color: m.verified ? '#34d399' : '#94a3b8' }}
+        right={m.verified != null ? <span className="ml-auto text-meta" style={{ color: m.verified ? 'rgb(var(--jz-teal-ink))' : 'rgb(var(--jz-muted))' }}
           title={`verified_exploitable(真值): ${m.verified}`}>{m.verified ? '✓ 已验证可利用' : '未验证'}</span> : null} />
       <CardTitle t={d.g.label} mono />
     </NCard>
@@ -209,7 +209,7 @@ const ApprCard = ({ data }: NodeProps) => {
   return (
     <NCard d={d} accent={st.col}>
       <CardHead label={<>🛡 审批</>} color={st.col}
-        right={<span className="ml-auto font-mono text-meta" style={{ color: m.state === 'pending' ? st.col : '#94a3b8' }}>{m.state || ''}</span>} />
+        right={<span className="ml-auto font-mono text-meta" style={{ color: m.state === 'pending' ? st.col : 'rgb(var(--jz-muted))' }}>{m.state || ''}</span>} />
       <CardTitle t={d.g.label} />
     </NCard>
   );
@@ -221,11 +221,11 @@ const FindCard = ({ data }: NodeProps) => {
   const accent = SEV[sev] || TYPE_STYLE.finding.col;
   const state = d.g.state;
   const corner = state === 'confirmed' ? '✓' : state === 'excluded' ? '✕' : state ? '…' : '';
-  const cornerCol = state === 'confirmed' ? '#22c55e' : state === 'excluded' ? '#64748b' : '#eab308';
+  const cornerCol = state === 'confirmed' ? 'rgb(var(--jz-teal))' : state === 'excluded' ? 'rgb(var(--jz-muted))' : 'rgb(var(--jz-amber))';
   const isAgg = d.g.id.startsWith('agg:');
   return (
     <NCard d={d} accent={accent}
-      glow={sev === 'critical' || sev === 'high'}   // 红光气泡: critical/high 真值,无 CVSS 不编评分
+      emphasis={sev === 'critical' || sev === 'high'}   // 红光气泡: critical/high 真值,无 CVSS 不编评分
       style={{ opacity: d.dim ? 0.16 : state === 'excluded' ? 0.5 : 1 }}>
       <CardHead label={<>🎯 {isAgg ? '规则族' : '发现'}</>} color={accent}
         right={<span className="ml-auto font-mono text-meta px-1 rounded-control" title="severity(真值,后端无 CVSS 字段)"
@@ -462,18 +462,18 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
         if (gf?.tried) { flow = 'tried'; tip = `已探测 ${gf.tried} 处(可用 ${gf.ok}/兜底 ${gf.fb})`; }
       }
       const flowStyle = flow === 'confirmed'
-        ? { stroke: cssVar('--jz-teal') || '#10b981', strokeWidth: 2.4, opacity: 0.95 }
-        : flow === 'excluded' ? { stroke: cssVar('--jz-muted') || '#94a3b8', strokeWidth: 1, opacity: 0.3, strokeDasharray: '5 4' }
-        : flow === 'pending' ? { stroke: cssVar('--jz-muted') || '#94a3b8', strokeWidth: 1, opacity: 0.5, strokeDasharray: '2 3' }
-        : flow === 'tried' ? { stroke: cssVar('--jz-brand') || '#22d3ee', strokeWidth: 1.3, opacity: 0.6, strokeDasharray: '6 4' }
+        ? { stroke: cssVar('--jz-teal'), strokeWidth: 2.4, opacity: 0.95 }
+        : flow === 'excluded' ? { stroke: cssVar('--jz-muted'), strokeWidth: 1, opacity: 0.3, strokeDasharray: '5 4' }
+        : flow === 'pending' ? { stroke: cssVar('--jz-muted'), strokeWidth: 1, opacity: 0.5, strokeDasharray: '2 3' }
+        : flow === 'tried' ? { stroke: cssVar('--jz-brand'), strokeWidth: 1.3, opacity: 0.6, strokeDasharray: '6 4' }
         : undefined;
       rfEdges.push({
         id: `e${i}:${e.from}->${e.to}`, source: e.from, target: e.to, type: 'default',
         // R117-3②: 初始连线色同走 token(挂载后 restyle 效应即时按主题归一)
         style: flowStyle ? { stroke: (flowStyle as any).stroke, strokeWidth: (flowStyle as any).strokeWidth, opacity: (flowStyle as any).opacity, ...(flowStyle as any).strokeDasharray ? { strokeDasharray: (flowStyle as any).strokeDasharray } : {} }
-          : { stroke: chain ? (cssVar('--jz-brand') || '#22d3ee') : (cssVar('--jz-muted') || '#94a3b8'), strokeWidth: chain ? 1.6 : 1, opacity: chain ? 0.85 : 0.45 },
+          : { stroke: chain ? (cssVar('--jz-brand')) : (cssVar('--jz-muted')), strokeWidth: chain ? 1.6 : 1, opacity: chain ? 0.85 : 0.45 },
         ...(chain ? { data: { baseOp: 0.85, chain: true } } : { data: { baseOp: (flowStyle as any)?.opacity ?? 0.45, chain: false, flow, tip } }),
-        className: chain ? 'ac-edge-glow' : flow ? `ac-flow-${flow}` : undefined,
+        className: chain ? 'ac-edge-chain' : flow ? `ac-flow-${flow}` : undefined,
         ...(tip ? { title: tip } : {}),
       });
     });
@@ -539,23 +539,23 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
       // 在亮色模式下对比度退化(浅白网格底连线消失),改 cssVar 双模解析(亮=石墨/科技蓝暗亮自适应);
       // deps 增 theme: 主题翻转即重算全部连线色。方案所述「dash-flow 假流动动画」经全文件 grep
       // 不存在(图例既有「静态辉光不假造流动」口径),零动画可剔除,如实披露。
-      const edgeBase = cssVar('--jz-muted') || '#94a3b8';
-      const edgeChain = cssVar('--jz-brand') || '#22d3ee';
+      const edgeBase = cssVar('--jz-muted');
+      const edgeChain = cssVar('--jz-brand');
       let changed = false;
       const next = eds.map((e) => {
         const base = (e.data as any) || {};
         const onChain = Boolean(chainOn && chainPairs.has(e.source + '→' + e.target));
         const inNb = !nbhd || (nbhd.has(e.source) && nbhd.has(e.target));
         const op = chainOn ? (onChain ? 1 : 0.08) : (!inNb ? 0.06 : (base.baseOp ?? 0.45));
-        const stroke = chainOn && onChain ? (SEV[chainOn?.severity || 'high'] || '#f97316')
+        const stroke = chainOn && onChain ? (SEV[chainOn?.severity || 'high'])
           : base.chain ? edgeChain : edgeBase;
-        const cls = (base.chain || onChain) ? 'ac-edge-glow' : undefined;
+        const cls = (base.chain || onChain) ? 'ac-edge-chain' : undefined;
         const sw = chainOn && onChain ? 2.6 : base.chain ? 1.6 : 1;
         // R314: flow 虚线语义在 restyle 中保持(dash 阵列/确认色不被归一刷平)
         const flow = base.flow as string | undefined;
         const dash = flow === 'excluded' ? '5 4' : flow === 'pending' ? '2 3' : flow === 'tried' ? '6 4' : undefined;
-        const strokeF = flow === 'confirmed' ? (cssVar('--jz-teal') || '#10b981')
-          : flow === 'tried' ? (cssVar('--jz-brand') || '#22d3ee') : stroke;
+        const strokeF = flow === 'confirmed' ? (cssVar('--jz-teal'))
+          : flow === 'tried' ? (cssVar('--jz-brand')) : stroke;
         if (e.style?.opacity === op && e.style?.stroke === strokeF && e.style?.strokeWidth === sw && e.className === cls && e.style?.strokeDasharray === dash) return e;
         changed = true;
         return { ...e, style: { ...e.style, opacity: op, stroke: strokeF, strokeWidth: sw, ...(dash ? { strokeDasharray: dash } : { strokeDasharray: undefined }) }, className: cls };
@@ -661,11 +661,11 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
   return (
     <div data-attack-canvas="v3" data-canvas-sel={selId || ''} data-canvas-it={itTarget?.nodeId || ''} className="h-full flex flex-col">
       <style>{`
-        .ac-edge-glow { filter: drop-shadow(0 0 3px rgba(34,211,238,.55)); }
-        .ac-flow-confirmed path { stroke: rgb(16,185,129) !important; stroke-width: 2.4 !important; }
+        .ac-edge-chain path { stroke-width: 2px; }
+        .ac-flow-confirmed path { stroke: rgb(var(--jz-teal)) !important; stroke-width: 2.4 !important; }
         .ac-flow-excluded path { stroke-dasharray: 5 4 !important; opacity: .3 !important; }
         .ac-flow-pending path { stroke-dasharray: 2 3 !important; }
-        .ac-flow-tried path { stroke-dasharray: 6 4 !important; stroke: rgb(34,211,238) !important; }
+        .ac-flow-tried path { stroke-dasharray: 6 4 !important; stroke: rgb(var(--jz-brand)) !important; }
         .react-flow__attribution { display: none; }
       `}</style>
       <div className="flex items-center gap-2 pb-1.5 text-meta">
@@ -692,7 +692,7 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
           minZoom={0.25} maxZoom={4} nodesConnectable={false} elevateNodesOnSelect={false}
           proOptions={{ hideAttribution: true }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={18} size={1} color={cssVar('--jz-border', 0.9) || '#94a3b8'} />
+          <Background variant={BackgroundVariant.Dots} gap={18} size={1} color={cssVar('--jz-border', 0.9)} />
           {/* ① 左浮工具坞: +/−/适应/智能重排(简单分层=既有 LAYERS 布局,不引第三方布局库) */}
           <Panel position="top-left">
             <div data-canvas-dock className="flex items-center gap-1 rounded-card bg-jz-surface/85 backdrop-blur-md border border-jz-border/60 shadow-card p-1">
@@ -717,7 +717,7 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
                 onClick={() => {
                   const vp = document.querySelector('.react-flow__viewport');
                   if (!vp) return;
-                  import('html-to-image').then(({ toPng }) => toPng(vp as HTMLElement, { backgroundColor: '#0b1220', pixelRatio: 2 }))
+                  import('html-to-image').then(({ toPng }) => toPng(vp as HTMLElement, { backgroundColor: cssVar('--jz-canvas'), pixelRatio: 2 }))
                     .then((url) => { const a = document.createElement('a'); a.href = url; a.download = `canvas_${sid}.png`; a.click(); });
                 }}
                 className="w-7 h-7 grid place-items-center rounded-control text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2/60" title="导出 PNG(当前视图)"><Download className="w-4 h-4" /></button>
@@ -736,10 +736,10 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
           {/* ① 右下半透明 Minimap */}
           <Panel position="bottom-right">
             <div data-canvas-minimap className="rounded-card overflow-hidden border border-jz-border/70"
-              style={{ background: 'rgb(var(--jz-surface) / 0.85)', backdropFilter: 'blur(8px)', boxShadow: '0 4px 12px -2px rgba(0,0,0,0.06)' }} title="小地图(半透明,可点选导航)">
+              style={{ background: 'rgb(var(--jz-surface))', border: '1px solid rgb(var(--jz-border))', boxShadow: 'var(--jz-shadow-card)' }} title="小地图(半透明,可点选导航)">
               <MiniMap pannable zoomable
                 style={{ width: 150, height: 100, background: 'transparent' }}
-                maskColor={cssVar('--jz-canvas', 0.72) || 'rgba(8,11,17,.72)'}
+                maskColor={cssVar('--jz-canvas', 0.72)}
                 nodeColor={(n) => {
                   if (n.type === 'header') return 'transparent';
                   const t = (n.data as unknown as CardData)?.g?.type;
