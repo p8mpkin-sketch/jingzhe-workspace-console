@@ -110,7 +110,7 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
     <div className={cx('min-w-0', className)} data-table-layout="table">
       <table aria-label={label} className="w-full border-collapse text-label">
         <thead className={cx(stickyHeader && 'sticky top-0 z-[1]')}>
-          <tr className="h-jz-table-head bg-jz-surface-2 text-jz-muted">
+          <tr className="h-jz-table-head bg-jz-surface-2/70 text-meta text-jz-muted">
             {selectable && (
               <th scope="col" className="w-10 pl-4 text-left">
                 <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand align-middle" checked={allSelected}

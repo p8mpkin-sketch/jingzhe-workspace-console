@@ -17,7 +17,7 @@ import {
 } from '@/components/ui';
 import type { Column, TabItem } from '@/components/ui';
 import { moduleLabel } from '@/layout/navigation';
-import { Database, Activity, Radar, List, Zap, ArrowUpRight, RefreshCw, Plus } from 'lucide-react';
+import { Database, Activity, Radar, List, Zap, ArrowUpRight, RefreshCw, Plus, Boxes, CircleCheck, ShieldAlert, Cpu } from 'lucide-react';
 
 // R84-3: DOMAINS/domainOf 抽至 features/pentest/masvsDomains.ts(单一来源),本文件仅 import
 // R104-3②: 默认态跨会话合规均值雷达同用 domainOf 归域(零第二份映射,后端只回 masvs 原值)
@@ -603,6 +603,18 @@ export const DashboardPage: React.FC = () => {
   return (
     <Page data-dashboard-page>
       <PageHeader title={moduleLabel('/dashboard')} description="评估、渗透会话和发现的整体情况。"
+        eyebrow={<span data-dashboard-eyebrow>{new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}{me?.username ? ` · ${me.username}` : ''}</span>}
+        summary={(glob || sev) ? (
+          <>
+            <span className="inline-flex items-center gap-2"><span aria-hidden className={cx('h-2 w-2 rounded-pill', (glob?.running ?? 0) > 0 ? 'bg-jz-brand' : 'bg-jz-border-strong')} />运行中 <span className="font-mono font-semibold tnum text-jz-ink">{glob?.running ?? '—'}</span></span>
+            <span className="inline-flex items-center gap-2"><span aria-hidden className="h-2 w-2 rounded-pill bg-jz-border-strong" />排队 <span className="font-mono font-semibold tnum text-jz-ink">{queued ?? '—'}</span></span>
+            {(glob?.failed ?? 0) > 0
+              ? <button type="button" onClick={() => nav('/tasks?status=failed')} className="inline-flex items-center gap-2 rounded-control text-jz-amber hover:underline" data-summary-failed>
+                  <span aria-hidden className="h-2 w-2 rounded-pill bg-jz-amber" />失败 <span className="font-mono font-semibold tnum">{glob?.failed}</span> · 查看</button>
+              : <span className="inline-flex items-center gap-2"><span aria-hidden className="h-2 w-2 rounded-pill bg-jz-teal" />没有失败的任务</span>}
+            <span className="inline-flex items-center gap-2"><span aria-hidden className={cx('h-2 w-2 rounded-pill', critN > 0 ? 'bg-jz-red' : sev?.by_severity?.critical != null ? 'bg-jz-teal' : 'bg-jz-border-strong')} />严重发现 <span className={cx('font-mono font-semibold tnum', critN > 0 ? 'text-jz-red' : 'text-jz-ink')}>{sev?.by_severity?.critical ?? '—'}</span></span>
+          </>
+        ) : undefined}
         meta={isAdmin && (nodes || []).length > 0 ? (
           <span className="flex flex-wrap items-center gap-2" data-node-strip>
             <span className="text-meta text-jz-muted">执行节点</span>
@@ -626,18 +638,19 @@ export const DashboardPage: React.FC = () => {
 
       <div data-kpi-row>
         <MetricGrid>
-          <Metric label="评估资产" loading={glob === null && !sumErr} data-kpi-asset
+          <Metric label="评估资产" icon={<Boxes aria-hidden />} loading={glob === null && !sumErr} data-kpi-asset
             value={<span data-kpi-total>{glob?.total ?? '—'}</span>}
             hint={<>已完成 <span className="tnum">{glob?.done ?? '—'}</span> · 失败 <span className="tnum">{glob?.failed ?? '—'}</span> · 脱壳完成 <span className="tnum">{coverage != null ? `${coverage}%` : '—'}</span></>} />
-          <Metric label="任务成功率" loading={glob === null && !sumErr}
+          <Metric label="任务成功率" icon={<CircleCheck aria-hidden />} loading={glob === null && !sumErr}
+            tone={rate === '—' ? 'default' : parseInt(rate, 10) >= 90 ? 'success' : 'attention'}
             title="成功率 = 完成 / (完成 + 失败)。运行中和排队中的任务不计入。"
             value={<span className="flex items-center gap-2.5"><span ref={ringRef} className="h-9 w-9 flex-none" data-status-ring aria-hidden />{rate}</span>}
             hint={<>运行中 <span className="tnum" data-running-num>{glob?.running ?? '—'}</span> · 排队 <span className="tnum" data-queued-num>{queued ?? '—'}</span> · 失败 <span className="tnum">{glob?.failed ?? '—'}</span></>} />
-          <Metric label="严重 / 高 发现" loading={sev === null && !sumErr} data-sev-card tone={critN > 0 ? 'danger' : 'default'}
+          <Metric label="严重 / 高 发现" icon={<ShieldAlert aria-hidden />} loading={sev === null && !sumErr} data-sev-card tone={critN > 0 ? 'danger' : 'default'}
             title="待确认和已确认的发现,不含已排除的。"
             value={<><span data-critical-num>{sev?.by_severity?.critical ?? '—'}</span><span className="text-jz-muted"> / </span><span data-high-num>{sev?.by_severity?.high ?? '—'}</span></>}
             hint={<>共 <span className="tnum">{sev?.total_active ?? '—'}</span> 项 · 来自 <span className="tnum">{sev?.sessions_scanned ?? '—'}/{sev?.sessions_total ?? '—'}</span> 个会话</>} />
-          <Metric label="模型" loading={ai === null}
+          <Metric label="模型" icon={<Cpu aria-hidden />} loading={ai === null}
             value={ai?.gated ? <span className="text-section text-jz-muted" data-ai-gated>仅管理员可见</span>
               : <span data-ai-enabled-num>{ai?.enabled ?? '—'}<span className="text-section text-jz-muted">/{ai?.total ?? '—'}</span></span>}
             hint={ai?.gated ? '连接状态可在系统页查看' : <span data-ai-model title={`当前模型:${ai?.activeModel || '未配置'}。可在系统页切换。`}>已启用 · 当前 {ai?.activeModel || '未配置'}</span>} />

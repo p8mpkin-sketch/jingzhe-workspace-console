@@ -42,9 +42,9 @@ export function Tabs<K extends string>({ items, value, onChange, label, sticky =
           <button key={t.key} ref={(el) => { refs.current[t.key] = el; }} type="button" role="tab" aria-selected={on} tabIndex={on ? 0 : -1}
             disabled={t.disabled} onClick={() => onChange(t.key)} {...t.dataAttrs}
             className={cx('relative flex-none inline-flex items-center gap-2 px-3 h-jz-control-lg max-[760px]:h-jz-touch text-body whitespace-nowrap -mb-px border-b-2 transition-colors duration-hover disabled:opacity-45',
-              on ? 'border-jz-brand text-jz-brand font-semibold' : 'border-transparent text-jz-ink-2 hover:text-jz-ink hover:border-jz-border-strong')}>
+              on ? 'border-jz-brand text-jz-ink font-semibold' : 'border-transparent text-jz-ink-2 hover:text-jz-ink hover:border-jz-border-strong')}>
             {t.label}
-            {t.count != null && <span className={cx('text-meta tnum font-normal', on ? 'text-jz-brand' : 'text-jz-muted')}>{t.count}</span>}
+            {t.count != null && <span className={cx('rounded-pill px-1.5 text-meta tnum font-medium', on ? 'bg-jz-brand-soft text-jz-brand' : 'bg-jz-surface-2 text-jz-muted')}>{t.count}</span>}
           </button>
         );
       })}

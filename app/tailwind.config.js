@@ -21,6 +21,7 @@ module.exports = {
         canvas: c('canvas'),
         surface: c('surface'),
         'surface-2': c('surface-2'),
+        rail: c('rail'),
         ink: c('ink'),
         'ink-2': c('ink-2'),
         muted: c('muted'),
@@ -77,6 +78,7 @@ module.exports = {
       none: 'none',
       card: 'var(--jz-shadow-card)',
       dialog: 'var(--jz-shadow-dialog)',
+    raised: 'var(--jz-shadow-raised)',
     },
     extend: {
       // Text utilities use the AA-safe ink variants; fills and dots keep the base hue.
@@ -104,6 +106,7 @@ module.exports = {
         page: 'var(--jz-motion-page)',
       },
       transitionTimingFunction: { jz: 'var(--jz-ease)' },
+      backgroundImage: { 'jz-header-tint': 'var(--jz-header-tint)' },
       letterSpacing: { display: 'var(--jz-tracking-display)', page: 'var(--jz-tracking-page)' },
     },
   },

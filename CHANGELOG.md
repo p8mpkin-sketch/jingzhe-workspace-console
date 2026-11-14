@@ -3,6 +3,28 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 10 — Visual elevation
+
+A second, presentation-only pass requested after phase 9 ("a large visible upgrade"). Changes go through tokens, shared primitives and the shell, so every route picks them up; no request, route, storage key or `data-*` hook changes.
+
+### Changed
+- Tokens (`design/tokens.css`): warm neutral canvas, surface-2 and border (`246 245 242`, `240 239 235`, `228 226 220`); new `--jz-rail` for the navigation rail; new `--jz-shadow-raised` for hover on interactive cards; new `--jz-header-tint` (two radial tints, brand 7–8% and teal 5%, within design-system.md §5). Page title 28 → 30 px, metric value 30 → 32 px.
+- `Page` paints the header tint behind the top of every page. `PageHeader` gains a `summary` row (status facts under a rule) and a brand-colored eyebrow.
+- `Panel` and `ObjectCard` use the 16 px panel radius and 20 px padding, footers sit on a quiet surface, panel title icons take the brand color, object cards lift on hover.
+- `Metric`: a tone rail on the left (teal / amber / red, always with the text value), an optional icon tile, the hint below a rule, and an optional whole-card click with keyboard activation.
+- `Tabs`: active tab in ink with a brand underline; counts in pills. Table header uses the meta size on a lighter surface.
+- Shell: the rail sits one step below the canvas; the active item is a raised surface with a brand indicator and brand icon; device and queue cards are surfaces. The top bar shares the canvas color.
+- `/dashboard`: date and user in the eyebrow; a summary row with running, queued, failed (links to the failed task filter) and critical counts, all from data the page already loads; metric icons; success-rate tone follows the rate (≥ 90% teal, below amber).
+
+### Verified
+- `tsc --noEmit` and `npm run build` pass.
+- 14 routes at 1680 / 1440 / 1280 / 1024 / 760 / 390 in both themes: no overflow, no page errors; request log identical to baseline; shell checks pass; phase 8 and 9 interaction scripts pass with no write requests; 546 focusable controls with a visible focus ring.
+- Contrast check: no failing text pair on the new surfaces. Token lint unchanged at 19.
+- Screenshots: `docs/screenshots/phase-10/`.
+
+### Remaining gaps
+- Fixture data is thin, so some index pages (for example `/company` with three projects) end with open canvas below the grid.
+
 ## Phase 9 — Responsive and accessibility
 
 ### Changed

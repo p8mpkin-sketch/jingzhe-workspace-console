@@ -79,7 +79,7 @@ export const TopBar: React.FC<{ onOpenNav?: () => void }> = ({ onOpenNav }) => {
   const live = sid != null && sse === 'live';
 
   return (
-    <header className="sticky top-0 z-40 flex h-jz-topbar flex-none items-center gap-2 border-b border-jz-border bg-jz-surface px-jz-page" data-topbar>
+    <header className="sticky top-0 z-40 flex h-jz-topbar flex-none items-center gap-2 border-b border-jz-border bg-jz-canvas px-jz-page" data-topbar>
       {onOpenNav && (
         <IconButton label="打开导航" onClick={onOpenNav} data-nav-open className="-ml-2 tablet:hidden"><Menu size={18} aria-hidden /></IconButton>
       )}

@@ -61,12 +61,12 @@ export const Sidebar: React.FC<{ mobileOpen?: boolean; onMobileClose?: () => voi
     <nav ref={mobile ? drawerRef : undefined} tabIndex={mobile ? -1 : undefined} aria-label="主导航"
       data-nav-rail={collapsed ? 'collapsed' : 'full'}
       onMouseDown={mobile ? (e) => e.stopPropagation() : undefined}
-      className={cx('relative z-30 flex h-full flex-none flex-col border-r border-jz-border bg-jz-surface outline-none',
+      className={cx('relative z-30 flex h-full flex-none flex-col border-r border-jz-border bg-jz-rail outline-none',
         'transition-[width] duration-expand',
         mobile ? 'w-[280px] max-w-[86vw] shadow-dialog' : collapsed ? 'w-jz-sidebar-collapsed' : 'w-jz-sidebar')}>
 
       <div className={cx('flex h-jz-topbar flex-none items-center gap-2.5', collapsed ? 'justify-center px-2' : 'px-4')}>
-        <img src="/v2/brand/icon.svg" alt="" className="h-7 w-7 flex-none rounded-control" />
+        <img src="/v2/brand/icon.svg" alt="" className="h-8 w-8 flex-none rounded-control shadow-card" />
         {!collapsed && (
           <div className="min-w-0 flex-1 leading-tight">
             <div className="whitespace-nowrap font-display text-section font-semibold text-jz-ink">惊蛰</div>
@@ -85,11 +85,14 @@ export const Sidebar: React.FC<{ mobileOpen?: boolean; onMobileClose?: () => voi
                 <li key={to}>
                   <NavLink to={to} title={collapsed ? label : undefined} aria-label={collapsed ? label : undefined}
                     onClick={mobile ? close : undefined} data-nav-item={to}
-                    className={({ isActive }) => cx('flex h-jz-control items-center gap-2.5 whitespace-nowrap rounded-control text-label transition-colors duration-hover max-[760px]:h-jz-touch',
+                    className={({ isActive }) => cx('group relative flex h-jz-control items-center gap-2.5 whitespace-nowrap rounded-control text-label transition-[background-color,color,box-shadow] duration-hover max-[760px]:h-jz-touch',
                       collapsed ? 'justify-center px-0' : 'px-2.5',
-                      isActive ? 'bg-jz-brand-soft font-semibold text-jz-brand' : 'font-medium text-jz-ink-2 hover:bg-jz-surface-2 hover:text-jz-ink')}>
-                    <Icon size={18} className="flex-none" aria-hidden />
-                    {!collapsed && <span className="truncate">{label}</span>}
+                      isActive ? 'bg-jz-surface font-semibold text-jz-ink shadow-card' : 'font-medium text-jz-ink-2 hover:bg-jz-surface/70 hover:text-jz-ink')}>
+                    {({ isActive }) => (<>
+                      {isActive && !collapsed && <span aria-hidden className="absolute inset-y-2 -left-3 w-[3px] rounded-r-pill bg-jz-brand" />}
+                      <Icon size={18} className={cx('flex-none', isActive ? 'text-jz-brand' : 'text-jz-muted group-hover:text-jz-ink-2')} aria-hidden />
+                      {!collapsed && <span className="truncate">{label}</span>}
+                    </>)}
                   </NavLink>
                 </li>
               ))}
@@ -110,7 +113,7 @@ export const Sidebar: React.FC<{ mobileOpen?: boolean; onMobileClose?: () => voi
           ) : (
             <button type="button" onClick={() => setDevPop((v) => !v)} data-sidebar-devices data-devices-clickable
               aria-haspopup="dialog" aria-expanded={devPop}
-              className="w-full space-y-1 rounded-control border border-jz-border px-2.5 py-2 text-left transition-colors duration-hover hover:bg-jz-surface-2">
+              className="w-full space-y-1 rounded-card border border-jz-border bg-jz-surface px-3 py-2.5 text-left transition-colors duration-hover hover:border-jz-border-strong">
               <div className="flex items-center gap-1.5 text-meta text-jz-muted"><Smartphone size={14} aria-hidden /> 设备</div>
               <div className="text-label text-jz-ink" data-sidebar-dev-count>{devCount > 0 ? `${devCount} 台已连接` : '没有已连接的设备'}</div>
               <div className="flex items-center gap-1.5 text-meta text-jz-ink-2">
@@ -132,8 +135,8 @@ export const Sidebar: React.FC<{ mobileOpen?: boolean; onMobileClose?: () => voi
         ) : (
           <button type="button" onClick={openFailed} disabled={!failed} title={queueTitle}
             data-sidebar-load data-engine-load-clickable={failed > 0 ? 'warn' : 'off'}
-            className={cx('w-full space-y-1 rounded-control border px-2.5 py-2 text-left transition-colors duration-hover',
-              failed > 0 ? 'border-jz-amber/40 bg-jz-amber/10 hover:bg-jz-amber/20' : 'cursor-default border-jz-border')}>
+            className={cx('w-full space-y-1 rounded-card border px-3 py-2.5 text-left transition-colors duration-hover',
+              failed > 0 ? 'border-jz-amber/40 bg-jz-amber/10 hover:bg-jz-amber/20' : 'cursor-default border-jz-border bg-jz-surface')}>
             <div className="flex items-center gap-1.5 text-meta text-jz-muted">
               <Activity size={14} aria-hidden /> 任务队列
               {failed > 0 && <span className="ml-auto font-medium text-jz-amber" data-engine-fail-badge>查看失败项</span>}
