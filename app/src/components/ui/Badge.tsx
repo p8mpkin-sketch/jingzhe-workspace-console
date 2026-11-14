@@ -1,19 +1,29 @@
 import React from 'react';
+import { cx } from './cx';
+import { SEVERITY_LABEL } from './stateDictionary';
 
 export type SevLevel = 'critical' | 'high' | 'medium' | 'low' | 'safe' | 'info';
-/* 回访轮对齐 StatusBadge 语言: 状态=染底+文字色不用 border(规范#3),胶囊圆角;border 保留宽度但透明,几何零位移 */
 const SEV: Record<SevLevel, string> = {
-  critical: 'bg-jz-sev-critical/15 text-jz-sev-critical',
-  high: 'bg-jz-sev-high/15 text-jz-sev-high',
-  medium: 'bg-jz-sev-medium/15 text-jz-sev-medium',
-  low: 'bg-jz-sev-low/15 text-jz-sev-low',
-  safe: 'bg-jz-teal/15 text-jz-teal',
+  critical: 'bg-jz-sev-critical/10 text-jz-sev-critical',
+  high: 'bg-jz-sev-high/10 text-jz-sev-high',
+  medium: 'bg-jz-sev-medium/10 text-jz-sev-medium',
+  low: 'bg-jz-surface-2 text-jz-sev-low',
+  safe: 'bg-jz-teal/10 text-jz-teal',
   info: 'bg-jz-surface-2 text-jz-ink-2',
 };
 
-export const Badge: React.FC<{ level?: SevLevel; className?: string; children: React.ReactNode }> =
- ({ level = 'info', className = '', children }) => (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-pill text-meta font-mono font-semibold border border-transparent ${SEV[level]} ${className}`}>
-      {children}
+/** Finding severity capsule. Always carries text; children default to the level's label. */
+export const Badge: React.FC<{ level?: SevLevel; className?: string; children?: React.ReactNode }> =
+  ({ level = 'info', className, children }) => (
+    <span data-severity={level} className={cx('inline-flex items-center h-6 px-2 rounded-pill text-meta font-medium whitespace-nowrap', SEV[level], className)}>
+      {children ?? SEVERITY_LABEL[level]}
     </span>
   );
+export const SeverityBadge = Badge;
+
+/** Neutral label for categories and keywords. Mono only when the value is an id, package or hash. */
+export const Tag: React.FC<{ children: React.ReactNode; mono?: boolean; className?: string; title?: string }> = ({ children, mono, className, title }) => (
+  <span title={title} className={cx('inline-flex items-center h-6 max-w-full px-2 rounded-tag bg-jz-surface-2 text-meta text-jz-ink-2', mono && 'font-mono', className)}>
+    <span className="truncate">{children}</span>
+  </span>
+);

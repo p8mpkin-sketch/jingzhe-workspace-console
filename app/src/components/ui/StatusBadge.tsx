@@ -1,33 +1,47 @@
 import React from 'react';
+import { cx } from './cx';
+import { stateOf, type Tone } from './stateDictionary';
 
 /**
- * R104-1 ①: 状态/危险级微胶囊(V3 三铁律②「调试标签一律封装微型状态胶囊」的标准载体)。
- * 五档危险/状态级 + custom 自由档(消费方经 className 自带配色, 本组件不预设)。
- * 全 token 化零裸 hex: 面色/字符色均消费主题 token(vuln-* 危险级色板 / jz-* 中性档),
- * 微光背景 + 同色系深色字符; 无边框(杜绝生硬黑线框), 柔和边缘光晕由 .
- * 以 currentColor 派生(styles/index.css), 暗色光晕更明显、亮色自动衰减。
+ * Status = dot + label, never color alone.
+ * New tones: success / attention / danger / neutral / brand (dot + label on a quiet outline).
+ * Legacy tones (critical / high / medium / low / info / custom) are kept so existing call sites render unchanged
+ * in meaning: a tinted capsule without a dot; `custom` takes its colors from className.
  */
-export type StatusTone = 'critical' | 'high' | 'medium' | 'low' | 'info' | 'custom';
+export type StatusTone = Tone | 'critical' | 'high' | 'medium' | 'low' | 'info' | 'custom';
 
-const TONE: Record<Exclude<StatusTone, 'custom'>, string> = {
+const DOT: Record<Tone, string> = {
+  success: 'bg-jz-teal', attention: 'bg-jz-amber', danger: 'bg-jz-red', neutral: 'bg-jz-border-strong', brand: 'bg-jz-brand',
+};
+const LEGACY: Record<'critical' | 'high' | 'medium' | 'low' | 'info', string> = {
   critical: 'bg-jz-sev-critical/10 text-jz-sev-critical',
   high: 'bg-jz-sev-high/10 text-jz-sev-high',
   medium: 'bg-jz-sev-medium/10 text-jz-sev-medium',
-  low: 'bg-jz-sev-low/10 text-jz-sev-low',
+  low: 'bg-jz-surface-2 text-jz-sev-low',
   info: 'bg-jz-surface-2 text-jz-ink-2',
 };
+const isTone = (t: StatusTone): t is Tone => t in DOT;
 
 export const StatusBadge: React.FC<{
- tone?: StatusTone;
- className?: string;
- title?: string;
- children: React.ReactNode;
-}> = ({ tone = 'info', className = '', title, children }) => (
-  <span
- title={title}
- data-status-badge={tone}
- className={` inline-flex items-center gap-1 px-2 py-0.5 rounded-pill text-meta font-mono font-semibold whitespace-nowrap ${tone === 'custom' ? '' : TONE[tone]} ${className}`}
- >
-    {children}
-  </span>
-);
+  tone?: StatusTone;
+  /** Machine status value; label and tone are read from the state dictionary. Overrides `tone`. */
+  status?: string | null;
+  className?: string;
+  title?: string;
+  children?: React.ReactNode;
+}> = ({ tone = 'info', status, className, title, children }) => {
+  const def = status !== undefined ? stateOf(status) : null;
+  const t: StatusTone = def ? def.tone : tone;
+  const base = 'inline-flex items-center gap-1.5 h-6 px-2 rounded-pill text-meta font-medium whitespace-nowrap';
+  if (isTone(t)) {
+    return (
+      <span title={title} data-status-badge={t} data-status={status ?? undefined} className={cx(base, 'border border-jz-border bg-jz-surface text-jz-ink-2', className)}>
+        <span aria-hidden className={cx('h-1.5 w-1.5 flex-none rounded-pill', DOT[t])} />
+        {children ?? def?.label}
+      </span>
+    );
+  }
+  return (
+    <span title={title} data-status-badge={t} className={cx(base, t === 'custom' ? '' : LEGACY[t], className)}>{children}</span>
+  );
+};

@@ -17,7 +17,7 @@ export const EMPTY_SCENES = {
   /** 暂无设备: 设备轮询/设备列表为空 */
   noDevices: { key: 'no-devices', icon: Smartphone, title: '暂无设备', subtitle: '尚未连接任何测试设备' },
   /** 暂无漏洞发现: 漏洞矩阵/发现列表为空 */
-  noFindings: { key: 'no-findings', icon: Bug, title: '暂无漏洞发现', subtitle: '当前会话尚未产出漏洞发现' },
+  noFindings: { key: 'no-findings', icon: Bug, title: '暂无发现项', subtitle: '当前会话尚未产出发现项' },
   /** 流量为空: 代理/Burp 桥捕获列表为空 */
   noTraffic: { key: 'no-traffic', icon: Radio, title: '流量为空', subtitle: '尚未捕获到任何代理流量' },
   /** 会话未启动: 运行数据位在会话启动前呈现 */

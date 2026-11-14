@@ -7,8 +7,12 @@ const size = (name) => [`var(--jz-text-${name})`, { lineHeight: `var(--jz-leadin
 
 module.exports = {
   darkMode: 'class',
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  // The dev gallery is scanned only outside production builds, so its classes never reach the shipped CSS.
+  content: ['./index.html', './src/**/*.{ts,tsx}', ...(process.env.NODE_ENV === 'production' ? [] : ['./dev/**/*.{html,tsx}'])],
   theme: {
+    // Ascending order matters for the cascade. tablet / table / desktop / wide are the design-system breakpoints
+    // (mirrored in src/components/ui/useMediaQuery.ts); sm / md / lg / xl / 2xl are Tailwind's defaults, still used by pages.
+    screens: { sm: '640px', tablet: '761px', md: '768px', table: '900px', lg: '1024px', xl: '1280px', desktop: '1280px', '2xl': '1536px', wide: '1680px' },
     colors: {
       transparent: 'transparent',
       current: 'currentColor',
