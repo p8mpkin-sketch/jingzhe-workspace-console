@@ -3,6 +3,29 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 4 — Project index
+
+### Changed
+- `/company` (`features/company/CompanyProjectsPage.tsx`): rebuilt on `Page`, `PageHeader`, `MetricGrid`, `SearchField`, `SegmentedControl`, `ObjectCard`, `AsyncBoundary` and `Dialog`. Three card columns from 1280 px, two from 900 px, one below. The list request, the create request and its payload, filtering and sorting are unchanged. A first-load failure now shows the error or permission state with retry; a failed refresh keeps the list and shows a stale notice; create errors show inside the dialog.
+- `/pentest` (`features/pentest/PentestProjectsPage.tsx`, `ProjectCard.tsx`): same page frame; actions moved to the header; metrics use `Metric`; filters are one chip style with pressed state; card and table views share the packer badge, progress bar and finding summary. The table view is a `DataTable` and becomes record cards below 900 px (it scrolled sideways before). Export and card menus use `Popover`. All five requests, the derived counts, filter persistence keys, export columns, import flow, wizard wiring and every `data-probe` / `data-*` hook are kept.
+- Copy: neutral names (评估项目, 工作台, 会话, 加固, 发现), no emoji as status, status values shown through the state dictionary, stage names 加固识别 / 静态分析 / 接口梳理 / 动态验证 / 报告归档. Tooltips state what a number counts instead of internal change notes.
+- A project load failure is now visible on `/pentest` (it rendered as "no projects" before); metrics show a dash in that case.
+
+### Removed
+- `ProjectCompactRow` (replaced by table columns), the project initial avatar, the per-page input and button class strings.
+
+### Verified
+- `tsc --noEmit` and `npm run build` pass. Main chunk 976.6 kB, CSS 161.2 kB.
+- 14 routes at five widths: no overflow, no error boundary; request log identical to baseline; shell checks pass.
+- `/pentest` and `/company` captured in the empty, error, forbidden and slow variants, plus table view and create dialog; table view has 3 rows as a table at 1440 px and as cards at 760 px; card menu, filtered-empty state and required-field validation exercised.
+- Token lint 833 (was 835). Contrast check: no failing pair.
+
+### Remaining gaps
+- The pager under the project grid is still the older `DataToolbar` pager, kept for its probes; it moves to `Pagination` with the tasks page in phase 7.
+- `NewProjectWizard` and `UniversalImportModal` are opened from this page and are still on phase 1 styling; the wizard is restyled with the project workspace in phase 5.
+- `/pentest` has no refresh action and no stale state because the page loads once; adding a reload would add requests, so it is left as is.
+- The create dialog keeps the prefilled brand value `TECNO,Infinix,itel` because it is part of the posted payload when left untouched.
+
 ## Phase 3 — Shell
 
 ### Changed
