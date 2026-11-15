@@ -214,7 +214,7 @@ export const AgentPage: React.FC = () => {
           </div>
         )}
 
-        <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto" data-agent-transcript>
+        <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto [scrollbar-gutter:stable]" data-agent-transcript>
           <div className="max-w-[1040px] mx-auto px-5 py-5 pb-6">
             {showHero && (
               <div className="min-h-[55vh] flex flex-col justify-center" data-agent-empty>
