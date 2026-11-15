@@ -1,3 +1,4 @@
+import { api } from '@/services/api';
 import React, { useEffect, useMemo, useState } from 'react';
 import { pressable } from '@/components/ui';
 import { Bot, Cpu } from 'lucide-react';
@@ -57,12 +58,8 @@ export const AiSidebar: React.FC = () => {
  const [insTokens, setInsTokens] = useState(0);
  const [insErr, setInsErr] = useState('');
  const sendFb = (cardId: string, verdict: string) => {
- try {
- const t = localStorage.getItem('token') || '';
- fetch('/api/feedback', { method: 'POST',
- headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
- body: JSON.stringify({ card_id: cardId, verdict, sid: sidNow }) }).catch(() => {});
- } catch { /* 静默 */ }
+ // Through the shared client: same auth header as every other write, and it invalidates cached GETs.
+ api('/api/feedback', { method: 'POST', body: JSON.stringify({ card_id: cardId, verdict, sid: sidNow }) }, true).catch(() => {});
  };
  const genInsight = async () => {
     setInsErr(''); setInsText(''); setInsTokens(0);

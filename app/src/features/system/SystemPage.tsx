@@ -103,11 +103,15 @@ function ModelsTab() {
 // Feedback on assistant suggestions (GET /api/feedback).
 function FeedbackStats() {
   const [items, setItems] = useState<Array<any>>([]);
-  useEffect(() => {
-    const t = localStorage.getItem('token') || '';
-    fetch('/api/feedback', { headers: { Authorization: `Bearer ${t}` } })
-      .then((r) => r.json()).then((d) => setItems(d.items || [])).catch(() => {});
+  const [state, setState] = useState<'loading' | 'ok' | 'error' | 'forbidden'>('loading');
+  // One owner, through the shared client: auth header, in-flight dedupe and error mapping come from there.
+  const load = React.useCallback(() => {
+    setState('loading');
+    api<{ items?: any[] }>('/api/feedback', {}, true)
+      .then((d) => { setItems(d?.items || []); setState('ok'); })
+      .catch((e: any) => setState(e?.status === 403 ? 'forbidden' : 'error'));
   }, []);
+  useEffect(() => { load(); }, [load]);
   const up = items.filter((i) => i.verdict === 'up').length;
   const down = items.filter((i) => i.verdict === 'down').length;
   return (
@@ -122,7 +126,14 @@ function FeedbackStats() {
             <li key={k} className="truncate text-jz-ink-2"><span className="font-mono text-meta text-jz-muted">{i.card_id}</span> · {i.verdict === 'up' ? '有用' : i.verdict === 'down' ? '没用' : i.verdict} · {i.note || '没有备注'}</li>
           ))}
         </ul>
-      ) : <p className="mt-3 text-meta text-jz-muted">还没有反馈。</p>}
+      ) : state === 'ok' ? <p className="mt-3 text-meta text-jz-muted">还没有反馈。</p> : null}
+      {state === 'loading' && <p className="mt-3 text-meta text-jz-muted" role="status">正在读取反馈…</p>}
+      {state === 'forbidden' && <p className="mt-3 text-meta text-jz-muted" role="status" data-state="forbidden">当前账号没有查看建议反馈的权限。</p>}
+      {state === 'error' && (
+        <p className="mt-3 text-meta text-jz-red" role="alert" data-state="error">
+          反馈未能加载。<button type="button" className="underline" onClick={load} data-feedback-retry>重试</button>
+        </p>
+      )}
     </Panel>
   );
 }
