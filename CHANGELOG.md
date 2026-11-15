@@ -1,8 +1,90 @@
 # Changelog
 
 Design-system migration of `app/`. Routes, API calls, permissions, task and report behavior are unchanged.
-Phases 1–13 are presentation only; Phase 14 also changes request dedupe and stream reconnect pacing.
+Phases 1–13 are presentation only; Phase 14 also changes request dedupe and stream reconnect pacing;
+Phase 15 routes the feedback requests through the shared client.
 One entry per phase.
+
+## Phase 15 — Assessment suite consolidation and legacy parity
+
+Closes the gap between the six-tab workbench and the legacy workbenches, tightens the pages around it, and
+records what a person with backend access has to replay. Routes, API contracts, permissions, task behavior and
+report behavior are unchanged; no endpoint was added. The six tabs, the token migration and the spacing
+migration from Phase 14 are untouched.
+
+### Requests
+- `/api/feedback` (GET on the system page, POST from the AI sidebar) goes through the shared API client. The
+  system page's feedback statistics gain loading, error, forbidden and retry states.
+- Audit on a production preview build (not the dev server): the unique request set of the 14 routes is identical
+  to the baseline. With SSE requests held open, as a live backend holds them, duplicates in the first 3 s are 0
+  for Phase 14 (bdae05d) and 0 for Phase 15, with the same polling set and intervals.
+- When the fixture closes every stream at once, reconnect attempts are counted as duplicates and the number moves
+  between runs of the same build (13 to 17 observed; 13 for Phase 14 and 17 for Phase 15 in the recorded pair).
+  Every entry is a stream reconnect or the agent event poll. `scripts/check-polling.mjs` gains `HOLD_STREAMS=1`
+  to measure without that artefact. Data: `docs/screenshots/phase-15/request-cadence.json`.
+- `docs/request-map.md` lists route, method, query, expected unique count and polling interval per route and
+  per workbench view, with a replay command, and separates "verified with fixtures" from "pending real backend".
+
+### Capability parity
+`docs/capability-matrix.md` maps every legacy panel to its workbench owner. No capability is without an owner
+and none was removed. New owners in this phase:
+
+| Legacy capability | Owner | `?view=` |
+| --- | --- | --- |
+| VulnsPanel (rule cards, manual add, import / export, MASVS and credential filters, notes, state change) | 发现 › 规则卡 | `rulecards` (new id) |
+| V3 finding clusters | 发现 › 聚类 | `clusters` (new id) |
+| AttackCanvas (structure canvas, source slice, path walk) | 证据 › 证据关系 › 应用结构 | `structure` (new id) |
+| V3 mission start (device / replay) | Header › 更多操作 | — |
+| V3 mission status, model routing chip | Inspector › 简报 | — |
+| AI inspector drawer object inspector | Inspector › 复核队列 › 当前检查对象 | — |
+
+Every earlier `?view=` id still resolves; the default is still `stream`. `?ui=v3` and `?ui=v2` stay reachable
+until the pending real-backend checks in the matrix pass.
+
+### Inspector
+The inspector keeps low-frequency context only: 复核队列, 简报, 进度, 日志. The 证据 tab, the recent-findings card
+and the counter card are gone, since the main surface already shows them.
+
+### Project and session index
+- Projects: the four metric cards become one fact row, followed by the sessions in progress (running, waiting
+  for sign-in, or paused; ordered by id, since rows carry no reliable timestamp). One primary action (新建评估项目).
+- Project sessions: the primary action is 继续会话 for the session in progress, or the most recent open one;
+  新建会话 opens the wizard in place and becomes primary when there is nothing to continue.
+
+### New assessment
+One submit action. The former second button (create and go to the session) is a destination choice next to it
+(任务队列 or 渗透会话), which keeps the `data-submit-pentest` hook. The review panel lists what will be produced.
+Request body and saved prefill are unchanged.
+
+### Visual consolidation
+- Session overview: the three cards size to their content instead of stretching to the viewport, and use
+  neutral titles.
+- Proxy traffic: one primary action; the plugin generator is secondary.
+- Neutral copy in the rule-card and application-structure surfaces now that they are first-class.
+
+### Responsive and accessibility
+- 390 px is part of every audit. Proxy traffic and analysis output stack and scroll below the tablet
+  breakpoint; before, the detail pane covered 26 focusable controls at 390 px.
+- Menus move with ArrowUp / ArrowDown / Home / End. Escape in the inspector returns focus to its toggle.
+
+### Legacy V3 overflow at 1440 px
+Reproduced and measured: the V3 header chip row overflows the document by 148 px at d7c1471 (Phase 13, before
+the workbench work) and by 135 px now. It predates Phase 14 and is left as is.
+
+### Verification (fixtures, production preview build)
+- `npm run lint:tokens`: 0. `tsc --noEmit` and `npm run build` pass. Contrast: 0 failing pairs.
+- 14 routes × 1440 / 1024 / 760 / 390 × light / dark: 0 overflow, 0 page errors. Empty, error, forbidden and
+  slow variants at 1440 and 390, stale at 1440: 0 overflow, 0 page errors.
+- 20 workbench surfaces × the same widths and themes, plus five data-state variants: 0 overflow, 0 errors,
+  2014 focus stops checked, 0 without a focus indicator, 0 covered (`scripts/check-workbench.mjs`).
+- Screenshots: `docs/screenshots/phase-15/` and `docs/screenshots/phase-15/workbench/`.
+
+### Not verified
+- Nothing was run against a real backend; `127.0.0.1:8099` refused connections. All numbers above are from
+  fixtures. The replay list is in `docs/request-map.md`.
+- No write was sent, even to fixtures: mission start, rule-card state change, clue, feedback POST and task
+  creation are wired to the same endpoints and bodies as before but were not exercised.
+- Legacy V3 / V2 keep their earlier copy and layout.
 
 ## Phase 14 — Assessment workbench consolidation
 
