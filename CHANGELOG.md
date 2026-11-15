@@ -3,6 +3,79 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 13 — Finish quality and real-data readiness
+
+This phase finishes quality on top of Phase 12 with no redesign. Routes, requests, permissions, task behavior and report behavior are unchanged. The split preview stays the default report view.
+
+### Token lint: 19 → 0
+The lint rule was not loosened. Every finding was resolved at its source.
+- **Hex 6.** All six were task numbers in copy, not colors: the `任务 #100367` examples in `AgentPage.tsx` and `AgentComposer.tsx`, and `#792` in the `NewProjectWizard.tsx` placeholder.
+  - Example prompts now build the reference from `EXAMPLE_TASK_ID` in `agent/model/sessionMeta.ts`, in the product's `任务 #<id>` format.
+  - The wizard placeholder no longer names a real app.
+- **Font size 6.** ECharts text in `DashboardPage.tsx` and `SkillsPage.tsx` now reads the new `--jz-text-chart-label` (11 px) and `--jz-text-chart-tick` (10 px) through `tokenPx()`. `tokenPx()` is the documented adapter next to `tokenColor()`.
+  - Knowledge-graph node labels move from 9 px to 10 px.
+- **CSS literal 7.**
+  - The three `box-shadow: none` resets use `--jz-shadow-none`.
+  - The four `@font-face` blocks move into `design/tokens.css`, because `@font-face` cannot read custom properties. Fonts are still self-hosted, and all four faces load.
+- `npm run lint:tokens` runs the lint in `--strict` mode.
+
+### Changed
+- `/company` with 0 projects: the start band explains the workflow. The page ends with a next-step surface that states the cause (the list loaded and was empty) and offers 新建公司项目 or 先看候选发现.
+- `/company` with 1 project: filters stay hidden. A compact 接下来 surface derives its step from the project's own list fields (an empty inventory means import apps; otherwise generate reports) and offers candidate discovery. It sends no extra request.
+- `/company` with 2 or more projects: unchanged.
+- The lead company project is ordered by `created_at` only when every candidate carries a finite value; otherwise it is ordered by id. No date is derived or displayed. A `TODO(api)` records that the live list response is unverified.
+- `/agent`:
+  - The transcript reserves its scrollbar gutter, so streaming output does not reflow the conversation when scrolling begins.
+  - The session menu (联网, Fork, 导出轨迹, seq) now uses `RowActions`.
+- `/pentest`: the project menu now uses `RowActions`. All `data-probe` hooks are kept.
+- Workbench: the "last updated" time no longer advances when every data source failed.
+- Copy: the report preview footer no longer repeats its scope, and the empty company index no longer restates the three steps.
+
+### Added
+- `capture.mjs --variant stale`: data loads, then the backend fails and the page's own refresh control is used once. The feedback per route is written to `report.stale.json`.
+- `scripts/check-polling.mjs`: lists per-route duplicate requests in the first 3 s and every repeating request over 65 s. `REAL=1 BASE=... TOKEN=...` runs it against a live backend without fixtures.
+
+### Verified
+- `tsc --noEmit`, `npm run build` and `npm run lint:tokens` (0) pass.
+- 14 routes at 1680 / 1440 / 1280 / 1024 / 760 in both themes: 0 overflow, 0 page errors. The request log is identical to the baseline.
+- All 14 routes in the empty, error, forbidden, slow and stale variants at 1440 and 760: 0 overflow, 0 errors.
+  - Stale feedback appears on /dashboard, /company, /company/projects/:id, /tasks and the session workbench.
+  - /new-audit reports a failed device refresh with a toast.
+  - The other routes have no manual refresh control.
+- Report keyboard path, run at 1440 and 1280 in both themes:
+  - The list is a single tab stop.
+  - ↓, End, Home and ↑ (clamped at the ends) move both the selection and the preview.
+  - → focuses the preview heading, and Esc or ← return to the row.
+  - Enter opens the full report.
+  - Keyboard navigation of the preview makes 0 requests.
+  - The preview label reads "摘要预览 · 不含发现明细与证据", and the preview background differs from the list surface.
+- Focus under the sticky workspace tabs: 0 occluded at 1680, 1440, 1280, 1024 and 760.
+- Agent:
+  - Pin state survives a reload in both directions.
+  - Column widths stay at 248 / 804 / 320 while content streams in.
+  - The center minimum holds exactly: a 1128 px workspace (center 560 px) pins, and 1127 px (center 559 px) falls back to the drawer. The toggle explains the fallback.
+- Request cadence over 65 s per route, compared with the Phase 12 build: identical duplicates and polling sets on every route (`docs/screenshots/phase-13/request-cadence.json`).
+- Contrast: 0 failing pairs. Focus scan: 319 controls, each with a visible ring.
+- Screenshots in `docs/screenshots/phase-13/`:
+  - Each route at 1440 / 1024 / 760 in both themes, plus the five state variants.
+  - `states/`: 0, 1 and 2 projects at three widths in both themes.
+  - `interaction/`: report keyboard, sticky focus, agent persistence and fallback, and row menus.
+
+### Remaining gaps
+- **No real backend was reachable.** The repo has no backend and `127.0.0.1:8099` refuses connections, so every flow ran on fixtures. `check-polling.mjs` is ready for a live run.
+- **Behavior seen only on fixtures:**
+  - The fixture closes every SSE stream at once, so notifications and the workbench hook stream reconnect every 3 s.
+  - The agent stream reconnects about every 1.2 s, and each reconnect reloads sessions, snapshot and events.
+  - A live backend keeps these streams open.
+  - The agent reconnect has no backoff. If a live server closed the stream repeatedly, the client would reconnect at that rate (existing behavior, unchanged).
+- **Duplicate requests on first load** (existing behavior, identical in Phase 12, data layer untouched):
+  - `/api/me` and `/api/tasks-summary` ×2 on /dashboard.
+  - `/api/pentest/devices` ×2 on /pentest and /new-audit (page plus sidebar).
+  - `/api/pentest/sessions/40` ×3 on the session page.
+  - `/api/models/catalog` and `/api/models/providers` ×3, and sessions and snapshot ×2 on /agent.
+- **Timestamps:** `created_at` is optional in `types/pentest.ts`. Whether the live project list returns it is unverified, and the fixture's values are inferred.
+- **Spacing literals:** the token lint does not cover spacing. About 500 px spacing values remain in the legacy pentest workbench (`workbench.css`, `v3.css` and inline styles in `features/pentest/workbench/*`). Moving them onto the 8 px token scale is a separate migration.
+
 ## Phase 12 — Composition finish
 
 Composition work on top of Phase 11, without touching tokens. Presentation only: routes, requests, permissions, task and report behavior are unchanged; the split preview stays the default report view.
