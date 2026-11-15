@@ -630,7 +630,7 @@ export const DashboardPage: React.FC = () => {
         <SignalPanel className="desktop:col-span-8" data-queue-signal loading={glob === null && !sumErr}
           question="评估队列现在的状态"
           value={<span data-running-num>{glob?.running ?? '—'}</span>}
-          statement={glob ? <>个任务正在运行，<span className="tnum" data-queued-num>{queued ?? '—'}</span> 个排队。{(glob.failed ?? 0) > 0 ? `${glob.failed} 个失败的任务需要查看原因。` : '没有失败的任务。'}</> : '正在读取队列。'}
+          statement={glob && glob.running == null ? '队列数据没有加载成功，暂时无法判断运行和失败情况。' : glob ? <>个任务正在运行，<span className="tnum" data-queued-num>{queued ?? '—'}</span> 个排队。{(glob.failed ?? 0) > 0 ? `${glob.failed} 个失败的任务需要查看原因。` : '没有失败的任务。'}</> : '正在读取队列。'}
           actions={(glob?.failed ?? 0) > 0
             ? <Button size="sm" variant="secondary" onClick={() => nav('/tasks?status=failed')} data-summary-failed>查看失败任务 <span className="tnum">{glob?.failed}</span></Button>
             : undefined}
@@ -664,7 +664,7 @@ export const DashboardPage: React.FC = () => {
                   );
                 })}
               </ul>
-            ) : <p className="px-6 pb-4 pt-2 text-label text-jz-muted">现在没有运行中的任务。</p>}
+            ) : <p className="px-6 pb-4 pt-2 text-label text-jz-muted">{glob && glob.running == null ? '运行中的任务暂时无法读取。' : '现在没有运行中的任务。'}</p>}
           </div>
         </SignalPanel>
 

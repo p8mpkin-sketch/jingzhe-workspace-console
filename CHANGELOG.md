@@ -3,6 +3,39 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 11 — Composition and product identity
+
+Bolder composition on the priority pages: one leading object or signal per page, secondary facts as quiet lists or fact rows instead of equal cards, master-detail where reading matters, grouped actions instead of repeated buttons. Presentation only: routes, requests, permissions, task and report behavior are unchanged.
+
+### Added
+- `components/ui/Composition.tsx`: `FeatureBand` (the page's primary object), `FactRow`, `SignalPanel` (question, large answer, breakdown), `StackedBar`, `MetricList`, `ActionMenu` (grouped exports and downloads), `RowActions` (one primary action plus overflow), `SplitView` (list and preview from 1280 px, drawer below), `CoverageDisclosure`, `ChartPanel` (a chart titled by its question, with an empty state), `ViewToggle` with `useViewPreference` (per-viewer, wrapped localStorage), `useScrolledPast`.
+- Token `--jz-text-headline` (24 px) for primary objects; Tailwind `text-headline`.
+
+### Changed
+- `/company`: the most recently created company-level project leads in a feature band with portfolio facts beside it (replacing four metric cards); the other projects follow with a card / table toggle; a short list ends with a next-steps tile instead of open canvas.
+- `/company/projects/:id`: project facts move into the header summary (per-tab metric rows removed); the tab bar sticks and, once the header scrolls away, carries the project name and batch run. Reports: generator and history share one surface, the chapter list is a disclosure, DOCX / PDF per row become one download menu, a report being generated is highlighted. Overview: completion as the leading signal with a stacked state bar, a next-steps list from the project's data, recent reports and runs side by side. Runs: totals as a fact row.
+- `/dashboard`: asymmetric 12-column grid. The queue is the leading signal (8 columns) with the running tasks folded in and the failed-task link as its action; assets, findings, models and open sessions are a metric list (4 columns). The domain chart is titled by its question and shows an empty state instead of an all-zero radar; the event feed is bounded to the chart's height.
+- `/reports`: new default preview view: compact list on the left, readable preview on the right (sticky) from 1280 px, drawer below. The preview uses the hub's existing aggregates only. Card and table views keep the full width; per-row summary CSV moves into a row menu. KPI cards become one fact strip.
+- `/tasks`: metrics and the running-tasks panel become one queue surface; one primary action per row at every width, the rest in the row menu.
+- `/discovery`: counts and the processing chain on one surface; evidence table beside a coverage disclosure of matching height; rows open a detail drawer; unresolved candidates per app run full width; stale notice on a failed refresh with data.
+- `/agent`: from 1440 px the run details are a pinned third pane (collapsible); below that the existing drawer.
+- `/system`: the model tab opens with a health surface (providers, active model, keys, routing coverage, probe results, one row per provider) before the settings; feedback has its own heading.
+- `DataTable`, `Pagination`, `BulkBar`: 20 px edge padding, matching `Panel`, so forms and tables share one rhythm.
+
+### Verified
+- `tsc --noEmit` and `npm run build` pass after every commit.
+- 14 routes at 1680 / 1440 / 1280 / 1024 / 760 in both themes: no overflow, no page errors; request log identical to the baseline (14 routes).
+- The eight changed routes in the empty, error, forbidden and slow variants at 1440 and 760: no overflow, no page errors. The dashboard no longer reads "no failed tasks" when the queue request failed.
+- Interactions (overview tab, sticky header on scroll, download menu, report preview drawer, discovery detail drawer, task row menu, agent inspector collapse, company table view) send no write requests.
+- Keyboard: tabbing the eight changed routes reaches 321 distinct controls, each with a visible focus ring.
+- Token lint unchanged at 19; contrast check: no failing text pair.
+- Screenshots: `docs/screenshots/phase-11/` (each changed route at 1440 / 1024 / 760 in both themes, state variants, interaction states).
+
+### Remaining gaps
+- Projects carry no timestamps, so "current project" means the most recently created company-level project (highest id).
+- The report preview shows only hub aggregates (score, matrix, domains); findings and evidence stay in the full report.
+- The agent inspector keeps its own inner styling; only its placement changed.
+
 ## Phase 10 — Visual elevation
 
 A second, presentation-only pass requested after phase 9 ("a large visible upgrade"). Changes go through tokens, shared primitives and the shell, so every route picks them up; no request, route, storage key or `data-*` hook changes.
