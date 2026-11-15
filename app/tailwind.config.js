@@ -56,6 +56,7 @@ module.exports = {
       body: size('body'),
       section: size('section'),
       title: size('title'),
+      headline: size('headline'),
       page: size('page'),
       metric: size('metric'),
       display: size('display'),
