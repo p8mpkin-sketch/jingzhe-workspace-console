@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronRight, FlaskConical, ShieldCheck, ListChecks } from 'lucide-react';
 import { api } from '@/services/api';
 import {
-  Page, PageHeader, MetricGrid, Metric, Panel, DataTable, SegmentedControl, StatusBadge, Tag, AsyncBoundary, EmptyState, InlineAlert,
+  Page, PageHeader, Panel, DataTable, SegmentedControl, StatusBadge, Tag, AsyncBoundary, EmptyState, Drawer, FactRow, CoverageDisclosure,
 } from '@/components/ui';
 import type { Column, TabItem } from '@/components/ui';
 import { moduleLabel } from '@/layout/navigation';
@@ -52,6 +52,7 @@ export const DiscoveryPage: React.FC = () => {
   const [data, setData] = useState<Overview | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [filter, setFilter] = useState<Filter>('all');
+  const [open, setOpen] = useState<Confirmed | null>(null);
 
   const load = useCallback(() => {
     setError(null);
@@ -109,87 +110,95 @@ export const DiscoveryPage: React.FC = () => {
       {!!error && !data && <span className="sr-only" data-discovery-error>加载失败</span>}
       {!error && !data && <span className="sr-only" data-discovery-loading>加载中</span>}
 
-      <div data-discovery-kpis>
-        <MetricGrid>
-          {KPI.map(({ key, label, hint }) => (
-            <Metric key={key} label={label} hint={hint} loading={!data && !error} data-discovery-kpi={key}
-              tone={key === 'unresolved_total' && data && data.unresolved_total > 0 ? 'attention' : 'default'}
-              value={<span data-discovery-value={key}>{data ? (data[key as keyof Overview] as number) : '—'}</span>} />
-          ))}
-        </MetricGrid>
-      </div>
-
-      <AsyncBoundary loading={!data && !error} error={error} onRetry={load} skeleton="table">
+      {/* Counts and the processing chain on one quiet surface: they describe the same funnel. */}
+      <section aria-label="发现概况" className="overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card" data-discovery-kpis>
+        <FactRow className="px-6 py-4" facts={KPI.map(({ key, label, hint }) => ({
+          label, hint,
+          tone: key === 'unresolved_total' && data && data.unresolved_total > 0 ? 'attention' as const : 'default' as const,
+          value: <span data-discovery-kpi={key}><span data-discovery-value={key}>{data ? (data[key as keyof Overview] as number) : error ? '—' : '…'}</span></span>,
+        }))} />
         {data && (
-          <>
-            <Panel title="处理环节" data-discovery-pipeline
-              description={`${data.apk_with_confirmed} / ${data.tasks_total} 个应用有已确认的结果`}>
-              {pipeline.length === 0 ? <EmptyState compact title="没有环节信息" cause="服务端没有返回处理环节。" /> : (
-                <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
-                  {pipeline.map((s, i) => (
-                    <li key={s.id} className="flex items-center gap-1.5">
-                      <StatusBadge tone={STAGE_TONE[s.state] ?? 'neutral'} title={STAGE_STATE[s.state] ?? '未开始'}>
-                        <span data-discovery-stage={s.id}><span className="mr-1 font-mono tnum text-jz-muted">{String(i + 1).padStart(2, '0')}</span>{s.label}</span>
-                        <span className="sr-only">({STAGE_STATE[s.state] ?? '未开始'})</span>
-                      </StatusBadge>
-                      {i < pipeline.length - 1 && <ChevronRight size={14} className="flex-none text-jz-muted" aria-hidden />}
-                    </li>
-                  ))}
-                </ol>
-              )}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-jz-border px-6 py-3" data-discovery-pipeline>
+            <span className="text-label font-medium text-jz-ink-2">处理环节</span>
+            {pipeline.length === 0 ? <span className="text-meta text-jz-muted">服务端没有返回处理环节。</span> : (
+              <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
+                {pipeline.map((st, i) => (
+                  <li key={st.id} className="flex items-center gap-1.5">
+                    <StatusBadge tone={STAGE_TONE[st.state] ?? 'neutral'} title={STAGE_STATE[st.state] ?? '未开始'}>
+                      <span data-discovery-stage={st.id}><span className="mr-1 font-mono tnum text-jz-muted">{String(i + 1).padStart(2, '0')}</span>{st.label}</span>
+                      <span className="sr-only">({STAGE_STATE[st.state] ?? '未开始'})</span>
+                    </StatusBadge>
+                    {i < pipeline.length - 1 && <ChevronRight size={14} className="flex-none text-jz-muted" aria-hidden />}
+                  </li>
+                ))}
+              </ol>
+            )}
+            <span className="ml-auto text-meta text-jz-muted">{data.apk_with_confirmed} / {data.tasks_total} 个应用有已确认的结果</span>
+          </div>
+        )}
+      </section>
+
+      <AsyncBoundary loading={!data && !error} error={error} stale={!!error && !!data} onRetry={load} skeleton="table">
+        {data && (
+          <div className="grid grid-cols-1 gap-6 desktop:grid-cols-12">
+            <Panel flush className="desktop:col-span-8" title="已确认的证据" description="点一行查看完整的假设、发现编号和证据来源。" data-discovery-confirmed
+              actions={<SegmentedControl items={filterItems} value={filter} onChange={setFilter} label="按证据来源筛选" />}>
+              <DataTable<Confirmed> label="已确认的证据" columns={columns} rows={rows} rowKey={(r) => r.finding_id || r.hypothesis_id}
+                rowDataAttrs={(r) => ({ 'data-discovery-row': r.hypothesis_id })} stickyHeader={false} onRowClick={setOpen}
+                rowClassName={(r) => (open && open.hypothesis_id === r.hypothesis_id ? 'bg-jz-brand-soft' : undefined)}
+                state={rows.length === 0 ? (
+                  <EmptyState compact icon={ListChecks} title={confirmed.length === 0 ? '还没有已确认的结果' : '没有符合条件的结果'}
+                    cause={confirmed.length === 0 ? '候选通过判定和独立核验后会出现在这里。' : '当前筛选下没有已确认的结果。'} />
+                ) : undefined} />
             </Panel>
 
-            <div className="grid grid-cols-1 gap-6 desktop:grid-cols-3">
-              <Panel flush className="desktop:col-span-2" title="已确认的证据" data-discovery-confirmed
-                actions={<SegmentedControl items={filterItems} value={filter} onChange={setFilter} label="按证据来源筛选" />}>
-                <DataTable<Confirmed> label="已确认的证据" columns={columns} rows={rows} rowKey={(r) => r.finding_id || r.hypothesis_id}
-                  rowDataAttrs={(r) => ({ 'data-discovery-row': r.hypothesis_id })} stickyHeader={false}
-                  state={rows.length === 0 ? (
-                    <EmptyState compact icon={ListChecks} title={confirmed.length === 0 ? '还没有已确认的结果' : '没有符合条件的结果'}
-                      cause={confirmed.length === 0 ? '候选通过判定和独立核验后会出现在这里。' : '当前筛选下没有已确认的结果。'} />
-                  ) : undefined} />
-              </Panel>
+            <div className="flex min-w-0 flex-col gap-6 desktop:col-span-4">
+              <CoverageDisclosure title="证据来源与覆盖" data-discovery-provenance
+                sources={[
+                  { key: 'real', label: '真实设备', state: real > 0 ? 'used' : 'unused', count: real, detail: '判定加独立核验，取值来自真实设备。' },
+                  { key: 'synthetic', label: '合成数据', state: synthetic > 0 ? 'used' : 'unused', count: synthetic, detail: '单独标记，不当作真实设备上的取值。' },
+                  { key: 'silver', label: '待核验（silver）', state: 'unavailable', count: data.silver_total, detail: '还没有独立核验，不计入已确认。' },
+                  { key: 'unresolved', label: '未决候选', state: 'unavailable', count: data.unresolved_total, detail: '缺少动态证据。' },
+                ]}
+                note="候选 = 数据流假设；已确认 = 通过判定并经独立核验。这些数字只反映已接入的应用，公开来源和已接入范围都无法保证覆盖完整。" />
 
-              <div className="flex min-w-0 flex-col gap-6">
-                <Panel title="证据来源" data-discovery-provenance>
-                  <dl className="space-y-2 text-label">
-                    {([['真实设备', real, 'bg-jz-teal'], ['合成数据', synthetic, 'bg-jz-amber'], ['待核验(silver)', data.silver_total, 'bg-jz-border-strong']] as const).map(([label, n, cls]) => (
-                      <div key={label} className="flex items-center gap-2">
-                        <span aria-hidden className={`h-2 w-2 flex-none rounded-pill ${cls}`} />
-                        <dt className="flex-1 text-jz-ink-2">{label}</dt>
-                        <dd className="font-mono tnum text-jz-ink">{n}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                  <p className="mt-3 border-t border-jz-border pt-3 text-meta text-jz-muted">已确认只来自判定加独立核验。合成数据已单独标记,不当作真实设备上的取值。</p>
-                </Panel>
-
-                <Panel title="未决候选" description="缺少动态证据,不计入已确认" data-discovery-unresolved>
-                  <div className="font-display text-metric font-semibold tnum text-jz-ink">{data.unresolved_total}</div>
-                  {tasks.length > 0 && (
-                    <>
-                      <div className="mt-3 flex items-center justify-between text-meta text-jz-muted"><span>应用</span><span>数据流假设</span></div>
-                      <ul className="mt-1 space-y-1.5 text-label">
-                        {tasks.slice(0, 4).map((t) => (
-                          <li key={t.task} className="flex items-center gap-2">
-                            <span className="min-w-0 flex-1 truncate text-jz-ink-2" title={t.task}>{shortTask(t.task)}</span>
-                            <span className="font-mono tnum text-jz-muted">{t.dataflow}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      {tasks.length > 4 && <p className="mt-2 text-meta text-jz-muted">只列出前 4 个,共 {tasks.length} 个应用。</p>}
-                    </>
-                  )}
-                </Panel>
-              </div>
             </div>
-
-            <InlineAlert tone="info">
-              候选 = 数据流假设;已确认 = 通过判定并经独立核验;真实设备与合成数据按证据来源区分。这些数字只反映已接入的应用,不代表覆盖完整。
-            </InlineAlert>
-          </>
+            <Panel flush className="desktop:col-span-12" title="未决候选按应用" description="缺少动态证据，不计入已确认" data-discovery-unresolved>
+              {tasks.length > 0 ? (
+                <>
+                  <ul className="grid grid-cols-1 text-label tablet:grid-cols-2 desktop:grid-cols-3 [&>li]:border-b [&>li]:border-jz-border">
+                    {tasks.slice(0, 9).map((t) => (
+                      <li key={t.task} className="flex items-center gap-2 px-5 py-2.5">
+                        <span className="min-w-0 flex-1 truncate text-jz-ink-2" title={t.task}>{shortTask(t.task)}</span>
+                        <span className="font-mono tnum text-jz-muted" title="数据流假设">{t.dataflow}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {tasks.length > 9 && <p className="px-5 py-2.5 text-meta text-jz-muted">只列出前 9 个，共 {tasks.length} 个应用。</p>}
+                </>
+              ) : <EmptyState compact title="没有按应用的统计" />}
+            </Panel>
+          </div>
         )}
       </AsyncBoundary>
+
+      <Drawer open={!!open} onClose={() => setOpen(null)} title={open ? `证据 ${shortId(open.hypothesis_id)}` : '证据'}>
+        {open && (
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2.5 text-label" data-discovery-detail>
+            {([
+              ['假设', <span className="break-all font-mono">{open.hypothesis_id}</span>],
+              ['应用', <span className="break-all">{open.task}</span>],
+              ['证据来源', open.synthetic ? '合成数据（不代表真实设备上的取值）' : `真实设备 · ${open.provenance}`],
+              ['设备', <span className="font-mono">{open.device || '—'}</span>],
+              ['发现编号', <span className="break-all font-mono">{open.finding_id || '—'}</span>],
+              ['证明级别', <span className="font-mono">{open.proof_level || '—'}</span>],
+              ['核验来源', open.source || '设备来源'],
+            ] as Array<[string, React.ReactNode]>).map(([k, v]) => (
+              <React.Fragment key={k}><dt className="text-jz-muted">{k}</dt><dd className="min-w-0 text-jz-ink">{v}</dd></React.Fragment>
+            ))}
+          </dl>
+        )}
+      </Drawer>
     </Page>
   );
 };

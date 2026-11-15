@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Eye, EyeOff, Plug } from 'lucide-react';
 import {
-  Button, Panel, StatusBadge, Tag, SkeletonLoader, EmptyState, Field, Input, Select, Checkbox, Drawer, ConfirmDialog, InlineAlert,
+  Button, Panel, StatusBadge, Tag, SkeletonLoader, EmptyState, Field, Input, Select, Checkbox, Drawer, ConfirmDialog, InlineAlert, FactRow,
 } from '@/components/ui';
 import { api } from '@/services/api';
 
@@ -110,6 +110,50 @@ export const ModelConsole: React.FC = () => {
     <div className="flex flex-col gap-6">
       {toast && <div data-toast role="status" className="fixed right-6 top-14 z-50 rounded-control border border-jz-teal bg-jz-surface px-3 py-1.5 text-label text-jz-teal shadow-card">{toast}</div>}
 
+      {/* Health first: what is working right now, read from data this console already loaded. Settings follow. */}
+      <section aria-label="模型服务健康" className="overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card" data-model-health>
+        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-jz-border px-5 py-3.5">
+          <h2 className="text-section font-semibold text-jz-ink">健康状态</h2>
+          <p className="text-meta text-jz-muted">探针结果只来自本次打开页面后手动运行的探针。</p>
+        </div>
+        {(() => {
+          const slots = ['inference', 'cleaning', 'report', 'fallback'];
+          const routed = slots.filter((k) => (routing as any)?.[k]).length;
+          const keyed = ps.filter((p) => p.key_masked).length;
+          const probed = ps.filter((p) => probes[p.id]);
+          const okN = probed.filter((p) => probes[p.id]?.error_class === 'OK').length;
+          return (
+            <FactRow className="px-5 py-4" facts={[
+              { label: '供应商', value: ps.length, hint: `已启用 ${ps.filter((p) => p.enabled !== false).length}` },
+              { label: '主力模型', value: <span className="text-body font-medium">{(() => { const a = ps.find((p) => p.id === data.active_id); return a ? `${a.label || a.vendor || a.name || a.id} · ${a.model || '—'}` : data.active_model || '未设置'; })()}</span> },
+              { label: '已配置 Key', value: `${keyed}/${ps.length}`, tone: ps.length && keyed < ps.length ? 'attention' : 'default' },
+              { label: '分流规则', value: `${routed}/${slots.length}`, tone: routed < slots.length ? 'attention' : 'success', hint: routed < slots.length ? '有任务类型未配置模型' : '全部已配置' },
+              { label: '探针', value: probed.length ? `${okN}/${probed.length}` : '—', tone: probed.length && okN < probed.length ? 'danger' : probed.length ? 'success' : 'default', hint: probed.length ? '通过 / 已探测' : '尚未探测' },
+            ]} />
+          );
+        })()}
+        {ps.length > 0 && (
+          <ul className="divide-y divide-jz-border border-t border-jz-border">
+            {ps.map((p) => {
+              const pr = probes[p.id];
+              const ms = pr ? (pr.stages || []).reduce((n: number, st: ProbeStage) => n + (st.rtt_ms || 0), 0) : 0;
+              return (
+                <li key={p.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-2.5 text-label" data-health-row={p.id}>
+                  <span className="min-w-0 flex-1 basis-40 truncate font-medium text-jz-ink">{p.label || p.vendor || p.name || p.id}<span className="ml-2 font-mono text-meta text-jz-muted">{p.model || '—'}</span></span>
+                  {data.active_id === p.id && <StatusBadge tone="brand">主力</StatusBadge>}
+                  {p.enabled === false && <StatusBadge tone="neutral">已停用</StatusBadge>}
+                  <StatusBadge tone={p.key_masked ? 'success' : 'attention'}>{p.key_masked ? 'Key 已配置' : 'Key 未配置'}</StatusBadge>
+                  <StatusBadge tone={!pr ? 'neutral' : pr.error_class === 'OK' ? 'success' : 'danger'}>
+                    {!pr ? '未探测' : pr.error_class === 'OK' ? `探针通过${ms ? ` · ${ms}ms` : ''}` : `探针失败 · ${pr.error_class || '未知'}`}
+                  </StatusBadge>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <h2 className="jz-section -mb-2 text-jz-ink" data-model-settings>设置</h2>
       <Panel title="分流规则" description="主模型返回 429 或超出限额时自动改用兜底模型,并在时间线上标记。">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 desktop:grid-cols-4">
           {[['inference', '推理任务(逆向、因果分析)'], ['cleaning', '清洗任务(流量、日志)'], ['report', '报告生成'], ['fallback', '兜底模型']].map(([k, label]) => (

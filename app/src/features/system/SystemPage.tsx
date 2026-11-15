@@ -40,7 +40,7 @@ export const SystemPage: React.FC = () => {
   const items: TabItem<Tab>[] = TABS.map((t) => ({ key: t.key, label: t.label, dataAttrs: { 'data-system-tab': t.key } }));
   return (
     <Page data-system-page>
-      <PageHeader title={moduleLabel('/system')} description="模型服务、账号、审计记录、资源用量和开放接口。" />
+      <PageHeader title={moduleLabel('/system')} description="模型服务、账号、审计记录、资源用量和开放接口。每个标签页先给出当前状态，再列出可以修改的设置。" />
       <Tabs items={items} value={tab} onChange={setTab} label="系统设置" />
       <div className="space-y-6" role="tabpanel" aria-label={TABS.find((t) => t.key === tab)?.label}>
         {tab === 'models' && <ModelsTab />}
@@ -94,6 +94,7 @@ function ModelsTab() {
   return (
     <>
       <ModelConsole />
+      <h2 className="jz-section -mb-2 text-jz-ink">反馈</h2>
       <FeedbackStats />
     </>
   );

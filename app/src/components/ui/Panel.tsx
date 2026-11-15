@@ -56,9 +56,11 @@ export const MetricGrid: React.FC<{ children: React.ReactNode; className?: strin
 export const ObjectCard: React.FC<{
   title: React.ReactNode; subtitle?: React.ReactNode; badge?: React.ReactNode; media?: React.ReactNode;
   children?: React.ReactNode; footer?: React.ReactNode; className?: string;
-} & Omit<React.HTMLAttributes<HTMLElement>, 'title'>> = ({ title, subtitle, badge, media, children, footer, className, ...rest }) => (
+  /** Tighter padding for secondary lists; put the open action in `badge` and leave `footer` out. */
+  compact?: boolean;
+} & Omit<React.HTMLAttributes<HTMLElement>, 'title'>> = ({ title, subtitle, badge, media, children, footer, compact, className, ...rest }) => (
   <article className={cx('flex min-w-0 flex-col rounded-panel border border-jz-border bg-jz-surface shadow-card transition-[box-shadow,border-color] duration-hover hover:border-jz-border-strong hover:shadow-raised', className)} {...rest}>
-    <div className="flex items-start gap-3 p-5">
+    <div className={cx('flex items-start gap-3', compact ? 'px-4 pb-2 pt-4' : 'p-5')}>
       {media && <div className="flex-none">{media}</div>}
       <div className="min-w-0 flex-1">
         <h3 className="text-body font-semibold text-jz-ink break-words">{title}</h3>
@@ -66,7 +68,7 @@ export const ObjectCard: React.FC<{
       </div>
       {badge && <div className="flex-none">{badge}</div>}
     </div>
-    {children && <div className="flex-1 px-5 pb-5">{children}</div>}
+    {children && <div className={cx('flex-1', compact ? 'px-4 pb-4' : 'px-5 pb-5')}>{children}</div>}
     {footer && <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-jz-border bg-jz-surface-2/40 px-5 py-3">{footer}</div>}
   </article>
 );

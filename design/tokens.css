@@ -52,6 +52,7 @@
   --jz-text-body: 14px;      --jz-leading-body: 1.6;
   --jz-text-section: 17px;   --jz-leading-section: 1.35;
   --jz-text-title: 20px;     --jz-leading-title: 1.25;   /* dialog title, compact metric */
+  --jz-text-headline: 24px;  --jz-leading-headline: 1.2; /* primary object on a page (feature band, signal) */
   --jz-text-page: 30px;      --jz-leading-page: 1.2;
   --jz-text-metric: 32px;    --jz-leading-metric: 1.1;
   --jz-text-display: 36px;   --jz-leading-display: 1.1;

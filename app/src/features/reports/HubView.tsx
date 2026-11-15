@@ -1,10 +1,11 @@
 // HubView.tsx — report hub: metric row, toolbar (search / risk filter / sort / view), task cards or table,
 // selection with a batch summary export, pagination. Presentation only; every number comes from the parent.
 import React from 'react';
-import { LayoutGrid, Table2, FileDown, ArrowUpDown, Check, FileSearch, SearchX, Plus } from 'lucide-react';
+import { LayoutGrid, Table2, FileDown, ArrowUpDown, Check, FileSearch, SearchX, Plus, PanelRight, ArrowRight, Download, Eye } from 'lucide-react';
 import {
-  Button, StatusBadge, CodePill, Panel, Metric, MetricGrid, ObjectCard, DataTable, Pagination, BulkBar,
-  SearchField, SegmentedControl, Popover, MenuItem, AsyncBoundary, EmptyState, Checkbox, IconButton, useMediaQuery, useCompactTable,
+  Button, StatusBadge, CodePill, Panel, ObjectCard, DataTable, Pagination, BulkBar,
+  SearchField, SegmentedControl, Popover, MenuItem, AsyncBoundary, EmptyState, Checkbox, useMediaQuery, useCompactTable,
+  SplitView, FactRow, ActionMenu, RowActions, cx,
 } from '@/components/ui';
 import type { Column, TabItem } from '@/components/ui';
 import { ScoreRing, MX_LABEL, scoreCls } from './shared';
@@ -18,7 +19,8 @@ export type HubState = {
   q: string;
   risk: 'all' | 'highrisk' | 'lowscore';
   sort: 'new' | 'risk' | 'score';
-  view: 'cards' | 'table';
+  /** split = list with a readable preview beside it (drawer below 1280 px); cards and table use the full width. */
+  view: 'split' | 'cards' | 'table';
   page: number;
   pageSize: number;
   checked: Set<number>;
@@ -53,6 +55,77 @@ const MatrixCounts: React.FC<{ mx: NonNullable<HubEntry['agg']>['mx'] | undefine
     <span className={`inline-flex items-center gap-x-3 gap-y-1 ${compact ? 'whitespace-nowrap' : 'flex-wrap'}`}>
       {cell('red', 'bg-jz-red')}{cell('yellow', 'bg-jz-amber')}{cell('green', 'bg-jz-teal')}{cell('gray', 'bg-jz-border-strong')}
     </span>
+  );
+};
+
+/** Readable summary of one task's report, built only from the hub's own aggregates (no extra request). */
+const ReportPreview: React.FC<{
+  entry: HubEntry; onOpen: (tid: number) => void; onExportOne: (tid: number) => void;
+  /** Wide split only: Escape or ArrowLeft returns focus to the list row. */
+  onBack?: () => void; headingRef?: React.Ref<HTMLHeadingElement>;
+}> = ({ entry, onOpen, onExportOne, onBack, headingRef }) => {
+  const { task: t, agg } = entry;
+  const s = agg?.summary;
+  const score = complianceScoreOf(s);
+  const top = domainsOf(agg).slice(0, 6);
+  const max = Math.max(1, ...top.map((d) => d.count));
+  return (
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-panel border border-jz-border bg-jz-surface-2" data-hub-preview={t.id}
+      onKeyDown={onBack ? (e) => {
+        if (e.key !== 'Escape' && e.key !== 'ArrowLeft') return;
+        const el = e.target as HTMLElement;
+        if (el.closest('[role="menu"], input, select, textarea')) return;
+        e.preventDefault(); onBack();
+      } : undefined}>
+      <div className="flex items-center gap-2 border-b border-jz-border px-6 py-2 text-meta text-jz-muted" data-hub-preview-label>
+        <Eye size={14} aria-hidden className="flex-none" />
+        <span><span className="font-medium text-jz-ink-2">摘要预览</span> · 不含发现明细与证据</span>
+      </div>
+      <header className="flex flex-wrap items-start gap-4 border-b border-jz-border px-6 py-5">
+        <ScoreRing rate={score ?? 0} size={64} stroke={4.5}>
+          <span className={cx('font-display text-section font-semibold tnum', score == null ? 'text-jz-muted' : 'text-jz-ink')} title="合规分">{score ?? '—'}</span>
+        </ScoreRing>
+        <div className="min-w-0 flex-1 basis-56">
+          <div className="text-meta text-jz-muted"><span className="font-mono tnum">#{t.id}</span> · 更新于 <span className="font-mono tnum">{when(t) || '—'}</span></div>
+          <h2 ref={headingRef} tabIndex={-1} className="mt-0.5 w-fit max-w-full rounded-control font-display text-section font-semibold text-jz-ink break-words" data-hub-preview-heading>{t.app_name || t.package || `任务 #${t.id}`}</h2>
+          <div className="mt-2"><CodePill value={t.package || `任务#${t.id}未返回包名`} maxW="max-w-full" /></div>
+        </div>
+        {s?.risk_level
+          ? <StatusBadge tone={riskTone(s.risk_level)}>风险 {s.risk_level}</StatusBadge>
+          : <StatusBadge tone="neutral">{agg?.loading ? '统计中' : '无会话数据'}</StatusBadge>}
+      </header>
+      <div className="flex flex-col gap-6 px-6 py-5">
+        <FactRow facts={[
+          { label: '合规分', value: score ?? '—', hint: '100 − 风险分' },
+          { label: '确认高危', value: s && typeof s.confirmed_high === 'number' ? s.confirmed_high : '—', tone: s?.confirmed_high ? 'danger' : 'default' },
+          { label: '确认 / 复核 / 排除', value: s?.counts ? `${s.counts.confirmed ?? 0} / ${s.counts.pending ?? 0} / ${s.counts.excluded ?? 0}` : '—' },
+          { label: '加固', value: <span className="text-body font-medium">{t.packer && t.packer !== 'none' ? t.packer : '未识别'}</span> },
+        ]} />
+        <section>
+          <h3 className="mb-2 text-label font-semibold text-jz-ink">鉴权矩阵</h3>
+          <div className="text-label"><MatrixCounts mx={agg?.mx} /></div>
+        </section>
+        <section>
+          <h3 className="mb-2 text-label font-semibold text-jz-ink">发现集中在哪些域</h3>
+          {top.length ? (
+            <ul className="space-y-2.5">
+              {top.map((d) => (
+                <li key={d.name}>
+                  <div className="mb-1 flex items-baseline justify-between gap-2 text-label"><span className="text-jz-ink">{d.name}</span><span className="font-mono text-meta tnum text-jz-ink-2">{d.count} 项</span></div>
+                  <div className="h-1.5 overflow-hidden rounded-pill bg-jz-surface-2"><div className="h-full rounded-pill bg-jz-brand" style={{ width: `${Math.round((d.count / max) * 100)}%` }} /></div>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="text-label text-jz-muted">{agg?.sid ? '这个任务的会话没有发现。' : '没有关联会话，无法按域统计。'}</p>}
+        </section>
+      </div>
+      <footer className="mt-auto flex flex-wrap items-center gap-2 border-t border-jz-border bg-jz-surface px-6 py-3">
+        <Button size="sm" onClick={() => onOpen(t.id)} data-hub-open={t.id}>打开完整报告<ArrowRight size={14} aria-hidden /></Button>
+        <ActionMenu label="导出" menuLabel={`导出任务 #${t.id}`} icon={<Download size={14} aria-hidden />}
+          items={[{ key: 'csv', label: '汇总 CSV', icon: <FileDown size={14} aria-hidden />, onSelect: () => onExportOne(t.id), attrs: { 'data-hub-export-one': t.id } }]} />
+        <span className="ml-auto text-meta text-jz-muted">发现明细、证据与 Markdown / JSON 导出在完整报告里</span>
+      </footer>
+    </article>
   );
 };
 
@@ -93,17 +166,42 @@ export const HubView: React.FC<{
 
   const riskItems: TabItem<HubState['risk']>[] = (['all', 'highrisk', 'lowscore'] as const).map((k) => ({ key: k, label: RISK_LABEL[k], dataAttrs: { 'data-hub-risk-btn': k } }));
   const viewItems: TabItem<HubState['view']>[] = [
+    { key: 'split', label: <><PanelRight size={14} aria-hidden /><span className="max-[760px]:sr-only">预览</span></>, dataAttrs: { 'data-hub-view-btn': 'split' } },
     { key: 'cards', label: <><LayoutGrid size={14} aria-hidden /><span className="max-[760px]:sr-only">卡片</span></>, dataAttrs: { 'data-hub-view-btn': 'cards' } },
     { key: 'table', label: <><Table2 size={14} aria-hidden /><span className="max-[760px]:sr-only">表格</span></>, dataAttrs: { 'data-hub-view-btn': 'table' } },
   ];
 
   const rowActions = (t: any) => (
-    <span className="inline-flex items-center gap-2">
-      <Button size="sm" variant="ghost" icon={<FileDown size={14} aria-hidden />} onClick={() => onExportOne(t.id)} data-hub-export-one={t.id}
-        title="导出该任务的汇总 CSV">汇总 CSV</Button>
-      <Button size="sm" variant="secondary" onClick={() => onOpen(t.id)} data-hub-open={t.id}>查看报告</Button>
-    </span>
+    <RowActions label={`任务 #${t.id} 的更多操作`}
+      primary={<Button size="sm" variant="secondary" onClick={() => onOpen(t.id)} data-hub-open={t.id}>查看报告</Button>}
+      more={[{ key: 'csv', label: '导出汇总 CSV', icon: <FileDown size={14} aria-hidden />, onSelect: () => onExportOne(t.id), attrs: { 'data-hub-export-one': t.id } }]} />
   );
+
+  // Split view: the selected task (first on the page by default on wide screens; none on narrow, so the drawer stays closed).
+  const wide = useMediaQuery('(min-width: 1280px)');
+  const [pick, setPick] = React.useState<number | null>(null);
+  const current = paged.find((e) => e.task.id === pick) ?? (wide ? paged[0] : undefined);
+  // Roving focus: one tab stop for the list; arrows move it (and the preview, on wide screens),
+  // Enter opens the full report, ArrowRight moves into the preview and Escape / ArrowLeft come back.
+  const listRef = React.useRef<HTMLUListElement>(null);
+  const headingRef = React.useRef<HTMLHeadingElement>(null);
+  const [focusId, setFocusId] = React.useState<number | null>(null);
+  const rovingId = (paged.some((e) => e.task.id === focusId) ? focusId : current?.task.id) ?? paged[0]?.task.id;
+  const focusPick = (id: number) => listRef.current?.querySelector<HTMLElement>(`[data-hub-pick="${id}"]`)?.focus();
+  const onPickKey = (e: React.KeyboardEvent<HTMLElement>, idx: number, id: number) => {
+    const move = (to: number) => {
+      const next = paged[Math.max(0, Math.min(paged.length - 1, to))]?.task.id;
+      if (next == null) return;
+      e.preventDefault(); setFocusId(next); if (wide) setPick(next); focusPick(next);
+    };
+    if (e.key === 'ArrowDown') move(idx + 1);
+    else if (e.key === 'ArrowUp') move(idx - 1);
+    else if (e.key === 'Home') move(0);
+    else if (e.key === 'End') move(paged.length - 1);
+    else if (e.key === 'Enter') { e.preventDefault(); if (wide) onOpen(id); else setPick(id); }
+    else if (e.key === ' ') { e.preventDefault(); setPick(id); }
+    else if (e.key === 'ArrowRight' && wide) { e.preventDefault(); setPick(id); requestAnimationFrame(() => headingRef.current?.focus()); }
+  };
 
   // Secondary columns appear only where there is room for them; all of them stay in the cards and in the CSV.
   const mid = useMediaQuery('(min-width: 1280px)');
@@ -134,23 +232,20 @@ export const HubView: React.FC<{
     } },
     { key: 'updated', header: '更新', mono: true, cell: ({ task: t }) => when(t) || '—' },
     { key: 'actions', header: <span className="sr-only">操作</span>, label: '操作', align: 'right', card: 'action', cell: ({ task: t }) => (
-      <span className="inline-flex items-center gap-1 whitespace-nowrap">
-        <IconButton size="sm" variant="ghost" label="导出该任务的汇总 CSV" onClick={() => onExportOne(t.id)}><FileDown size={14} aria-hidden /></IconButton>
-        <Button size="sm" variant="secondary" onClick={() => onOpen(t.id)}>查看报告</Button>
-      </span>
+      <span className="inline-flex whitespace-nowrap">{rowActions(t)}</span>
     ) },
   ] as Column<HubEntry>[]).filter((c) => compact || ((roomy || (c.key !== 'domains' && c.key !== 'updated')) && (mid || (c.key !== 'counts' && c.key !== 'packer'))));
 
   return (
     <div className="flex flex-col gap-6" data-reports-hub>
-      <MetricGrid>
-        <Metric label="已完成评估任务" value={failed ? '—' : kpi.total} loading={loading} hint="类型为评估且状态为已完成" data-hub-kpi="已审计任务" />
-        <Metric label="确认高危发现" value={dash(kpi.highRisk)} loading={loading} tone={kpi.highRisk ? 'danger' : 'default'}
-          hint={aggHint ?? '各任务最新会话的确认高危之和'} data-hub-kpi="累计高危" />
-        <Metric label="平均合规分" value={dash(kpi.avgScore)} loading={loading}
-          hint={aggHint ?? '合规分 = 100 − 风险分'} title="平台没有 MASVS 绝对合规分;此处为 100 减去会话风险分,限定在 0 到 100" data-hub-kpi="平均 MASVS 分" />
-        <Metric label="可导出完整报告" value={failed ? '—' : kpi.exportable} loading={loading} hint="有关联活跃会话的任务" data-hub-kpi="可导出完整报告" />
-      </MetricGrid>
+      <section aria-label="报告概况" className="rounded-panel border border-jz-border bg-jz-surface px-6 py-4 shadow-card" data-hub-kpis>
+        <FactRow facts={[
+          { label: '已完成评估任务', value: <span data-hub-kpi="已审计任务">{loading ? '…' : failed ? '—' : kpi.total}</span>, hint: '类型为评估且状态为已完成' },
+          { label: '确认高危发现', value: <span data-hub-kpi="累计高危">{loading ? '…' : dash(kpi.highRisk)}</span>, tone: kpi.highRisk ? 'danger' : 'default', hint: aggHint ?? '各任务最新会话的确认高危之和' },
+          { label: <span title="平台没有 MASVS 绝对合规分;此处为 100 减去会话风险分,限定在 0 到 100">平均合规分</span>, value: <span data-hub-kpi="平均 MASVS 分">{loading ? '…' : dash(kpi.avgScore)}</span>, hint: aggHint ?? '合规分 = 100 − 风险分' },
+          { label: '可导出完整报告', value: <span data-hub-kpi="可导出完整报告">{loading ? '…' : failed ? '—' : kpi.exportable}</span>, hint: '有关联活跃会话的任务' },
+        ]} />
+      </section>
 
       <Panel flush>
         <div className="flex flex-wrap items-center gap-3 px-4 py-3" data-hub-toolbar>
@@ -168,7 +263,7 @@ export const HubView: React.FC<{
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-jz-border px-4 py-2 text-label text-jz-muted">
           <span className="tnum">共 {entries.length} 个任务,符合条件 {filtered.length} 个</span>
-          {paged.length > 0 && (hub.view === 'cards' || compact) && (
+          {paged.length > 0 && (hub.view !== 'table' || compact) && (
             <Checkbox className="!items-center" checked={allChecked} onChange={toggleAll} data-hub-check-all label={<span className="text-label text-jz-ink-2">选择本页</span>} />
           )}
         </div>
@@ -193,7 +288,45 @@ export const HubView: React.FC<{
                   action={<Button variant="secondary" onClick={() => patch({ q: '', risk: 'all', page: 1 })}>清除筛选</Button>} />
               </div>
             )}>
-            {hub.view === 'cards' ? (
+            {hub.view === 'split' ? (
+              <div className="p-4" data-hub-split>
+                <SplitView open={!!current} onClose={() => setPick(null)}
+                  detailTitle={current ? (current.task.app_name || current.task.package || `任务 #${current.task.id}`) : '报告预览'}
+                  detail={current ? <ReportPreview entry={current} onOpen={onOpen} onExportOne={onExportOne} headingRef={headingRef}
+                    onBack={wide ? () => focusPick(current.task.id) : undefined} /> : null}
+                  list={(
+                    <ul ref={listRef} className="divide-y divide-jz-border overflow-hidden rounded-card border border-jz-border" aria-label="已完成评估任务" data-hub-list>
+                      {paged.map((e, idx) => {
+                        const t = e.task; const s = e.agg?.summary; const score = complianceScoreOf(s);
+                        const on = current?.task.id === t.id;
+                        return (
+                          <li key={t.id} data-hub-row={t.id} aria-current={on ? 'true' : undefined}
+                            className={cx('flex items-center gap-3 px-3 py-3 transition-colors duration-hover', on ? 'bg-jz-brand-soft' : 'hover:bg-jz-surface-2')}>
+                            <Checkbox className="!items-center" checked={hub.checked.has(t.id)} onChange={() => toggleOne(t.id)} data-hub-check={t.id}
+                              label={<span className="sr-only">选择任务 #{t.id}</span>} />
+                            <div className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-control" onClick={() => { setFocusId(t.id); setPick(t.id); }}
+                              role="button" tabIndex={t.id === rovingId ? 0 : -1} onKeyDown={(ev) => onPickKey(ev, idx, t.id)}
+                              aria-keyshortcuts={wide ? 'ArrowUp ArrowDown Home End Enter ArrowRight' : 'ArrowUp ArrowDown Home End Enter'}
+                              aria-label={`预览 ${t.app_name || t.package || '任务 #' + t.id}`} data-hub-pick={t.id}>
+                              <span className={cx('w-9 flex-none text-right font-mono text-body font-semibold tnum', scoreCls(score))} title="合规分">{score ?? '—'}</span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-label font-medium text-jz-ink">{t.app_name || t.package || `任务 #${t.id}`}</span>
+                                <span className="block truncate font-mono text-meta text-jz-muted">#{t.id} · {when(t) || '—'}</span>
+                              </span>
+                              {s?.risk_level
+                                ? <StatusBadge tone={riskTone(s.risk_level)}>{s.risk_level}</StatusBadge>
+                                : <StatusBadge tone="neutral">{e.agg?.loading ? '统计中' : '无数据'}</StatusBadge>}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )} />
+                <p className="mt-3 text-meta text-jz-muted" data-hub-keys>{wide
+                  ? '↑ ↓ 切换预览，→ 进入预览，Enter 打开完整报告；勾选后可批量导出汇总 CSV。'
+                  : '点一行查看摘要预览；勾选后可批量导出汇总 CSV。'}</p>
+              </div>
+            ) : hub.view === 'cards' ? (
               <div className="grid grid-cols-1 gap-4 p-4 table:grid-cols-2 desktop:grid-cols-3 wide:grid-cols-4" data-hub-cards>
                 {paged.map(({ task: t, agg }) => {
                   const score = complianceScoreOf(agg?.summary);

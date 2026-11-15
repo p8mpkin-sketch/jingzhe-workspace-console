@@ -8,6 +8,7 @@ import { AnswerCard } from './components_agent/AnswerCard';
 import { TurnView } from './components_agent/TurnView';
 import { useAgentSession } from './useAgentSession';
 import { api } from '@/services/api';
+import { useMediaQuery, useViewPreference } from '@/components/ui';
 import { projectTurns } from './model/turnProjection';
 import type { EvidenceView } from './content/types';
 
@@ -29,6 +30,16 @@ export const AgentPage: React.FC = () => {
   const atBottomRef = useRef(true);
   const [showJump, setShowJump] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
+  // From 1440 px the run context is a third, pinned pane (collapsible); below that it stays a drawer.
+  // The choice to pin or collapse is remembered; the pane also yields to the drawer when pinning would
+  // squeeze the conversation below AGENT_CENTER_MIN (narrow window, open session rail).
+  const wide = useMediaQuery('(min-width: 1440px)');
+  const [fits, setFits] = useState(true);
+  const [pinPref, setPinPref] = useViewPreference<'pinned' | 'collapsed'>('agent-inspector', 'pinned', ['pinned', 'collapsed']);
+  const pinned = pinPref === 'pinned';
+  const pinMode = wide && fits;
+  const toggleInspector = () => (pinMode ? setPinPref(pinned ? 'collapsed' : 'pinned') : setInspectorOpen(true));
+  const closeInspector = () => (pinMode ? setPinPref('collapsed') : setInspectorOpen(false));
   const [sessionOpen, setSessionOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [webStatus, setWebStatus] = useState<any>(null);
@@ -134,12 +145,14 @@ export const AgentPage: React.FC = () => {
         sessionRail={<AgentSidebar sessions={a.sessions} current={a.current} onNew={onNew}
           onSelect={(id) => { a.setCurrent(id); setSessionOpen(false); }} onDelete={onDelete} onBatchDelete={onBatchDelete}
           className="h-full" />}
-        inspectorOpen={inspectorOpen}
+        inspectorOpen={!pinMode && inspectorOpen}
+        inspectorPinned={pinMode && pinned}
+        onPinFitChange={setFits}
         onCloseInspector={() => setInspectorOpen(false)}
         inspector={<AgentInspector nodes={a.nodes} tools={tools} events={a.events}
           lastSeq={a.lastSeq} lastEvent={a.lastEvent}
           goal={goal} todos={todos} metrics={a.metrics}
-          onClose={() => setInspectorOpen(false)} />}
+          onClose={closeInspector} />}
       >
       <div className="flex-1 min-w-0 flex flex-col relative">
         <div className="flex items-center gap-2 px-3 sm:px-5 py-2 border-b border-jz-border/40">
@@ -165,8 +178,9 @@ export const AgentPage: React.FC = () => {
           <span data-agent-connected className={`hidden md:flex items-center gap-1 text-meta ${a.connected ? 'text-jz-teal' : 'text-jz-muted'}`}>
             <Radio size={10} /> {a.connected ? '已连接' : '回放'}
           </span>
-          <button onClick={() => setInspectorOpen(true)} data-agent-inspector-toggle
-            className="flex items-center gap-1 px-2 py-1 rounded-control text-meta text-jz-muted hover:text-jz-brand hover:bg-jz-surface-2/60">
+          <button onClick={toggleInspector} data-agent-inspector-toggle={pinMode ? (pinned ? 'pinned' : 'collapsed') : 'drawer'} aria-pressed={pinMode ? pinned : undefined}
+            title={pinMode ? (pinned ? '收起运行详情栏（会记住）' : '固定运行详情栏（会记住）') : wide ? '当前宽度放不下固定栏，运行详情以抽屉打开' : '打开运行详情'}
+            className={`flex items-center gap-1 px-2 py-1 rounded-control text-meta hover:text-jz-brand hover:bg-jz-surface-2/60 ${pinMode && pinned ? 'text-jz-brand' : 'text-jz-muted'}`}>
             <PanelRight size={12} /> <span className="hidden sm:inline">运行详情</span>
           </button>
           <div className="relative">

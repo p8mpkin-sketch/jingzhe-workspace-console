@@ -75,7 +75,7 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
             {rows.map((row, i) => {
               const k = keys[i];
               return (
-                <li key={k} {...rowDataAttrs?.(row)} className={cx('flex gap-3 px-4 py-3', rowClassName?.(row))}>
+                <li key={k} {...rowDataAttrs?.(row)} className={cx('flex gap-3 px-5 py-3', rowClassName?.(row))}>
                   {selectable && (
                     <label className="flex h-jz-touch w-6 flex-none items-start justify-center pt-1">
                       <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand" checked={selected!.has(k)} onChange={() => onToggle!(k, row)} aria-label="选择此行" {...selectAttrs?.row?.(row)} />
@@ -112,13 +112,13 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
         <thead className={cx(stickyHeader && 'sticky top-0 z-[1]')}>
           <tr className="h-jz-table-head bg-jz-surface-2/70 text-meta text-jz-muted">
             {selectable && (
-              <th scope="col" className="w-10 pl-4 text-left">
+              <th scope="col" className="w-10 pl-5 text-left">
                 <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand align-middle" checked={allSelected}
                   ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
                   onChange={() => onToggleAll?.(keys, allSelected)} aria-label="选择本页全部" {...selectAttrs?.all} />
               </th>
             )}
-            {columns.map((c) => <th key={c.key} scope="col" className={cx('px-4 font-medium whitespace-nowrap', alignCls(c.align), c.width)}>{c.header}</th>)}
+            {columns.map((c) => <th key={c.key} scope="col" className={cx('px-4 first:pl-5 last:pr-5 font-medium whitespace-nowrap', alignCls(c.align), c.width)}>{c.header}</th>)}
           </tr>
         </thead>
         {!state && (
@@ -131,12 +131,12 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
                   onClick={onRowClick ? () => onRowClick(row) : undefined} onKeyDown={activate(row)}
                   className={cx(rowH, 'border-t border-jz-border text-jz-ink transition-colors duration-hover hover:bg-jz-surface-2', on && 'bg-jz-brand-soft', onRowClick && 'cursor-pointer', rowClassName?.(row))}>
                   {selectable && (
-                    <td className="w-10 pl-4" onClick={(e) => e.stopPropagation()}>
+                    <td className="w-10 pl-5" onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand align-middle" checked={on} onChange={() => onToggle!(k, row)} aria-label="选择此行" {...selectAttrs?.row?.(row)} />
                     </td>
                   )}
                   {columns.map((c) => (
-                    <td key={c.key} className={cx('px-4 py-2 align-middle', alignCls(c.align), c.mono && 'font-mono text-meta', c.align === 'right' && 'tnum')}>{c.cell(row, i)}</td>
+                    <td key={c.key} className={cx('px-4 py-2 first:pl-5 last:pr-5 align-middle', alignCls(c.align), c.mono && 'font-mono text-meta', c.align === 'right' && 'tnum')}>{c.cell(row, i)}</td>
                   ))}
                 </tr>
               );
@@ -168,7 +168,7 @@ export const Pagination: React.FC<{
   const [to, setTo] = React.useState('');
   const nav = 'grid h-8 w-8 place-items-center rounded-control border border-jz-border text-jz-ink-2 hover:bg-jz-surface-2 disabled:opacity-45 disabled:pointer-events-none max-[760px]:h-jz-touch max-[760px]:w-jz-touch';
   return (
-    <nav aria-label="分页" className={cx('flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-jz-border px-4 py-2.5 text-label text-jz-muted', className)} {...dataAttrs}>
+    <nav aria-label="分页" className={cx('flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-jz-border px-5 py-2.5 text-label text-jz-muted', className)} {...dataAttrs}>
       <span>{summary ?? <>共 <span className="tnum text-jz-ink-2">{total}</span> 条</>}</span>
       <div className="flex flex-wrap items-center gap-2">
         {onPageSize && (
@@ -202,7 +202,7 @@ export const Pagination: React.FC<{
 export const BulkBar: React.FC<{ count: number; onClear: () => void; children: React.ReactNode; className?: string }> = ({ count, onClear, children, className }) => {
   if (count <= 0) return null;
   return (
-    <div role="region" aria-label="批量操作" data-bulk-bar className={cx('flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-jz-border bg-jz-brand-soft px-4 py-2 text-label text-jz-ink', className)}>
+    <div role="region" aria-label="批量操作" data-bulk-bar className={cx('flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-jz-border bg-jz-brand-soft px-5 py-2 text-label text-jz-ink', className)}>
       <span>已选 <span className="tnum font-semibold">{count}</span> 项</span>
       <div className="flex flex-1 flex-wrap items-center gap-2">{children}</div>
       <button type="button" onClick={onClear} className="rounded-control px-2 h-8 text-jz-ink-2 hover:bg-jz-surface hover:text-jz-ink">取消选择</button>

@@ -68,3 +68,7 @@ export { tokenVar, tokenColor, tokenFont, useThemeVersion } from './tokens';
 export type { ColorToken } from './tokens';
 export { useMediaQuery, useCompactTable, useIsMobile, BREAKPOINT } from './useMediaQuery';
 export { pressable } from './pressable';
+
+// Composition (phase 11)
+export { useViewPreference, ViewToggle, FactRow, FeatureBand, SignalPanel, StackedBar, MetricList, ActionMenu, RowActions, SplitView, CoverageDisclosure, ChartPanel, useScrolledPast } from './Composition';
+export type { ViewMode, Fact, ListMetric, MenuAction, CoverageSource } from './Composition';
