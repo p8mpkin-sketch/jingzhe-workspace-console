@@ -12,6 +12,8 @@ import { moduleLabel } from '@/layout/navigation';
 type Project = {
   id: number; name: string; company_name?: string; kind?: string; brands?: string;
   source?: string; status?: string; app_count?: number; inventory_count?: number;
+  /** Optional in `types/pentest.ts`; the live list response has not been verified to carry it (see pickPrimary). */
+  created_at?: number;
 };
 type Kind = 'all' | 'company' | 'single';
 type Sort = 'recent' | 'apps' | 'name';
@@ -60,32 +62,56 @@ const STEPS = [
   ['评估与报告', '批量执行评估，再生成单应用报告与合集报告。'],
 ] as const;
 
+const nextLink = 'inline-flex h-8 items-center gap-1 rounded-control px-2 text-label font-medium text-jz-brand hover:bg-jz-brand-soft max-[760px]:h-jz-touch';
+
 /** Fills the last row when the list is short, so the index never ends in an unexplained gap. */
-const NextStepCard: React.FC<{ span: number; only?: boolean }> = ({ span, only }) => (
+const NextStepCard: React.FC<{ span: number }> = ({ span }) => (
   <div data-company-next className={cx('flex min-w-0 flex-col justify-between gap-3 rounded-panel border border-jz-border bg-jz-surface-2/50 p-4',
     span === 2 ? 'desktop:col-span-2' : span === 3 ? 'table:col-span-2 desktop:col-span-3' : '')}>
     <div>
-      <h3 className="text-body font-semibold text-jz-ink">{only ? '目前只有上方这一个项目' : '接下来'}</h3>
-      {only
-        ? <p className="mt-1.5 text-label text-jz-ink-2">
-            要扩大范围，可以在 <Link to="/discovery" className="font-medium text-jz-brand hover:underline" data-company-discovery>候选发现</Link> 里查看尚未归属的应用，或为另一家公司新建项目。
-          </p>
-        : <ol className="mt-1.5 space-y-1 text-label text-jz-ink-2">
-            {STEPS.map(([t, d], i) => <li key={t}>{i + 1}. {d}</li>)}
-          </ol>}
+      <h3 className="text-body font-semibold text-jz-ink">接下来</h3>
+      <ol className="mt-1.5 space-y-1 text-label text-jz-ink-2">
+        {STEPS.map(([t, d], i) => <li key={t}>{i + 1}. {d}</li>)}
+      </ol>
     </div>
   </div>
 );
 
-/** Shown in place of the lead band when there are no projects: what a company project is and how to begin. */
-const StartBand: React.FC<{ onCreate: () => void }> = ({ onCreate }) => (
+/**
+ * One project: the next step follows from that project's own list fields (no extra request).
+ * An empty inventory points to importing apps; otherwise to reports in the project, with discovery as the way to widen scope.
+ */
+const SoloNext: React.FC<{ p: Project }> = ({ p }) => {
+  const empty = appCount(p) === 0;
+  return (
+    <section data-company-next="solo" aria-labelledby="company-solo-next"
+      className="grid min-w-0 gap-4 rounded-panel border border-jz-border bg-jz-surface-2/50 p-4 tablet:grid-cols-2">
+      <div className="min-w-0">
+        <h3 id="company-solo-next" className="text-body font-semibold text-jz-ink">接下来</h3>
+        <p className="mt-1 text-label text-jz-ink-2">
+          {empty ? '这个项目的应用清单还是空的，评估和报告都要从导入应用开始。' : `清单里有 ${appCount(p)} 个应用，可以在项目里执行评估并生成项目总报告。`}
+        </p>
+        <Link to={'/company/projects/' + p.id} className={cx(nextLink, '-ml-2 mt-1')} data-company-next-project>
+          {empty ? '进入项目导入应用' : '进入项目生成报告'} <ArrowRight size={14} aria-hidden />
+        </Link>
+      </div>
+      <div className="min-w-0 tablet:border-l tablet:border-jz-border tablet:pl-4">
+        <h3 className="text-body font-semibold text-jz-ink">扩大范围</h3>
+        <p className="mt-1 text-label text-jz-ink-2">候选发现列出了尚未归属到任何项目的应用，可以从中确认归属，或为另一家公司新建项目。</p>
+        <Link to="/discovery" className={cx(nextLink, '-ml-2 mt-1')} data-company-discovery>查看候选发现 <ArrowRight size={14} aria-hidden /></Link>
+      </div>
+    </section>
+  );
+};
+
+/** Shown in place of the lead band when there are no projects: what a company project is and how it proceeds. */
+const StartBand: React.FC = () => (
   <section className="min-w-0 border-y border-jz-border" data-band="editorial" data-company-start>
     <div className="grid gap-x-10 gap-y-6 py-6 desktop:grid-cols-12">
       <div className="flex min-w-0 flex-col gap-4 desktop:col-span-5">
         <div className="text-label font-medium text-jz-brand">开始一个公司项目</div>
         <h2 className="font-display text-page font-semibold text-jz-ink">以公司为范围整理应用和报告</h2>
         <p className="text-body text-jz-ink-2">一个公司项目对应一家公司或集团：先确定范围，再建立应用清单，最后统一评估并输出报告。</p>
-        <div className="mt-auto"><Button icon={<Plus size={16} aria-hidden />} onClick={onCreate} data-company-start-create>新建公司项目</Button></div>
       </div>
       <ol className="grid min-w-0 gap-4 tablet:grid-cols-3 desktop:col-span-7 desktop:border-l desktop:border-jz-border desktop:pl-10">
         {STEPS.map(([t, d], i) => (
@@ -96,6 +122,23 @@ const StartBand: React.FC<{ onCreate: () => void }> = ({ onCreate }) => (
           </li>
         ))}
       </ol>
+    </div>
+  </section>
+);
+
+/** Ends the empty index with the decision to make: create now, or look at unassigned apps first. */
+const StartNext: React.FC<{ onCreate: () => void }> = ({ onCreate }) => (
+  <section data-company-start-next aria-labelledby="company-start-next"
+    className="flex min-w-0 flex-wrap items-center justify-between gap-4 rounded-panel border border-jz-border bg-jz-surface p-5 shadow-card">
+    <div className="min-w-0 flex-1 basis-80">
+      <h3 id="company-start-next" className="text-body font-semibold text-jz-ink">还没有公司项目</h3>
+      <p className="mt-1 text-label text-jz-ink-2">项目列表加载成功，结果为空。可以直接新建；不确定范围时，先看候选发现里尚未归属的应用。</p>
+    </div>
+    <div className="flex flex-wrap items-center gap-2">
+      <Link to="/discovery" className="inline-flex h-jz-control items-center gap-1.5 rounded-control border border-jz-border bg-jz-surface px-3 text-label font-medium text-jz-ink hover:bg-jz-surface-2" data-company-discovery>
+        先看候选发现
+      </Link>
+      <Button icon={<Plus size={16} aria-hidden />} onClick={onCreate} data-company-start-create>新建公司项目</Button>
     </div>
   </section>
 );
@@ -123,9 +166,18 @@ const projectColumns: Column<Project>[] = [
   ) },
 ];
 
-/** The active project: the most recently created company-level project (ids grow with creation; the list has no timestamps). */
+/**
+ * The lead project: the most recently created company-level project.
+ * Ordered by `created_at` only when every candidate carries a finite value; otherwise by id, which grows with creation.
+ * TODO(api): confirm GET /api/pentest/projects returns created_at for every row. Until then the id order is what
+ * production uses; the frontend never derives or displays a date it was not given.
+ */
+const byRecency = (list: Project[]): Project[] => {
+  const timed = list.length > 0 && list.every((p) => typeof p.created_at === 'number' && Number.isFinite(p.created_at) && p.created_at > 0);
+  return [...list].sort((a, b) => (timed ? (b.created_at as number) - (a.created_at as number) : 0) || b.id - a.id);
+};
 const pickPrimary = (rows: Project[]): Project | undefined =>
-  [...rows].sort((a, b) => b.id - a.id).find((p) => p.kind === 'company') ?? [...rows].sort((a, b) => b.id - a.id)[0];
+  byRecency(rows.filter((p) => p.kind === 'company'))[0] ?? byRecency(rows)[0];
 
 export const CompanyProjectsPage: React.FC = () => {
   const nav = useNavigate();
@@ -228,7 +280,7 @@ export const CompanyProjectsPage: React.FC = () => {
           <Button icon={<Plus size={16} aria-hidden />} onClick={openCreate} data-company-create>新建公司项目</Button>
         </>} />
 
-      {!loading && loaded && !loadErr && rows.length === 0 && <StartBand onCreate={openCreate} />}
+      {!loading && loaded && !loadErr && rows.length === 0 && <><StartBand /><StartNext onCreate={openCreate} /></>}
       {loading && <div className="h-56 rounded-panel border border-jz-border bg-jz-surface motion-safe:animate-pulse" role="status" aria-label="加载中" />}
       {!loading && primary && (
         <FeatureBand variant="editorial" data-company-primary={primary.id}
@@ -239,7 +291,7 @@ export const CompanyProjectsPage: React.FC = () => {
           facts={[
             { label: '清单内应用', value: appCount(primary), tone: appCount(primary) ? 'default' : 'attention', hint: appCount(primary) ? undefined : '待导入应用' },
             { label: '品牌', value: primaryBrands.length || '—' },
-            { label: '来源', value: sourceLabel(primary.source) },
+            { label: '来源', value: primary.source ? sourceLabel(primary.source) : '未标注' },
           ]}
           actions={<Link to={'/company/projects/' + primary.id} data-company-primary-open
             className="inline-flex h-jz-control-lg items-center gap-2 rounded-control bg-jz-brand px-4 text-body font-medium text-jz-on-brand hover:bg-jz-brand/90">
@@ -248,7 +300,8 @@ export const CompanyProjectsPage: React.FC = () => {
           aside={portfolio} />
       )}
 
-      {!(loaded && !loadErr && rows.length === 0) && <section className="flex flex-col gap-3" aria-label="项目列表">
+      {loaded && !loadErr && rows.length === 1 && primary && <SoloNext p={primary} />}
+      {!(loaded && !loadErr && rows.length <= 1) && <section className="flex flex-col gap-3" aria-label="项目列表">
         <div className="flex flex-wrap items-center gap-3" data-company-toolbar>
           <h2 className="jz-section mr-auto text-jz-ink">{dash ? '项目列表' : filtering ? '筛选结果' : primary ? <>其他项目 <span className="font-mono text-jz-muted">· {listed.length}</span></> : '全部项目'}</h2>
           {(rows.length > 1 || filtering) && <>
@@ -282,7 +335,7 @@ export const CompanyProjectsPage: React.FC = () => {
               </div>
             : <div className={GRID}>
                 {listed.map((p) => <ProjectCard key={p.id} p={p} />)}
-                {fill > 0 && <NextStepCard span={fill} only={listed.length === 0} />}
+                {fill > 0 && listed.length > 0 && <NextStepCard span={fill} />}
               </div>}
         </AsyncBoundary>
       </section>}
