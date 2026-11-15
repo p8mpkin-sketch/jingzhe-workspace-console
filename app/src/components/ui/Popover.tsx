@@ -19,6 +19,17 @@ export const Popover: React.FC<{
     if (!open) return;
     const onDown = (e: MouseEvent) => { if (!wrap.current?.contains(e.target as Node)) setOpen(false); };
     const onKey = (e: KeyboardEvent) => {
+      // Menus: arrow keys, Home and End move between enabled items; Tab still works.
+      if (role === 'menu' && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) {
+        const items = Array.from(wrap.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') || []);
+        if (!items.length) return;
+        e.preventDefault();
+        const at = items.indexOf(document.activeElement as HTMLElement);
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1
+          : e.key === 'ArrowDown' ? (at + 1) % items.length : (at <= 0 ? items.length - 1 : at - 1);
+        items[next].focus();
+        return;
+      }
       if (e.key !== 'Escape') return;
       setOpen(false);
       wrap.current?.querySelector<HTMLElement>('button')?.focus();
@@ -26,7 +37,7 @@ export const Popover: React.FC<{
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
-  }, [open]);
+  }, [open, role]);
   const close = () => setOpen(false);
   return (
     <span ref={wrap} className="relative inline-flex">
