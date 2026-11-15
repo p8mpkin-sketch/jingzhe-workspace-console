@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUpRight, Bot, Bug, CircleAlert, DoorOpen, Download, GitBranch, Globe, KeyRound, MoreHorizontal, PanelLeft, PanelRight, Radio, ShieldAlert, Sparkles } from 'lucide-react';
+import { ArrowUpRight, Bot, Bug, CircleAlert, DoorOpen, Download, GitBranch, Globe, KeyRound, PanelLeft, PanelRight, Radio, ShieldAlert, Sparkles } from 'lucide-react';
 import { AgentSidebar } from './components_agent/AgentSidebar';
 import { AgentComposer } from './components_agent/AgentComposer';
 import { AgentInspector } from './components_agent/AgentInspector';
@@ -8,7 +8,7 @@ import { AnswerCard } from './components_agent/AnswerCard';
 import { TurnView } from './components_agent/TurnView';
 import { useAgentSession } from './useAgentSession';
 import { api } from '@/services/api';
-import { useMediaQuery, useViewPreference } from '@/components/ui';
+import { RowActions, useMediaQuery, useViewPreference } from '@/components/ui';
 import { projectTurns } from './model/turnProjection';
 import type { EvidenceView } from './content/types';
 import { EXAMPLE_TASK } from './model/sessionMeta';
@@ -42,7 +42,6 @@ export const AgentPage: React.FC = () => {
   const toggleInspector = () => (pinMode ? setPinPref(pinned ? 'collapsed' : 'pinned') : setInspectorOpen(true));
   const closeInspector = () => (pinMode ? setPinPref('collapsed') : setInspectorOpen(false));
   const [sessionOpen, setSessionOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [webStatus, setWebStatus] = useState<any>(null);
   useEffect(() => {
     api<any>('/api/agent/web/status').then(setWebStatus).catch(() => setWebStatus(null));
@@ -184,28 +183,14 @@ export const AgentPage: React.FC = () => {
             className={`flex items-center gap-1 px-2 py-1 rounded-control text-meta hover:text-jz-brand hover:bg-jz-surface-2/60 ${pinMode && pinned ? 'text-jz-brand' : 'text-jz-muted'}`}>
             <PanelRight size={12} /> <span className="hidden sm:inline">运行详情</span>
           </button>
-          <div className="relative">
-            <button onClick={() => setMenuOpen((v) => !v)} data-agent-more
-              className="w-7 h-7 rounded-control grid place-items-center text-jz-muted hover:text-jz-ink hover:bg-jz-surface-2/60">
-              <MoreHorizontal size={15} />
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-44 rounded-card bg-jz-surface shadow-card border border-jz-border/50 p-1 z-30" data-agent-more-menu>
-                <button onClick={() => { a.toggleWeb(); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-control text-meta text-jz-ink-2 hover:bg-jz-surface-2 text-left"
-                  title={webStatus ? `搜索源：${webStatus.provider === 'tavily' ? 'Tavily' : 'DuckDuckGo（免 Key）'}` : '联网搜索'}>
-                  <Globe size={12} /> 联网 {a.webEnabled ? '开' : '关'}
-                  {webStatus && <span className="ml-auto font-mono text-meta text-jz-muted">{webStatus.provider === 'tavily' ? 'Tavily' : 'DDG'}</span>}
-                </button>
-                <button onClick={() => { a.forkSession().catch(() => {}); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-control text-meta text-jz-ink-2 hover:bg-jz-surface-2 text-left">
-                  <GitBranch size={12} /> Fork 分支
-                </button>
-                <button onClick={() => { a.exportTrajectory().catch(() => {}); setMenuOpen(false); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded-control text-meta text-jz-ink-2 hover:bg-jz-surface-2 text-left">
-                  <Download size={12} /> 导出轨迹
-                </button>
-                <div className="px-2 py-1 text-meta font-mono text-jz-muted">seq {a.lastSeq}</div>
-              </div>
-            )}
-          </div>
+          <RowActions label="会话操作" triggerAttrs={{ 'data-agent-more': '' }} menuAttrs={{ 'data-agent-more-menu': '' }}
+            more={[
+              { key: 'web', icon: <Globe size={14} aria-hidden />, onSelect: () => a.toggleWeb(),
+                label: <>联网 {a.webEnabled ? '开' : '关'}{webStatus && <span className="ml-2 font-mono text-meta text-jz-muted">{webStatus.provider === 'tavily' ? 'Tavily' : 'DDG'}</span>}</> },
+              { key: 'fork', icon: <GitBranch size={14} aria-hidden />, label: 'Fork 分支', onSelect: () => { a.forkSession().catch(() => {}); } },
+              { key: 'export', icon: <Download size={14} aria-hidden />, label: '导出轨迹', onSelect: () => { a.exportTrajectory().catch(() => {}); } },
+              { key: 'seq', label: <span className="font-mono text-meta">seq {a.lastSeq}</span>, onSelect: () => {}, disabled: true },
+            ]} />
         </div>
 
         {a.error && (
