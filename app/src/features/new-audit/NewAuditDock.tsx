@@ -2,7 +2,7 @@
 // Presentational only: state and handlers come from NewAuditPage. All data-* hooks are kept.
 import React from 'react';
 import { Package, FileSearch, Shield, DoorOpen, ListChecks, Loader2 } from 'lucide-react';
-import { Button, Badge, StatusBadge, Tag, CodePill, Panel, Checkbox, InlineAlert, cx } from '@/components/ui';
+import { Button, Badge, StatusBadge, Tag, CodePill, Panel, Checkbox, InlineAlert, SegmentedControl, cx } from '@/components/ui';
 import { PipelineStepper } from '@/components/ui/PipelineStepper';
 import type { StepperPhase } from '@/components/ui/PipelineStepper';
 
@@ -192,6 +192,7 @@ export const LaunchDock: React.FC<{
   submit: (gotoPentest: boolean) => void;
   status: string; createdId: number | null;
 }> = (p) => {
+  const [after, setAfter] = React.useState<'tasks' | 'pentest'>('tasks');
   const launchDisabled = p.busy || !p.preview || !p.authorized || !!p.webTargetErr;
   const blocker = !p.preview ? '先在第 1 步提供资产并完成预检。'
     : p.webTargetErr ? 'Web 目标的格式不正确。'
@@ -229,24 +230,38 @@ export const LaunchDock: React.FC<{
           </p>
         </div>
 
+        <div className="space-y-1.5" data-exec-outputs>
+          <h4 className="text-label font-semibold text-jz-ink">将产出</h4>
+          <ul className="space-y-1 text-label text-jz-ink-2">
+            <li>任务队列中的一条评估任务,进度在任务页跟踪</li>
+            <li>规则扫描得到的发现,以及任务完成后生成的评估报告</li>
+            <li>{p.preview?.strong_shell ? '脱壳、反编译和扫描的任务产物' : '反编译和扫描的任务产物'}</li>
+            <li>设备、范围和模式的预选会保存在本机,供渗透会话沿用</li>
+          </ul>
+        </div>
+
         <Checkbox checked={p.authorized} onChange={(e) => p.setAuthorized(e.target.checked)} data-authorized-check
           label="我确认对该样本拥有合法的测试授权" hint="确认记录会随任务保存。" />
 
         <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2" data-after-create>
+            <span className="text-label text-jz-ink-2">创建后前往</span>
+            <SegmentedControl label="创建后前往" value={after} onChange={setAfter}
+              items={[
+                { key: 'tasks', label: '任务队列', dataAttrs: { 'data-after-tasks': '' } },
+                { key: 'pentest', label: '渗透会话', dataAttrs: { 'data-submit-pentest': '' } },
+              ]} />
+          </div>
           <Button variant="primary" size="lg" className="w-full justify-center" loading={p.busy}
-            onClick={() => p.submit(false)} disabled={launchDisabled} data-launch-btn data-submit-task
+            onClick={() => p.submit(after === 'pentest')} disabled={launchDisabled} data-launch-btn data-submit-task
             title={launchDisabled ? blocker || '正在处理' : '创建评估任务,并保存设备、范围和模式的预选'}>
             {p.busy ? '创建中…' : '创建评估任务'}
-          </Button>
-          <Button variant="ghost" className="w-full justify-center" onClick={() => p.submit(true)} disabled={launchDisabled} data-submit-pentest
-            title="创建评估任务,然后带着设备、范围和模式的预选进入渗透会话">
-            创建并进入渗透会话
           </Button>
           {launchDisabled && !p.busy && blocker && <p className="text-meta text-jz-muted" data-launch-blocker>{blocker}</p>}
         </div>
 
         {p.status && <p className="text-label text-jz-ink-2" role="status" data-status-line>{p.status}</p>}
-        {p.createdId != null && <p className="text-label text-jz-teal" data-created-line>任务 #{p.createdId} 已创建,正在跳转…</p>}
+        {p.createdId != null && <p className="text-label text-jz-teal" data-created-line>任务 #{p.createdId} 已创建,正在前往{after === 'pentest' ? '渗透会话' : '任务队列'}…</p>}
       </div>
     </Panel>
   );
