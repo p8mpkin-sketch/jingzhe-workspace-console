@@ -175,7 +175,7 @@ for (const variant of VARIANTS) {
       const blank = text.length < 6 && nodes < 4;
       if (w === 1440) report.variants[variant][s.name] = blank ? 'BLANK' : text.length < 6 ? '(loading skeleton)' : text.slice(0, 90);
       if (blank) report.errors.push(`${s.name}.${variant} @${w}: blank surface`);
-      if (shots && (w !== 1024)) await page.screenshot({ path: path.join(out, `${s.name}.${variant}-${w}-light.png`) });
+      if (shots && w === 1440) await page.screenshot({ path: path.join(out, `${s.name}.${variant}-${w}-light.png`) });
       state.failing = false;
     }
     await ctx.close();

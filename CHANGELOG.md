@@ -1,7 +1,69 @@
 # Changelog
 
-Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
-behavior are unchanged. One entry per phase; each phase is one commit.
+Design-system migration of `app/`. Routes, API calls, permissions, task and report behavior are unchanged.
+Phases 1–13 are presentation only; Phase 14 also changes request dedupe and stream reconnect pacing.
+One entry per phase.
+
+## Phase 14 — Assessment workbench consolidation
+
+An information-architecture phase. The workbench's panels now have one owner each, and the data layer stops repeating requests. Routes, API contracts, permissions, task behavior and report behavior are unchanged; no endpoint was added. Unlike earlier phases, this one edits `src/services` and `src/stores`, as requested, for request dedupe and reconnect pacing only.
+
+### Information architecture
+The rail listed 13 views in two groups, and a context panel had six more tabs. The workbench now has six primary tabs, defined once in `workbench/ia.ts`. Each surface is reachable from exactly one place.
+
+| Primary | Secondary | Surfaces (`?view=`) |
+| --- | --- | --- |
+| 概览 | | `overview` |
+| 运行 | Agent 轨迹 | 研判 `stream`, 取证 `stream&tab=trajectory`, 推理记录 `ai` |
+| | 终端 | `raw` (终端输出, 执行监控) |
+| | 接口与请求 | 接口资产 `apitree`, 代理流量 `burp` |
+| 发现 | | 主发现 `findings`, Shadow 对照 `shadow` |
+| 证据 | 证据关系 | 关系图 `graph`, 事实图谱 `facts` |
+| | 凭据 | `credentials` |
+| | 覆盖矩阵 | `coverage` (new id) |
+| 产物 | 分析输出 | `artifacts` (new id) |
+| | 加固信息 | `packer` (new id) |
+| 报告 | 报告 | `report` |
+| | 版本对比 | `diff` |
+
+- Every earlier `?view=` link resolves to the same surface. The default surface is still `stream`, so the session route's request log is unchanged.
+- **Moved.** The coverage matrix moves from the context panel to 证据. The task artifacts browser (previously only a dialog in the task list) is also the 分析输出 surface, on the same endpoints. The packaging panel (previously only in the legacy workbench) is the 加固信息 surface.
+- **Merged.** 决策流 and AI 思考 are segments of Agent 轨迹. 接口资产 and Burp 联动 are segments of 接口与请求. Shadow 发现 is a segment of 发现. 关系图 and 事实图谱 are segments of 证据关系. The stream tab bar, the tool header with its "back to stream" button and the per-view title bars are replaced by one surface bar.
+- **Inspector.** The context panel is the 检查器: 复核, 进度, 简报, 证据, 日志. It stays open across surfaces when docked (≥ 1400 px) and closes on a surface change when it is an overlay.
+- **Legacy.** The earlier workbenches stay reachable from the rail (旧版工作台), with a bar that returns to the current one. The findings matrix, the canvas and the AI inspector drawer of those workbenches are only there.
+
+### Data layer
+- **GET dedupe** (`services/apiClient.ts`): identical plain GETs share one in-flight request, and a successful response is reused for 2 s. Any write, any pointer or key input, and a token change invalidate the reuse, so a refresh control always reaches the server.
+- **One owner per stream.** `notifications.connect()` is idempotent. The dashboard reads the signed-in user from the auth store instead of requesting `/api/me` again.
+- **Reconnect** (`services/backoff.ts`), used by the agent stream, the notification stream and the session event stream: exponential backoff with equal jitter from 1 s, capped at 30 s; reset only after a connection delivers data or stays open 5 s; the cursor (`since_seq`) is read at every reopen; nothing reconnects while the tab is hidden, and one attempt runs when it is shown again. The session event stream previously relied on the browser's fixed-interval retry, which also replayed the original cursor.
+
+### States
+- A partial-data notice with retry shows on every surface when a workbench source failed.
+- Reused panels no longer render a failed read as empty data: reasoning record, terminal output, step monitor, API inventory, proxy status, relation graph, packaging, version compare (which reported "0 differences" on failure), report (which rendered an all-zero report) and analysis output.
+- Report: the chapter list scrolls to its section; a 复核状态 chapter is built from finding states; export actions appear once; the paper is left-aligned at 960 px.
+- Copy in the promoted panels uses neutral assessment language.
+
+### Spacing
+`padding`, `margin` and `gap` in `workbench.css`, `v3.css` and the inline styles of `workbench/*.tsx` read `--jz-space-*`: 347 values map exactly, 74 off-grid values snap to the nearest step, and 0 / 1 px offsets stay literal. `design/tokens.css` gains `--jz-space-0-5`, `-1-5`, `-2-5` and `-5`.
+
+### Added
+- `scripts/check-workbench.mjs`: audits all 17 surfaces at 1440 / 1024 / 760 in both themes — deep links, click reachability with no duplicate owner, overflow with and without the inspector, focus indicator and occlusion, and the empty / error / forbidden / slow / stale variants.
+- `scripts/check-reconnect.mjs`: reconnect pacing, hidden-tab pause and cursor preservation of the agent stream.
+- Fixtures for packaging, model usage, credentials and proxy status.
+
+### Verified
+- `tsc --noEmit`, `npm run build` and `npm run lint:tokens` (0) pass; 0 contrast failures.
+- Workbench: 17 surfaces × 3 widths × 2 themes, 0 overflow, 0 page errors, 1218 tab stops with a visible indicator and none covered; 5 data-state variants with no blank surface.
+- 14 routes at 1680 / 1440 / 1280 / 1024 / 760 in both themes: 0 overflow, 0 page errors. The request log is identical to the baseline.
+- Request cadence over 65 s (`docs/screenshots/phase-14/request-cadence.json`): no duplicate non-stream request in the first 3 s on any route; `/agent` goes from 209 to 35 requests.
+- Reconnect: gaps of 0.7 / 1.7 / 3.1 / 7.4 / 11.8 s, 0 attempts while hidden, 1 on show, `since_seq` kept.
+
+### Gaps
+- **No live backend.** `127.0.0.1:8099` refuses connections in this environment, so everything above ran on fixtures. `REAL=1 BASE=… TOKEN=… node scripts/check-polling.mjs` is ready for a live run.
+- Fixtures answer every stream with an empty body, so streams reconnect (now backed off) in every fixture run; against a live backend they stay open.
+- The legacy workbenches keep their earlier layout and copy. Legacy V3 (`?ui=v3`) overflows its header by 135 px at 1440; whether that predates this phase was not checked.
+- The terminal surface keeps its own 终端输出 / 执行监控 switch inside the panel.
+- The 2 s GET reuse applies to all plain GETs. A view that must re-read within 2 s without user input should pass `cache: 'no-store'`.
 
 ## Phase 13 — Finish quality and real-data readiness
 
