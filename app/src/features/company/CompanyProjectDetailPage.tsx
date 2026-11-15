@@ -36,6 +36,14 @@ const ToolbarSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (
   <div className="w-32 flex-none"><Select {...rest}>{children}</Select></div>
 );
 
+/** Numbered marker for a step in a workflow; `line` draws the connector down to the next step. */
+const StepRail: React.FC<{ n: number; line?: boolean }> = ({ n, line }) => (
+  <div aria-hidden className="flex w-6 flex-none flex-col items-center">
+    <span className="grid h-6 w-6 flex-none place-items-center rounded-pill border border-jz-brand bg-jz-brand-soft font-mono text-meta font-semibold text-jz-brand">{n}</span>
+    {line && <span className="mt-1 w-px flex-1 bg-jz-border-strong" />}
+  </div>
+);
+
 export const CompanyProjectDetailPage: React.FC = () => {
   const { pid } = useParams();
   const id = Number(pid || 0);
@@ -72,6 +80,18 @@ export const CompanyProjectDetailPage: React.FC = () => {
   const [ai, setAi] = useState(false);
 
   const [headRef, pastHead] = useScrolledPast<HTMLDivElement>();
+  // The tab bar sticks to the top of the page scroller; reserve its height as scroll padding so
+  // keyboard focus and in-page scrolling never land underneath it.
+  const [stickyEl, bindSticky] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const scroller = stickyEl?.closest<HTMLElement>('[data-company-project-detail]');
+    if (!stickyEl || !scroller) return;
+    const apply = () => { scroller.style.scrollPaddingTop = `${stickyEl.offsetHeight + 8}px`; };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(stickyEl);
+    return () => { ro.disconnect(); scroller.style.scrollPaddingTop = ''; };
+  }, [stickyEl]);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -218,7 +238,7 @@ export const CompanyProjectDetailPage: React.FC = () => {
 
   return (
     <Page data-company-project-detail>
-      <div ref={headRef}>
+      <div ref={headRef} className="flex flex-col gap-4">
         <PageHeader eyebrow={back} title={project.name || '项目'}
           meta={<>
             <span className="font-mono">#{project.id}</span>
@@ -232,8 +252,8 @@ export const CompanyProjectDetailPage: React.FC = () => {
             <Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} onClick={load}>刷新</Button>
             <Button icon={<Play size={16} aria-hidden />} loading={busy === 'run'} disabled={!apps.length} onClick={() => setConfirmRun(true)}
               title={apps.length ? undefined : '清单里还没有应用'} data-company-run>批量执行</Button>
-          </>}
-          summary={<div className="flex w-full flex-wrap items-center gap-x-6 gap-y-2" data-company-context>
+          </>} />
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-panel border border-jz-border bg-jz-surface px-4 py-3 text-label text-jz-ink-2" data-company-context>
             <span>应用 <b className="font-semibold tnum text-jz-ink">{apps.length}</b></span>
             <span className="flex items-center gap-2">评估完成 <b className="font-semibold tnum text-jz-ink">{done}/{apps.length}</b>
               <span className="w-24"><Bar pct={pct} label="已完成应用占比" /></span><span className="tnum text-jz-muted">{pct}%</span></span>
@@ -241,7 +261,7 @@ export const CompanyProjectDetailPage: React.FC = () => {
             {failed > 0 && <StatusBadge tone="danger">失败 {failed}</StatusBadge>}
             <span>候选 <b className="font-semibold tnum text-jz-ink">{candidates.length}</b></span>
             <span>报告 <b className="font-semibold tnum text-jz-ink">{reports.length}</b>{latest && <span className="text-jz-muted"> · 最近 #{latest.id} {reportStatus(latest.status)}</span>}</span>
-          </div>} />
+        </div>
       </div>
 
       {!!loadErr && <StaleNotice reason={'刷新失败：' + (loadErr instanceof Error ? loadErr.message : String(loadErr))} onRefresh={load} />}
@@ -251,7 +271,7 @@ export const CompanyProjectDetailPage: React.FC = () => {
       )}
 
       {/* Context stays visible while scrolling: the tab bar sticks, and once the header is out of view it carries the project name and the primary action. */}
-      <div className="sticky top-0 z-10 -mx-jz-page -mt-2 bg-jz-canvas px-jz-page pt-2" data-company-sticky={pastHead ? 'compact' : 'full'}>
+      <div ref={bindSticky} className="sticky top-0 z-10 -mx-jz-page -mt-4 bg-jz-canvas px-jz-page pt-2" data-company-sticky={pastHead ? 'compact' : 'full'}>
         <div className="flex min-w-0 items-center gap-4 border-b border-jz-border">
           {pastHead && (
             <div className="hidden min-w-0 max-w-xs flex-none items-center gap-2 lg:flex" data-company-sticky-title>
@@ -275,43 +295,48 @@ export const CompanyProjectDetailPage: React.FC = () => {
 
       {active === 'reports' && (
         <section className="min-w-0 overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card" role="tabpanel" aria-label="报告" data-report-workflow>
-          {/* Step 1: generate. */}
-          <div className="border-b border-jz-border px-5 py-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-section font-semibold text-jz-ink">生成项目总报告</h2>
-              <p className="text-meta text-jz-muted">按模板输出 DOCX 与 PDF，生成后自动下载 PDF；新报告出现在下方历史的第一行。</p>
+          {/* One workflow in two numbered steps; the rail ties the generator to the history it feeds. */}
+          <div className="flex gap-4 px-5 pt-4" data-report-step="generate">
+            <StepRail n={1} line />
+            <div className="min-w-0 flex-1 pb-5">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-section font-semibold text-jz-ink">生成项目总报告</h2>
+                <p className="text-meta text-jz-muted">生成后自动下载 PDF，并出现在下方历史的第一行。</p>
+              </div>
+              <div className="mt-4 grid items-end gap-4 desktop:grid-cols-[minmax(220px,300px)_1fr_auto]">
+                <Field label="模板">
+                  {(ids) => (
+                    <Select ids={ids} value={template} onChange={(e) => setTemplate(e.target.value)}>
+                      <option value="technical">技术证据版</option><option value="executive">管理层摘要</option><option value="forensic">取证版</option>
+                    </Select>
+                  )}
+                </Field>
+                <Checkbox checked={useLlm} onChange={(e) => setUseLlm(e.target.checked)} label="使用 LLM 撰写叙述（可选）"
+                  hint={`报告正文不含明文密钥。当前覆盖 ${apps.length} 个应用，${done} 个已完成。`} />
+                <Button icon={<Wand2 size={16} aria-hidden />} loading={busy === 'report:portfolio:'} disabled={!!busy || !apps.length} onClick={() => gen('portfolio')}
+                  title={apps.length ? undefined : '清单里还没有应用'}>生成报告</Button>
+              </div>
+              <details className="group mt-3">
+                <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-control text-label text-jz-ink-2 hover:text-jz-ink [&::-webkit-details-marker]:hidden">
+                  <ChevronDown size={14} aria-hidden className="transition-transform duration-expand group-open:rotate-180" />报告包含 {REPORT_CONTENTS.length} 个章节
+                </summary>
+                <ul className="mt-2 grid gap-x-4 gap-y-1.5 text-label text-jz-ink-2 sm:grid-cols-2 desktop:grid-cols-4" aria-label="报告包含的章节">
+                  {REPORT_CONTENTS.map((x) => <li key={x} className="flex items-center gap-1.5"><Check size={14} className="flex-none text-jz-muted" aria-hidden />{x}</li>)}
+                </ul>
+              </details>
             </div>
-            <div className="mt-4 grid items-end gap-4 desktop:grid-cols-[minmax(220px,300px)_1fr_auto]">
-              <Field label="模板">
-                {(ids) => (
-                  <Select ids={ids} value={template} onChange={(e) => setTemplate(e.target.value)}>
-                    <option value="technical">技术证据版</option><option value="executive">管理层摘要</option><option value="forensic">取证版</option>
-                  </Select>
-                )}
-              </Field>
-              <Checkbox checked={useLlm} onChange={(e) => setUseLlm(e.target.checked)} label="使用 LLM 撰写叙述（可选）"
-                hint={`报告正文不含明文密钥。当前覆盖 ${apps.length} 个应用，${done} 个已完成。`} />
-              <Button icon={<Wand2 size={16} aria-hidden />} loading={busy === 'report:portfolio:'} disabled={!!busy || !apps.length} onClick={() => gen('portfolio')}
-                title={apps.length ? undefined : '清单里还没有应用'}>生成报告</Button>
-            </div>
-            <details className="group mt-3">
-              <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-control text-label text-jz-ink-2 hover:text-jz-ink [&::-webkit-details-marker]:hidden">
-                <ChevronDown size={14} aria-hidden className="transition-transform duration-expand group-open:rotate-180" />报告包含 {REPORT_CONTENTS.length} 个章节
-              </summary>
-              <ul className="mt-2 grid gap-x-4 gap-y-1.5 text-label text-jz-ink-2 sm:grid-cols-2 desktop:grid-cols-4" aria-label="报告包含的章节">
-                {REPORT_CONTENTS.map((x) => <li key={x} className="flex items-center gap-1.5"><Check size={14} className="flex-none text-jz-muted" aria-hidden />{x}</li>)}
-              </ul>
-            </details>
           </div>
-          {/* Step 2: history of what was generated, same surface and padding. */}
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
-            <div>
-              <h2 className="text-body font-semibold text-jz-ink">报告历史</h2>
-              <p className="text-meta text-jz-muted">{filteredReports.length} / {reports.length} 份 · 下载在每行的菜单里</p>
+          <div className="flex gap-4 px-5 pb-3" data-report-step="history">
+            <StepRail n={2} />
+            <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-section font-semibold text-jz-ink">历史与下载</h2>
+                <p className="text-meta text-jz-muted">{filteredReports.length} / {reports.length} 份报告</p>
+              </div>
+              <SearchField value={reportQ} onValueChange={setReportQ} label="搜索报告" className="w-56 max-w-full" />
             </div>
-            <SearchField value={reportQ} onValueChange={setReportQ} label="搜索报告" className="w-56 max-w-full" />
           </div>
-          <DataTable label="报告历史" columns={reportCols} rows={shownReports} rowKey={(r) => r.id}
+          <DataTable stickyHeader={false} label="报告历史" columns={reportCols} rows={shownReports} rowKey={(r) => r.id}
             rowClassName={(r) => r.status === 'generating' ? 'bg-jz-brand-soft/50' : undefined}
             rowDataAttrs={(r) => ({ 'data-report-row': r.id, 'data-report-latest': latest && r.id === latest.id ? '' : undefined })}
             state={!shownReports.length ? (reports.length
@@ -391,7 +416,7 @@ export const CompanyProjectDetailPage: React.FC = () => {
                 {Array.from(new Set(apps.map((a) => a.ownership_tier).filter(Boolean))).map((s) => <option key={s} value={s}>{s}</option>)}
               </ToolbarSelect>
             </>}>
-            <DataTable label="应用清单" columns={appCols} rows={shownApps} rowKey={(a) => a.id}
+            <DataTable stickyHeader={false} label="应用清单" columns={appCols} rows={shownApps} rowKey={(a) => a.id}
               state={!shownApps.length ? (apps.length
                 ? noMatch('没有匹配的应用')
                 : <EmptyState compact icon={Layers3} title="清单里还没有应用" cause="导入 APK，或在“候选应用”里发现并导入。"
@@ -433,7 +458,7 @@ export const CompanyProjectDetailPage: React.FC = () => {
               <Button size="sm" variant="secondary" disabled={!!busy} loading={busy === 'download'} onClick={() => batch('download')}>下载</Button>
               <Button size="sm" disabled={!!busy} loading={busy === 'import'} onClick={() => batch('import')}>导入项目</Button>
             </BulkBar>
-            <DataTable label="候选应用" columns={candCols} rows={shownCands} rowKey={(c) => c.id}
+            <DataTable stickyHeader={false} label="候选应用" columns={candCols} rows={shownCands} rowKey={(c) => c.id}
               selected={selected as Set<string | number>} onToggle={toggleCand} onToggleAll={toggleAllCands}
               state={!shownCands.length ? (candidates.length
                 ? noMatch('没有匹配的候选应用')
