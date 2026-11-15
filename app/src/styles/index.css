@@ -1,5 +1,4 @@
 @import "../../../design/tokens.css";
-@import "./fonts.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -98,7 +97,7 @@ svg.lucide { stroke-width: 1.75; }
     color: rgb(var(--jz-print-ink)) !important;
     background: transparent !important;
     border-color: rgb(var(--jz-print-rule)) !important;
-    box-shadow: none !important;
+    box-shadow: var(--jz-shadow-none) !important;
     overflow: visible !important;
     max-height: none !important;
   }

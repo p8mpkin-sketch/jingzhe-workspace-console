@@ -11,12 +11,13 @@ import { api } from '@/services/api';
 import { useMediaQuery, useViewPreference } from '@/components/ui';
 import { projectTurns } from './model/turnProjection';
 import type { EvidenceView } from './content/types';
+import { EXAMPLE_TASK } from './model/sessionMeta';
 
 const SUGGESTS_AGENT = [
-  { icon: ShieldAlert, tint: 'text-jz-sev-critical', label: '高危漏洞清单', desc: '按任务聚合高危发现，给出文件位置和修复优先级', q: '任务 #100367 有哪些高危发现？给出文件位置和修复优先级' },
-  { icon: KeyRound, tint: 'text-jz-sev-medium', label: '硬编码密钥提取', desc: '汇总密钥、证书与凭据，标注文件、置信度和用途', q: '汇总任务 #100367 中的硬编码密钥/证书，列出文件与置信度' },
-  { icon: DoorOpen, tint: 'text-jz-brand', label: '导出组件审计', desc: '检查 exported 组件及其权限保护状态', q: '列出任务 #100367 的 exported 组件，标出未加权限保护的' },
-  { icon: Bug, tint: 'text-jz-teal', label: '危险 API 清单', desc: '按风险等级整理危险调用与高危权限', q: '汇总任务 #100367 中危险 API 调用，按风险等级排序' },
+  { icon: ShieldAlert, tint: 'text-jz-sev-critical', label: '高危漏洞清单', desc: '按任务聚合高危发现，给出文件位置和修复优先级', q: `${EXAMPLE_TASK} 有哪些高危发现？给出文件位置和修复优先级` },
+  { icon: KeyRound, tint: 'text-jz-sev-medium', label: '硬编码密钥提取', desc: '汇总密钥、证书与凭据，标注文件、置信度和用途', q: `汇总${EXAMPLE_TASK} 中的硬编码密钥/证书，列出文件与置信度` },
+  { icon: DoorOpen, tint: 'text-jz-brand', label: '导出组件审计', desc: '检查 exported 组件及其权限保护状态', q: `列出${EXAMPLE_TASK} 的 exported 组件，标出未加权限保护的` },
+  { icon: Bug, tint: 'text-jz-teal', label: '危险 API 清单', desc: '按风险等级整理危险调用与高危权限', q: `汇总${EXAMPLE_TASK} 中危险 API 调用，按风险等级排序` },
 ];
 const SUGGESTS_QUICK = [
   { icon: ShieldAlert, tint: 'text-jz-sev-critical', label: '证书锁定结论', desc: '检索本地知识库中的 SSL Pinning 结论与出处', q: '检索本地知识库里关于证书锁定（SSL Pinning）的结论与出处' },

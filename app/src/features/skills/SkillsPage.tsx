@@ -6,7 +6,7 @@ import { useAuth } from '@/stores/auth';
 // Rxxx 重构: 顶层 KPI 卡 + 一级双工作台 Tab(资产库/候选审核台);卡片拆 SkillCard/CandidateCard 子组件。
 import { DataToolbar, UniversalImportModal, exportDataFile } from '@/components/ui';
 import type { UniversalImportResult } from '@/components/ui';
-import { Badge, Button, ConfirmDialog, Input, Panel, SegmentedControl, Drawer, EmptyState, ErrorState, SkeletonLoader, EmptyStatePlaceholder, Page, PageHeader, Skeleton, Tabs, toast, tokenColor, useThemeVersion } from '@/components/ui';
+import { Badge, Button, ConfirmDialog, Input, Panel, SegmentedControl, Drawer, EmptyState, ErrorState, SkeletonLoader, EmptyStatePlaceholder, Page, PageHeader, Skeleton, Tabs, toast, tokenColor, tokenPx, useThemeVersion } from '@/components/ui';
 import { moduleLabel } from '@/layout/navigation';
 import type { ColorToken } from '@/components/ui';
 import { SkillCard } from './SkillCard';
@@ -44,12 +44,12 @@ const KbGraph: React.FC<{ graph: any }> = ({ graph }) => {
  tooltip: { confine: true, formatter: (p: any) => p.dataType === 'node'
         ? `${p.data.name}<br/>类型 ${p.data.catName} · 关联 ${deg[p.data.name] || 0}`
         : `${p.data.sourceName} → ${p.data.targetName}<br/>${p.data.rel} ×${p.data.count || 1}` },
- legend: { data: KB_NODE_CATS.map((c) => c.name), textStyle: { color: tokenColor('muted'), fontSize: 10 }, top: 0 },
+ legend: { data: KB_NODE_CATS.map((c) => c.name), textStyle: { color: tokenColor('muted'), fontSize: tokenPx('chart-tick') }, top: 0 },
  series: [{
  type: 'graph', layout: 'force', roam: true, draggable: true,
  force: { repulsion: 140, edgeLength: [40, 110], layoutAnimation: true },
  categories: KB_NODE_CATS,
- label: { show: true, color: tokenColor('ink-2'), fontSize: 9,
+ label: { show: true, color: tokenColor('ink-2'), fontSize: tokenPx('chart-tick'),
  formatter: (p: any) => String(p.data.name || '').replace(/^(src|item|packer|vuln|task):/, '').slice(0, 18) },
  edgeLabel: { show: false },
  data: (graph.nodes || []).map((n: any) => ({

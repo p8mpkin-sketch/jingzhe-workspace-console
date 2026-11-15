@@ -56,6 +56,9 @@
   --jz-text-page: 30px;      --jz-leading-page: 1.2;
   --jz-text-metric: 32px;    --jz-leading-metric: 1.1;
   --jz-text-display: 36px;   --jz-leading-display: 1.1;
+  /* Text drawn by chart libraries on canvas (ECharts): read in JS through tokenPx(). */
+  --jz-text-chart-label: 11px; /* axis names, radar indicators */
+  --jz-text-chart-tick: 10px;  /* tick labels, legends, graph node labels */
   --jz-weight-regular: 400;
   --jz-weight-medium: 500;
   --jz-weight-strong: 600;
@@ -90,6 +93,7 @@
   --jz-shadow-card: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px -18px rgba(16,24,40,.18);
   --jz-shadow-dialog: 0 20px 60px -24px rgba(16,24,40,.30);
   --jz-shadow-raised: 0 1px 2px rgba(16,24,40,.05), 0 14px 32px -20px rgba(16,24,40,.28); /* hover on interactive cards */
+  --jz-shadow-none: none; /* explicit reset (flat cards inside a surface, print) */
   /* One soft tint behind the page header (design-system.md §5: max 8% opacity). */
   --jz-header-tint: radial-gradient(70% 100% at 0% 0%, rgb(var(--jz-brand) / .07), transparent 70%), radial-gradient(40% 80% at 100% 0%, rgb(var(--jz-teal) / .05), transparent 70%);
 
@@ -145,3 +149,35 @@ body { font-family: var(--jz-font-body); font-size: var(--jz-text-body); line-he
 .jz-section { font-size: var(--jz-text-section); line-height: var(--jz-leading-section); font-weight: var(--jz-weight-strong); }
 .jz-meta { font-size: var(--jz-text-meta); line-height: var(--jz-leading-meta); color: rgb(var(--jz-muted)); }
 .jz-mono { font-family: var(--jz-font-mono); font-variant-numeric: tabular-nums; }
+
+/* ── Font faces ── Self-hosted Latin subsets, bundled by Vite from app/node_modules (no network font
+   request). The family names are the first entries of --jz-font-*; Chinese glyphs fall back to the
+   system CJK stack in those tokens. @font-face cannot read custom properties, so the names live here. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../app/node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("../app/node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../app/node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../app/node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2") format("woff2");
+}

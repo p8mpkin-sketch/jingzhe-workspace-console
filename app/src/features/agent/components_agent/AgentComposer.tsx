@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Lock, Send, Square, Zap } from 'lucide-react';
 import { api } from '@/services/api';
+import { EXAMPLE_TASK } from '../model/sessionMeta';
 
 export const AgentComposer: React.FC<{
   running: boolean;
@@ -75,7 +76,7 @@ export const AgentComposer: React.FC<{
           if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
         }}
         rows={1} data-agent-input
-        placeholder={placeholder || (running ? 'Agent 正在执行，可停止…' : (mode === 'quick' ? '问一个本地知识库问题，例如：证书锁定有哪些结论？' : '问一个 APK 审计问题，例如：任务 #100367 有哪些高危发现？'))}
+        placeholder={placeholder || (running ? 'Agent 正在执行，可停止…' : (mode === 'quick' ? '问一个本地知识库问题，例如：证书锁定有哪些结论？' : `问一个 APK 审计问题，例如：${EXAMPLE_TASK} 有哪些高危发现？`))}
         className="block w-full resize-none bg-transparent text-label leading-[1.6] text-jz-ink placeholder:text-jz-muted outline-none"
         style={{ minHeight: 56, maxHeight: 180 }} />
       <div className="flex items-center gap-2 mt-1 pt-1.5">

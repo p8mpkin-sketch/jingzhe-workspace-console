@@ -13,7 +13,7 @@ import { useTheme } from '@/theme/ThemeContext';
 // R104-3: V3 微型状态胶囊/模型路由胶囊消费(R104-1 底座);Badge 调试标签全部收敛为 StatusBadge(三铁律②)
 import {
   Page, PageHeader, Panel, DataTable, Button, IconButton, StatusBadge, Tag, Tabs, SegmentedControl, EmptyState,
-  StaleNotice, SkeletonLoader, toast, cx, tokenColor, useThemeVersion, SignalPanel, MetricList, ChartPanel,
+  StaleNotice, SkeletonLoader, toast, cx, tokenColor, tokenPx, useThemeVersion, SignalPanel, MetricList, ChartPanel,
 } from '@/components/ui';
 import type { Column, TabItem } from '@/components/ui';
 import { moduleLabel } from '@/layout/navigation';
@@ -223,7 +223,7 @@ export const DashboardPage: React.FC = () => {
             // R103-1: 双模色板(ECharts canvas 吃不了 CSS 变量,按主题取值)
             splitArea: { areaStyle: { color: cc.split } },
             axisLine: { lineStyle: { color: cc.line } },
-            axisName: { color: cc.label, fontSize: 11 },
+            axisName: { color: cc.label, fontSize: tokenPx('chart-label') },
             splitLine: { lineStyle: { color: cc.line } },
           },
           series: [{
@@ -279,7 +279,7 @@ export const DashboardPage: React.FC = () => {
           // R103-1: 双模色板(原硬编码暗色 hex 亮色不换肤;ECharts canvas 吃不了 CSS 变量,按主题取值)
           splitArea: { areaStyle: { color: cc.split } },
           axisLine: { lineStyle: { color: cc.line } },
-          axisName: { color: cc.label, fontSize: 11 },
+          axisName: { color: cc.label, fontSize: tokenPx('chart-label') },
           splitLine: { lineStyle: { color: cc.line } },
         },
         series: [{
@@ -315,13 +315,13 @@ export const DashboardPage: React.FC = () => {
           grid: { left: 6, right: 6, top: 20, bottom: 0, containLabel: true },
           xAxis: {
             type: 'category', data: domNames,
-            axisLabel: { color: cc.label, fontSize: 10, interval: 0, rotate: 36 },
+            axisLabel: { color: cc.label, fontSize: tokenPx('chart-tick'), interval: 0, rotate: 36 },
             axisLine: { lineStyle: { color: cc.line } },
             axisTick: { show: false },
           },
           yAxis: {
             type: 'value',
-            axisLabel: { color: cc.muted, fontSize: 10 },
+            axisLabel: { color: cc.muted, fontSize: tokenPx('chart-tick') },
             splitLine: { lineStyle: { color: cc.line } },
           },
           series: SEV_ORDER.map((sv) => ({

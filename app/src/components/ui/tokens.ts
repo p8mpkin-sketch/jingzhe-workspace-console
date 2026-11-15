@@ -20,6 +20,11 @@ export function tokenColor(name: ColorToken, alpha?: number): string {
   return c;
 }
 
+/** Canvas text sizes come from the type tokens; chart libraries take numbers, so this reads the px value. */
+export type SizeToken = 'meta' | 'label' | 'body' | 'chart-label' | 'chart-tick';
+export const tokenPx = (name: SizeToken): number =>
+  parseFloat(getComputedStyle(document.documentElement).getPropertyValue(`--jz-text-${name}`)) || 0;
+
 /** Font stacks for canvas text. */
 export const tokenFont = (kind: 'body' | 'display' | 'mono' = 'body'): string =>
   getComputedStyle(document.documentElement).getPropertyValue(`--jz-font-${kind}`).trim();

@@ -71,7 +71,7 @@ const rules = [
 
 let changed = 0;
 for (const f of files) {
-  if (f.endsWith('styles/index.css') || f.endsWith('styles/fonts.css')) continue;
+  if (f.endsWith('styles/index.css')) continue;
   // Logic layers are never touched by the codemod.
   if (/\/src\/(services|stores|types)\//.test(f)) continue;
   const src = fs.readFileSync(f, 'utf8');

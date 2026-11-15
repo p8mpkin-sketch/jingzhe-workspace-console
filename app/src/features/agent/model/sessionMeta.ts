@@ -25,3 +25,7 @@ export function sessionMeta(s: AgentSession): SessionMeta {
 export function isTestSession(s: AgentSession): boolean {
   return sessionMeta(s).kind === 'test';
 }
+
+/** Task used in example prompts; written in the product's `任务 #<id>` reference format. */
+export const EXAMPLE_TASK_ID = 100367;
+export const EXAMPLE_TASK = `任务 #${EXAMPLE_TASK_ID}`;
