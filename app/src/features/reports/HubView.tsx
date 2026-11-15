@@ -1,11 +1,11 @@
 // HubView.tsx — report hub: metric row, toolbar (search / risk filter / sort / view), task cards or table,
 // selection with a batch summary export, pagination. Presentation only; every number comes from the parent.
 import React from 'react';
-import { LayoutGrid, Table2, FileDown, ArrowUpDown, Check, FileSearch, SearchX, Plus, PanelRight, ArrowRight, Download } from 'lucide-react';
+import { LayoutGrid, Table2, FileDown, ArrowUpDown, Check, FileSearch, SearchX, Plus, PanelRight, ArrowRight, Download, Eye } from 'lucide-react';
 import {
   Button, StatusBadge, CodePill, Panel, ObjectCard, DataTable, Pagination, BulkBar,
   SearchField, SegmentedControl, Popover, MenuItem, AsyncBoundary, EmptyState, Checkbox, useMediaQuery, useCompactTable,
-  SplitView, FactRow, ActionMenu, RowActions, pressable, cx,
+  SplitView, FactRow, ActionMenu, RowActions, cx,
 } from '@/components/ui';
 import type { Column, TabItem } from '@/components/ui';
 import { ScoreRing, MX_LABEL, scoreCls } from './shared';
@@ -59,21 +59,35 @@ const MatrixCounts: React.FC<{ mx: NonNullable<HubEntry['agg']>['mx'] | undefine
 };
 
 /** Readable summary of one task's report, built only from the hub's own aggregates (no extra request). */
-const ReportPreview: React.FC<{ entry: HubEntry; onOpen: (tid: number) => void; onExportOne: (tid: number) => void }> = ({ entry, onOpen, onExportOne }) => {
+const ReportPreview: React.FC<{
+  entry: HubEntry; onOpen: (tid: number) => void; onExportOne: (tid: number) => void;
+  /** Wide split only: Escape or ArrowLeft returns focus to the list row. */
+  onBack?: () => void; headingRef?: React.Ref<HTMLHeadingElement>;
+}> = ({ entry, onOpen, onExportOne, onBack, headingRef }) => {
   const { task: t, agg } = entry;
   const s = agg?.summary;
   const score = complianceScoreOf(s);
   const top = domainsOf(agg).slice(0, 6);
   const max = Math.max(1, ...top.map((d) => d.count));
   return (
-    <article className="flex min-w-0 flex-col overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card" data-hub-preview={t.id}>
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-panel border border-jz-border bg-jz-surface-2" data-hub-preview={t.id}
+      onKeyDown={onBack ? (e) => {
+        if (e.key !== 'Escape' && e.key !== 'ArrowLeft') return;
+        const el = e.target as HTMLElement;
+        if (el.closest('[role="menu"], input, select, textarea')) return;
+        e.preventDefault(); onBack();
+      } : undefined}>
+      <div className="flex items-center gap-2 border-b border-jz-border px-6 py-2 text-meta text-jz-muted" data-hub-preview-label>
+        <Eye size={14} aria-hidden className="flex-none" />
+        <span><span className="font-medium text-jz-ink-2">摘要预览</span> · 不含发现明细与证据</span>
+      </div>
       <header className="flex flex-wrap items-start gap-4 border-b border-jz-border px-6 py-5">
         <ScoreRing rate={score ?? 0} size={64} stroke={4.5}>
           <span className={cx('font-display text-section font-semibold tnum', score == null ? 'text-jz-muted' : 'text-jz-ink')} title="合规分">{score ?? '—'}</span>
         </ScoreRing>
         <div className="min-w-0 flex-1 basis-56">
           <div className="text-meta text-jz-muted"><span className="font-mono tnum">#{t.id}</span> · 更新于 <span className="font-mono tnum">{when(t) || '—'}</span></div>
-          <h2 className="mt-0.5 font-display text-headline font-semibold tracking-page text-jz-ink break-words">{t.app_name || t.package || `任务 #${t.id}`}</h2>
+          <h2 ref={headingRef} tabIndex={-1} className="mt-0.5 w-fit max-w-full rounded-control font-display text-section font-semibold text-jz-ink break-words" data-hub-preview-heading>{t.app_name || t.package || `任务 #${t.id}`}</h2>
           <div className="mt-2"><CodePill value={t.package || `任务#${t.id}未返回包名`} maxW="max-w-full" /></div>
         </div>
         {s?.risk_level
@@ -105,13 +119,11 @@ const ReportPreview: React.FC<{ entry: HubEntry; onOpen: (tid: number) => void; 
           ) : <p className="text-label text-jz-muted">{agg?.sid ? '这个任务的会话没有发现。' : '没有关联会话，无法按域统计。'}</p>}
         </section>
       </div>
-      <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-jz-border bg-jz-surface-2/40 px-6 py-3">
-        <p className="text-meta text-jz-muted">完整报告含发现明细、证据与 Markdown / JSON / 打印导出。</p>
-        <div className="flex items-center gap-2">
-          <ActionMenu label="导出" menuLabel={`导出任务 #${t.id}`} icon={<Download size={14} aria-hidden />}
-            items={[{ key: 'csv', label: '汇总 CSV', icon: <FileDown size={14} aria-hidden />, onSelect: () => onExportOne(t.id), attrs: { 'data-hub-export-one': t.id } }]} />
-          <Button size="sm" onClick={() => onOpen(t.id)} data-hub-open={t.id}>打开完整报告<ArrowRight size={14} aria-hidden /></Button>
-        </div>
+      <footer className="mt-auto flex flex-wrap items-center gap-2 border-t border-jz-border bg-jz-surface px-6 py-3">
+        <Button size="sm" onClick={() => onOpen(t.id)} data-hub-open={t.id}>打开完整报告<ArrowRight size={14} aria-hidden /></Button>
+        <ActionMenu label="导出" menuLabel={`导出任务 #${t.id}`} icon={<Download size={14} aria-hidden />}
+          items={[{ key: 'csv', label: '汇总 CSV', icon: <FileDown size={14} aria-hidden />, onSelect: () => onExportOne(t.id), attrs: { 'data-hub-export-one': t.id } }]} />
+        <span className="ml-auto text-meta text-jz-muted">发现明细、证据与 Markdown / JSON 导出在完整报告里</span>
       </footer>
     </article>
   );
@@ -169,6 +181,27 @@ export const HubView: React.FC<{
   const wide = useMediaQuery('(min-width: 1280px)');
   const [pick, setPick] = React.useState<number | null>(null);
   const current = paged.find((e) => e.task.id === pick) ?? (wide ? paged[0] : undefined);
+  // Roving focus: one tab stop for the list; arrows move it (and the preview, on wide screens),
+  // Enter opens the full report, ArrowRight moves into the preview and Escape / ArrowLeft come back.
+  const listRef = React.useRef<HTMLUListElement>(null);
+  const headingRef = React.useRef<HTMLHeadingElement>(null);
+  const [focusId, setFocusId] = React.useState<number | null>(null);
+  const rovingId = (paged.some((e) => e.task.id === focusId) ? focusId : current?.task.id) ?? paged[0]?.task.id;
+  const focusPick = (id: number) => listRef.current?.querySelector<HTMLElement>(`[data-hub-pick="${id}"]`)?.focus();
+  const onPickKey = (e: React.KeyboardEvent<HTMLElement>, idx: number, id: number) => {
+    const move = (to: number) => {
+      const next = paged[Math.max(0, Math.min(paged.length - 1, to))]?.task.id;
+      if (next == null) return;
+      e.preventDefault(); setFocusId(next); if (wide) setPick(next); focusPick(next);
+    };
+    if (e.key === 'ArrowDown') move(idx + 1);
+    else if (e.key === 'ArrowUp') move(idx - 1);
+    else if (e.key === 'Home') move(0);
+    else if (e.key === 'End') move(paged.length - 1);
+    else if (e.key === 'Enter') { e.preventDefault(); if (wide) onOpen(id); else setPick(id); }
+    else if (e.key === ' ') { e.preventDefault(); setPick(id); }
+    else if (e.key === 'ArrowRight' && wide) { e.preventDefault(); setPick(id); requestAnimationFrame(() => headingRef.current?.focus()); }
+  };
 
   // Secondary columns appear only where there is room for them; all of them stay in the cards and in the CSV.
   const mid = useMediaQuery('(min-width: 1280px)');
@@ -259,10 +292,11 @@ export const HubView: React.FC<{
               <div className="p-4" data-hub-split>
                 <SplitView open={!!current} onClose={() => setPick(null)}
                   detailTitle={current ? (current.task.app_name || current.task.package || `任务 #${current.task.id}`) : '报告预览'}
-                  detail={current ? <ReportPreview entry={current} onOpen={onOpen} onExportOne={onExportOne} /> : null}
+                  detail={current ? <ReportPreview entry={current} onOpen={onOpen} onExportOne={onExportOne} headingRef={headingRef}
+                    onBack={wide ? () => focusPick(current.task.id) : undefined} /> : null}
                   list={(
-                    <ul className="divide-y divide-jz-border overflow-hidden rounded-card border border-jz-border" aria-label="已完成评估任务" data-hub-list>
-                      {paged.map((e) => {
+                    <ul ref={listRef} className="divide-y divide-jz-border overflow-hidden rounded-card border border-jz-border" aria-label="已完成评估任务" data-hub-list>
+                      {paged.map((e, idx) => {
                         const t = e.task; const s = e.agg?.summary; const score = complianceScoreOf(s);
                         const on = current?.task.id === t.id;
                         return (
@@ -270,7 +304,9 @@ export const HubView: React.FC<{
                             className={cx('flex items-center gap-3 px-3 py-3 transition-colors duration-hover', on ? 'bg-jz-brand-soft' : 'hover:bg-jz-surface-2')}>
                             <Checkbox className="!items-center" checked={hub.checked.has(t.id)} onChange={() => toggleOne(t.id)} data-hub-check={t.id}
                               label={<span className="sr-only">选择任务 #{t.id}</span>} />
-                            <div className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-control" onClick={() => setPick(t.id)} {...pressable(true)}
+                            <div className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-control" onClick={() => { setFocusId(t.id); setPick(t.id); }}
+                              role="button" tabIndex={t.id === rovingId ? 0 : -1} onKeyDown={(ev) => onPickKey(ev, idx, t.id)}
+                              aria-keyshortcuts={wide ? 'ArrowUp ArrowDown Home End Enter ArrowRight' : 'ArrowUp ArrowDown Home End Enter'}
                               aria-label={`预览 ${t.app_name || t.package || '任务 #' + t.id}`} data-hub-pick={t.id}>
                               <span className={cx('w-9 flex-none text-right font-mono text-body font-semibold tnum', scoreCls(score))} title="合规分">{score ?? '—'}</span>
                               <span className="min-w-0 flex-1">
@@ -286,7 +322,9 @@ export const HubView: React.FC<{
                       })}
                     </ul>
                   )} />
-                <p className="mt-3 text-meta text-jz-muted">点一行查看报告预览；勾选后可以批量导出汇总 CSV。</p>
+                <p className="mt-3 text-meta text-jz-muted" data-hub-keys>{wide
+                  ? '↑ ↓ 切换预览，→ 进入预览，Enter 打开完整报告；勾选后可批量导出汇总 CSV。'
+                  : '点一行查看摘要预览；勾选后可批量导出汇总 CSV。'}</p>
               </div>
             ) : hub.view === 'cards' ? (
               <div className="grid grid-cols-1 gap-4 p-4 table:grid-cols-2 desktop:grid-cols-3 wide:grid-cols-4" data-hub-cards>
