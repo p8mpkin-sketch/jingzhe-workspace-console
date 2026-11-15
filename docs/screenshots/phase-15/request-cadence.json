@@ -1,0 +1,584 @@
+{
+ "note": "65 s per route at 1440, fixtures, production preview build (vite preview). 'closing' = the fixture ends every SSE response at once, so EventSource reconnects with jittered backoff and those attempts are counted as duplicates when two fall inside the first 3 s; 'held' = SSE requests are left open the way a live backend holds them (HOLD_STREAMS=1). phase14 = merged commit bdae05d rebuilt and measured in the same session; the file recorded during Phase 14 (docs/screenshots/phase-14/request-cadence.json) was taken one commit earlier, before the session stream moved to backoff.",
+ "held": {
+  "phase14": {
+   "/pentest": {
+    "total": 21,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/ai-assistant": {
+    "total": 19,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=29,30",
+     "GET /api/pentest/devices n=9 gaps(s)=7,8"
+    ]
+   },
+   "/tasks": {
+    "total": 20,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/discovery": {
+    "total": 16,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/new-audit": {
+    "total": 15,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/company/projects/1": {
+    "total": 20,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/skills": {
+    "total": 18,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/system": {
+    "total": 18,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/company": {
+    "total": 16,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/pentest/project/1/session/40": {
+    "total": 73,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40 n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/autopilot/status n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/timeline n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/events?source=progress&limit=300 n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/vulns/grouped n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/approvals n=9 gaps(s)=8"
+    ]
+   },
+   "/dashboard": {
+    "total": 40,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/tasks?status=running&limit=50 n=3 gaps(s)=30",
+     "GET /api/pentest/events/recent?limit=30 n=9 gaps(s)=8"
+    ]
+   },
+   "/pentest/project/1": {
+    "total": 17,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/reports": {
+    "total": 23,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/agent": {
+    "total": 30,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/agent/sessions/a1/events?since_seq=0 n=8 gaps(s)=1,2,4,10,17"
+    ]
+   }
+  },
+  "phase15": {
+   "/company/projects/1": {
+    "total": 20,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/pentest/project/1": {
+    "total": 17,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/pentest": {
+    "total": 21,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/dashboard": {
+    "total": 39,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/tasks?status=running&limit=50 n=3 gaps(s)=30",
+     "GET /api/pentest/events/recent?limit=30 n=8 gaps(s)=8"
+    ]
+   },
+   "/skills": {
+    "total": 18,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/new-audit": {
+    "total": 15,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/tasks": {
+    "total": 20,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/system": {
+    "total": 18,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/reports": {
+    "total": 23,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/discovery": {
+    "total": 16,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/ai-assistant": {
+    "total": 19,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/agent": {
+    "total": 29,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/agent/sessions/a1/events?since_seq=0 n=7 gaps(s)=1,2,7,10,26"
+    ]
+   },
+   "/company": {
+    "total": 16,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8"
+    ]
+   },
+   "/pentest/project/1/session/40": {
+    "total": 73,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40 n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/autopilot/status n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/timeline n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/events?source=progress&limit=300 n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/vulns/grouped n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/approvals n=9 gaps(s)=8"
+    ]
+   }
+  }
+ },
+ "closing": {
+  "phase14": {
+   "/pentest": {
+    "total": 27,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,3,7,13,28"
+    ]
+   },
+   "/pentest/project/1/session/40": {
+    "total": 86,
+    "initialDuplicates": [
+     "GET /api/pentest/sessions/40/events/stream?source=hook&since_seq=0&token=fixture-token x2",
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40 n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/autopilot/status n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/timeline n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/events?source=progress&limit=300 n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/vulns/grouped n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/approvals n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/events/stream?source=hook&since_seq=0&token=fixture-token n=7 gaps(s)=1,2,6,12,27",
+     "GET /api/notifications/stream?token=fixture-token n=8 gaps(s)=1,3,5,9,15,16"
+    ]
+   },
+   "/pentest/project/1": {
+    "total": 23,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,3,5,11,17"
+    ]
+   },
+   "/new-audit": {
+    "total": 22,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=8 gaps(s)=1,2,3,5,9,22,21"
+    ]
+   },
+   "/dashboard": {
+    "total": 46,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,3,8,14,29",
+     "GET /api/tasks?status=running&limit=50 n=3 gaps(s)=30",
+     "GET /api/pentest/events/recent?limit=30 n=9 gaps(s)=8"
+    ]
+   },
+   "/ai-assistant": {
+    "total": 25,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=29,30",
+     "GET /api/pentest/devices n=9 gaps(s)=7,8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,8,10,17"
+    ]
+   },
+   "/skills": {
+    "total": 24,
+    "initialDuplicates": [],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,3,6,13,24"
+    ]
+   },
+   "/discovery": {
+    "total": 23,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=8 gaps(s)=1,3,4,14,19"
+    ]
+   },
+   "/reports": {
+    "total": 29,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,3,7,9,27"
+    ]
+   },
+   "/company/projects/1": {
+    "total": 26,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,4,7,10,28"
+    ]
+   },
+   "/system": {
+    "total": 24,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,3,7,12,27"
+    ]
+   },
+   "/company": {
+    "total": 22,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,3,6,14,21"
+    ]
+   },
+   "/tasks": {
+    "total": 26,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,7,14,26"
+    ]
+   },
+   "/agent": {
+    "total": 35,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=29,30",
+     "GET /api/pentest/devices n=9 gaps(s)=7,8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,4,6,13,21",
+     "GET /api/agent/sessions/a1/events?since_seq=0 n=7 gaps(s)=1,2,7,16,21"
+    ]
+   }
+  },
+  "phase15": {
+   "/dashboard": {
+    "total": 46,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,4,8,11,19",
+     "GET /api/tasks?status=running&limit=50 n=3 gaps(s)=30",
+     "GET /api/pentest/events/recent?limit=30 n=9 gaps(s)=8"
+    ]
+   },
+   "/company": {
+    "total": 23,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=8 gaps(s)=1,3,7,9,18,19"
+    ]
+   },
+   "/company/projects/1": {
+    "total": 26,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x3"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,7,14,22"
+    ]
+   },
+   "/pentest/project/1": {
+    "total": 23,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,3,4,13,25"
+    ]
+   },
+   "/new-audit": {
+    "total": 21,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,3,5,13,28"
+    ]
+   },
+   "/pentest/project/1/session/40": {
+    "total": 85,
+    "initialDuplicates": [
+     "GET /api/pentest/sessions/40/events/stream?source=hook&since_seq=0&token=fixture-token x2",
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40 n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/autopilot/status n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/timeline n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/events?source=progress&limit=300 n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/vulns/grouped n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/approvals n=9 gaps(s)=8",
+     "GET /api/pentest/sessions/40/events/stream?source=hook&since_seq=0&token=fixture-token n=7 gaps(s)=1,2,3,4,14,20",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,3,6,13,28"
+    ]
+   },
+   "/pentest": {
+    "total": 27,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,7,13,24"
+    ]
+   },
+   "/reports": {
+    "total": 29,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,5,9,25"
+    ]
+   },
+   "/tasks": {
+    "total": 26,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,5,12,28"
+    ]
+   },
+   "/ai-assistant": {
+    "total": 25,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,7,14,26"
+    ]
+   },
+   "/skills": {
+    "total": 25,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=8 gaps(s)=1,2,3,5,13,20,17"
+    ]
+   },
+   "/system": {
+    "total": 24,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,4,5,14,17"
+    ]
+   },
+   "/agent": {
+    "total": 35,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2",
+     "GET /api/agent/sessions/a1/events?since_seq=0 x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=7 gaps(s)=1,2,6,14,23",
+     "GET /api/agent/sessions/a1/events?since_seq=0 n=7 gaps(s)=1,2,8,11,20"
+    ]
+   },
+   "/discovery": {
+    "total": 23,
+    "initialDuplicates": [
+     "GET /api/notifications/stream?token=fixture-token x2"
+    ],
+    "repeating": [
+     "GET /api/tasks-summary n=3 gaps(s)=30",
+     "GET /api/pentest/devices n=9 gaps(s)=8",
+     "GET /api/notifications/stream?token=fixture-token n=8 gaps(s)=1,3,5,8,26,20"
+    ]
+   }
+  }
+ }
+}
