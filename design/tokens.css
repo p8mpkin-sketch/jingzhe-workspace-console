@@ -65,11 +65,15 @@
   --jz-tracking-display: -0.02em;
   --jz-tracking-page: -0.015em;
 
-  /* ── Spacing (8px grid) ── */
+  /* ── Spacing (8px grid; half steps 0-5 / 1-5 / 2-5 are for dense workbench rows only) ── */
+  --jz-space-0-5: 2px;
   --jz-space-1: 4px;
+  --jz-space-1-5: 6px;
   --jz-space-2: 8px;
+  --jz-space-2-5: 10px;
   --jz-space-3: 12px;
   --jz-space-4: 16px;
+  --jz-space-5: 20px;
   --jz-space-6: 24px;
   --jz-space-8: 32px;
   --jz-space-12: 48px;
