@@ -250,7 +250,7 @@ export const CompanyProjectsPage: React.FC = () => {
 
       {!(loaded && !loadErr && rows.length === 0) && <section className="flex flex-col gap-3" aria-label="项目列表">
         <div className="flex flex-wrap items-center gap-3" data-company-toolbar>
-          <h2 className="jz-section mr-auto text-jz-ink">{filtering ? '筛选结果' : primary ? <>其他项目 <span className="font-mono text-jz-muted">· {listed.length}</span></> : '全部项目'}</h2>
+          <h2 className="jz-section mr-auto text-jz-ink">{dash ? '项目列表' : filtering ? '筛选结果' : primary ? <>其他项目 <span className="font-mono text-jz-muted">· {listed.length}</span></> : '全部项目'}</h2>
           {(rows.length > 1 || filtering) && <>
           <SearchField value={query} onValueChange={setQuery} label="搜索项目、公司或品牌" className="min-w-0 flex-1 basis-64 desktop:max-w-md" />
           <SegmentedControl label="项目类型" value={kind} onChange={setKind}
@@ -264,7 +264,7 @@ export const CompanyProjectsPage: React.FC = () => {
           </div>
           <ViewToggle value={view} onChange={setView} />
           </>}
-          <span className="whitespace-nowrap text-label text-jz-muted" aria-live="polite">共 {visible.length} 个项目</span>
+          {loaded && <span className="whitespace-nowrap text-label text-jz-muted" aria-live="polite">共 {visible.length} 个项目</span>}
         </div>
 
         <AsyncBoundary loading={loading} error={loadErr} stale={!!loadErr && loaded} onRetry={() => load(loaded)}

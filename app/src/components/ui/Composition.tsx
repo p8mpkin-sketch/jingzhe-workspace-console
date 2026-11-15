@@ -208,21 +208,28 @@ export const ActionMenu: React.FC<{
 );
 
 /** One visible primary action per row; everything else in an overflow menu. */
-export const RowActions: React.FC<{ primary?: React.ReactNode; more?: MenuAction[]; label: string; className?: string }> = ({ primary, more, label, className }) => (
+export const RowActions: React.FC<{
+  primary?: React.ReactNode; more?: MenuAction[]; label: string; className?: string;
+  /** Hooks for the overflow trigger and the menu body (tests and analytics keep their selectors). */
+  triggerAttrs?: Record<string, string | number | undefined>; menuAttrs?: Record<string, string | number | undefined>;
+}> = ({ primary, more, label, className, triggerAttrs, menuAttrs }) => (
   <div className={cx('flex items-center justify-end gap-1', className)} onClick={(e) => e.stopPropagation()}>
     {primary}
     {more && more.length > 0 && (
       <Popover label={label} role="menu"
         trigger={(p) => (
-          <button type="button" {...p} aria-label={label} title={label}
+          <button type="button" {...p} aria-label={label} title={label} {...triggerAttrs}
             className="grid h-8 w-8 place-items-center rounded-control text-jz-muted hover:bg-jz-surface-2 hover:text-jz-ink max-[760px]:h-jz-touch max-[760px]:w-jz-touch">
             <MoreHorizontal size={16} aria-hidden />
           </button>
         )}>
-        {(close) => more.map((a) => (
-          <MenuItem key={a.key} icon={a.icon} danger={a.danger} disabled={a.disabled} {...a.attrs}
-            onClick={() => { close(); a.onSelect(); }}>{a.label}</MenuItem>
-        ))}
+        {(close) => {
+          const items = more.map((a) => (
+            <MenuItem key={a.key} icon={a.icon} danger={a.danger} disabled={a.disabled} {...a.attrs}
+              onClick={() => { close(); a.onSelect(); }}>{a.label}</MenuItem>
+          ));
+          return menuAttrs ? <div {...menuAttrs}>{items}</div> : items;
+        }}
       </Popover>
     )}
   </div>

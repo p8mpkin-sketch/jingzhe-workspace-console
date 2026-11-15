@@ -3,6 +3,52 @@
 Design-system migration of `app/`. Presentation only: routes, API calls, permissions, task and report
 behavior are unchanged. One entry per phase; each phase is one commit.
 
+## Phase 12 — Composition finish
+
+Composition work on top of Phase 11, without touching tokens. Presentation only: routes, requests, permissions, task and report behavior are unchanged; the split preview stays the default report view.
+
+### Added
+- `FeatureBand variant="editorial"`: rules instead of a card, a 7 / 5 split with the facts as a definition list. Text facts render at body size, numbers at headline size.
+- `ObjectCard compact`: tighter padding, with the open action in the title row and no footer bar.
+- `RowActions` takes `triggerAttrs` and `menuAttrs`, so existing hooks keep their selectors.
+- Fixture switch `FIXTURE_PROJECTS=n`, which trims the project list to capture the 0 / 1 / 2-project states.
+
+### Changed
+- `/company`: the lead project is an editorial band labelled 最近创建的公司项目 (最近创建的项目 when there is no company-level project) and is never called the current project. Its facts are apps, brands and source, with portfolio facts beside it.
+  - Other projects are compact cards under "其他项目 · N".
+  - With no projects, the page explains how to start in three steps, with one create action in the band.
+  - With one project, the search, filter, sort and view controls are hidden. A note points to 候选发现.
+  - With two projects, the next-steps tile stays.
+  - When the list fails to load, the heading reads 项目列表 with no count.
+- `/company/projects/:id`: header facts move into a context strip that the tab bar hangs beneath.
+  - The report generator and history are steps ① 生成 and ② 历史与下载, joined by a rail.
+  - The page scroller reserves the sticky tab bar's height as `scroll-padding-top`, so keyboard focus never lands under it.
+  - Table headers no longer stick beneath the sticky tab bar.
+- `/reports` split view: the preview sits on the second surface under "摘要预览 · 不含发现明细与证据". Its title is one step smaller than before, and 打开完整报告 is its one primary action, with the export menu beside it.
+  - The list is one tab stop with roving focus. ↑ / ↓ / Home / End move the selection and the preview, Enter opens the full report, → moves into the preview, and Esc or ← return to the row. Checkboxes stay separate tab stops.
+  - The footnote states these keys.
+- `/agent`: the run-details pane remembers pinned or collapsed (`jz-view:agent-inspector`). From 1440 px it falls back to the drawer whenever pinning would leave the conversation narrower than 560 px, and the toggle's title says why.
+- `/tasks`: the row overflow menu is now the shared `RowActions`, which the reports and workspace pages already use. The hooks `data-more-btn`, `data-more-menu`, `data-act-*`, `data-goto-session`, `data-ask-btn` and `data-artifacts-btn` are kept. Rows stay at comfortable density, since each row holds two lines and an action. Other tables are compact.
+- Copy trimmed: the workspace no longer repeats where downloads are, and the preview states its scope once.
+
+### Verified
+- `tsc --noEmit` and `npm run build` pass after every commit.
+- 14 routes at 1680 / 1440 / 1280 / 1024 / 760 in both themes: no overflow and no page errors. The request log is identical to the baseline (14 routes).
+- Company, workspace, reports, tasks and agent in the empty, error, forbidden and slow variants at 1440 and 760: no overflow and no page errors.
+- Focus under the sticky tab bar: Tab and Shift+Tab across all five workspace tabs at 1440, 1024 and 760 reach 171–272 controls and leave 0 occluded. A control run without the scroll padding finds 9 occluded, so the check does detect occlusion.
+- Report keyboard path (arrows, Home/End, →, Tab, Esc, ←): the preview follows the selection with no new requests. Card/table preference survives a reload. Agent collapse survives a reload. The narrow-center fallback opens the drawer. Interactions send no write requests.
+- Keyboard focus scan: 318 controls on the eight priority routes, each with a visible ring. Token lint stays at 19. Contrast: no failing text pair.
+- Screenshots in `docs/screenshots/phase-12/`:
+  - Every route at 1440 / 1024 / 760 in both themes.
+  - The state variants of the changed routes.
+  - `states/`: the 0 / 1 / 2-project index at three widths in both themes.
+  - `interaction/`: report keyboard preview, focus clearing the sticky bar, agent collapse after reload, agent drawer fallback and the task row menu.
+
+### Remaining gaps
+- The project id is still a proxy for creation order, by decision. The list endpoint carries no timestamp the UI uses.
+- The 0-project page ends after the start band. Nothing else exists to show until a project is created.
+- The agent inspector's inner styling is unchanged. Only its placement and memory changed.
+
 ## Phase 11 — Composition and product identity
 
 Bolder composition on the priority pages: one leading object or signal per page, secondary facts as quiet lists or fact rows instead of equal cards, master-detail where reading matters, grouped actions instead of repeated buttons. Presentation only: routes, requests, permissions, task and report behavior are unchanged.
