@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api, getToken } from '@/services/api';
+import { createBackoff, scheduleReconnect } from '@/services/backoff';
 
 /** R121: 站内实时通知中心 store——SSE 流(后端 /api/notifications/stream,token 走 query,
  * pentest events/stream R23 P0-3 同款先例)+ REST 兜底拉取。Toast 由本 store 持有队列,
@@ -31,6 +32,9 @@ interface NotificationsState {
 }
 
 const MAX_TOASTS = 3;
+const backoff = createBackoff();
+let cancelRetry: () => void = () => {};
+let streamToken = '';
 
 export const useNotifications = create<NotificationsState>((set, get) => ({
   items: [],
@@ -42,30 +46,45 @@ export const useNotifications = create<NotificationsState>((set, get) => ({
   connect: () => {
     const token = getToken();
     if (!token) return;
-    get().es?.close();
+    // One owner: a second connect() with the same token while a stream is open or opening is a no-op.
+    const cur = get().es;
+    if (cur && cur.readyState !== EventSource.CLOSED && streamToken === token) return;
+    cur?.close();
+    cancelRetry();
+    streamToken = token;
     get().refresh();
-    const es = new EventSource(`/api/notifications/stream?token=${encodeURIComponent(token)}`);
-    es.onopen = () => set({ live: true });
-    es.onerror = () => set({ live: false });
-    es.onmessage = (m) => {
-      try {
-        const d = JSON.parse(m.data);
-        if (d.unread === undefined) return;    // 注释帧/done 帧无负载
-        set((st) => {
-          // 去重合并(流帧=增量,SSE 重连后 cursor=当下,理论无重叠;防御式按 id 去重)
-          const seen = new Set(st.items.map((x) => x.id));
-          const fresh: NotifItem[] = (d.items || []).filter((x: NotifItem) => !seen.has(x.id));
-          const items = [...fresh, ...st.items].slice(0, 50);
-          // 新到即浮卡(仅经流到达的,REST refresh 不弹)
-          const toasts = [...fresh.slice(0, MAX_TOASTS), ...st.toasts].slice(0, MAX_TOASTS);
-          return { items, unread: d.unread, toasts };
-        });
-      } catch { /* ping/注释帧 */ }
+    const open = () => {
+      const es = new EventSource(`/api/notifications/stream?token=${encodeURIComponent(token)}`);
+      es.onopen = () => { set({ live: true }); backoff.opened(); };
+      es.onerror = () => {
+        // Take over from the browser's fixed-interval retry: close, then reopen with backoff.
+        es.close();
+        set({ live: false, es: null });
+        if (streamToken !== token) return;
+        cancelRetry = scheduleReconnect(backoff, () => { if (streamToken === token && !get().es) open(); });
+      };
+      es.onmessage = (m) => {
+        backoff.alive();
+        try {
+          const d = JSON.parse(m.data);
+          if (d.unread === undefined) return;    // 注释帧/done 帧无负载
+          set((st) => {
+            // 去重合并(流帧=增量,SSE 重连后 cursor=当下,理论无重叠;防御式按 id 去重)
+            const seen = new Set(st.items.map((x) => x.id));
+            const fresh: NotifItem[] = (d.items || []).filter((x: NotifItem) => !seen.has(x.id));
+            const items = [...fresh, ...st.items].slice(0, 50);
+            // 新到即浮卡(仅经流到达的,REST refresh 不弹)
+            const toasts = [...fresh.slice(0, MAX_TOASTS), ...st.toasts].slice(0, MAX_TOASTS);
+            return { items, unread: d.unread, toasts };
+          });
+        } catch { /* ping/注释帧 */ }
+      };
+      set({ es });
     };
-    set({ es });
+    open();
   },
 
-  disconnect: () => { get().es?.close(); set({ es: null, live: false }); },
+  disconnect: () => { streamToken = ''; cancelRetry(); backoff.reset(); get().es?.close(); set({ es: null, live: false }); },
 
   refresh: async () => {
     try {

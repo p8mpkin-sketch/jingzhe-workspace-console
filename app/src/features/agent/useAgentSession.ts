@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, getToken } from '@/services/api';
+import { createBackoff, scheduleReconnect } from '@/services/backoff';
 import type { AgentEvent, AgentNode, AgentSession, AgentSnapshot } from './types';
 
 /** Event-sourced session hook: snapshot + SSE(seq) + a pure node reducer.
@@ -28,12 +29,14 @@ export function useAgentSession() {
   const seenRef = useRef<Set<number>>(new Set());
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
-  const retryRef = useRef<number | null>(null);
+  const cancelRetryRef = useRef<() => void>(() => {});
+  const backoffRef = useRef(createBackoff());
+  const connectRef = useRef<(sid: string, since: number) => void>(() => {});
 
   useEffect(() => { currentRef.current = current; }, [current]);
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { lastSeqRef.current = lastSeq; }, [lastSeq]);
-  useEffect(() => () => { mountedRef.current = false; abortRef.current?.abort(); }, []);
+  useEffect(() => () => { mountedRef.current = false; abortRef.current?.abort(); cancelRetryRef.current(); backoffRef.current.reset(); }, []);
 
   const loadSessions = useCallback(async () => {
     try {
@@ -180,11 +183,15 @@ export function useAgentSession() {
       const snap = await api<AgentSnapshot>(`/api/agent/sessions/${sid}/snapshot`);
       if (currentRef.current !== sid) return;
       setRunning(!!snap.running);
-      setNodes(snap.nodes || []);
-      setEvents(snap.events || []);
-      seenRef.current = new Set((snap.events || []).map((e) => e.seq).filter(Boolean));
-      lastSeqRef.current = snap.last_seq || 0;
-      setLastSeq(snap.last_seq || 0);
+      // The cursor never moves backwards: a snapshot older than what the stream already delivered is ignored,
+      // so the reconnect resumes from the last seen seq instead of replaying.
+      if ((snap.last_seq || 0) >= lastSeqRef.current) {
+        setNodes(snap.nodes || []);
+        setEvents(snap.events || []);
+        seenRef.current = new Set((snap.events || []).map((e) => e.seq).filter(Boolean));
+        lastSeqRef.current = snap.last_seq || 0;
+        setLastSeq(snap.last_seq || 0);
+      }
       const rows = await api<AgentSession[]>('/api/agent/sessions');
       if (currentRef.current === sid) setSessions(rows || []);
     } catch {
@@ -192,8 +199,23 @@ export function useAgentSession() {
     }
   }, []);
 
+  // The stream ended or failed. Reconcile once per outage, then reconnect from the last seen seq with
+  // exponential backoff and jitter (1 s doubling to 30 s). The delay resets only after a connection delivers
+  // data or stays open; a hidden tab waits and reconnects when it is shown again.
+  const dropped = (sid: string) => {
+    setConnected(false);
+    if (currentRef.current !== sid) return;
+    const backoff = backoffRef.current;
+    if (backoff.attempt === 0) reconcile(sid);
+    cancelRetryRef.current();
+    cancelRetryRef.current = scheduleReconnect(backoff, () => {
+      if (mountedRef.current && currentRef.current === sid) connectRef.current(sid, lastSeqRef.current);
+    });
+  };
+
   const connect = useCallback(async (sid: string, since: number) => {
     if (!sid) return;
+    cancelRetryRef.current();
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -203,6 +225,7 @@ export function useAgentSession() {
         signal: ctrl.signal,
       });
       if (!resp.ok || !resp.body) throw new Error(`SSE HTTP ${resp.status}`);
+      backoffRef.current.opened();
       setConnected(true);
       setError('');
       const reader = resp.body.getReader();
@@ -226,29 +249,26 @@ export function useAgentSession() {
           let payload: any;
           try { payload = JSON.parse(dataLines.join('\n')); } catch { continue; }
           if (evType === 'assistant/delta' || payload?.type === 'assistant/delta') {
+            backoffRef.current.alive(); // live output: the connection is real
             if (payload.reasoning) setLiveReasoning((v) => v + String(payload.text || ''));
             else setLiveText((v) => v + String(payload.text || ''));
             continue;
           }
-          if (payload?.seq) applyDurable(payload as AgentEvent);
+          if (payload?.seq) {
+            // Only an event past the cursor proves progress; a replay-then-close server stays backed off.
+            const before = lastSeqRef.current;
+            applyDurable(payload as AgentEvent);
+            if (lastSeqRef.current > before) backoffRef.current.alive();
+          }
         }
       }
-      if (!ctrl.signal.aborted) {
-        setConnected(false);
-        if (currentRef.current === sid) {
-          reconcile(sid);
-          retryRef.current = window.setTimeout(() => connect(sid, lastSeqRef.current), 1200);
-        }
-      }
+      if (!ctrl.signal.aborted) dropped(sid);
     } catch (e: any) {
       if (ctrl.signal.aborted || !mountedRef.current) return;
-      setConnected(false);
-      if (currentRef.current === sid) {
-        reconcile(sid);
-        retryRef.current = window.setTimeout(() => connect(sid, lastSeqRef.current), 1500);
-      }
+      dropped(sid);
     }
   }, [applyDurable, reconcile]);
+  connectRef.current = connect;
 
   // Load snapshot whenever the selected session changes, then start SSE.
   useEffect(() => {
@@ -286,7 +306,7 @@ export function useAgentSession() {
     return () => {
       dead = true;
       abortRef.current?.abort();
-      if (retryRef.current) { clearTimeout(retryRef.current); retryRef.current = null; }
+      cancelRetryRef.current(); backoffRef.current.reset();
     };
   }, [current, connect]);
 
@@ -413,6 +433,6 @@ export function useAgentSession() {
     liveText, liveReasoning, lastSeq, lastEvent, metrics, events,
     loadSessions, createSession, send, stop, remove, decideApproval, submitFeedback, exportTrajectory, forkSession,
     mode, setMode, webEnabled, toggleWeb,
-    reconnect: () => connect(currentRef.current, lastSeqRef.current),
+    reconnect: () => { backoffRef.current.reset(); connect(currentRef.current, lastSeqRef.current); },
   };
 }

@@ -8,6 +8,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 echarts.use([RadarChart, RadarComponent, PieChart, BarChart, GridComponent, TooltipComponent, CanvasRenderer]);
 import { api, ApiError } from '@/services/api';
 import { usePentest } from '@/stores/pentest';
+import { useAuth } from '@/stores/auth';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/theme/ThemeContext';
 // R104-3: V3 微型状态胶囊/模型路由胶囊消费(R104-1 底座);Badge 调试标签全部收敛为 StatusBadge(三铁律②)
@@ -163,8 +164,8 @@ export const DashboardPage: React.FC = () => {
 
   // R200(V3 节点化第4步): 执行节点状态卡数据(admin 可见)
   const [nodes, setNodes] = useState<any[] | null>(null);
-  const [me, setMe] = useState<any>(null);
-  useEffect(() => { api<any>('/api/me').then(setMe).catch(() => setMe(null)); }, []);
+  // Identity comes from the auth store's single bootstrap; the page does not ask /api/me again.
+  const me = useAuth((st) => st.me) as any;
   const isAdmin = me?.role === 'admin' || me?.role === 'super_admin';
   useEffect(() => {
     if (!isAdmin) { setNodes(null); return; }

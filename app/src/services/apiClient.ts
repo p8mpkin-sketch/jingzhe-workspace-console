@@ -14,9 +14,11 @@ export function getToken(): string {
 }
 export function setToken(t: string) {
   localStorage.setItem(TOKEN_KEY, t);
+  invalidateGetCache();
 }
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
+  invalidateGetCache();
 }
 
 export class ApiError extends Error {
@@ -26,11 +28,27 @@ export class ApiError extends Error {
 /** 请求超时默认值(60s): smoke 全量端点实测均在秒级,60s 仅拦悬挂态 */
 export const DEFAULT_TIMEOUT_MS = 60_000;
 
-export async function request<T = any>(path: string, opts: RequestInit = {}, silent = false): Promise<T> {
-  const headers = Object.assign(
-    { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-    opts.headers || {}
-  );
+/** How long an identical GET may be answered from the last response (covers several components mounting together). */
+export const GET_TTL_MS = 2_000;
+
+type RawResponse = { status: number; ok: boolean; statusText: string; text: string };
+const inflight = new Map<string, Promise<RawResponse>>();
+const recent = new Map<string, { at: number; raw: RawResponse }>();
+
+// A remembered response never answers a request made after the user acted: any click or key press makes
+// older entries ineligible, so a refresh button always reaches the server. The TTL only folds together the
+// burst of identical reads that components fire while a page mounts.
+let lastUserInputAt = 0;
+if (typeof window !== 'undefined') {
+  const mark = () => { lastUserInputAt = Date.now(); };
+  window.addEventListener('pointerdown', mark, true);
+  window.addEventListener('keydown', mark, true);
+}
+
+/** Drop every remembered GET. Called on any write, on sign-in / sign-out, and available to callers that must re-read. */
+export function invalidateGetCache() { recent.clear(); }
+
+async function send(path: string, opts: RequestInit, headers: Record<string, string>): Promise<RawResponse> {
   let r: Response;
   if (opts.signal) {
     // 调用方自带信号: 不叠加超时(语义让位),与既有行为完全一致
@@ -47,11 +65,59 @@ export async function request<T = any>(path: string, opts: RequestInit = {}, sil
       clearTimeout(timer);
     }
   }
-  if (r.status === 401) {
+  // 401 has no useful body; everything else is read once as text so each caller parses its own copy.
+  const text = r.status === 401 ? '' : await r.text().catch(() => '');
+  return { status: r.status, ok: r.ok, statusText: r.statusText, text };
+}
+
+/**
+ * One request path for the app.
+ * Plain GETs (no body, no caller signal, no custom headers, cache not 'no-store' / 'reload') are coalesced:
+ * identical calls share one in-flight request, and a successful response answers repeats for GET_TTL_MS.
+ * Any non-GET request clears that memory first, and so does any user input, so a read after a write or a
+ * click on a refresh control always reaches the server.
+ * Every caller gets its own parsed object. Pass `{ cache: 'no-store' }` to force a fresh read.
+ */
+export async function request<T = any>(path: string, opts: RequestInit = {}, silent = false): Promise<T> {
+  const token = getToken();
+  const headers = Object.assign(
+    { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    opts.headers || {}
+  ) as Record<string, string>;
+  const method = (opts.method || 'GET').toUpperCase();
+  const shareable = method === 'GET' && !opts.body && !opts.signal && !opts.headers && opts.cache !== 'no-store' && opts.cache !== 'reload';
+  let raw: RawResponse;
+  if (!shareable) {
+    if (method !== 'GET') invalidateGetCache();
+    raw = await send(path, opts, headers);
+    if (method !== 'GET') invalidateGetCache();
+  } else {
+    const key = token + ' ' + path;
+    const now = Date.now();
+    const hit = recent.get(key);
+    if (hit && now - hit.at < GET_TTL_MS && hit.at > lastUserInputAt) raw = hit.raw;
+    else {
+      let pending = inflight.get(key);
+      if (!pending) {
+        pending = send(path, opts, headers).then((res) => {
+          if (res.ok) {
+            const at = Date.now();
+            for (const [k, v] of recent) if (at - v.at >= GET_TTL_MS) recent.delete(k);
+            recent.set(key, { at, raw: res });
+          }
+          return res;
+        }).finally(() => { inflight.delete(key); });
+        inflight.set(key, pending);
+      }
+      raw = await pending;
+    }
+  }
+  if (raw.status === 401) {
     if (!silent) console.warn('[v2] 401', path);
     throw new ApiError(401, '未登录或会话过期');
   }
-  const d = (await r.json().catch(() => ({}))) as T;
-  if (!r.ok) throw new ApiError(r.status, (d as any)?.detail || r.statusText);
-  return d;
+  let d: any = {};
+  try { d = raw.text ? JSON.parse(raw.text) : {}; } catch { d = {}; }
+  if (!raw.ok) throw new ApiError(raw.status, d?.detail || raw.statusText);
+  return d as T;
 }
