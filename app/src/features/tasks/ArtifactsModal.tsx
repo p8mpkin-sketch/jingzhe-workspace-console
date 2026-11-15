@@ -71,13 +71,25 @@ const catOf = (rel: string, name: string): string | null => ART_CATS.find((c) =>
 
 type FlatFile = { name: string; rel: string; size_kb: number };
 
+/** Dialog-shaped frame without the overlay: header, scrolling body, action footer. */
+const InlineFrame: React.FC<{ open?: boolean; onClose?: () => void; widthClass?: string; title?: React.ReactNode; footer?: React.ReactNode; children?: React.ReactNode }> = ({ title, footer, children }) => (
+  <div className="flex h-full min-h-0 flex-col bg-jz-surface" data-art-inline>
+    <div className="flex-none px-4 pt-3 pb-2 text-label font-semibold text-jz-ink">{title}</div>
+    <div className="min-h-0 flex-1 overflow-auto px-4 pb-3">{children}</div>
+    {footer && <div className="flex flex-none flex-wrap items-center justify-end gap-2 border-t border-jz-border px-4 py-2.5">{footer}</div>}
+  </div>
+);
+
 export const ArtifactsModal: React.FC<{
  taskId: number;
  taskName: string;
  /** 任务关联渗透会话(sessMap 真值)——有则 ZIP 报告包可用, 无则诚实置灰 */
  linked: { pid: number; sid: number } | null;
  onClose: () => void;
-}> = ({ taskId, taskName, linked, onClose }) => {
+ /** Render as a page surface (assessment workbench › Artifacts) instead of a dialog. Same data, same actions. */
+ inline?: boolean;
+}> = ({ taskId, taskName, linked, onClose, inline = false }) => {
+  const Frame = inline ? InlineFrame : Dialog;
   const [prefix, setPrefix] = useState('');           // 当前目录(树模式浏览用,保留既有目录导航语义)
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -287,7 +299,7 @@ export const ArtifactsModal: React.FC<{
     on ? 'border-jz-brand bg-jz-brand-soft font-semibold text-jz-ink' : 'border-jz-border text-jz-ink-2 hover:border-jz-border-strong hover:bg-jz-surface-2');
 
   return (
-    <Dialog open onClose={onClose} widthClass="w-full max-w-jz-content"
+    <Frame open onClose={onClose} widthClass="w-full max-w-jz-content"
       title={(
         <span className="flex min-w-0 items-center gap-2" data-art-header>
           <span className="flex-none font-mono text-label tnum text-jz-muted">#{taskId}</span>
@@ -319,7 +331,7 @@ export const ArtifactsModal: React.FC<{
           )}
         </div>
       )}>
-      <div className="flex h-[68vh] min-h-80 flex-col gap-3">
+      <div className={cx('flex min-h-80 flex-col gap-3', inline ? 'h-full' : 'h-[68vh]')}>
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-2">
           <div className="flex min-h-0 flex-col rounded-card border border-jz-border" data-art-explorer>
             <div className="flex-none space-y-2 border-b border-jz-border p-3">
@@ -429,6 +441,6 @@ export const ArtifactsModal: React.FC<{
         )}
         {data?.run_dir && <p className="flex-none truncate font-mono text-meta text-jz-muted" title={data.run_dir}>{data.run_dir}</p>}
       </div>
-    </Dialog>
+    </Frame>
   );
 };
