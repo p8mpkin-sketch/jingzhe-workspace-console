@@ -79,3 +79,17 @@ Pending real backend (127.0.0.1:8099 was not reachable from the build environmen
 - Clusters response shape.
 
 Legacy `?ui=v3` / `?ui=v2` can be retired only after these four checks pass.
+
+## Legacy retirement gate (Phase 16)
+
+`?ui=v3` and `?ui=v2` are removed only when every row passes. Status as of Phase 16:
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Real-backend read audit | Pending: backend reachable on the owner's machine (401 on `/api/me`), no valid token yet | `app/scripts/real-read-audit.mjs`, result in `docs/screenshots/phase-16/` |
+| Real-backend write audit | Pending: same blocker; no write has been sent | `app/scripts/real-write-audit.mjs`, result in `docs/screenshots/phase-16/` |
+| V3 1440 px overflow resolved | Pass | `[data-v3-rail]` no longer overflows; 0 px at 1440 / 1024 / 760 / 390, light and dark (`docs/screenshots/phase-16/legacy/`) |
+| Capability matrix has no missing capability | Pass | tables above; unchanged in Phase 16 |
+| No current route depends on the legacy shell for a primary job | Pass | the only link into a legacy shell is the workbench's 旧版工作台 entry (`WorkbenchPage.openLegacy`); every route renders the six-tab workbench by default |
+
+**Decision: keep `?ui=v3` and `?ui=v2`.** Two gates are still pending, so nothing is removed in Phase 16.

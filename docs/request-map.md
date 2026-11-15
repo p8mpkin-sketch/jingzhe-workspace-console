@@ -39,6 +39,28 @@ This is the number to confirm on a real backend.
 `/api/tasks` with different query strings (`?status=running&limit=50`, `?limit=…`) are different requests and are
 listed separately.
 
+## Real-backend audit (Phase 16)
+
+Two scripts replace the manual replay above. Both read the token from `JZ_TOKEN` or from `JZ_TOKEN_FILE`
+(a file with mode 600), never print it, and refuse to write a result that still contains it.
+
+```sh
+cd app && npm run build && npx vite preview --port 4173 --strictPort
+# read-only: 14 routes for 65 s each, then the 20 workbench surfaces; any non-GET request is aborted and reported
+JZ_TOKEN_FILE=~/.jz-token node scripts/real-read-audit.mjs --out ../docs/screenshots/phase-16/real-read.json
+# writes against a disposable project, task and session that the script creates and deletes
+JZ_TOKEN_FILE=~/.jz-token JZ_APK_PATH=<server path of your own sample> [JZ_DEVICE=<serial>] [JZ_ALLOW_START=1] \
+  node scripts/real-write-audit.mjs --out ../docs/screenshots/phase-16/real-write.json --shots ../docs/screenshots/phase-16/real
+```
+
+The real backend holds SSE connections open itself, so the read audit needs no `HOLD_STREAMS`; that switch only
+exists for the fixture run (`docs/screenshots/phase-16/request-cadence.fixtures-held.json`: 14 routes, 65 s,
+0 duplicates).
+
+**Status: pending.** From the build environment `127.0.0.1:8099` refuses connections. On the owner's machine the
+backend answers (`GET /api/me` → 401), but no valid session token was available, so neither script has run yet.
+No real-backend request log or write result exists; nothing in this file is real-backend data.
+
 ## Shell (every signed-in route)
 
 These come from the app shell, so they appear on every route below and are not repeated in each table.
