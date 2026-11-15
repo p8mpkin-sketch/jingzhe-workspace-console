@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, ClipboardList, Download, ExternalLink, FileT
 import { api } from '@/services/api';
 import { usePentest } from '@/stores/pentest';
 import {
-  Page, PageHeader, Panel, Metric, MetricGrid, DataTable, Pagination, BulkBar, Tabs, Button, IconButton, Select, Checkbox, SearchField,
+  Page, PageHeader, Panel, FactRow, DataTable, Pagination, BulkBar, Tabs, Button, IconButton, Select, Checkbox, SearchField,
   StatusBadge, Tag, Dialog, ConfirmDialog, Drawer, Popover, MenuItem, EmptyState, StaleNotice, InlineAlert, AsyncBoundary,
   exportDataFile, useMediaQuery, cx,
 } from '@/components/ui';
@@ -423,8 +423,8 @@ export const TaskCenterPage: React.FC = () => {
     const hit = sessMap[t.id];
     const canAsk = canAskOf(t);
     const arts = artifactsReadyOf(t);
-    // Between 1280 and 1440 only the first action stays inline; the rest move into the menu with their hooks.
-    const fold = tableFits && !wide;
+    // One primary action per row at every width; the rest move into the menu with their hooks.
+    const fold = true;
     const inline: Array<{ key: string; node: React.ReactNode; item: (close: () => void) => React.ReactNode }> = [];
     if (hit) inline.push({ key: 'session',
       node: <Button size="sm" variant="secondary" onClick={() => gotoSession(hit)} data-goto-session title={`打开渗透会话 #${hit.sid}`}>会话</Button>,
@@ -544,18 +544,38 @@ export const TaskCenterPage: React.FC = () => {
 
       <div data-situation-pods>
         <div {...(slotInfo ? { 'data-slot-pod': '' } : {})}>
-          <MetricGrid>
-            <Metric label="并发占用" loading={!slotInfo && tasks === null}
-              tone={slotInfo?.hot ? 'danger' : slotInfo?.warm ? 'attention' : 'default'}
-              title="正在运行和排队的任务数,对比组织的最大并发数。达到上限后新任务会被拒绝。"
-              value={slotInfo ? `${slotInfo.used}/${slotInfo.unlim ? '∞' : slotInfo.quota}` : '—'}
-              hint={slotInfo
-                ? <span data-slot-indicator>空闲 {slotInfo.unlim ? '不限' : `${slotInfo.free} 个`}{slotInfo.load != null ? ` · 负载 ${slotInfo.load}%` : ''}</span>
-                : '无法读取并发配额'} />
-            <Metric label="运行中" loading={tasks === null} value={runningTasks.length} />
-            <Metric label="排队中" loading={tasks === null} value={queuedN} />
-            <Metric label="在线设备" value={liveDevices.length} hint="与顶栏的设备状态一致" />
-          </MetricGrid>
+          <section aria-label="队列" className="overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card">
+            <FactRow className="px-6 py-4" facts={[
+              { label: <span title="正在运行和排队的任务数,对比组织的最大并发数。达到上限后新任务会被拒绝。">并发占用</span>,
+                value: slotInfo ? `${slotInfo.used}/${slotInfo.unlim ? '∞' : slotInfo.quota}` : tasks === null ? '…' : '—',
+                tone: slotInfo?.hot ? 'danger' : slotInfo?.warm ? 'attention' : 'default',
+                hint: slotInfo
+                  ? <span data-slot-indicator>空闲 {slotInfo.unlim ? '不限' : `${slotInfo.free} 个`}{slotInfo.load != null ? ` · 负载 ${slotInfo.load}%` : ''}</span>
+                  : '无法读取并发配额' },
+              { label: '运行中', value: tasks === null ? '…' : runningTasks.length },
+              { label: '排队中', value: tasks === null ? '…' : queuedN },
+              { label: '在线设备', value: liveDevices.length, hint: '与顶栏的设备状态一致' },
+            ]} />
+            {runningTasks.length > 0 && (
+              <div className="border-t border-jz-border" data-running-lanes>
+                <h2 className="px-6 pt-3 text-label font-semibold text-jz-ink">正在运行</h2>
+                <ul className="divide-y divide-jz-border px-6 pb-1">
+                  {runningTasks.map((t: any) => {
+                    const hit = sessMap[t.id];
+                    return (
+                      <li key={t.id} data-running-lane={t.id} className="flex min-w-0 items-center gap-3 py-2.5">
+                        <span className="flex-none font-mono text-meta tnum text-jz-muted">#{t.id}</span>
+                        <span className="w-32 flex-none truncate text-label font-semibold text-jz-ink" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
+                        <span className="min-w-0 flex-1 truncate text-meta text-jz-muted" title={t.progress || '服务端还没有上报进度'}>{t.progress || '正在执行,还没有上报进度'}</span>
+                        <span className="hidden flex-none font-mono text-meta tnum text-jz-ink-2 tablet:inline" title="从创建到现在">{fmtDur(now - t.created_at)}</span>
+                        {hit && <Button size="sm" variant="ghost" icon={<ExternalLink size={14} aria-hidden />} onClick={() => gotoSession(hit)} data-lane-goto={t.id} title={`打开渗透会话 #${hit.sid}`}>会话</Button>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </section>
         </div>
         {!(batchSum && batchSum.count > 0) && <span className="sr-only" data-batch-dashboard-empty>没有批量脱壳任务</span>}
       </div>
@@ -646,32 +666,6 @@ export const TaskCenterPage: React.FC = () => {
         <Pagination total={filtered.length} page={safePage} pageSize={pageSize} onPage={setPage} onPageSize={(n) => setPageSize(n)} pageSizes={PAGE_SIZES} jump
           dataAttrs={{ 'data-v3-pagination': '', 'data-jump-input': 'present' }} />
       </Panel>
-
-      {runningTasks.length > 0 && (
-        <Panel title="运行中的任务" actions={<StatusBadge tone="brand">{runningTasks.length} 个</StatusBadge>} data-running-lanes>
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 desktop:grid-cols-4">
-            {runningTasks.map((t: any) => {
-              const hit = sessMap[t.id];
-              return (
-                <li key={t.id} data-running-lane={t.id} className="min-w-0 rounded-card border border-jz-border px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="flex-none font-mono text-meta tnum text-jz-muted">#{t.id}</span>
-                    <span className="min-w-0 flex-1 truncate text-label font-semibold text-jz-ink" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
-                    <span className="flex-none font-mono text-meta tnum text-jz-ink-2" title="从创建到现在">{fmtDur(now - t.created_at)}</span>
-                  </div>
-                  <p className="mt-1 truncate text-meta text-jz-muted" title={t.progress || '服务端还没有上报进度'}>{t.progress || '正在执行,还没有上报进度'}</p>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <Tag mono>{t.kind || 'audit'}</Tag>
-                    {t.packer && <PackerChip packer={t.packer} />}
-                    <span className="flex-1" />
-                    {hit && <Button size="sm" variant="ghost" icon={<ExternalLink size={14} aria-hidden />} onClick={() => gotoSession(hit)} data-lane-goto={t.id} title={`打开渗透会话 #${hit.sid}`}>会话</Button>}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </Panel>
-      )}
 
       {activeSids.length > 0 && (
         <Panel flush title={`关联的渗透会话 (${activeSids.length})`} data-session-rail
