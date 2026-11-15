@@ -46,7 +46,7 @@ const SEV: Record<string, string> = { critical: 'rgb(var(--jz-sev-critical))', h
 const SEV_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 const LAYERS = [
   { key: 'target', title: '目标', types: ['app'] },
-  { key: 'surface', title: '攻击面', types: ['component', 'deeplink'] },
+  { key: 'surface', title: '暴露面', types: ['component', 'deeplink'] },
   { key: 'asset', title: '接口/资产', types: ['api_group', 'key'] },
   { key: 'approve', title: '审批', types: ['approval'] },
   { key: 'finding', title: '发现', types: ['finding'] },
@@ -197,7 +197,7 @@ const KeyCard = ({ data }: NodeProps) => {
     <NCard d={d} accent={st.col}>
       <CardHead label={<>🔑 密钥</>} color={st.col}
         right={m.verified != null ? <span className="ml-auto text-meta" style={{ color: m.verified ? 'rgb(var(--jz-teal-ink))' : 'rgb(var(--jz-muted))' }}
-          title={`verified_exploitable(真值): ${m.verified}`}>{m.verified ? '✓ 已验证可利用' : '未验证'}</span> : null} />
+          title={`verified_exploitable(真值): ${m.verified}`}>{m.verified ? '✓ 已验证成立' : '未验证'}</span> : null} />
       <CardTitle t={d.g.label} mono />
     </NCard>
   );
@@ -629,7 +629,7 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
       rows.push(['模块', g.label], ['接口数', String(m.count ?? '—')]);
       (m.sample || []).forEach((p: string, i: number) => rows.push([`采样${i + 1}`, <span className="font-mono">{p}</span>]));
     } else if (g.type === 'key') {
-      rows.push(['密钥', g.label], ['算法', m.algo || '—'], ['已验证可利用', String(m.verified ?? '—')], ['证据', <span className="font-mono">{String(m.evidence || '—')}</span>]);
+      rows.push(['密钥', g.label], ['算法', m.algo || '—'], ['已验证成立', String(m.verified ?? '—')], ['证据', <span className="font-mono">{String(m.evidence || '—')}</span>]);
     } else if (g.type === 'approval') {
       rows.push(['工具', g.label], ['状态', m.state || '—'], ['时间', m.ts ? new Date(m.ts).toLocaleString() : '—'], ['理由', String(m.reason || '—')], ['结果', m.result ? JSON.stringify(m.result) : '—']);
     } else {   // finding
@@ -654,7 +654,7 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
   if (!graph.nodes.length)
     return (
       <div className="h-full grid place-items-center">
-        <EmptyStatePlaceholder icon={Shield} title="攻击面画布还是空的" subtitle="等待 autopilot 侦察产出" />
+        <EmptyStatePlaceholder icon={Shield} title="应用结构还没有数据" subtitle="任务运行后,这里显示组件、接口和它们之间的路径" />
       </div>
     );
 
@@ -670,9 +670,9 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
       `}</style>
       <div className="flex items-center gap-2 pb-1.5 text-meta">
         <button data-canvas-chain onClick={() => setChainIdx(chainIdx == null ? 0 : (chainIdx + 1) % Math.max(chains.length, 1))}
-          title="逐条浏览攻击链(链边在画布中高亮)"
+          title="逐条浏览关联路径(路径在画布中高亮)"
           className="px-2.5 py-1 rounded-control bg-jz-surface-2 text-jz-ink-2 hover:text-jz-brand font-mono transition-colors">
-          ⚡ 利用链{chains.length ? ` ${(chainIdx ?? -1) + 1}/${chains.length}` : ' 0'} 活跃
+          路径{chains.length ? ` ${(chainIdx ?? -1) + 1}/${chains.length}` : ' 0'} 活跃
         </button>
         {chainOn && <span className="text-jz-muted truncate">{chainOn.title || ''}</span>}
         {/* R624: /graph 无 api 节点而 /api_tree 已有资产时回退资产总数(双源口径在悬浮注明,不再显示矛盾的 0) */}
@@ -761,7 +761,7 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
                   </div>
                   <div className="pt-1.5 border-t border-jz-border/50 space-y-1">
                     <div data-canvas-legend-flow className="text-jz-ink-2">── 实线 = 确认链路 · ⋯ 虚线 = 尝试轨迹 · ○ 未触达</div>
-                    <div>⚡ 链边高亮 = 当前浏览的攻击链(静态辉光)</div>
+                    <div>链边高亮 = 当前浏览的路径</div>
                     {focusOnly && !graph?.nodes?.some?.((n: any) => n.type === 'finding' && n.state === 'confirmed') && (
                       <div data-canvas-nofocus className="text-jz-amber">⚠ 本会话暂无 confirmed 战果——聚焦不可用,已显示全景</div>
                     )}

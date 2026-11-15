@@ -3,6 +3,7 @@
 // Checks every work surface of the six-tab shell at 1440 / 1024 / 760 in both themes:
 //   - every `?view=` deep link resolves to its own surface, and every surface is reachable by clicking
 //     primary tab → secondary tab → segment (no orphan panel, no duplicate owner);
+//   (widths: 1440 / 1024 / 760 / 390)
 //   - no horizontal overflow of the document, the surface bar or the main column, with and without the inspector;
 //   - keyboard focus: every tab stop shows a focus indicator and is not covered by another element;
 //   - variants: empty / error / forbidden / slow / stale never reach the error boundary.
@@ -18,7 +19,7 @@ const base = arg('base', 'http://localhost:4173/v2/');
 const out = path.resolve(arg('out', '.ui-shots/workbench'));
 const shots = arg('shots', '1') === '1';
 const SESSION = '/pentest/project/1/session/40';
-const WIDTHS = [1440, 1024, 760];
+const WIDTHS = [1440, 1024, 760, 390];
 const THEMES = ['light', 'dark'];
 const VARIANTS = ['empty', 'error', 'forbidden', 'slow', 'stale'];
 // [name, query, expected data-wb-tab, expected data-wb-view]
@@ -32,8 +33,11 @@ const SURFACES = [
   ['runtime-requests-proxy', 'view=burp', 'runtime'],
   ['findings', 'view=findings', 'findings'],
   ['findings-shadow', 'view=shadow', 'findings'],
+  ['findings-rulecards', 'view=rulecards', 'findings'],
+  ['findings-clusters', 'view=clusters', 'findings'],
   ['evidence-graph', 'view=graph', 'evidence'],
   ['evidence-facts', 'view=facts', 'evidence'],
+  ['evidence-structure', 'view=structure', 'evidence'],
   ['evidence-credentials', 'view=credentials', 'evidence'],
   ['evidence-coverage', 'view=coverage', 'evidence'],
   ['artifacts-output', 'view=artifacts', 'artifacts'],
