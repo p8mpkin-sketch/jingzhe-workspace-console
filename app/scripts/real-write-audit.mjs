@@ -14,6 +14,7 @@
 //   JZ_DEVICE                   device serial for the session body, default emulator-5554
 //   JZ_ALLOW_START=1            also send autopilot start, then stop at once. Off by default because start
 //                               drives a real device.
+//   JZ_TASK_WAIT_MS             how long to wait for the task before creating the session, default 600000
 //   JZ_KEEP=1                   skip cleanup (for debugging). The ids are in the result file.
 //
 // Every step records: method, path, request body, response status, the read-back used to confirm the
@@ -70,6 +71,18 @@ try {
     });
     if (!tid && ok(tr.status)) tid = tr.json?.id ?? tr.json?.task_id ?? null;
     report.created.task = tid;
+  }
+
+  // The backend answers 404 to a session whose task has no run directory yet (seen in the Phase 16 run),
+  // so wait for the task to reach a terminal state, as a person does before opening the wizard.
+  if (tid) {
+    const deadline = Date.now() + +(process.env.JZ_TASK_WAIT_MS || 600000); let st = '';
+    while (Date.now() < deadline) {
+      st = (await call(token, 'GET', `/api/tasks/${tid}`)).json?.status ?? '';
+      if (/^(done|failed|error|cancelled|canceled|partial)$/.test(st)) break;
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+    report.created.taskStatusBeforeSession = st || 'unknown';
   }
 
   // 3. Session creation (wizard). Body: { task_id, device, authorized }.
@@ -161,6 +174,7 @@ try {
     }
   }
   report.finishedAt = new Date().toISOString();
+  for (const st of report.steps) if (st.requestBody?.apk_path) st.requestBody = { ...st.requestBody, apk_path: '<server path>/' + path.basename(st.requestBody.apk_path) };
   const json = JSON.stringify(report, null, 1);
   if (json.includes(token)) fail('Refusing to write the result: the token survived redaction.');
   fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });

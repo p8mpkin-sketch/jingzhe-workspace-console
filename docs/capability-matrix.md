@@ -86,10 +86,10 @@ Legacy `?ui=v3` / `?ui=v2` can be retired only after these four checks pass.
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Real-backend read audit | Pending: backend reachable on the owner's machine (401 on `/api/me`), no valid token yet | `app/scripts/real-read-audit.mjs`, result in `docs/screenshots/phase-16/` |
-| Real-backend write audit | Pending: same blocker; no write has been sent | `app/scripts/real-write-audit.mjs`, result in `docs/screenshots/phase-16/` |
+| Real-backend read audit | Pass, with one backend 500 (`auth_matrix` for a session without that data): 0 duplicate requests, 0 duplicate streams, 0 page errors | `app/scripts/real-read-audit.mjs`, result in `docs/screenshots/phase-16/` |
+| Real-backend write audit | **Not passed.** Six writes returned 200 (project, assessment, session, clue, feedback, stop). Start returned 400 (sample not installable) and the rule-card state change was not sent (no finding in the disposable session) | `app/scripts/real-write-audit.mjs`, result in `docs/screenshots/phase-16/` |
 | V3 1440 px overflow resolved | Pass | `[data-v3-rail]` no longer overflows; 0 px at 1440 / 1024 / 760 / 390, light and dark (`docs/screenshots/phase-16/legacy/`) |
 | Capability matrix has no missing capability | Pass | tables above; unchanged in Phase 16 |
 | No current route depends on the legacy shell for a primary job | Pass | the only link into a legacy shell is the workbench's 旧版工作台 entry (`WorkbenchPage.openLegacy`); every route renders the six-tab workbench by default |
 
-**Decision: keep `?ui=v3` and `?ui=v2`.** Two gates are still pending, so nothing is removed in Phase 16.
+**Decision: keep `?ui=v3` and `?ui=v2`.** The write audit has two open items (a successful task start and the rule-card state change), and the Phase 15 items listed above (mission start and status, rule-card import and export, source slice) are still unverified on a real backend. Nothing is removed in Phase 16.

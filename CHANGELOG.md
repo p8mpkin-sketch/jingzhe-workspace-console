@@ -3,7 +3,71 @@
 Design-system migration of `app/`. Routes, API calls, permissions, task and report behavior are unchanged.
 Phases 1–13 are presentation only; Phase 14 also changes request dedupe and stream reconnect pacing;
 Phase 15 routes the feedback requests through the shared client.
+Phase 16 verifies against the real backend and fixes the legacy V3 header overflow.
 One entry per phase.
+
+## Phase 16 — Real-backend verification and legacy cleanup
+
+A verification and cleanup phase. No redesign, no new endpoint, no change to API contracts, routes, permissions,
+task behavior or report behavior.
+
+### Real-backend read audit
+`app/scripts/real-read-audit.mjs`, run on the machine that hosts the backend (the build environment cannot reach
+`127.0.0.1:8099`), on a production preview build. 14 routes for 65 s each and the 20 workbench surfaces, read-only.
+- 0 duplicate data requests, 0 duplicate stream connections; each SSE endpoint connected once and stayed open.
+- `/api/feedback` is one read. `/api/tasks` with different query strings stay separate (5 keys).
+- Polling intervals match the fixture run (8 s and 30 s). 0 page errors, 0 write attempts on load.
+- One failed request: `GET /api/pentest/sessions/260/auth_matrix` → 500, a backend response for a session without
+  that data. The reports page already treats a failed read as "no matrix".
+- `GET /api/models/providers` was not requested on the session and agent routes although the fixture run requests
+  it; cause not determined, nothing failed.
+- Result: `docs/screenshots/phase-16/real-read.json`.
+
+### Real-backend write audit
+`app/scripts/real-write-audit.mjs`, against a disposable project (11), task (100409) and session (261).
+- 200 with unchanged endpoints and bodies: project creation, assessment creation, session creation, clue,
+  feedback, task stop.
+- Task start returned 400: the disposable sample is not installable, so the backend refused and no device was
+  driven. A successful start is still unverified.
+- Rule-card state change was not sent: the disposable session has no finding, and the audit does not change
+  findings of real sessions.
+- Session creation returned 404 in the automated run because the task had no run directory yet; the script now
+  waits for the task to finish first.
+- Cleanup: task deleted (GET → 404), session closed. Left behind because the API has no delete route: project
+  11, the closed session 261 and one feedback row. No database was edited by hand.
+- Results: `docs/screenshots/phase-16/real-write.json`, `real-write-verified.json`, screenshots in `real/`.
+  The local filesystem path of the sample was removed from the automated result after the run.
+
+### Legacy V3 overflow
+The overflowing element was the header row `[data-v3-rail]` (content 1507 px in a 1372 px row at 1440). Its
+`[data-v3-dive-dock]` child was `flex-none` although it scrolls horizontally. The dock now shrinks; below 640 px
+the row wraps and the composer toolbar wraps. 0 px overflow at 1440 / 1024 / 760 / 390, light and dark, for V3
+and V2 (`docs/screenshots/phase-16/legacy/`). Three class changes, no behavior change.
+
+### Legacy retirement gate
+Not met; `?ui=v3` and `?ui=v2` stay. Read audit, overflow, capability matrix and "no route depends on the
+legacy shell" pass. The write audit has two open items (a successful task start, the rule-card state change),
+and mission start and status, rule-card import and export and the source slice are still unverified on a real
+backend. The gate table is in `docs/capability-matrix.md`.
+
+### Keyboard
+The findings table was mouse-only. Sortable headers now respond to Enter and Space; rows are focusable, select
+with Enter or Space, and ArrowUp / ArrowDown move between them.
+
+### Verification (fixtures, production preview build)
+- `npm run lint:tokens`: 0. `tsc --noEmit` and `npm run build` pass. Contrast: 0 failing pairs.
+- 14 routes × 1440 / 1024 / 760 / 390 × light / dark: 0 overflow, 0 page errors; request set identical to the
+  baseline. Empty, error, forbidden and slow variants at 1440 and 390, stale at 1440: 0 overflow, 0 page errors.
+- 20 workbench surfaces × the same widths and themes, plus five data-state variants: 0 overflow, 0 errors,
+  2054 focus stops, 0 without a focus indicator, 0 covered.
+- 65 s held-stream cadence: 0 duplicates (`docs/screenshots/phase-16/request-cadence.fixtures-held.json`).
+- Keyboard: route tabs and workbench tabs with arrow keys, menus with arrows / Home / End, Escape returns
+  focus from menus and the inspector, findings table as above.
+
+### Not verified
+- A successful task start, the rule-card state change, mission start and status, rule-card import and export,
+  and the source slice, on a real backend.
+- The route and workbench screenshots are from fixtures; only the three in `real/` show real-backend data.
 
 ## Phase 15 — Assessment suite consolidation and legacy parity
 

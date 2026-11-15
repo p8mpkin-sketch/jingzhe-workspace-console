@@ -28,7 +28,7 @@
    "requestBody": {
     "kind": "audit",
     "app_name": "jz-phase16-write-audit-20261115173617",
-    "apk_path": "/Users/lenovo/Documents/代码/apk_scan-agent/APK-Sec-Web/data/uploads_demo_v5.apk",
+    "apk_path": "<backend checkout>/APK-Sec-Web/data/uploads_demo_v5.apk",
     "authorized": "用户已确认测试授权(向导勾选)"
    },
    "status": 200,
