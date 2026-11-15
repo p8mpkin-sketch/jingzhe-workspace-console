@@ -27,28 +27,25 @@ const GRID = 'grid grid-cols-1 gap-4 table:grid-cols-2 desktop:grid-cols-3';
 
 const openLink = 'inline-flex h-8 items-center gap-1 rounded-control px-2 text-label font-medium text-jz-brand hover:bg-jz-brand-soft max-[760px]:h-jz-touch';
 
-/** Compact card for scanning: name, scope, app count; brands only when present. */
+/** Compact card for scanning: name, scope, app count; the open link sits in the title row, so there is no footer bar. */
 const ProjectCard: React.FC<{ p: Project }> = ({ p }) => {
   const brands = parseBrands(p.brands);
   const count = appCount(p);
   return (
-    <ObjectCard data-company-project={p.id}
+    <ObjectCard compact data-company-project={p.id}
       title={<Link to={'/company/projects/' + p.id} className="hover:text-jz-brand">{p.name}</Link>}
       subtitle={p.company_name || '未填写公司或集团'}
-      badge={<Tag>{kindLabel(p)}</Tag>}
-      footer={<>
-        <span className="text-meta text-jz-muted">{sourceLabel(p.source)} · <span className="font-mono">#{p.id}</span></span>
-        <Link to={'/company/projects/' + p.id} aria-label={`打开项目 ${p.name}`} className={openLink}>
-          打开 <ArrowRight size={14} aria-hidden />
-        </Link>
-      </>}>
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
-        <span className="font-display text-title font-semibold tnum text-jz-ink">{count}</span>
+      badge={<Link to={'/company/projects/' + p.id} aria-label={`打开项目 ${p.name}`} className={cx(openLink, '-mr-2 -mt-1')}>
+        打开 <ArrowRight size={14} aria-hidden />
+      </Link>}>
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1.5">
+        <span className="font-display text-section font-semibold tnum text-jz-ink">{count}</span>
         <span className="text-label text-jz-ink-2">个应用</span>
         {count === 0 && <StatusBadge tone="attention">待导入应用</StatusBadge>}
+        <span className="ml-auto text-meta text-jz-muted">{kindLabel(p)} · {sourceLabel(p.source)} · <span className="font-mono">#{p.id}</span></span>
       </div>
       {brands.length > 0 && (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
+        <div className="mt-2 flex flex-wrap gap-1.5">
           {brands.slice(0, 4).map((b) => <Tag key={b}>{b}</Tag>)}
           {brands.length > 4 && <span className="text-meta text-jz-muted">+{brands.length - 4}</span>}
         </div>
@@ -57,20 +54,50 @@ const ProjectCard: React.FC<{ p: Project }> = ({ p }) => {
   );
 };
 
+const STEPS = [
+  ['确定范围', '新建公司项目，填写公司、品牌和授权范围。'],
+  ['建立清单', '在项目内导入应用清单，或从候选应用中确认归属。'],
+  ['评估与报告', '批量执行评估，再生成单应用报告与合集报告。'],
+] as const;
+
 /** Fills the last row when the list is short, so the index never ends in an unexplained gap. */
-const NextStepCard: React.FC<{ span: number }> = ({ span }) => (
-  <div data-company-next className={cx('flex min-w-0 flex-col justify-between gap-4 rounded-panel border border-jz-border bg-jz-surface-2/50 p-5',
+const NextStepCard: React.FC<{ span: number; only?: boolean }> = ({ span, only }) => (
+  <div data-company-next className={cx('flex min-w-0 flex-col justify-between gap-3 rounded-panel border border-jz-border bg-jz-surface-2/50 p-4',
     span === 2 ? 'desktop:col-span-2' : span === 3 ? 'table:col-span-2 desktop:col-span-3' : '')}>
     <div>
-      <h3 className="text-body font-semibold text-jz-ink">接下来</h3>
-      <ol className="mt-2 space-y-1.5 text-label text-jz-ink-2">
-        <li>1. 新建公司项目，确定公司、品牌和授权范围。</li>
-        <li>2. 在项目内导入应用清单，或从候选应用中确认归属。</li>
-        <li>3. 批量执行评估，再生成单应用报告与合集报告。</li>
+      <h3 className="text-body font-semibold text-jz-ink">{only ? '目前只有上方这一个项目' : '接下来'}</h3>
+      {only
+        ? <p className="mt-1.5 text-label text-jz-ink-2">
+            要扩大范围，可以在 <Link to="/discovery" className="font-medium text-jz-brand hover:underline" data-company-discovery>候选发现</Link> 里查看尚未归属的应用，或为另一家公司新建项目。
+          </p>
+        : <ol className="mt-1.5 space-y-1 text-label text-jz-ink-2">
+            {STEPS.map(([t, d], i) => <li key={t}>{i + 1}. {d}</li>)}
+          </ol>}
+    </div>
+  </div>
+);
+
+/** Shown in place of the lead band when there are no projects: what a company project is and how to begin. */
+const StartBand: React.FC<{ onCreate: () => void }> = ({ onCreate }) => (
+  <section className="min-w-0 border-y border-jz-border" data-band="editorial" data-company-start>
+    <div className="grid gap-x-10 gap-y-6 py-6 desktop:grid-cols-12">
+      <div className="flex min-w-0 flex-col gap-4 desktop:col-span-5">
+        <div className="text-label font-medium text-jz-brand">开始一个公司项目</div>
+        <h2 className="font-display text-page font-semibold text-jz-ink">以公司为范围整理应用和报告</h2>
+        <p className="text-body text-jz-ink-2">一个公司项目对应一家公司或集团：先确定范围，再建立应用清单，最后统一评估并输出报告。</p>
+        <div className="mt-auto"><Button icon={<Plus size={16} aria-hidden />} onClick={onCreate} data-company-start-create>新建公司项目</Button></div>
+      </div>
+      <ol className="grid min-w-0 gap-4 tablet:grid-cols-3 desktop:col-span-7 desktop:border-l desktop:border-jz-border desktop:pl-10">
+        {STEPS.map(([t, d], i) => (
+          <li key={t} className="flex min-w-0 flex-col gap-1.5 border-t border-jz-border pt-3">
+            <span className="font-mono text-label text-jz-muted">0{i + 1}</span>
+            <span className="text-body font-semibold text-jz-ink">{t}</span>
+            <span className="text-label text-jz-ink-2">{d}</span>
+          </li>
+        ))}
       </ol>
     </div>
-    <p className="text-meta text-jz-muted">新建入口在页面右上角。</p>
-  </div>
+  </section>
 );
 
 const projectColumns: Column<Project>[] = [
@@ -201,16 +228,18 @@ export const CompanyProjectsPage: React.FC = () => {
           <Button icon={<Plus size={16} aria-hidden />} onClick={openCreate} data-company-create>新建公司项目</Button>
         </>} />
 
+      {!loading && loaded && !loadErr && rows.length === 0 && <StartBand onCreate={openCreate} />}
       {loading && <div className="h-56 rounded-panel border border-jz-border bg-jz-surface motion-safe:animate-pulse" role="status" aria-label="加载中" />}
       {!loading && primary && (
-        <FeatureBand data-company-primary={primary.id}
-          eyebrow={primary.kind === 'company' ? '当前公司项目 · 最近创建' : '最近创建的项目'}
+        <FeatureBand variant="editorial" data-company-primary={primary.id}
+          eyebrow={primary.kind === 'company' ? '最近创建的公司项目' : '最近创建的项目'}
           title={<Link to={'/company/projects/' + primary.id} className="hover:text-jz-brand">{primary.name}</Link>}
-          subtitle={<>{primary.company_name || '未填写公司或集团'}<span className="text-jz-muted"> · {kindLabel(primary)} · {sourceLabel(primary.source)} · <span className="font-mono">#{primary.id}</span></span></>}
+          subtitle={<>{primary.company_name || '未填写公司或集团'}<span className="text-jz-muted"> · {kindLabel(primary)} · <span className="font-mono">#{primary.id}</span></span></>}
           tags={primaryBrands.length ? primaryBrands.slice(0, 8).map((b) => <Tag key={b}>{b}</Tag>) : undefined}
           facts={[
             { label: '清单内应用', value: appCount(primary), tone: appCount(primary) ? 'default' : 'attention', hint: appCount(primary) ? undefined : '待导入应用' },
             { label: '品牌', value: primaryBrands.length || '—' },
+            { label: '来源', value: sourceLabel(primary.source) },
           ]}
           actions={<Link to={'/company/projects/' + primary.id} data-company-primary-open
             className="inline-flex h-jz-control-lg items-center gap-2 rounded-control bg-jz-brand px-4 text-body font-medium text-jz-on-brand hover:bg-jz-brand/90">
@@ -219,9 +248,10 @@ export const CompanyProjectsPage: React.FC = () => {
           aside={portfolio} />
       )}
 
-      <section className="flex flex-col gap-3" aria-label="项目列表">
+      {!(loaded && !loadErr && rows.length === 0) && <section className="flex flex-col gap-3" aria-label="项目列表">
         <div className="flex flex-wrap items-center gap-3" data-company-toolbar>
-          <h2 className="jz-section mr-auto text-jz-ink">{filtering ? '筛选结果' : primary ? '其他项目' : '全部项目'}</h2>
+          <h2 className="jz-section mr-auto text-jz-ink">{filtering ? '筛选结果' : primary ? <>其他项目 <span className="font-mono text-jz-muted">· {listed.length}</span></> : '全部项目'}</h2>
+          {(rows.length > 1 || filtering) && <>
           <SearchField value={query} onValueChange={setQuery} label="搜索项目、公司或品牌" className="min-w-0 flex-1 basis-64 desktop:max-w-md" />
           <SegmentedControl label="项目类型" value={kind} onChange={setKind}
             items={[{ key: 'all', label: '全部' }, { key: 'company', label: '公司级' }, { key: 'single', label: '单应用' }]} />
@@ -233,7 +263,8 @@ export const CompanyProjectsPage: React.FC = () => {
             </Select>
           </div>
           <ViewToggle value={view} onChange={setView} />
-          <span className="whitespace-nowrap text-label text-jz-muted" aria-live="polite">{visible.length} 个项目</span>
+          </>}
+          <span className="whitespace-nowrap text-label text-jz-muted" aria-live="polite">共 {visible.length} 个项目</span>
         </div>
 
         <AsyncBoundary loading={loading} error={loadErr} stale={!!loadErr && loaded} onRetry={() => load(loaded)}
@@ -247,14 +278,14 @@ export const CompanyProjectsPage: React.FC = () => {
           {view === 'table'
             ? <div className="overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card">
                 <DataTable label="公司项目" columns={projectColumns} rows={listed} rowKey={(p) => p.id} rowDataAttrs={(p) => ({ 'data-company-project': p.id })}
-                  footer={!filtering && listed.length < 4 ? <p className="px-4 py-3 text-meta text-jz-muted">{primary ? '当前项目在上方单独列出。' : ''}共 {visible.length} 个项目。</p> : undefined} />
+                  footer={!filtering && listed.length < 4 ? <p className="px-4 py-3 text-meta text-jz-muted">{primary ? '最近创建的公司项目在上方单独列出。' : ''}共 {visible.length} 个项目。</p> : undefined} />
               </div>
             : <div className={GRID}>
                 {listed.map((p) => <ProjectCard key={p.id} p={p} />)}
-                {fill > 0 && <NextStepCard span={fill} />}
+                {fill > 0 && <NextStepCard span={fill} only={listed.length === 0} />}
               </div>}
         </AsyncBoundary>
-      </section>
+      </section>}
 
       <Dialog open={open} onClose={() => setOpen(false)} title="新建公司项目"
         description="先确定范围，创建后进入项目，再导入应用。"

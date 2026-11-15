@@ -55,32 +55,66 @@ export const FactRow: React.FC<{ facts: Fact[]; className?: string }> = ({ facts
 );
 
 /**
- * The page's primary object (the active project, the selected report). Bigger type, a brand rule on the left,
- * facts in a row, actions on the right. One per page.
+ * The page's primary object (the lead project, the selected report). One per page.
+ * `card` is a raised surface; `editorial` sits on the canvas between rules, like a lead story:
+ * identity on the left, facts as a column on the right, no card chrome.
  */
 export const FeatureBand: React.FC<{
   eyebrow?: React.ReactNode; title: React.ReactNode; subtitle?: React.ReactNode; tags?: React.ReactNode;
-  facts?: Fact[]; actions?: React.ReactNode; aside?: React.ReactNode; className?: string;
-} & Omit<React.HTMLAttributes<HTMLElement>, 'title'>> = ({ eyebrow, title, subtitle, tags, facts, actions, aside, className, ...rest }) => (
-  <section className={cx('relative min-w-0 overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card', className)} {...rest}>
-    <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-jz-brand" />
-    <div className="grid gap-6 p-6 pl-7 desktop:grid-cols-12">
-      <div className={cx('min-w-0 flex flex-col gap-5', aside ? 'desktop:col-span-8' : 'desktop:col-span-12')}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 flex-1 basis-72">
-            {eyebrow && <div className="mb-1.5 text-label font-medium text-jz-brand">{eyebrow}</div>}
-            <h2 className="font-display text-headline font-semibold tracking-page text-jz-ink break-words">{title}</h2>
-            {subtitle && <div className="mt-1.5 text-body text-jz-ink-2">{subtitle}</div>}
-            {tags && <div className="mt-3 flex flex-wrap gap-1.5">{tags}</div>}
+  facts?: Fact[]; actions?: React.ReactNode; aside?: React.ReactNode; variant?: 'card' | 'editorial'; className?: string;
+} & Omit<React.HTMLAttributes<HTMLElement>, 'title'>> = ({ eyebrow, title, subtitle, tags, facts, actions, aside, variant = 'card', className, ...rest }) => {
+  if (variant === 'editorial') {
+    return (
+      <section className={cx('min-w-0 border-y border-jz-border', className)} data-band="editorial" {...rest}>
+        <div className="grid gap-x-10 gap-y-6 py-6 desktop:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 desktop:col-span-7">
+            <div>
+              {eyebrow && <div className="mb-2 text-label font-medium text-jz-brand">{eyebrow}</div>}
+              <h2 className="font-display text-page font-semibold tracking-page text-jz-ink break-words">{title}</h2>
+              {subtitle && <div className="mt-2 text-body text-jz-ink-2">{subtitle}</div>}
+              {tags && <div className="mt-3 flex flex-wrap gap-1.5">{tags}</div>}
+            </div>
+            {actions && <div className="mt-auto flex flex-wrap items-center gap-2">{actions}</div>}
           </div>
-          {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+          <div className="min-w-0 desktop:col-span-5 desktop:border-l desktop:border-jz-border desktop:pl-10">
+            {facts && facts.length > 0 && (
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-4 tablet:grid-cols-3 desktop:grid-cols-3">
+                {facts.map((f, i) => (
+                  <div key={i} className="min-w-0">
+                    <dt className="text-meta text-jz-muted">{f.label}</dt>
+                    <dd className={cx('mt-1 font-semibold', typeof f.value === 'number' ? 'font-display text-headline tnum' : 'pt-1.5 text-body', toneText(f.tone))}>{f.value}</dd>
+                    {f.hint && <dd className="mt-0.5 text-meta text-jz-muted">{f.hint}</dd>}
+                  </div>
+                ))}
+              </dl>
+            )}
+            {aside && <div className={cx(facts && facts.length > 0 && 'mt-5 border-t border-jz-border pt-4')}>{aside}</div>}
+          </div>
         </div>
-        {facts && facts.length > 0 && <FactRow facts={facts} className="border-t border-jz-border pt-4" />}
+      </section>
+    );
+  }
+  return (
+    <section className={cx('relative min-w-0 overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card', className)} {...rest}>
+      <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-jz-brand" />
+      <div className="grid gap-6 p-6 pl-7 desktop:grid-cols-12">
+        <div className={cx('min-w-0 flex flex-col gap-5', aside ? 'desktop:col-span-8' : 'desktop:col-span-12')}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1 basis-72">
+              {eyebrow && <div className="mb-1.5 text-label font-medium text-jz-brand">{eyebrow}</div>}
+              <h2 className="font-display text-headline font-semibold tracking-page text-jz-ink break-words">{title}</h2>
+              {subtitle && <div className="mt-1.5 text-body text-jz-ink-2">{subtitle}</div>}
+              {tags && <div className="mt-3 flex flex-wrap gap-1.5">{tags}</div>}
+            </div>
+            {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+          </div>
+          {facts && facts.length > 0 && <FactRow facts={facts} className="border-t border-jz-border pt-4" />}
+        </div>
+        {aside && <div className="min-w-0 border-t border-jz-border pt-5 desktop:col-span-4 desktop:border-l desktop:border-t-0 desktop:pl-6 desktop:pt-0">{aside}</div>}
       </div>
-      {aside && <div className="min-w-0 border-t border-jz-border pt-5 desktop:col-span-4 desktop:border-l desktop:border-t-0 desktop:pl-6 desktop:pt-0">{aside}</div>}
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 // ---------- Signal panel and metric list ----------
 

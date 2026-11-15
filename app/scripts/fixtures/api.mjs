@@ -58,7 +58,8 @@ const matrixOf = (sid) => {
 export const routes = [
   ['GET', /^\/api\/me$/, { username: 'demo', role: 'admin' }],
   ['GET', /^\/api\/user\/info$/, { username: 'demo', role: 'admin' }],
-  ['GET', /^\/api\/pentest\/projects$/, projects],
+  // FIXTURE_PROJECTS=n trims the project list (index screenshots with 0, 1 or 2 projects).
+  ['GET', /^\/api\/pentest\/projects$/, () => (process.env.FIXTURE_PROJECTS != null ? projects.slice(0, Number(process.env.FIXTURE_PROJECTS)) : projects)],
   ['GET', /^\/api\/pentest\/projects\/\d+\/sessions$/, (u) => ({ sessions: sessions.filter((s) => String(s.project_id) === u.pathname.split('/')[4]).map((s, i) => ({ ...s, app: s.package, created: '2026-11-14 16:00', idle_days: i === 2 ? 9 : i === 1 ? 2 : 0 })) })],
   ['GET', /^\/api\/pentest\/projects\/\d+\/overview$/, { project: projects[0] }],
   ['GET', /^\/api\/pentest\/projects\/\d+\/apps$/, { apps }],
