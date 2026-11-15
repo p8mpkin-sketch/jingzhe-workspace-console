@@ -12,12 +12,12 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/theme/ThemeContext';
 // R104-3: V3 微型状态胶囊/模型路由胶囊消费(R104-1 底座);Badge 调试标签全部收敛为 StatusBadge(三铁律②)
 import {
-  Page, PageHeader, Panel, Metric, MetricGrid, DataTable, Button, IconButton, StatusBadge, Tag, Tabs, SegmentedControl, EmptyState,
-  StaleNotice, SkeletonLoader, toast, cx, tokenColor, useThemeVersion,
+  Page, PageHeader, Panel, DataTable, Button, IconButton, StatusBadge, Tag, Tabs, SegmentedControl, EmptyState,
+  StaleNotice, SkeletonLoader, toast, cx, tokenColor, useThemeVersion, SignalPanel, MetricList, ChartPanel,
 } from '@/components/ui';
 import type { Column, TabItem } from '@/components/ui';
 import { moduleLabel } from '@/layout/navigation';
-import { Database, Activity, Radar, List, Zap, ArrowUpRight, RefreshCw, Plus, Boxes, CircleCheck, ShieldAlert, Cpu } from 'lucide-react';
+import { Database, Activity, Radar, List, Zap, ArrowUpRight, RefreshCw, Plus, Boxes, ShieldAlert, Cpu } from 'lucide-react';
 
 // R84-3: DOMAINS/domainOf 抽至 features/pentest/masvsDomains.ts(单一来源),本文件仅 import
 // R104-3②: 默认态跨会话合规均值雷达同用 domainOf 归域(零第二份映射,后端只回 masvs 原值)
@@ -604,17 +604,6 @@ export const DashboardPage: React.FC = () => {
     <Page data-dashboard-page>
       <PageHeader title={moduleLabel('/dashboard')} description="评估、渗透会话和发现的整体情况。"
         eyebrow={<span data-dashboard-eyebrow>{new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}{me?.username ? ` · ${me.username}` : ''}</span>}
-        summary={(glob || sev) ? (
-          <>
-            <span className="inline-flex items-center gap-2"><span aria-hidden className={cx('h-2 w-2 rounded-pill', (glob?.running ?? 0) > 0 ? 'bg-jz-brand' : 'bg-jz-border-strong')} />运行中 <span className="font-mono font-semibold tnum text-jz-ink">{glob?.running ?? '—'}</span></span>
-            <span className="inline-flex items-center gap-2"><span aria-hidden className="h-2 w-2 rounded-pill bg-jz-border-strong" />排队 <span className="font-mono font-semibold tnum text-jz-ink">{queued ?? '—'}</span></span>
-            {(glob?.failed ?? 0) > 0
-              ? <button type="button" onClick={() => nav('/tasks?status=failed')} className="inline-flex items-center gap-2 rounded-control text-jz-amber hover:underline" data-summary-failed>
-                  <span aria-hidden className="h-2 w-2 rounded-pill bg-jz-amber" />失败 <span className="font-mono font-semibold tnum">{glob?.failed}</span> · 查看</button>
-              : <span className="inline-flex items-center gap-2"><span aria-hidden className="h-2 w-2 rounded-pill bg-jz-teal" />没有失败的任务</span>}
-            <span className="inline-flex items-center gap-2"><span aria-hidden className={cx('h-2 w-2 rounded-pill', critN > 0 ? 'bg-jz-red' : sev?.by_severity?.critical != null ? 'bg-jz-teal' : 'bg-jz-border-strong')} />严重发现 <span className={cx('font-mono font-semibold tnum', critN > 0 ? 'text-jz-red' : 'text-jz-ink')}>{sev?.by_severity?.critical ?? '—'}</span></span>
-          </>
-        ) : undefined}
         meta={isAdmin && (nodes || []).length > 0 ? (
           <span className="flex flex-wrap items-center gap-2" data-node-strip>
             <span className="text-meta text-jz-muted">执行节点</span>
@@ -636,39 +625,85 @@ export const DashboardPage: React.FC = () => {
 
       {sumErr && <StaleNotice reason="部分汇总数据没有加载成功,显示的数字可能不完整。" onRefresh={loadSummary} />}
 
-      <div data-kpi-row>
-        <MetricGrid>
-          <Metric label="评估资产" icon={<Boxes aria-hidden />} loading={glob === null && !sumErr} data-kpi-asset
-            value={<span data-kpi-total>{glob?.total ?? '—'}</span>}
-            hint={<>已完成 <span className="tnum">{glob?.done ?? '—'}</span> · 失败 <span className="tnum">{glob?.failed ?? '—'}</span> · 脱壳完成 <span className="tnum">{coverage != null ? `${coverage}%` : '—'}</span></>} />
-          <Metric label="任务成功率" icon={<CircleCheck aria-hidden />} loading={glob === null && !sumErr}
-            tone={rate === '—' ? 'default' : parseInt(rate, 10) >= 90 ? 'success' : 'attention'}
-            title="成功率 = 完成 / (完成 + 失败)。运行中和排队中的任务不计入。"
-            value={<span className="flex items-center gap-2.5"><span ref={ringRef} className="h-9 w-9 flex-none" data-status-ring aria-hidden />{rate}</span>}
-            hint={<>运行中 <span className="tnum" data-running-num>{glob?.running ?? '—'}</span> · 排队 <span className="tnum" data-queued-num>{queued ?? '—'}</span> · 失败 <span className="tnum">{glob?.failed ?? '—'}</span></>} />
-          <Metric label="严重 / 高 发现" icon={<ShieldAlert aria-hidden />} loading={sev === null && !sumErr} data-sev-card tone={critN > 0 ? 'danger' : 'default'}
-            title="待确认和已确认的发现,不含已排除的。"
-            value={<><span data-critical-num>{sev?.by_severity?.critical ?? '—'}</span><span className="text-jz-muted"> / </span><span data-high-num>{sev?.by_severity?.high ?? '—'}</span></>}
-            hint={<>共 <span className="tnum">{sev?.total_active ?? '—'}</span> 项 · 来自 <span className="tnum">{sev?.sessions_scanned ?? '—'}/{sev?.sessions_total ?? '—'}</span> 个会话</>} />
-          <Metric label="模型" icon={<Cpu aria-hidden />} loading={ai === null}
-            value={ai?.gated ? <span className="text-section text-jz-muted" data-ai-gated>仅管理员可见</span>
-              : <span data-ai-enabled-num>{ai?.enabled ?? '—'}<span className="text-section text-jz-muted">/{ai?.total ?? '—'}</span></span>}
-            hint={ai?.gated ? '连接状态可在系统页查看' : <span data-ai-model title={`当前模型:${ai?.activeModel || '未配置'}。可在系统页切换。`}>已启用 · 当前 {ai?.activeModel || '未配置'}</span>} />
-        </MetricGrid>
+      {/* Row 1: the one operational signal (the queue) leads; supporting metrics are a quiet list beside it. */}
+      <div className="grid grid-cols-1 gap-6 desktop:grid-cols-12" data-kpi-row>
+        <SignalPanel className="desktop:col-span-8" data-queue-signal loading={glob === null && !sumErr}
+          question="评估队列现在的状态"
+          value={<span data-running-num>{glob?.running ?? '—'}</span>}
+          statement={glob ? <>个任务正在运行，<span className="tnum" data-queued-num>{queued ?? '—'}</span> 个排队。{(glob.failed ?? 0) > 0 ? `${glob.failed} 个失败的任务需要查看原因。` : '没有失败的任务。'}</> : '正在读取队列。'}
+          actions={(glob?.failed ?? 0) > 0
+            ? <Button size="sm" variant="secondary" onClick={() => nav('/tasks?status=failed')} data-summary-failed>查看失败任务 <span className="tnum">{glob?.failed}</span></Button>
+            : undefined}
+          breakdown={[
+            { label: '排队', value: queued ?? '—' },
+            { label: '失败', value: glob?.failed ?? '—', tone: (glob?.failed ?? 0) > 0 ? 'attention' : 'default' },
+            { label: '已完成', value: glob?.done ?? '—' },
+            { label: <span title="成功率 = 完成 / (完成 + 失败)。运行中和排队中的任务不计入。">任务成功率</span>,
+              value: <span className="inline-flex items-center gap-2"><span ref={ringRef} className="h-6 w-6 flex-none" data-status-ring aria-hidden />{rate}</span>,
+              tone: rate === '—' ? 'default' : parseInt(rate, 10) >= 90 ? 'success' : 'attention' },
+          ]}>
+          <div data-live-workflows>
+            <div className="flex items-center justify-between gap-3 px-6 pt-4">
+              <h3 className="flex items-center gap-2 text-label font-semibold text-jz-ink"><Activity size={14} aria-hidden className="text-jz-muted" />正在运行 <span className="font-normal text-jz-muted">· 每 30 秒刷新</span></h3>
+              <Button size="sm" variant="ghost" onClick={() => nav('/tasks')} data-lw-goto-tasks>全部任务<ArrowUpRight size={14} aria-hidden /></Button>
+            </div>
+            {runningTasks.length > 0 ? (
+              <ul className="divide-y divide-jz-border px-6 pb-2">
+                {runningTasks.slice(0, 4).map((t: any) => {
+                  const hit = sessMap[t.id];
+                  return (
+                    <li key={t.id} data-live-lane={t.id} className="flex min-w-0 items-center gap-3 py-2.5">
+                      <span className="flex-none font-mono text-meta tnum text-jz-muted">#{t.id}</span>
+                      <span className="w-36 flex-none truncate text-label font-semibold text-jz-ink" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
+                      <span className="min-w-0 flex-1 truncate text-meta text-jz-muted" title={t.progress || '还没有上报进度'}>{t.progress || '正在执行，还没有上报进度'}</span>
+                      <span className="hidden flex-none font-mono text-meta tnum text-jz-ink-2 tablet:inline" title="从创建到现在">{fmtDur(now - t.created_at)}</span>
+                      {hit
+                        ? <Button size="sm" variant="ghost" icon={<ArrowUpRight size={14} aria-hidden />} onClick={() => nav(`/pentest/project/${hit.pid}/session/${hit.sid}`)} data-lw-goto-session={t.id}>会话</Button>
+                        : <Tag mono>{t.kind || 'audit'}</Tag>}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : <p className="px-6 pb-4 pt-2 text-label text-jz-muted">现在没有运行中的任务。</p>}
+          </div>
+        </SignalPanel>
+
+        <MetricList className="desktop:col-span-4" title="其他指标" loading={false} items={[
+          { key: 'asset', label: '评估资产', icon: <Boxes aria-hidden />,
+            value: glob === null && !sumErr ? '…' : <span data-kpi-asset><span data-kpi-total>{glob?.total ?? '—'}</span></span>,
+            hint: <>已完成 <span className="tnum">{glob?.done ?? '—'}</span> · 失败 <span className="tnum">{glob?.failed ?? '—'}</span> · 脱壳完成 <span className="tnum">{coverage != null ? `${coverage}%` : '—'}</span></> },
+          { key: 'sev', label: <span title="待确认和已确认的发现，不含已排除的。">严重 / 高 发现</span>, icon: <ShieldAlert aria-hidden />, tone: critN > 0 ? 'danger' : 'default',
+            value: sev === null && !sumErr ? '…' : <span data-sev-card><span data-critical-num>{sev?.by_severity?.critical ?? '—'}</span><span className="text-jz-muted"> / </span><span data-high-num>{sev?.by_severity?.high ?? '—'}</span></span>,
+            hint: <>共 <span className="tnum">{sev?.total_active ?? '—'}</span> 项 · 来自 <span className="tnum">{sev?.sessions_scanned ?? '—'}/{sev?.sessions_total ?? '—'}</span> 个会话</> },
+          { key: 'model', label: '模型', icon: <Cpu aria-hidden />,
+            value: ai === null ? '…' : ai?.gated ? <span className="text-label text-jz-muted" data-ai-gated>仅管理员可见</span>
+              : <span data-ai-enabled-num>{ai?.enabled ?? '—'}<span className="text-label text-jz-muted">/{ai?.total ?? '—'}</span></span>,
+            hint: ai?.gated ? '连接状态可在系统页查看' : <span data-ai-model title={`当前模型：${ai?.activeModel || '未配置'}。可在系统页切换。`}>已启用 · 当前 {ai?.activeModel || '未配置'}</span> },
+          { key: 'sessions', label: '未关闭的会话', icon: <Zap aria-hidden />,
+            value: feed?.sessions_scanned ?? '—', hint: '会话事件在下方，每 8 秒刷新' },
+        ]} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 desktop:grid-cols-3">
-        <Panel className="desktop:col-span-2" title={<span className="flex items-center gap-2"><Radar size={16} aria-hidden className="text-jz-muted" />按 MASTG 域分布</span>}
-          description={radarSessionView
-            ? (unmapped > 0 ? `会话 #${sid} 的发现数;${unmapped} 条没有标准域,计入“其他”。` : `会话 #${sid} 的发现数,全部已按域归类。`)
-            : `合规均分来自 ${aggRadar.counted}/${aggRadar.scanned} 个有发现的会话。每个会话的域得分 = 1 − 该域发现 / 全部发现。`}
+      {/* Row 2: the chart answers one question; the event feed beside it is bounded to the chart's height. */}
+      <div className="grid grid-cols-1 gap-6 desktop:grid-cols-12">
+        <ChartPanel className="desktop:col-span-8" data-radar-panel
+          question={radarSessionView ? `会话 #${sid} 的发现集中在哪些域？` : '哪些合规域的发现最多？'}
+          method={radarSessionView
+            ? (unmapped > 0 ? `会话 #${sid} 的发现数；${unmapped} 条没有标准域，计入“其他”。` : `会话 #${sid} 的发现数，全部已按域归类。`)
+            : `按 MASTG 域聚合 ${aggRadar.counted}/${aggRadar.scanned} 个有发现的会话。合规均分 = 1 − 该域发现 / 全部发现。`}
           actions={radarTabs.length > 1 ? <SegmentedControl items={radarTabs} value={radarMode} onChange={setRadarMode} label="数据范围" /> : undefined}
-          data-radar-panel>
+          empty={!radarSessionView && domainStats.reduce((n, r) => n + r.count, 0) === 0}
+          emptyState={<div data-radar-empty className="flex h-full min-h-48 flex-col items-center justify-center gap-2">
+            <span data-radar-mode={radarMode} data-radar-counted={aggRadar.counted} hidden />
+            <EmptyState compact icon={Radar} title="还没有可以按域归类的发现"
+              cause={`已扫描 ${aggRadar.scanned} 个会话，没有活跃发现。会话产生发现后，这里会按 ${DOMAINS.length + 1} 个域显示分布。`} />
+            <p className="text-meta text-jz-muted" data-mastg-capsule>{DOMAINS.length + 1} 个域（8 个标准域和“其他”）共 <span className="font-mono tnum">0</span> 项发现。</p>
+          </div>}>
           <span data-radar-mode={radarMode} data-radar-counted={aggRadar.counted} hidden />
           <div className="h-5 font-mono text-meta tnum text-jz-ink-2" data-radar-hover aria-live="polite">
             {hoverName && hoverVal != null
               ? (radarSessionView ? `${hoverName} · 发现 ${hoverVal}` : `${hoverName} · 合规均分 ${hoverVal}% · 发现 ${hoverCount}`)
-              : <span className="text-jz-muted">把鼠标移到图上查看各域的数值{radarSessionView ? ',点击可查看该域的发现' : ''}</span>}
+              : <span className="text-jz-muted">把鼠标移到图上查看各域的数值{radarSessionView ? '，点击可查看该域的发现' : ''}</span>}
           </div>
           <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-2">
             <div ref={ref} className="h-64" role="img" aria-label={radarSessionView ? `会话 #${sid} 各域发现数雷达图` : '各域合规均分雷达图'} />
@@ -708,10 +743,11 @@ export const DashboardPage: React.FC = () => {
               </div>
             )}
           </div>
-        </Panel>
+        </ChartPanel>
 
+        <div className="relative min-w-0 desktop:col-span-4">
         <Panel flush title="会话事件" description={feed && feed.sessions_scanned != null ? `${feed.sessions_scanned} 个未关闭的会话,每 8 秒刷新` : '每 8 秒刷新'} data-live-feed
-          className="flex min-h-0 flex-col desktop:h-[34rem]" bodyClassName="flex min-h-0 flex-1 flex-col">
+          className="flex min-h-0 flex-col max-desktop:h-[28rem] desktop:absolute desktop:inset-0" bodyClassName="flex min-h-0 flex-1 flex-col">
           {feed && feed.events.length > 0 && (
             <div className="px-4 pt-1" data-feed-filter>
               <Tabs items={feedTabs} value={feedFilter} onChange={setFeedFilter} label="按事件类型筛选" />
@@ -744,34 +780,8 @@ export const DashboardPage: React.FC = () => {
             </ol>
           )}
         </Panel>
+        </div>
       </div>
-
-      {runningTasks.length > 0 && (
-        <Panel title={<span className="flex items-center gap-2"><Activity size={16} aria-hidden className="text-jz-muted" />运行中的任务</span>}
-          description="每 30 秒刷新" data-live-workflows
-          actions={<Button size="sm" variant="ghost" onClick={() => nav('/tasks')} data-lw-goto-tasks>全部任务</Button>}>
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 desktop:grid-cols-4">
-            {runningTasks.map((t: any) => {
-              const hit = sessMap[t.id];
-              return (
-                <li key={t.id} data-live-lane={t.id} className="min-w-0 rounded-card border border-jz-border px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="flex-none font-mono text-meta tnum text-jz-muted">#{t.id}</span>
-                    <span className="min-w-0 flex-1 truncate text-label font-semibold text-jz-ink" title={t.app_name || t.package || ''}>{t.app_name || t.package || '—'}</span>
-                    <span className="flex-none font-mono text-meta tnum text-jz-ink-2" title="从创建到现在">{fmtDur(now - t.created_at)}</span>
-                  </div>
-                  <p className="mt-1 truncate text-meta text-jz-muted" title={t.progress || '还没有上报进度'}>{t.progress || '正在执行,还没有上报进度'}</p>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <Tag mono>{t.kind || 'audit'}</Tag>
-                    <span className="flex-1" />
-                    {hit && <Button size="sm" variant="ghost" icon={<ArrowUpRight size={14} aria-hidden />} onClick={() => nav(`/pentest/project/${hit.pid}/session/${hit.sid}`)} data-lw-goto-session={t.id}>会话</Button>}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </Panel>
-      )}
 
       <Panel flush title={<span className="flex items-center gap-2"><List size={16} aria-hidden className="text-jz-muted" />最近的评估</span>}
         description={apkRows.length ? `最近 ${apkRows.length} 个评估任务` : undefined}
