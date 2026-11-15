@@ -63,7 +63,7 @@ export const ReportCenterPage: React.FC = () => {
   }, []);
 
   // ---- 大厅状态(提升至根,详情往返不丢检索/分页) ----
-  const [hub, setHub] = useState<HubState>({ q: '', risk: 'all', sort: 'new', view: 'cards', page: 1, pageSize: 12, checked: new Set() });
+  const [hub, setHub] = useState<HubState>({ q: '', risk: 'all', sort: 'new', view: 'split', page: 1, pageSize: 12, checked: new Set() });
   const patchHub = useCallback((p: Partial<HubState>) => setHub((s) => ({ ...s, ...p })), []);
   const [batchBusy, setBatchBusy] = useState(false);
 
