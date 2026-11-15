@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, FileText, Play, RefreshCw, Sparkles, Upload, Wand2, Check, ExternalLink, SearchX, Layers3, Activity } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Download, FileText, Play, RefreshCw, Sparkles, Upload, Wand2, Check, ExternalLink, SearchX, Layers3, Activity, ChevronDown } from 'lucide-react';
 import { api, getToken } from '@/services/api';
 import {
-  Button, Checkbox, ConfirmDialog, DataTable, BulkBar, EmptyState, ErrorState, Field, InlineAlert, Input, Metric, MetricGrid, Page, PageHeader,
+  Button, Checkbox, ConfirmDialog, DataTable, BulkBar, EmptyState, ErrorState, Field, InlineAlert, Input, Page, PageHeader,
   Pagination, Panel, PermissionState, SearchField, Select, SkeletonLoader, StaleNotice, StatusBadge, Tabs, Tag, Textarea,
+  ActionMenu, FactRow, SignalPanel, StackedBar, useScrolledPast,
 } from '@/components/ui';
 import type { Column, StatusTone } from '@/components/ui';
 
@@ -69,6 +70,8 @@ export const CompanyProjectDetailPage: React.FC = () => {
   const [aptoide, setAptoide] = useState(true);
   const [play, setPlay] = useState(true);
   const [ai, setAi] = useState(false);
+
+  const [headRef, pastHead] = useScrolledPast<HTMLDivElement>();
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -161,11 +164,13 @@ export const CompanyProjectDetailPage: React.FC = () => {
     { key: 'name', header: '报告', card: 'title', cell: (r) => <span className="font-medium text-jz-ink">{reportName(r)}</span> },
     { key: 'template', header: '模板', cell: (r) => templateText(r.template) },
     { key: 'status', header: '状态', cell: (r) => <StatusBadge tone={tone(r.status)}>{reportStatus(r.status)}</StatusBadge> },
-    { key: 'actions', header: '下载', align: 'right', card: 'action', cell: (r) => (
-      <div className="flex justify-end gap-2">
-        <Button size="sm" variant="secondary" icon={<Download size={14} aria-hidden />} onClick={() => download(r.id, 'docx')} aria-label={`下载报告 #${r.id} 的 DOCX`}>DOCX</Button>
-        <Button size="sm" variant="secondary" icon={<Download size={14} aria-hidden />} onClick={() => download(r.id, 'pdf')} aria-label={`下载报告 #${r.id} 的 PDF`}>PDF</Button>
-      </div>
+    { key: 'actions', header: <span className="sr-only">下载</span>, label: '下载', align: 'right', card: 'action', cell: (r) => (
+      <ActionMenu label="下载" menuLabel={`下载报告 #${r.id}`} icon={<Download size={14} aria-hidden />}
+        triggerAttrs={{ 'data-report-download': r.id }}
+        items={[
+          { key: 'pdf', label: 'PDF', onSelect: () => download(r.id, 'pdf'), attrs: { 'aria-label': `下载报告 #${r.id} 的 PDF` } },
+          { key: 'docx', label: 'DOCX', onSelect: () => download(r.id, 'docx'), attrs: { 'aria-label': `下载报告 #${r.id} 的 DOCX` } },
+        ]} />
     ) },
   ];
   const appCols: Column<App>[] = [
@@ -201,22 +206,43 @@ export const CompanyProjectDetailPage: React.FC = () => {
   const toggleAllCands = (keys: Array<string | number>, all: boolean) => setSelected((p) => { const n = new Set(p); keys.forEach((k) => { if (all) n.delete(Number(k)); else n.add(Number(k)); }); return n; });
   const noMatch = (text: string) => <EmptyState compact icon={SearchX} title={text} />;
 
+  const kindText = project.kind === 'company' ? '公司级' : '单应用';
+  const latest = reports[0];
+  const pending = Math.max(0, apps.length - done - activeApps - failed);
+  // What to do next, in workflow order; only steps that apply to the current data.
+  const nextSteps: { key: string; text: React.ReactNode; action: React.ReactNode }[] = [];
+  if (!apps.length) nextSteps.push({ key: 'import', text: '清单里还没有应用。导入 APK，或在候选应用里发现并导入。', action: <Button size="sm" variant="secondary" icon={<Upload size={14} aria-hidden />} onClick={() => fileRef.current?.click()}>导入 APK</Button> });
+  if (apps.length && done < apps.length) nextSteps.push({ key: 'run', text: `${apps.length - done} 个应用还没有完成评估。`, action: <Button size="sm" variant="secondary" onClick={() => setActive('apps')}>查看应用清单</Button> });
+  if (candidates.length) nextSteps.push({ key: 'cand', text: `${candidates.length} 个候选应用待核验或导入。`, action: <Button size="sm" variant="secondary" onClick={() => setActive('candidates')}>处理候选应用</Button> });
+  if (done) nextSteps.push({ key: 'report', text: latest ? `最近一份报告是 #${latest.id}（${reportStatus(latest.status)}）。` : '已有完成的应用，可以生成第一份项目总报告。', action: <Button size="sm" variant="secondary" onClick={() => setActive('reports')}>去生成报告</Button> });
+
   return (
     <Page data-company-project-detail>
-      <PageHeader eyebrow={back} title={project.name || '项目'}
-        meta={<>
-          <span className="font-mono">#{project.id}</span>
-          <Tag>{project.kind === 'company' ? '公司级' : '单应用'}</Tag>
-          <span>{project.company_name || '未填写公司'}</span>
-          <span>{brands.join(' / ') || '未设置品牌'}</span>
-        </>}
-        actions={<>
-          <input ref={fileRef} type="file" multiple accept=".apk,.xapk" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => upload(e.target.files)} />
-          <Button variant="secondary" icon={<Upload size={16} aria-hidden />} loading={uploading} onClick={() => fileRef.current?.click()} data-company-upload>导入 APK</Button>
-          <Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} onClick={load}>刷新</Button>
-          <Button icon={<Play size={16} aria-hidden />} loading={busy === 'run'} disabled={!apps.length} onClick={() => setConfirmRun(true)}
-            title={apps.length ? undefined : '清单里还没有应用'} data-company-run>批量执行</Button>
-        </>} />
+      <div ref={headRef}>
+        <PageHeader eyebrow={back} title={project.name || '项目'}
+          meta={<>
+            <span className="font-mono">#{project.id}</span>
+            <Tag>{kindText}</Tag>
+            <span>{project.company_name || '未填写公司'}</span>
+            <span>{brands.join(' / ') || '未设置品牌'}</span>
+          </>}
+          actions={<>
+            <input ref={fileRef} type="file" multiple accept=".apk,.xapk" className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => upload(e.target.files)} />
+            <Button variant="secondary" icon={<Upload size={16} aria-hidden />} loading={uploading} onClick={() => fileRef.current?.click()} data-company-upload>导入 APK</Button>
+            <Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} onClick={load}>刷新</Button>
+            <Button icon={<Play size={16} aria-hidden />} loading={busy === 'run'} disabled={!apps.length} onClick={() => setConfirmRun(true)}
+              title={apps.length ? undefined : '清单里还没有应用'} data-company-run>批量执行</Button>
+          </>}
+          summary={<div className="flex w-full flex-wrap items-center gap-x-6 gap-y-2" data-company-context>
+            <span>应用 <b className="font-semibold tnum text-jz-ink">{apps.length}</b></span>
+            <span className="flex items-center gap-2">评估完成 <b className="font-semibold tnum text-jz-ink">{done}/{apps.length}</b>
+              <span className="w-24"><Bar pct={pct} label="已完成应用占比" /></span><span className="tnum text-jz-muted">{pct}%</span></span>
+            {activeApps > 0 && <StatusBadge tone="attention">执行中 {activeApps}</StatusBadge>}
+            {failed > 0 && <StatusBadge tone="danger">失败 {failed}</StatusBadge>}
+            <span>候选 <b className="font-semibold tnum text-jz-ink">{candidates.length}</b></span>
+            <span>报告 <b className="font-semibold tnum text-jz-ink">{reports.length}</b>{latest && <span className="text-jz-muted"> · 最近 #{latest.id} {reportStatus(latest.status)}</span>}</span>
+          </div>} />
+      </div>
 
       {!!loadErr && <StaleNotice reason={'刷新失败：' + (loadErr instanceof Error ? loadErr.message : String(loadErr))} onRefresh={load} />}
       {msg && (
@@ -224,24 +250,38 @@ export const CompanyProjectDetailPage: React.FC = () => {
           action={<Button size="sm" variant="ghost" onClick={() => setMsg(null)}>关闭</Button>}>{msg.text}</InlineAlert>
       )}
 
-      <Tabs<TabKey> label="项目内容" value={active} onChange={setActive} items={[
-        { key: 'reports', label: '报告', count: reports.length, dataAttrs: { 'data-company-tab': 'reports' } },
-        { key: 'overview', label: '概览', dataAttrs: { 'data-company-tab': 'overview' } },
-        { key: 'apps', label: '应用清单', count: apps.length, dataAttrs: { 'data-company-tab': 'apps' } },
-        { key: 'candidates', label: '候选应用', count: candidates.length, dataAttrs: { 'data-company-tab': 'candidates' } },
-        { key: 'runs', label: '执行记录', count: runs.length, dataAttrs: { 'data-company-tab': 'runs' } },
-      ]} />
+      {/* Context stays visible while scrolling: the tab bar sticks, and once the header is out of view it carries the project name and the primary action. */}
+      <div className="sticky top-0 z-10 -mx-jz-page -mt-2 bg-jz-canvas px-jz-page pt-2" data-company-sticky={pastHead ? 'compact' : 'full'}>
+        <div className="flex min-w-0 items-center gap-4 border-b border-jz-border">
+          {pastHead && (
+            <div className="hidden min-w-0 max-w-xs flex-none items-center gap-2 lg:flex" data-company-sticky-title>
+              <span className="truncate text-label font-semibold text-jz-ink">{project.name}</span>
+              <Tag>{kindText}</Tag>
+            </div>
+          )}
+          <Tabs<TabKey> label="项目内容" value={active} onChange={setActive} className="min-w-0 flex-1 border-b-0" items={[
+            { key: 'reports', label: '报告', count: reports.length, dataAttrs: { 'data-company-tab': 'reports' } },
+            { key: 'overview', label: '概览', dataAttrs: { 'data-company-tab': 'overview' } },
+            { key: 'apps', label: '应用清单', count: apps.length, dataAttrs: { 'data-company-tab': 'apps' } },
+            { key: 'candidates', label: '候选应用', count: candidates.length, dataAttrs: { 'data-company-tab': 'candidates' } },
+            { key: 'runs', label: '执行记录', count: runs.length, dataAttrs: { 'data-company-tab': 'runs' } },
+          ]} />
+          {pastHead && (
+            <Button size="sm" className="hidden flex-none lg:inline-flex" icon={<Play size={14} aria-hidden />} loading={busy === 'run'} disabled={!apps.length}
+              onClick={() => setConfirmRun(true)} data-company-sticky-run>批量执行</Button>
+          )}
+        </div>
+      </div>
 
       {active === 'reports' && (
-        <div className="flex flex-col gap-4" role="tabpanel">
-          <MetricGrid>
-            <Metric label="项目报告" value={reports.length} hint="DOCX 与 PDF" />
-            <Metric label="覆盖应用" value={apps.length} hint={done + ' 个已完成'} />
-            <Metric label="候选应用" value={candidates.length} hint="不写入报告正文" />
-            <Metric label="最近报告" value={reports[0] ? '#' + reports[0].id : '—'} hint={reports[0] ? reportStatus(reports[0].status) : '暂无'} />
-          </MetricGrid>
-          <Panel title="生成项目总报告" description="按模板输出 DOCX 与 PDF，生成后自动下载 PDF。">
-            <div className="grid items-end gap-4 desktop:grid-cols-[minmax(220px,300px)_1fr_auto]">
+        <section className="min-w-0 overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card" role="tabpanel" aria-label="报告" data-report-workflow>
+          {/* Step 1: generate. */}
+          <div className="border-b border-jz-border px-5 py-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-section font-semibold text-jz-ink">生成项目总报告</h2>
+              <p className="text-meta text-jz-muted">按模板输出 DOCX 与 PDF，生成后自动下载 PDF；新报告出现在下方历史的第一行。</p>
+            </div>
+            <div className="mt-4 grid items-end gap-4 desktop:grid-cols-[minmax(220px,300px)_1fr_auto]">
               <Field label="模板">
                 {(ids) => (
                   <Select ids={ids} value={template} onChange={(e) => setTemplate(e.target.value)}>
@@ -250,82 +290,95 @@ export const CompanyProjectDetailPage: React.FC = () => {
                 )}
               </Field>
               <Checkbox checked={useLlm} onChange={(e) => setUseLlm(e.target.checked)} label="使用 LLM 撰写叙述（可选）"
-                hint={`报告正文不含明文密钥。当前覆盖 ${apps.length} 个应用，已有 ${reports.length} 份报告。`} />
+                hint={`报告正文不含明文密钥。当前覆盖 ${apps.length} 个应用，${done} 个已完成。`} />
               <Button icon={<Wand2 size={16} aria-hidden />} loading={busy === 'report:portfolio:'} disabled={!!busy || !apps.length} onClick={() => gen('portfolio')}
                 title={apps.length ? undefined : '清单里还没有应用'}>生成报告</Button>
             </div>
-            <ul className="mt-4 grid gap-x-4 gap-y-1.5 border-t border-jz-border pt-4 text-label text-jz-ink-2 sm:grid-cols-2 desktop:grid-cols-4" aria-label="报告包含的章节">
-              {REPORT_CONTENTS.map((x) => <li key={x} className="flex items-center gap-1.5"><Check size={14} className="flex-none text-jz-muted" aria-hidden />{x}</li>)}
-            </ul>
-          </Panel>
-          <Panel flush title="报告历史" description={`${filteredReports.length} / ${reports.length} 份`}
-            actions={<SearchField value={reportQ} onValueChange={setReportQ} label="搜索报告" className="w-56 max-w-full" />}>
-            <DataTable label="报告历史" columns={reportCols} rows={shownReports} rowKey={(r) => r.id}
-              state={!shownReports.length ? (reports.length
-                ? noMatch('没有匹配的报告')
-                : <EmptyState compact icon={FileText} title="还没有报告" cause="在上方生成第一份项目总报告。" />) : undefined} />
-            <Pagination page={reportPage} pageSize={8} total={filteredReports.length} onPage={setReportPage} />
-          </Panel>
-        </div>
+            <details className="group mt-3">
+              <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-control text-label text-jz-ink-2 hover:text-jz-ink [&::-webkit-details-marker]:hidden">
+                <ChevronDown size={14} aria-hidden className="transition-transform duration-expand group-open:rotate-180" />报告包含 {REPORT_CONTENTS.length} 个章节
+              </summary>
+              <ul className="mt-2 grid gap-x-4 gap-y-1.5 text-label text-jz-ink-2 sm:grid-cols-2 desktop:grid-cols-4" aria-label="报告包含的章节">
+                {REPORT_CONTENTS.map((x) => <li key={x} className="flex items-center gap-1.5"><Check size={14} className="flex-none text-jz-muted" aria-hidden />{x}</li>)}
+              </ul>
+            </details>
+          </div>
+          {/* Step 2: history of what was generated, same surface and padding. */}
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+            <div>
+              <h2 className="text-body font-semibold text-jz-ink">报告历史</h2>
+              <p className="text-meta text-jz-muted">{filteredReports.length} / {reports.length} 份 · 下载在每行的菜单里</p>
+            </div>
+            <SearchField value={reportQ} onValueChange={setReportQ} label="搜索报告" className="w-56 max-w-full" />
+          </div>
+          <DataTable label="报告历史" columns={reportCols} rows={shownReports} rowKey={(r) => r.id}
+            rowClassName={(r) => r.status === 'generating' ? 'bg-jz-brand-soft/50' : undefined}
+            rowDataAttrs={(r) => ({ 'data-report-row': r.id, 'data-report-latest': latest && r.id === latest.id ? '' : undefined })}
+            state={!shownReports.length ? (reports.length
+              ? noMatch('没有匹配的报告')
+              : <EmptyState compact icon={FileText} title="还没有报告" cause="在上方生成第一份项目总报告。" />) : undefined} />
+          <Pagination page={reportPage} pageSize={8} total={filteredReports.length} onPage={setReportPage} />
+        </section>
       )}
 
       {active === 'overview' && (
-        <div className="flex flex-col gap-4" role="tabpanel">
-          <MetricGrid>
-            <Metric label="应用" value={apps.length} hint="项目清单" />
-            <Metric label="已完成" value={done} hint={apps.length ? pct + '% 覆盖' : '尚未执行'} />
-            <Metric label="候选应用" value={candidates.length} hint="待核验或导入" />
-            <Metric label="报告" value={reports.length} hint="DOCX 与 PDF" />
-          </MetricGrid>
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Panel title="执行覆盖" description="按应用状态">
-              <div className="flex items-end justify-between">
-                <span className="font-display text-metric font-semibold tnum text-jz-ink">{done}<span className="ml-1 font-body text-label font-normal text-jz-muted">/ {apps.length}</span></span>
-                <span className="text-label tnum text-jz-ink-2">{pct}%</span>
-              </div>
-              <div className="mt-3"><Bar pct={pct} label="已完成应用占比" /></div>
-              <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-                {([['完成', done, 'text-jz-teal'], ['执行中', activeApps, 'text-jz-amber'], ['失败', failed, failed > 0 ? 'text-jz-red' : 'text-jz-ink']] as const).map(([k, v, c]) => (
-                  <div key={k} className="rounded-control border border-jz-border py-2">
-                    <dd className={'text-section font-semibold tnum ' + c}>{v}</dd><dt className="text-meta text-jz-muted">{k}</dt>
-                  </div>
-                ))}
-              </dl>
-            </Panel>
-            <Panel flush title="最近报告" actions={<Button size="sm" variant="ghost" onClick={() => setActive('reports')}>全部报告</Button>}>
-              <ul className="divide-y divide-jz-border">
-                {reports.slice(0, 5).map((r) => (
-                  <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-label">
-                    <span className="min-w-0 truncate text-jz-ink">{reportName(r)} · {templateText(r.template)}</span>
-                    <StatusBadge tone={tone(r.status)}>{reportStatus(r.status)}</StatusBadge>
+        <div className="grid gap-4 desktop:grid-cols-12" role="tabpanel" aria-label="概览">
+          <SignalPanel className="desktop:col-span-8" question="这个项目评估到哪一步了？"
+            value={<>{pct}<span className="text-title text-jz-muted">%</span></>}
+            tone={apps.length && pct === 100 ? 'success' : 'default'}
+            statement={apps.length ? `清单内 ${apps.length} 个应用，${done} 个已完成评估。` : '清单里还没有应用，导入后才能执行评估。'}
+            breakdown={[
+              { label: '完成', value: done, tone: done ? 'success' : 'default' },
+              { label: '执行中', value: activeApps, tone: activeApps ? 'attention' : 'default' },
+              { label: '失败', value: failed, tone: failed ? 'danger' : 'default' },
+              { label: '未执行', value: pending },
+            ]}>
+            <StackedBar className="px-6 py-4" label="应用状态分布" parts={[
+              { key: 'done', label: '完成', value: done, tone: 'success' },
+              { key: 'active', label: '执行中', value: activeApps, tone: 'attention' },
+              { key: 'failed', label: '失败', value: failed, tone: 'danger' },
+              { key: 'pending', label: '未执行', value: pending, tone: 'neutral' },
+            ]} />
+          </SignalPanel>
+          <Panel flush className="desktop:col-span-4" title="接下来">
+            {nextSteps.length ? (
+              <ol className="divide-y divide-jz-border">
+                {nextSteps.map((n, i) => (
+                  <li key={n.key} className="flex flex-col gap-2 px-5 py-3.5" data-company-next={n.key}>
+                    <p className="text-label text-jz-ink"><span className="mr-1.5 font-mono text-jz-muted">{i + 1}</span>{n.text}</p>
+                    <div>{n.action}</div>
                   </li>
                 ))}
-              </ul>
-              {!reports.length && <EmptyState compact icon={FileText} title="还没有报告" />}
-            </Panel>
-            <Panel flush title="最近执行" actions={<Button size="sm" variant="ghost" onClick={() => setActive('runs')}>全部记录</Button>}>
-              <ul className="divide-y divide-jz-border">
-                {runs.slice(0, 5).map((r) => (
-                  <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-label">
-                    <span className="flex items-center gap-2 text-jz-ink"><span className="font-mono">#{r.id}</span><StatusBadge tone={tone(r.status)}>{statusText(r.status)}</StatusBadge></span>
-                    <span className="tnum text-jz-muted">{r.succeeded}/{r.total} 成功 · {r.failed} 失败</span>
-                  </li>
-                ))}
-              </ul>
-              {!runs.length && <EmptyState compact icon={Activity} title="还没有执行记录" />}
-            </Panel>
-          </div>
+              </ol>
+            ) : <EmptyState compact icon={Check} title="没有待处理的步骤" cause="应用全部完成，报告已生成。" />}
+          </Panel>
+          <Panel flush className="desktop:col-span-6" title="最近报告" actions={<Button size="sm" variant="ghost" onClick={() => setActive('reports')}>全部报告<ArrowRight size={14} aria-hidden /></Button>}>
+            <ul className="divide-y divide-jz-border">
+              {reports.slice(0, 5).map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-3 px-5 py-2.5 text-label">
+                  <span className="min-w-0 truncate text-jz-ink">{reportName(r)} · <span className="text-jz-ink-2">{templateText(r.template)}</span></span>
+                  <StatusBadge tone={tone(r.status)}>{reportStatus(r.status)}</StatusBadge>
+                </li>
+              ))}
+            </ul>
+            {!reports.length && <EmptyState compact icon={FileText} title="还没有报告" />}
+          </Panel>
+          <Panel flush className="desktop:col-span-6" title="最近执行" actions={<Button size="sm" variant="ghost" onClick={() => setActive('runs')}>全部记录<ArrowRight size={14} aria-hidden /></Button>}>
+            <ul className="divide-y divide-jz-border">
+              {runs.slice(0, 5).map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-3 px-5 py-2.5 text-label">
+                  <span className="flex items-center gap-2 text-jz-ink"><span className="font-mono">#{r.id}</span><StatusBadge tone={tone(r.status)}>{statusText(r.status)}</StatusBadge></span>
+                  <span className="tnum text-jz-muted">{r.succeeded}/{r.total} 成功 · {r.failed} 失败</span>
+                </li>
+              ))}
+            </ul>
+            {!runs.length && <EmptyState compact icon={Activity} title="还没有执行记录" />}
+          </Panel>
         </div>
       )}
 
       {active === 'apps' && (
         <div className="flex flex-col gap-4" role="tabpanel">
-          <MetricGrid>
-            <Metric label="应用" value={apps.length} hint="项目清单" />
-            <Metric label="已完成" value={done} hint="可以生成报告" />
-            <Metric label="执行中" value={activeApps} hint="排队中或运行中" />
-            <Metric label="失败" value={failed} hint="可以重新执行" tone={failed > 0 ? 'danger' : 'default'} />
-          </MetricGrid>
           <Panel flush title="应用清单" description={`${filteredApps.length} / ${apps.length} 个`}
             actions={<>
               <SearchField value={appQ} onValueChange={setAppQ} label="搜索应用或包名" className="w-56 max-w-full" />
@@ -350,7 +403,7 @@ export const CompanyProjectDetailPage: React.FC = () => {
 
       {active === 'candidates' && (
         <div className="flex flex-col gap-4" role="tabpanel">
-          <Panel title="发现候选应用" description="从公开来源发现，核验后下载或导入项目。">
+          <Panel title="发现候选应用" description="从公开来源发现，核验后下载或导入项目。公开来源无法保证覆盖完整，未出现的应用不代表不存在。">
             <div className="grid gap-4 lg:grid-cols-2">
               <Field label="指定包名" hint="可选，多个包名用英文逗号分隔">
                 {(ids) => <Input ids={ids} value={seed} onChange={(e) => setSeed(e.target.value)} />}
@@ -392,19 +445,19 @@ export const CompanyProjectDetailPage: React.FC = () => {
 
       {active === 'runs' && (
         <div className="flex flex-col gap-4" role="tabpanel">
-          <MetricGrid>
-            <Metric label="批次" value={runs.length} />
-            <Metric label="成功应用" value={runs.reduce((n, r) => n + (r.succeeded || 0), 0)} />
-            <Metric label="失败应用" value={runs.reduce((n, r) => n + (r.failed || 0), 0)} />
-            <Metric label="跳过" value={runs.reduce((n, r) => n + (r.skipped || 0), 0)} />
-          </MetricGrid>
           <Panel flush title="执行记录" description="每次批量执行的进度与结果。并发 2；失败的应用保留在清单中，可以重新执行。"
             actions={<Button size="sm" variant="secondary" icon={<RefreshCw size={14} aria-hidden />} onClick={load}>刷新</Button>}>
+            <FactRow className="border-b border-jz-border px-5 py-4" facts={[
+              { label: '批次', value: runs.length },
+              { label: '成功应用', value: runs.reduce((n, r) => n + (r.succeeded || 0), 0), tone: 'success' },
+              { label: '失败应用', value: runs.reduce((n, r) => n + (r.failed || 0), 0), tone: runs.some((r) => r.failed) ? 'danger' : 'default' },
+              { label: '跳过', value: runs.reduce((n, r) => n + (r.skipped || 0), 0) },
+            ]} />
             <ul className="divide-y divide-jz-border">
               {runs.map((r) => {
                 const p = r.total ? Math.round(r.succeeded / r.total * 100) : 0;
                 return (
-                  <li key={r.id} className="grid gap-2 px-4 py-3 sm:grid-cols-[1fr_200px_48px] sm:items-center">
+                  <li key={r.id} className="grid gap-2 px-5 py-3 sm:grid-cols-[1fr_200px_48px] sm:items-center">
                     <div>
                       <div className="flex items-center gap-2 text-label font-medium text-jz-ink"><span className="font-mono">#{r.id}</span><StatusBadge tone={tone(r.status)}>{statusText(r.status)}</StatusBadge></div>
                       <div className="mt-1 text-meta tnum text-jz-muted">{r.succeeded} 成功 · {r.failed} 失败 · {r.skipped} 跳过，共 {r.total}</div>

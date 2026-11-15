@@ -70,5 +70,5 @@ export { useMediaQuery, useCompactTable, useIsMobile, BREAKPOINT } from './useMe
 export { pressable } from './pressable';
 
 // Composition (phase 11)
-export { useViewPreference, ViewToggle, FactRow, FeatureBand, SignalPanel, MetricList, ActionMenu, RowActions, SplitView, CoverageDisclosure, ChartPanel, useScrolledPast } from './Composition';
+export { useViewPreference, ViewToggle, FactRow, FeatureBand, SignalPanel, StackedBar, MetricList, ActionMenu, RowActions, SplitView, CoverageDisclosure, ChartPanel, useScrolledPast } from './Composition';
 export type { ViewMode, Fact, ListMetric, MenuAction, CoverageSource } from './Composition';

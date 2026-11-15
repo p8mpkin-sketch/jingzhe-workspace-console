@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ChevronDown, Info, LayoutGrid, MoreHorizontal, Rows3 } from 'lucide-react';
 import { cx } from './cx';
 import { SegmentedControl } from './Tabs';
@@ -89,7 +89,7 @@ export const SignalPanel: React.FC<{
   question: React.ReactNode; value: React.ReactNode; statement?: React.ReactNode; tone?: Fact['tone'];
   breakdown?: Fact[]; actions?: React.ReactNode; loading?: boolean; children?: React.ReactNode; className?: string;
 } & React.HTMLAttributes<HTMLElement>> = ({ question, value, statement, tone, breakdown, actions, loading, children, className, ...rest }) => (
-  <section className={cx('min-w-0 overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card', className)} {...rest}>
+  <section className={cx('flex min-w-0 flex-col overflow-hidden rounded-panel border border-jz-border bg-jz-surface shadow-card', className)} {...rest}>
     <div className="flex flex-col gap-5 p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h2 className="text-label font-medium text-jz-ink-2">{question}</h2>
@@ -103,9 +103,25 @@ export const SignalPanel: React.FC<{
       </div>
       {breakdown && breakdown.length > 0 && <FactRow facts={breakdown} className="border-t border-jz-border pt-4" />}
     </div>
-    {children && <div className="border-t border-jz-border">{children}</div>}
+    {children && <div className="flex flex-1 flex-col justify-end border-t border-jz-border">{children}</div>}
   </section>
 );
+
+/** One bar split by state (done / in progress / failed / rest), with the legend in text so color is never the only cue. */
+export const StackedBar: React.FC<{ parts: { key: string; label: string; value: number; tone: 'success' | 'attention' | 'danger' | 'neutral' }[]; label: string; className?: string }> = ({ parts, label, className }) => {
+  const total = parts.reduce((n, p) => n + p.value, 0) || 1;
+  const fill = (t: string) => t === 'success' ? 'bg-jz-teal' : t === 'attention' ? 'bg-jz-amber' : t === 'danger' ? 'bg-jz-red' : 'bg-jz-border-strong';
+  return (
+    <div className={cx('flex flex-col gap-2.5', className)}>
+      <div className="flex h-2 overflow-hidden rounded-pill bg-jz-surface-2" role="img" aria-label={label + '：' + parts.map((p) => `${p.label} ${p.value}`).join('，')}>
+        {parts.map((p) => p.value > 0 && <span key={p.key} className={cx('h-full', fill(p.tone))} style={{ width: (p.value / total) * 100 + '%' }} />)}
+      </div>
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-meta text-jz-ink-2" aria-hidden>
+        {parts.map((p) => <li key={p.key} className="flex items-center gap-1.5"><span className={cx('h-2 w-2 rounded-pill', fill(p.tone))} />{p.label} <span className="tnum">{Math.round((p.value / total) * 100)}%</span></li>)}
+      </ul>
+    </div>
+  );
+};
 
 export type ListMetric = Fact & { key: string; onClick?: () => void; icon?: React.ReactNode };
 /** Secondary metrics as a quiet stacked list (label left, value right), not as equal cards. */
@@ -257,18 +273,17 @@ export const ChartPanel: React.FC<{
 
 // ---------- Sticky context ----------
 
-/** True once the element has scrolled out of its scroll container (used for compact sticky headers). */
-export function useScrolledPast<T extends HTMLElement>(): [React.RefObject<T>, boolean] {
-  const ref = useRef<T>(null);
+/** True once the element has scrolled out of its scroll container (used for compact sticky headers). Pass the callback as `ref`. */
+export function useScrolledPast<T extends HTMLElement>(): [(el: T | null) => void, boolean] {
+  const [node, setNode] = useState<T | null>(null);
   const [past, setPast] = useState(false);
   useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-    let root: HTMLElement | null = el.parentElement;
+    if (!node || typeof IntersectionObserver === 'undefined') return;
+    let root: HTMLElement | null = node.parentElement;
     while (root && !/(auto|scroll)/.test(getComputedStyle(root).overflowY)) root = root.parentElement;
     const io = new IntersectionObserver(([e]) => setPast(!e.isIntersecting && e.boundingClientRect.top < (e.rootBounds?.top ?? 0) + 1), { root, threshold: 0 });
-    io.observe(el);
+    io.observe(node);
     return () => io.disconnect();
-  }, []);
-  return [ref, past];
+  }, [node]);
+  return [setNode, past];
 }
