@@ -1,0 +1,8 @@
+{
+  "overflow": [],
+  "errors": [],
+  "stale": {
+    "/pentest/project/1/session/40 @1440": "stale notice",
+    "/pentest/project/1/session/40 @760": "stale notice"
+  }
+}

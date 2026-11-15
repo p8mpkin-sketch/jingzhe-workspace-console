@@ -111,7 +111,7 @@ const StartBand: React.FC = () => (
       <div className="flex min-w-0 flex-col gap-4 desktop:col-span-5">
         <div className="text-label font-medium text-jz-brand">开始一个公司项目</div>
         <h2 className="font-display text-page font-semibold text-jz-ink">以公司为范围整理应用和报告</h2>
-        <p className="text-body text-jz-ink-2">一个公司项目对应一家公司或集团：先确定范围，再建立应用清单，最后统一评估并输出报告。</p>
+        <p className="text-body text-jz-ink-2">一个公司项目对应一家公司或集团，按右侧三步推进。</p>
       </div>
       <ol className="grid min-w-0 gap-4 tablet:grid-cols-3 desktop:col-span-7 desktop:border-l desktop:border-jz-border desktop:pl-10">
         {STEPS.map(([t, d], i) => (

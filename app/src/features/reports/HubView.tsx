@@ -123,7 +123,6 @@ const ReportPreview: React.FC<{
         <Button size="sm" onClick={() => onOpen(t.id)} data-hub-open={t.id}>打开完整报告<ArrowRight size={14} aria-hidden /></Button>
         <ActionMenu label="导出" menuLabel={`导出任务 #${t.id}`} icon={<Download size={14} aria-hidden />}
           items={[{ key: 'csv', label: '汇总 CSV', icon: <FileDown size={14} aria-hidden />, onSelect: () => onExportOne(t.id), attrs: { 'data-hub-export-one': t.id } }]} />
-        <span className="ml-auto text-meta text-jz-muted">发现明细、证据与 Markdown / JSON 导出在完整报告里</span>
       </footer>
     </article>
   );
