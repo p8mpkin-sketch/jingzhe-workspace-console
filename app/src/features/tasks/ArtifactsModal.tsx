@@ -332,8 +332,8 @@ export const ArtifactsModal: React.FC<{
         </div>
       )}>
       <div className={cx('flex min-h-80 flex-col gap-3', inline ? 'h-full' : 'h-[68vh]')}>
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-2">
-          <div className="flex min-h-0 flex-col rounded-card border border-jz-border" data-art-explorer>
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto lg:grid-cols-2 lg:overflow-visible">
+          <div className="flex min-h-64 flex-col rounded-card border border-jz-border lg:min-h-0" data-art-explorer>
             <div className="flex-none space-y-2 border-b border-jz-border p-3">
               <SearchField value={q} onValueChange={setQ} label="搜索文件" placeholder="搜索文件名或路径" data-art-search />
               <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="按类型筛选" data-art-cat-filter>
@@ -414,7 +414,7 @@ export const ArtifactsModal: React.FC<{
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-col rounded-card border border-jz-border" data-art-preview>
+          <div className="flex min-h-64 flex-col rounded-card border border-jz-border lg:min-h-0" data-art-preview>
             {!preview ? (
               <EmptyState icon={Eye} title="选择一个文件预览" cause={`报告和不超过 ${PREVIEW_MAX_KB}KB 的文本文件可以在线预览,其余文件请下载后查看。`} className="flex-1" />
             ) : (
