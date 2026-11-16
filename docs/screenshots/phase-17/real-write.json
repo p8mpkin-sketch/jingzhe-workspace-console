@@ -6,7 +6,7 @@
   "body": {
    "kind": "audit",
    "app_name": "jz-phase17-write-audit-20261116092954",
-   "apk_path": "/Users/lenovo/Documents/代码/apk_scan-agent/APK-Sec-Web/data/uploads/demo_v5.apk",
+   "apk_path": "<backend root>/APK-Sec-Web/data/uploads/demo_v5.apk",
    "authorized": "用户已确认测试授权(向导勾选)"
   },
   "status": 200,
@@ -241,9 +241,9 @@
   "structure": "ok dialog_shows_source=true",
   "structure_shows_source": true,
   "screenshots": [
-   "/Users/lenovo/Documents/代码/jingzhe-workspace-app/docs/screenshots/phase-17/real/rulecards.png",
-   "/Users/lenovo/Documents/代码/jingzhe-workspace-app/docs/screenshots/phase-17/real/rulecards-import.png",
-   "/Users/lenovo/Documents/代码/jingzhe-workspace-app/docs/screenshots/phase-17/real/structure-source.png"
+   "docs/screenshots/phase-17/real/rulecards.png",
+   "docs/screenshots/phase-17/real/rulecards-import.png",
+   "docs/screenshots/phase-17/real/structure-source.png"
   ],
   "at": "2026-11-16T09:35:53.430Z"
  },
