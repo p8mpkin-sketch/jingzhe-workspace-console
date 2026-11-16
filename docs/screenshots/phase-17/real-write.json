@@ -306,5 +306,84 @@
    "docs/screenshots/phase-17/real/structure-source.png",
    "docs/screenshots/phase-17/real/structure-source-1024.png"
   ]
+ },
+ {
+  "step": "4f.overlay",
+  "session": 260,
+  "node_id": "comp:com.vivo.push.sdk.service.CommandClientService",
+  "elementFromPoint": {
+   "found": true,
+   "center": {
+    "x": 704,
+    "y": 281
+   },
+   "nodeRect": {
+    "w": 110,
+    "h": 37
+   },
+   "topElement": {
+    "tag": "div",
+    "cls": "px-3 pt-1.5 truncate text-jz-ink font-semibold",
+    "data": {}
+   },
+   "topIsNodeOrChild": true,
+   "closestDataAncestor": {
+    "tag": "div",
+    "cls": "bg-jz-surface-2/80 overflow-hidden select-none",
+    "data": {
+     "data-node-id": "comp:com.vivo.push.sdk.service.CommandClientService"
+    }
+   }
+  },
+  "real_dblclick": {
+   "default": {
+    "label": "default",
+    "ok": true
+   },
+   "after_focus_off": {
+    "toggled": false,
+    "label": "after-focus-off",
+    "ok": false,
+    "err": "page.dblclick: Timeout 4000ms exceeded. |       - <pre class=\"font-mono text-meta leading-relaxed text-jz-ink-2 bg-jz-canvas rounded-control border border-jz-border p-2.5 overflow-auto max-h-[62vh] whitespace-pre-wrap break-all\">package com.vivo.push.sdk.service;↵↵/* JADX WARN:…</pre> from <div data-unified-modal=\"true\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-jz-scrim/50 p-4 modal-overlay-in max-[760px]:items-end max-[760px]:p-0\">…</div> subtree intercepts pointer events"
+   },
+   "after_zoom_in": {
+    "zoomed": 0,
+    "label": "after-zoom-in",
+    "ok": false,
+    "err": "page.dblclick: Timeout 4000ms exceeded. |       - <pre class=\"font-mono text-meta leading-relaxed text-jz-ink-2 bg-jz-canvas rounded-control border border-jz-border p-2.5 overflow-auto max-h-[62vh] whitespace-pre-wrap break-all\">package com.vivo.push.sdk.service;↵↵/* JADX WARN:…</pre> from <div data-unified-modal=\"true\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-jz-scrim/50 p-4 modal-overlay-in max-[760px]:items-end max-[760px]:p-0\">…</div> subtree intercepts pointer events"
+   }
+  },
+  "interpretation": "node itself receives the pointer",
+  "at": "2026-11-16T09:55:16.442Z"
+ },
+ {
+  "step": "4f.ui-relative",
+  "session": 263,
+  "node_id": "comp:.MainActivity",
+  "node_found": true,
+  "dblclick_method": "real-dblclick",
+  "real_dblclick_err": null,
+  "source_path": "com/pentest/demo/MainActivity.java",
+  "status": 200,
+  "dialog_has_source": true,
+  "pre_head": "package com.pentest.demo;\n\nimport android.app.Activity;\nimpo",
+  "error_text_present": false,
+  "nonGET": 0,
+  "nonGET_list": [],
+  "screenshot": "docs/screenshots/phase-17/real/structure-source-relative.png"
+ },
+ {
+  "step": "4f.ui-relative.cleanup",
+  "session_delete": {
+   "status": 200,
+   "after_status": "closed"
+  },
+  "task_delete": {
+   "status": 200,
+   "get_after": 404
+  },
+  "demo_installed_on_emulator": false,
+  "T2": 100414,
+  "S2": 263
  }
 ]
