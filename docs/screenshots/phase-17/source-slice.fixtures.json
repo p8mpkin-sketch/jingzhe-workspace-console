@@ -1,0 +1,8 @@
+{
+ "pass": true,
+ "dblclick": true,
+ "sourcePaths": [
+  "com/example/compass/MainActivity.java"
+ ],
+ "dialogShowsSource": true
+}

@@ -19,8 +19,7 @@ import { CompanyProjectsPage } from '@/features/company/CompanyProjectsPage';
 import { CompanyProjectDetailPage } from '@/features/company/CompanyProjectDetailPage';
 import { LoginGate } from './LoginGate';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-// UI 2.0 阶段A: SessionShell = V3 对话主线 / V2 经典版 切换壳(localStorage apksec-ui-v3 + ?ui= 深链),
-// V2 组件本体零改动(并行会话防覆盖: 本轮共享文件仅此两行接线)
+// SessionShell renders the six-tab workbench; the legacy ?ui=v3 / ?ui=v2 shells were retired in Phase 17.
 import { SessionShell } from '@/features/pentest/v3/SessionShell';
 import { CmdPalette } from '@/components/CmdPalette';
 import { RefreshCw } from 'lucide-react';

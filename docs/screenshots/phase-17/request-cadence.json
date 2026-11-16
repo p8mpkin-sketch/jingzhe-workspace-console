@@ -1,0 +1,324 @@
+{
+ "kind": "request cadence, real backend (streams held open by the backend)",
+ "startedAt": "2026-11-16T09:23:44.128Z",
+ "durationMsPerRoute": 65000,
+ "durationMsPerView": 6000,
+ "routes": {
+  "/reports": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/new-audit": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/tasks": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/pentest": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/company/projects/{id}": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/agent": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/company": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/skills": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/system": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/ai-assistant": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/pentest/project/{id}/session/{id}": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260 n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260/autopilot/status n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260/timeline n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300 n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260/vulns/grouped n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260/approvals n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/pentest/project/{id}": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/dashboard": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8",
+    "GET /api/tasks?status=running&limit=50 n=3 gaps(s)=30",
+    "GET /api/pentest/events/recent?limit=30 n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "/discovery": {
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  }
+ },
+ "views": {
+  "overview": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "stream": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "stream&tab=trajectory": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "ai": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "raw": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "apitree": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "burp": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "findings": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "shadow": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "rulecards": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "clusters": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "graph": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "facts": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "structure": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "credentials": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "coverage": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "artifacts": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "packer": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "report": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  },
+  "diff": {
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ]
+  }
+ },
+ "pollingIntervals": {
+  "expected": "8 s or 30 s (docs/request-map.md)",
+  "offCadence": [],
+  "pass": true
+ }
+}

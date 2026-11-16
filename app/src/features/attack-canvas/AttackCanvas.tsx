@@ -7,6 +7,7 @@ import '@xyflow/react/dist/style.css';
 import { ChevronUp, Download, FileJson, Plus, Minus, Scan, LayoutGrid, Shield } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { api } from '@/services/api';
+import { sourcePathFor } from './sourcePath';
 import { usePentest } from '@/stores/pentest';
 import { useTheme } from '@/theme/ThemeContext';
 // R108-2①②: 三件套接入——graph===null(首载)呈 SkeletonLoader 图表骨架(替既有裸 pulse 骨架);
@@ -593,13 +594,14 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
     const m = g.meta || {};
     if (g.type === 'component' || g.type === 'deeplink') {
       const cls = String(g.type === 'component' ? (m.full_name || '') : (m.component || ''));
-      const path = cls ? cls.split('.').join('/') + '.java' : '';
+      let path = sourcePathFor(cls);
       setModal({ title: <span className="font-mono">{cls || g.label}</span>,
         body: <div className="text-meta text-jz-muted">读取反编译源码切片…(既有数据链 GET /api/chat/source)</div> });
       try {
         const s = await api<any>(`/api/pentest/sessions/${sid}`);
         const tid = s?.task_id;
         if (!tid) throw new Error('会话无关联任务');
+        path = sourcePathFor(cls, s?.package);
         const d = await api<any>(`/api/chat/source?task_id=${tid}&path=${encodeURIComponent(path)}`, {}, true);
         const text = String(d?.content ?? '');
         setModal({ title: <span className="font-mono">{cls}</span>, body: (

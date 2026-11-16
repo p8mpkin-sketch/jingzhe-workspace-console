@@ -1,0 +1,389 @@
+[
+ {
+  "step": "4a.create",
+  "method": "POST",
+  "path": "/api/tasks",
+  "body": {
+   "kind": "audit",
+   "app_name": "jz-phase17-write-audit-20261116092954",
+   "apk_path": "<backend root>/APK-Sec-Web/data/uploads/demo_v5.apk",
+   "authorized": "用户已确认测试授权(向导勾选)"
+  },
+  "status": 200,
+  "resp": {
+   "task_id": 100413
+  },
+  "at": "2026-11-16T09:29:54.613Z"
+ },
+ {
+  "step": "4a.poll_terminal",
+  "method": "GET",
+  "path": "/api/tasks/100413",
+  "status": 200,
+  "task_status": "done",
+  "has_result": true,
+  "apk_path_exists": true,
+  "pool_com_pentest_demo_apk_exists": false,
+  "at": "2026-11-16T09:31:55.042Z"
+ },
+ {
+  "step": "4b.projects",
+  "method": "GET",
+  "path": "/api/pentest/projects",
+  "status": 200,
+  "count": 11,
+  "project11": {
+   "id": 11,
+   "name": "jz-phase16-write-audit-20261115173617"
+  },
+  "at": "2026-11-16T09:32:18.868Z"
+ },
+ {
+  "step": "4b.create_session",
+  "method": "POST",
+  "path": "/api/pentest/projects/11/sessions",
+  "body": {
+   "task_id": 100413,
+   "device": "emulator-5554",
+   "authorized": "用户已确认测试授权(向导勾选)"
+  },
+  "status": 200,
+  "session": {
+   "id": 262,
+   "package": "com.pentest.demo",
+   "device": "emulator-5554",
+   "task_id": 100413,
+   "project_id": null,
+   "status": "ready"
+  },
+  "at": "2026-11-16T09:32:18.896Z"
+ },
+ {
+  "step": "4b.get_session",
+  "method": "GET",
+  "path": "/api/pentest/sessions/262",
+  "status": 200,
+  "session": {
+   "id": 262,
+   "device": "emulator-5554",
+   "package": "com.pentest.demo",
+   "status": "ready",
+   "task_id": 100413,
+   "project_id": 11
+  },
+  "at": "2026-11-16T09:32:18.906Z"
+ },
+ {
+  "step": "4c.start",
+  "method": "POST",
+  "path": "/api/pentest/sessions/262/autopilot/start",
+  "body": null,
+  "status": 200,
+  "state": "running",
+  "resp_keys": [
+   "status",
+   "state",
+   "view"
+  ],
+  "at": "2026-11-16T09:32:56.240Z"
+ },
+ {
+  "step": "4c.observe",
+  "path": "/api/pentest/sessions/262/vulns/grouped",
+  "states_seen": [
+   "running"
+  ],
+  "first_instance": {
+   "card": "明文 HTTP 传输(非 HTTPS)",
+   "id": "3cc82e420ecf",
+   "state": "pending",
+   "total_cards": 1
+  },
+  "demo_installed_on_emulator": true,
+  "at": "2026-11-16T09:32:56.469Z"
+ },
+ {
+  "step": "4c.stop",
+  "method": "POST",
+  "path": "/api/pentest/sessions/262/autopilot/stop",
+  "status": 200,
+  "state_after": "stopped",
+  "at": "2026-11-16T09:32:58.496Z"
+ },
+ {
+  "step": "4d.change",
+  "method": "POST",
+  "path": "/api/pentest/sessions/262/vulns/state",
+  "body": {
+   "id": "3cc82e420ecf",
+   "state": "confirmed"
+  },
+  "status": 200,
+  "resp": {
+   "status": "ok"
+  },
+  "readback_state": "confirmed",
+  "at": "2026-11-16T09:33:16.222Z"
+ },
+ {
+  "step": "4d.restore",
+  "method": "POST",
+  "path": "/api/pentest/sessions/262/vulns/state",
+  "body": {
+   "id": "3cc82e420ecf",
+   "state": "pending"
+  },
+  "status": 200,
+  "resp": {
+   "status": "ok"
+  },
+  "readback_state": "pending",
+  "at": "2026-11-16T09:33:16.768Z"
+ },
+ {
+  "step": "4e.start",
+  "method": "POST",
+  "path": "/api/pentest/sessions/262/mission/start",
+  "body": {
+   "mode": "replay",
+   "max_screens": 20,
+   "max_minutes": 10,
+   "run_tests": true,
+   "max_tests": 5,
+   "run_adjudicate": true,
+   "max_adjudications": 3
+  },
+  "status": 200,
+  "state": "running",
+  "at": "2026-11-16T09:33:31.833Z"
+ },
+ {
+  "step": "4e.status_final",
+  "method": "GET",
+  "path": "/api/pentest/sessions/262/mission/status",
+  "status": 200,
+  "states_seen": [
+   "running/inventory",
+   "done/done"
+  ],
+  "final_state": "done",
+  "final_stage": "done",
+  "final_body_keys": [
+   "status",
+   "state",
+   "stage",
+   "mode",
+   "sid",
+   "task_id",
+   "package",
+   "device",
+   "run_tests",
+   "allow_hosts",
+   "adjudicate",
+   "auth",
+   "account_b",
+   "auth_mode",
+   "blockers",
+   "counters",
+   "artifacts",
+   "reason",
+   "started",
+   "updated"
+  ],
+  "at": "2026-11-16T09:33:36.868Z"
+ },
+ {
+  "step": "4f.source_slice",
+  "graph_status": 200,
+  "graph_nodes": 6,
+  "component_nodes": 1,
+  "tried": [
+   "/MainActivity.java -> 403"
+  ],
+  "picked": null,
+  "method": "GET",
+  "path_example": null,
+  "at": "2026-11-16T09:33:55.985Z"
+ },
+ {
+  "step": "4f.source_slice",
+  "graph_status": 200,
+  "graph_nodes": 6,
+  "package": "com.pentest.demo",
+  "component_nodes": 1,
+  "tried": [
+   "com/pentest/demo/MainActivity.java -> 200"
+  ],
+  "picked": {
+   "node_id": "comp:.MainActivity",
+   "full_name": ".MainActivity",
+   "resolved_path": "com/pentest/demo/MainActivity.java",
+   "status": 200,
+   "content_len": 4405,
+   "truncated": false,
+   "first_line": "package com.pentest.demo;"
+  },
+  "method": "GET",
+  "path": "/api/chat/source?task_id=100413&path=com%2Fpentest%2Fdemo%2FMainActivity.java",
+  "at": "2026-11-16T09:34:43.561Z"
+ },
+ {
+  "step": "4g.ui",
+  "base": "http://localhost:4173/v2/",
+  "session": 262,
+  "rulecards": "ok",
+  "export": "ok rows=5",
+  "import": "ok card_count=1",
+  "export_rows": 5,
+  "import_card_count": 1,
+  "nonGET_api_during_export_import": [],
+  "nonGET_count": 0,
+  "structure": "ok dialog_shows_source=true",
+  "structure_shows_source": true,
+  "screenshots": [
+   "docs/screenshots/phase-17/real/rulecards.png",
+   "docs/screenshots/phase-17/real/rulecards-import.png",
+   "docs/screenshots/phase-17/real/structure-source.png"
+  ],
+  "at": "2026-11-16T09:35:53.430Z"
+ },
+ {
+  "step": "4h.cleanup",
+  "autopilot_stop": 200,
+  "session_delete": {
+   "status": 200,
+   "resp": {
+    "status": "ok"
+   },
+   "after_status": "closed",
+   "note": "soft-close only (no hard-delete route for pentest sessions)"
+  },
+  "task_delete": {
+   "status": 200,
+   "resp": {
+    "ok": true
+   },
+   "get_after": 404
+  },
+  "feedback": {
+   "total": 1,
+   "phase16_audit_rows": [
+    {
+     "ts": 1794764375.293159,
+     "card_id": "phase16-audit-manual-20261116013935"
+    }
+   ],
+   "deleted": [
+    {
+     "ts": 1794764375.293159,
+     "status": 200
+    }
+   ],
+   "remaining_phase16": 0
+  },
+  "demo_uninstall": {
+   "result": "Success",
+   "still_present": false
+  },
+  "kept": {
+   "project_11": "kept (no project-delete route)",
+   "session_261": "kept (soft-close only)",
+   "session_262": "soft-closed, status=closed (no hard-delete route)"
+  },
+  "at": "2026-11-16T09:36:56.433Z"
+ },
+ {
+  "step": "4f.ui-recheck",
+  "session": 260,
+  "node_id": "comp:com.vivo.push.sdk.service.CommandClientService",
+  "source_path": "com/vivo/push/sdk/service/CommandClientService.java",
+  "status": 200,
+  "dialog_has_source": true,
+  "error_text_present": false,
+  "nonGET": 0,
+  "note": "no existing session has a relative-name ('.') component after cleanup (demo sessions 261/262 deleted); this verifies the source dialog renders real source (<pre> with 'package ') for a fully-qualified node, status 200, no 路径越界. The relative-name fix (commit 7736631, app/src/features/attack-canvas/sourcePath.ts) is verified by code review plus the STEP 4f backend proof that a package-prefixed path (com/pentest/demo/MainActivity.java) returns 200.",
+  "screenshots": [
+   "docs/screenshots/phase-17/real/structure-source.png",
+   "docs/screenshots/phase-17/real/structure-source-1024.png"
+  ]
+ },
+ {
+  "step": "4f.overlay",
+  "session": 260,
+  "node_id": "comp:com.vivo.push.sdk.service.CommandClientService",
+  "elementFromPoint": {
+   "found": true,
+   "center": {
+    "x": 704,
+    "y": 281
+   },
+   "nodeRect": {
+    "w": 110,
+    "h": 37
+   },
+   "topElement": {
+    "tag": "div",
+    "cls": "px-3 pt-1.5 truncate text-jz-ink font-semibold",
+    "data": {}
+   },
+   "topIsNodeOrChild": true,
+   "closestDataAncestor": {
+    "tag": "div",
+    "cls": "bg-jz-surface-2/80 overflow-hidden select-none",
+    "data": {
+     "data-node-id": "comp:com.vivo.push.sdk.service.CommandClientService"
+    }
+   }
+  },
+  "real_dblclick": {
+   "default": {
+    "label": "default",
+    "ok": true
+   },
+   "after_focus_off": {
+    "toggled": false,
+    "label": "after-focus-off",
+    "ok": false,
+    "err": "page.dblclick: Timeout 4000ms exceeded. |       - <pre class=\"font-mono text-meta leading-relaxed text-jz-ink-2 bg-jz-canvas rounded-control border border-jz-border p-2.5 overflow-auto max-h-[62vh] whitespace-pre-wrap break-all\">package com.vivo.push.sdk.service;↵↵/* JADX WARN:…</pre> from <div data-unified-modal=\"true\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-jz-scrim/50 p-4 modal-overlay-in max-[760px]:items-end max-[760px]:p-0\">…</div> subtree intercepts pointer events"
+   },
+   "after_zoom_in": {
+    "zoomed": 0,
+    "label": "after-zoom-in",
+    "ok": false,
+    "err": "page.dblclick: Timeout 4000ms exceeded. |       - <pre class=\"font-mono text-meta leading-relaxed text-jz-ink-2 bg-jz-canvas rounded-control border border-jz-border p-2.5 overflow-auto max-h-[62vh] whitespace-pre-wrap break-all\">package com.vivo.push.sdk.service;↵↵/* JADX WARN:…</pre> from <div data-unified-modal=\"true\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-jz-scrim/50 p-4 modal-overlay-in max-[760px]:items-end max-[760px]:p-0\">…</div> subtree intercepts pointer events"
+   }
+  },
+  "interpretation": "node itself receives the pointer",
+  "at": "2026-11-16T09:55:16.442Z"
+ },
+ {
+  "step": "4f.ui-relative",
+  "session": 263,
+  "node_id": "comp:.MainActivity",
+  "node_found": true,
+  "dblclick_method": "real-dblclick",
+  "real_dblclick_err": null,
+  "source_path": "com/pentest/demo/MainActivity.java",
+  "status": 200,
+  "dialog_has_source": true,
+  "pre_head": "package com.pentest.demo;\n\nimport android.app.Activity;\nimpo",
+  "error_text_present": false,
+  "nonGET": 0,
+  "nonGET_list": [],
+  "screenshot": "docs/screenshots/phase-17/real/structure-source-relative.png"
+ },
+ {
+  "step": "4f.ui-relative.cleanup",
+  "session_delete": {
+   "status": 200,
+   "after_status": "closed"
+  },
+  "task_delete": {
+   "status": 200,
+   "get_after": 404
+  },
+  "demo_installed_on_emulator": false,
+  "T2": 100414,
+  "S2": 263
+ }
+]

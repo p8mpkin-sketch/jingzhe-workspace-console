@@ -4,7 +4,77 @@ Design-system migration of `app/`. Routes, API calls, permissions, task and repo
 Phases 1–13 are presentation only; Phase 14 also changes request dedupe and stream reconnect pacing;
 Phase 15 routes the feedback requests through the shared client.
 Phase 16 verifies against the real backend and fixes the legacy V3 header overflow.
+Phase 17 closes the real-backend gaps, fixes the source-slice path and retires the legacy workbenches.
 One entry per phase.
+
+## Phase 17 — Real-backend acceptance and legacy retirement
+
+A verification phase. No redesign, no new endpoint, no change to API contracts, routes, permissions, task behavior
+or report behavior. Real-backend runs were made on the machine that hosts the backend; only emulator-5554 was used.
+
+### auth_matrix 500 (backend)
+`GET /api/pentest/sessions/{sid}/auth_matrix` returned 500 for sessions without recon API paths: a fallback in
+`auth_matrix_endpoint` (backend `app.py`) called `.get()` on a `Path`. The four-line fallback was removed, so the
+existing baseline check answers. Sessions 260 and 261 now return 200 with the documented
+`{"status":"error","error_class":"NO_BASELINE"}`; session 29 is unchanged. The backend repository is not part of
+this repo and the change is not committed there; the one-file patch was handed over. Regression check:
+`real-read-audit.mjs` reads `auth_matrix` for `JZ_MATRIX_SIDS` and fails on any 5xx. The frontend is unchanged
+for this fix and still shows an error state when the request fails.
+
+### Real-backend read audit
+Session 260 / project 9, 14 routes × 65 s and 20 workbench surfaces: 0 duplicate data requests, 0 duplicate
+stream connections, 0 failed requests, 0 page errors, 0 console errors, 0 write attempts. `/api/feedback` is one
+read; `/api/tasks` query variants stay separate; every repeating request polls at 8 s or 30 s, as in
+`docs/request-map.md`. `/api/models/catalog` → 200 with 3 items. Results: `docs/screenshots/phase-17/real-read.json`,
+`request-cadence.json`.
+
+### models/providers difference
+Not a defect. The agent composer requests `/api/models/providers` only when `/api/models/catalog` is empty or
+fails. The fixture catalog was empty, the real one is not. The fixture catalog is now non-empty,
+`FIXTURE_CATALOG=empty` keeps the fallback path, and `scripts/check-catalog-fallback.mjs` checks both (pass). The
+request baseline no longer lists providers on the session and agent routes.
+
+### Real-backend write audit
+Project 11 (reused), task 100413, session 262, emulator-5554. Each write with its body, status, read-back and
+cleanup is in `docs/screenshots/phase-17/real-write.json`:
+- Task start → 200, `running`; stop → 200, `stopped`.
+- Rule-card state → 200, read back `confirmed`, restored to `pending`.
+- Mission start (replay, unchanged body) → 200; mission status reached `done`. Device mode was not sent.
+- Rule-card export (5 rows) and import (1 local card): local only, 0 non-GET requests.
+- Source slice `GET /api/chat/source` → 200 with source.
+- Cleanup: session closed, task deleted (GET → 404), the Phase 16 feedback row deleted with
+  `DELETE /api/feedback/{ts}`, `com.pentest.demo` uninstalled from the emulator. Project 11 and sessions 261, 262 and
+  263 stay closed or in place: there is no project delete and session delete is a soft close.
+
+### Source slice fix
+The first real UI run showed 路径越界: the structure canvas built `/MainActivity.java` from the relative manifest name
+`.MainActivity`, which the backend refuses. The canvas and the inspector now resolve a leading-dot name against
+the session package (`features/attack-canvas/sourcePath.ts`), as Android does. Same endpoint and parameters.
+Rechecked with a real double-click on session 260 and on a fresh disposable session 263 (task 100414, no start;
+removed afterwards). `scripts/check-source-slice.mjs` covers it on fixtures: it fails on the Phase 16 build and
+passes now.
+
+### Legacy retirement
+Every gate item passed (`docs/screenshots/phase-17/legacy-retirement.md`), so `?ui=v3` and `?ui=v2` are retired.
+The session route drops a `ui` parameter and opens the workbench with the other parameters kept; the 旧版工作台
+entry is gone; stale preference keys are cleared. The V2 and V3 shells and the modules only they used are deleted
+(12 files). `scripts/check-legacy-retired.mjs` checks old links (pass).
+
+### Verification (fixtures, production preview build)
+- `npm run lint:tokens`: 0. `tsc --noEmit` and `npm run build` pass. Contrast: 0 failing pairs.
+- 14 routes × 1440 / 1024, light: 0 overflow, 0 page errors; request set identical to the updated baseline.
+- 20 workbench surfaces × 1440 / 1024 / 760 / 390 × light / dark plus data-state variants: 0 overflow, 0 errors,
+  1974 focus stops, 0 without a focus indicator, 0 covered (80 fewer stops than Phase 16: the removed 旧版工作台
+  entry, once per surface and width). `docs/screenshots/phase-17/workbench/`.
+- Source slice, catalog fallback and legacy-link checks: pass.
+
+### Screenshots
+Route screenshots at 1440 and 1024 in `docs/screenshots/phase-17/` are from fixtures. Real-backend screenshots are
+in `docs/screenshots/phase-17/real/`; local file paths printed by the decompiler in the source dialog are masked.
+
+### Not done
+- The backend patch is applied on the running backend but not committed to the backend repository.
+- A project delete route does not exist; project 11 stays.
 
 ## Phase 16 — Real-backend verification and legacy cleanup
 

@@ -28,7 +28,7 @@ Ids in the tables come from the fixtures: `{sid}` is a session id (fixture 40, c
 | Duplicates in the first 3 s, streams held open | 0 | 0 | Verified with fixtures |
 | Total requests in 65 s, streams held open | 346 | 344 | Verified with fixtures |
 | Duplicates in the first 3 s, fixture closes streams at once | 13 | 17 | Fixture artefact, see below |
-| Same checks against 127.0.0.1:8099 | — | — | **Pending real backend** |
+| Same checks against 127.0.0.1:8099 | — | — | Real backend: 0 duplicates (Phase 16 and Phase 17) |
 
 When the fixture closes every SSE response immediately, EventSource reconnects with jittered backoff (about 1 s,
 2 s, 4 s …). Two attempts sometimes land inside the 3 s window and are counted as a duplicate. The count moves
@@ -80,7 +80,8 @@ Differences from the fixture request set, ids normalised:
 - `/agent`: the agent session id is not numeric (`43bc88f6`), and the event cursor is `since_seq=21` because the
   real session already has events. Same three requests.
 - `/pentest/project/{id}/session/{id}` and `/agent`: `GET /api/models/providers` was not requested on the real
-  backend although the fixture run requests it. The cause was not determined; nothing failed on either page.
+  backend although the fixture run requests it. Resolved in Phase 17: the agent composer asks for providers only
+  when `/api/models/catalog` is empty or fails; the real catalog has 3 items, the old fixture catalog was empty.
 
 ### Result: write audit, real backend, 2026-11-15
 
@@ -165,7 +166,6 @@ These come from the app shell, so they appear on every route below and are not r
 | Method | Route | Query | Expected unique count on load | Polling interval |
 | --- | --- | --- | --- | --- |
 | GET | `/api/models/catalog` | — | 1 | none (on load only) |
-| GET | `/api/models/providers` | — | 1 | none (on load only) |
 | GET | `/api/pentest/sessions/{sid}` | — | 1 | every 8 s |
 | GET | `/api/pentest/sessions/{sid}/approvals` | — | 1 | every 8 s |
 | GET | `/api/pentest/sessions/{sid}/autopilot/status` | — | 1 | every 8 s |
@@ -249,7 +249,6 @@ Shell requests only.
 | GET | `/api/agent/settings` | — | 1 | none (on load only) |
 | GET | `/api/agent/web/status` | — | 1 | none (on load only) |
 | GET | `/api/models/catalog` | — | 1 | none (on load only) |
-| GET | `/api/models/providers` | — | 1 | none (on load only) |
 
 ### `/system`
 
@@ -284,20 +283,68 @@ Route `/pentest/project/1/session/{sid}?view=<id>`. The default view (`stream`) 
 | `report` | none beyond the session route | 0 |
 | `diff` | `GET /api/pentest/sessions`<br>`GET /api/pentest/sessions/{sid}/vulns`<br>`GET /api/pentest/sessions/{sid}/vulns` | 0 |
 
-## Writes (never fired by the audit scripts)
+## Real-backend audit (Phase 17)
 
-The audits only load pages, so no write was sent, even to fixtures. These are the writes the Phase 15 changes
-touch; each needs one manual check on a real backend. Bodies are unchanged from the legacy callers.
+Run on the machine that hosts the backend, production preview build, token from a mode-600 file.
+
+```sh
+cd app && npm ci && npm run build && npx vite preview --port 4173 --strictPort &
+JZ_TOKEN_FILE=~/.jz-token JZ_PID=9 JZ_SID=260 JZ_MATRIX_SIDS=260,261,29 DUR=65000 VIEW_DUR=6000 \
+  node scripts/real-read-audit.mjs --out ../docs/screenshots/phase-17/real-read.json \
+  --cadence ../docs/screenshots/phase-17/request-cadence.json
+```
+
+`HOLD_STREAMS` only applies to fixture runs (`check-polling.mjs`); the real backend holds every stream open.
+
+### Result: read audit, real backend, 2026-11-16 (session 260, project 9)
+
+| Check | Result |
+| --- | --- |
+| Routes × duration, workbench surfaces | 14 × 65 s, 20 × 6 s |
+| Duplicate data requests / duplicate stream connections | 0 / 0 |
+| Failed requests, page errors, console errors, write attempts on load | 0, 0, 0, 0 |
+| `GET /api/pentest/sessions/{sid}/auth_matrix` | 260, 261, 29 → 200 `NO_BASELINE` (260 and 261 were 500 before the backend fix) |
+| `/api/feedback` | one read on `/system` |
+| `/api/tasks` query variants | 5 separate keys, never merged |
+| Polling | every repeating request at 8 s or 30 s, as in the tables below |
+| `/api/models/catalog` | 200, 3 items; `/api/models/providers` not requested on the session or agent route (expected, see above) |
+| Differences from the fixture baseline | `/tasks` (real task ids in `counts?ids=`), `/agent` (non-numeric agent session id, real event cursor); no other route |
+
+A first run picked session 261 automatically and recorded one 404 for `GET /api/tasks/100409/artifacts`: that task
+was deleted in the Phase 16 cleanup. The run above is pinned to session 260, the Phase 16 baseline session.
+
+### Result: write audit, real backend, 2026-11-16
+
+Disposable data: project 11 (reused), task 100413 / session 262 on emulator-5554. Full record:
+`docs/screenshots/phase-17/real-write.json`.
+
+| Write | Method and path | Body | Status | Resulting state | Cleanup |
+| --- | --- | --- | --- | --- | --- |
+| Assessment | `POST /api/tasks` | `{kind:"audit", app_name, apk_path, authorized}` | 200 | task 100413, `done` after about 2 min | `DELETE /api/tasks/100413` → 200, then GET → 404 |
+| Session | `POST /api/pentest/projects/11/sessions` | `{task_id, device:"emulator-5554", authorized}` | 200 | session 262, `ready` | `DELETE /api/pentest/sessions/262?force=true` → 200, `closed` |
+| Task start | `POST /api/pentest/sessions/262/autopilot/start` | none | 200 | `running`; one finding listed | stop → 200, `stopped`; `com.pentest.demo` uninstalled from the emulator |
+| Rule-card state | `POST /api/pentest/sessions/262/vulns/state` | `{id, state:"confirmed"}` | 200 | read back `confirmed` | restored with `{state:"pending"}` → 200, read back `pending` |
+| Mission | `POST /api/pentest/sessions/262/mission/start` | `{mode:"replay", max_screens:20, max_minutes:10, run_tests:true, max_tests:5, run_adjudicate:true, max_adjudications:3}` | 200 | `GET …/mission/status` → `done` | closed with the session |
+| Source slice | `GET /api/chat/source` | `task_id=100413&path=com/pentest/demo/MainActivity.java` | 200 | 4405 bytes of source | read only |
+| Rule-card import / export | none (local only) | — | — | 5 rows exported, 1 card imported, 0 non-GET requests | local storage keys removed |
+| Feedback cleanup | `DELETE /api/feedback/{ts}` | — | 200 | Phase 16 row removed | — |
+
+A second disposable pair (task 100414 / session 263, no start, no mission) confirmed the source slice of a relative
+component name (`.MainActivity`) in the UI, then was removed the same way.
+
+## Writes (verified on the real backend in Phase 17)
+
+The page audits only load pages. These writes were sent by the write audits with unchanged bodies; results above.
 
 | Method | Route | Body | Trigger | Status |
 | --- | --- | --- | --- | --- |
 | GET | `/api/feedback` | — | System page, feedback statistics | Routed through the shared client in Phase 15; fixtures only |
-| POST | `/api/feedback` | unchanged from before Phase 15 | AI sidebar, feedback buttons | Pending real backend |
-| POST | `/api/tasks` | `{kind:"audit", app_name, apk_path, authorized, device_serial?}` | New assessment, single submit | Pending real backend |
-| POST | `/api/pentest/sessions/{sid}/mission/start` | `{mode:"device"|"replay", max_screens:20, max_minutes:10, run_tests:true, max_tests:5, run_adjudicate:true, max_adjudications:3}` | Workbench header menu | Pending real backend |
-| GET | `/api/pentest/sessions/{sid}/mission/status` | — | Inspector brief, on open and after a start | Pending real backend |
-| POST | `/api/pentest/sessions/{sid}/vulns/state` | unchanged (VulnsPanel) | Findings, rule cards | Pending real backend |
-| POST | `/api/pentest/sessions/{sid}/clue` | `{text}` | Agent trace composer | Pending real backend |
+| POST | `/api/feedback` | unchanged from before Phase 15 | AI sidebar, feedback buttons | 200 (Phase 16) |
+| POST | `/api/tasks` | `{kind:"audit", app_name, apk_path, authorized, device_serial?}` | New assessment, single submit | 200 (Phase 16, Phase 17) |
+| POST | `/api/pentest/sessions/{sid}/mission/start` | `{mode:"device"|"replay", max_screens:20, max_minutes:10, run_tests:true, max_tests:5, run_adjudicate:true, max_adjudications:3}` | Workbench header menu | 200, replay mode (Phase 17); device mode not sent |
+| GET | `/api/pentest/sessions/{sid}/mission/status` | — | Inspector brief, on open and after a start | 200, reached `done` (Phase 17) |
+| POST | `/api/pentest/sessions/{sid}/vulns/state` | unchanged (VulnsPanel) | Findings, rule cards | 200, read back and restored (Phase 17) |
+| POST | `/api/pentest/sessions/{sid}/clue` | `{text}` | Agent trace composer | 200 (Phase 16) |
 
 ## Requests that still bypass the shared client
 

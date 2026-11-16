@@ -1,0 +1,1166 @@
+{
+ "kind": "real-backend read audit",
+ "startedAt": "2026-11-16T09:23:44.128Z",
+ "base": "http://localhost:4173/v2/",
+ "durationMsPerRoute": 65000,
+ "durationMsPerView": 6000,
+ "ids": {
+  "project": 9,
+  "session": 260,
+  "companyProject": 9
+ },
+ "routes": {
+  "/reports": {
+   "total": 32,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions",
+    "GET /api/pentest/sessions/245/auth_matrix",
+    "GET /api/pentest/sessions/245/report/summary",
+    "GET /api/pentest/sessions/245/vulns/grouped",
+    "GET /api/pentest/sessions/247/auth_matrix",
+    "GET /api/pentest/sessions/247/report/summary",
+    "GET /api/pentest/sessions/247/vulns/grouped",
+    "GET /api/pentest/sessions/248/auth_matrix",
+    "GET /api/pentest/sessions/248/report/summary",
+    "GET /api/pentest/sessions/248/vulns/grouped",
+    "GET /api/pentest/sessions/257/auth_matrix",
+    "GET /api/pentest/sessions/257/report/summary",
+    "GET /api/pentest/sessions/257/vulns/grouped",
+    "GET /api/pentest/sessions/260/auth_matrix",
+    "GET /api/pentest/sessions/260/report/summary",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary",
+    "GET /api/tasks?limit=500"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/new-audit": {
+   "total": 15,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/tasks": {
+   "total": 20,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/org",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions",
+    "GET /api/tasks-summary",
+    "GET /api/tasks/batch-unpack-summary",
+    "GET /api/tasks/counts?ids=100412,100411,100410,100408,100407,100406,100405,100404,100403,100402,100401,100400,100398,100397,100396,100395,100394,100391,100390,100389",
+    "GET /api/tasks?limit=2000"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/pentest": {
+   "total": 29,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/projects",
+    "GET /api/pentest/projects/1/sessions",
+    "GET /api/pentest/projects/10/sessions",
+    "GET /api/pentest/projects/11/sessions",
+    "GET /api/pentest/projects/2/sessions",
+    "GET /api/pentest/projects/3/sessions",
+    "GET /api/pentest/projects/4/sessions",
+    "GET /api/pentest/projects/5/sessions",
+    "GET /api/pentest/projects/6/sessions",
+    "GET /api/pentest/projects/7/sessions",
+    "GET /api/pentest/projects/8/sessions",
+    "GET /api/pentest/projects/9/sessions",
+    "GET /api/pentest/sessions?limit=500",
+    "GET /api/pentest/vulns/severity-summary",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/company/projects/{id}": {
+   "total": 20,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/projects/9/apps",
+    "GET /api/pentest/projects/9/candidates",
+    "GET /api/pentest/projects/9/overview",
+    "GET /api/pentest/projects/9/reports",
+    "GET /api/pentest/projects/9/runs",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/agent": {
+   "total": 22,
+   "unique": [
+    "GET /api/agent/sessions",
+    "GET /api/agent/sessions/43bc88f6/eval",
+    "GET /api/agent/sessions/43bc88f6/events?since_seq=21",
+    "GET /api/agent/sessions/43bc88f6/snapshot",
+    "GET /api/agent/settings",
+    "GET /api/agent/web/status",
+    "GET /api/me",
+    "GET /api/models/catalog",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/company": {
+   "total": 16,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/projects",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/skills": {
+   "total": 18,
+   "unique": [
+    "GET /api/kb/candidates",
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/skills",
+    "GET /api/tasks-summary",
+    "GET /api/tasks?limit=200"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/system": {
+   "total": 18,
+   "unique": [
+    "GET /api/feedback",
+    "GET /api/me",
+    "GET /api/models/providers",
+    "GET /api/models/routing",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/ai-assistant": {
+   "total": 19,
+   "unique": [
+    "GET /api/chat/sessions",
+    "GET /api/me",
+    "GET /api/models/providers",
+    "GET /api/models/routing",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/tasks-summary",
+    "GET /api/tasks?limit=500"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/pentest/project/{id}/session/{id}": {
+   "total": 72,
+   "unique": [
+    "GET /api/me",
+    "GET /api/models/catalog",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260 n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260/autopilot/status n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260/timeline n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300 n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260/vulns/grouped n=9 gaps(s)=8",
+    "GET /api/pentest/sessions/260/approvals n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/pentest/project/{id}": {
+   "total": 17,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/projects",
+    "GET /api/pentest/projects/9/sessions",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/dashboard": {
+   "total": 37,
+   "unique": [
+    "GET /api/me",
+    "GET /api/models/providers",
+    "GET /api/models/routing",
+    "GET /api/nodes",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/events/recent?limit=30",
+    "GET /api/pentest/sessions",
+    "GET /api/pentest/sessions/249/report/summary",
+    "GET /api/pentest/vulns/domain-summary",
+    "GET /api/pentest/vulns/severity-summary",
+    "GET /api/tasks-summary",
+    "GET /api/tasks/batch-unpack-summary",
+    "GET /api/tasks?limit=500",
+    "GET /api/tasks?status=queued&limit=2000",
+    "GET /api/tasks?status=running&limit=50"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8",
+    "GET /api/tasks?status=running&limit=50 n=3 gaps(s)=30",
+    "GET /api/pentest/events/recent?limit=30 n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "/discovery": {
+   "total": 16,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/tasks-summary",
+    "GET /api/v2/overview"
+   ],
+   "initialDuplicates": [],
+   "polling": [
+    "GET /api/tasks-summary n=3 gaps(s)=30",
+    "GET /api/pentest/devices n=9 gaps(s)=8"
+   ],
+   "streams": [
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  }
+ },
+ "views": {
+  "overview": {
+   "total": 17,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/burp/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/events?source=progress&since_seq=0&limit=200",
+    "GET /api/pentest/sessions/260/llm-usage",
+    "GET /api/pentest/sessions/260/report/summary",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "stream": {
+   "total": 14,
+   "unique": [
+    "GET /api/me",
+    "GET /api/models/catalog",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "stream&tab=trajectory": {
+   "total": 13,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "ai": {
+   "total": 18,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/api_tree",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=hook&limit=60",
+    "GET /api/pentest/sessions/260/events?source=orchestrator&limit=500",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=200",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/report/summary",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "raw": {
+   "total": 17,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=bridge&since_seq=0&limit=200",
+    "GET /api/pentest/sessions/260/events?source=evidence&since_seq=0&limit=200",
+    "GET /api/pentest/sessions/260/events?source=hook&since_seq=0&limit=200",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/events?source=progress&since_seq=0&limit=200",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "apitree": {
+   "total": 14,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/api_tree",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "burp": {
+   "total": 16,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/burp/plugin?probe=1",
+    "GET /api/pentest/sessions/260/burp/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=bridge&limit=200",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "findings": {
+   "total": 13,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "shadow": {
+   "total": 13,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped?source=shadow",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "rulecards": {
+   "total": 14,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=hook&since_seq=0&limit=200",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "clusters": {
+   "total": 14,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/clusters?limit=50",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "graph": {
+   "total": 14,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/graph",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "facts": {
+   "total": 14,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/fact-graph",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "structure": {
+   "total": 15,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/api_tree",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/graph",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "credentials": {
+   "total": 14,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/credentials",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "coverage": {
+   "total": 13,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "artifacts": {
+   "total": 29,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary",
+    "GET /api/tasks/100401/artifacts?prefix=",
+    "GET /api/tasks/100401/artifacts?prefix=.agent_evidence",
+    "GET /api/tasks/100401/artifacts?prefix=analysis",
+    "GET /api/tasks/100401/artifacts?prefix=analysis%2Fpoc",
+    "GET /api/tasks/100401/artifacts?prefix=decompiled",
+    "GET /api/tasks/100401/artifacts?prefix=decompiled%2Ffixed_dex",
+    "GET /api/tasks/100401/artifacts?prefix=decompiled%2Fjadx_output",
+    "GET /api/tasks/100401/artifacts?prefix=pentest",
+    "GET /api/tasks/100401/artifacts?prefix=pentest%2Fcapture",
+    "GET /api/tasks/100401/artifacts?prefix=pentest%2Fevents",
+    "GET /api/tasks/100401/artifacts?prefix=pentest%2Fevidence",
+    "GET /api/tasks/100401/artifacts?prefix=report",
+    "GET /api/tasks/100401/artifacts?prefix=unpacked",
+    "GET /api/tasks/100401/artifacts?prefix=unpacked%2F_wrap",
+    "GET /api/tasks/100401/artifacts?prefix=unpacked%2Flib",
+    "GET /api/tasks/100401/artifacts?prefix=unpacked%2Fmemdex"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "packer": {
+   "total": 14,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/packer",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "report": {
+   "total": 13,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  },
+  "diff": {
+   "total": 16,
+   "unique": [
+    "GET /api/me",
+    "GET /api/notifications/stream?token=<redacted>",
+    "GET /api/notifications?limit=50",
+    "GET /api/pentest/devices",
+    "GET /api/pentest/sessions",
+    "GET /api/pentest/sessions/259/vulns",
+    "GET /api/pentest/sessions/260",
+    "GET /api/pentest/sessions/260/approvals",
+    "GET /api/pentest/sessions/260/autopilot/status",
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted>",
+    "GET /api/pentest/sessions/260/events?source=progress&limit=300",
+    "GET /api/pentest/sessions/260/security-rounds",
+    "GET /api/pentest/sessions/260/timeline",
+    "GET /api/pentest/sessions/260/vulns",
+    "GET /api/pentest/sessions/260/vulns/grouped",
+    "GET /api/tasks-summary"
+   ],
+   "initialDuplicates": [],
+   "polling": [],
+   "streams": [
+    "GET /api/pentest/sessions/260/events/stream?source=hook&since_seq=0&token=<redacted> connections=1",
+    "GET /api/notifications/stream?token=<redacted> connections=1"
+   ],
+   "writeAttemptsBlocked": [],
+   "failed": [],
+   "consoleErrors": [],
+   "pageErrors": []
+  }
+ },
+ "baseline": {
+  "/dashboard": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/pentest": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/pentest/project/{id}": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/pentest/project/{id}/session/{id}": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/company": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/company/projects/{id}": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/new-audit": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/tasks": {
+   "missingOnReal": [
+    "GET /api/tasks/counts?ids=100,101,102,103,104,105,106,107"
+   ],
+   "extraOnReal": [
+    "GET /api/tasks/counts?ids=100412,100411,100410,100408,100407,100406,100405,100404,100403,100402,100401,100400,100398,100397,100396,100395,100394,100391,100390,100389"
+   ]
+  },
+  "/reports": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/discovery": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/skills": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/ai-assistant": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  },
+  "/agent": {
+   "missingOnReal": [
+    "GET /api/agent/sessions/{id}/eval",
+    "GET /api/agent/sessions/{id}/events?since_seq=0",
+    "GET /api/agent/sessions/{id}/snapshot"
+   ],
+   "extraOnReal": [
+    "GET /api/agent/sessions/43bc88f6/eval",
+    "GET /api/agent/sessions/43bc88f6/events?since_seq=21",
+    "GET /api/agent/sessions/43bc88f6/snapshot"
+   ]
+  },
+  "/system": {
+   "missingOnReal": [],
+   "extraOnReal": []
+  }
+ },
+ "checks": {
+  "feedbackReads": {
+   "requests": [
+    "GET /api/feedback"
+   ],
+   "duplicated": false,
+   "pass": true
+  },
+  "tasksVariants": {
+   "note": "different query strings are separate keys and are never merged",
+   "keys": [
+    "GET /api/tasks?limit=500",
+    "GET /api/tasks?limit=2000",
+    "GET /api/tasks?limit=200",
+    "GET /api/tasks?status=queued&limit=2000",
+    "GET /api/tasks?status=running&limit=50"
+   ]
+  },
+  "duplicateDataRequests": [],
+  "duplicateStreamConnections": [],
+  "writeAttempts": [],
+  "failedRequests": [],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "baselineDifferences": [
+   "/tasks",
+   "/agent"
+  ],
+  "authMatrix": {
+   "direct": [
+    {
+     "session": 260,
+     "status": 200,
+     "shape": "error NO_BASELINE",
+     "counts": null
+    },
+    {
+     "session": 261,
+     "status": 200,
+     "shape": "error NO_BASELINE",
+     "counts": null
+    },
+    {
+     "session": 29,
+     "status": 200,
+     "shape": "error NO_BASELINE",
+     "counts": null
+    }
+   ],
+   "fromPages5xx": [],
+   "pass": true
+  },
+  "models": {
+   "catalog": {
+    "status": 200,
+    "items": 3
+   },
+   "providers": {
+    "status": 200,
+    "items": 1
+   },
+   "providersRequestedOn": [],
+   "explanation": "AgentComposer requests /api/models/providers only when /api/models/catalog fails or returns an empty list (src/features/agent/components_agent/AgentComposer.tsx). The fixture used to return an empty catalog.",
+   "pass": true
+  },
+  "pollingIntervals": {
+   "expected": "8 s or 30 s (docs/request-map.md)",
+   "offCadence": [],
+   "pass": true
+  },
+  "streams": {
+   "reconnects": []
+  }
+ },
+ "finishedAt": "2026-11-16T09:27:33.767Z"
+}

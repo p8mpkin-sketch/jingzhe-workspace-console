@@ -46,7 +46,6 @@
   "/pentest/project/1/session/40": [
     "GET /api/me",
     "GET /api/models/catalog",
-    "GET /api/models/providers",
     "GET /api/notifications/stream?token=fixture-token",
     "GET /api/notifications?limit=50",
     "GET /api/pentest/devices",
@@ -152,7 +151,6 @@
     "GET /api/agent/web/status",
     "GET /api/me",
     "GET /api/models/catalog",
-    "GET /api/models/providers",
     "GET /api/notifications/stream?token=fixture-token",
     "GET /api/notifications?limit=50",
     "GET /api/pentest/devices",
