@@ -63,7 +63,10 @@ entry is gone; stale preference keys are cleared. The V2 and V3 shells and the m
 ### Verification (fixtures, production preview build)
 - `npm run lint:tokens`: 0. `tsc --noEmit` and `npm run build` pass. Contrast: 0 failing pairs.
 - 14 routes × 1440 / 1024, light: 0 overflow, 0 page errors; request set identical to the updated baseline.
-- 20 workbench surfaces: see `docs/screenshots/phase-17/workbench/`.
+- 20 workbench surfaces × 1440 / 1024 / 760 / 390 × light / dark plus data-state variants: 0 overflow, 0 errors,
+  1974 focus stops, 0 without a focus indicator, 0 covered (80 fewer stops than Phase 16: the removed 旧版工作台
+  entry, once per surface and width). `docs/screenshots/phase-17/workbench/`.
+- Source slice, catalog fallback and legacy-link checks: pass.
 
 ### Screenshots
 Route screenshots at 1440 and 1024 in `docs/screenshots/phase-17/` are from fixtures. Real-backend screenshots are
