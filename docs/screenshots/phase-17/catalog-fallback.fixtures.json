@@ -1,0 +1,25 @@
+{
+ "pass": true,
+ "result": {
+  "default:agent": {
+   "catalogRequests": 1,
+   "providersRequests": 0,
+   "providerModelListed": true
+  },
+  "default:session": {
+   "catalogRequests": 1,
+   "providersRequests": 0,
+   "providerModelListed": true
+  },
+  "empty:agent": {
+   "catalogRequests": 1,
+   "providersRequests": 1,
+   "providerModelListed": true
+  },
+  "empty:session": {
+   "catalogRequests": 1,
+   "providersRequests": 1,
+   "providerModelListed": true
+  }
+ }
+}
