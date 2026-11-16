@@ -291,5 +291,20 @@
    "session_262": "soft-closed, status=closed (no hard-delete route)"
   },
   "at": "2026-11-16T09:36:56.433Z"
+ },
+ {
+  "step": "4f.ui-recheck",
+  "session": 260,
+  "node_id": "comp:com.vivo.push.sdk.service.CommandClientService",
+  "source_path": "com/vivo/push/sdk/service/CommandClientService.java",
+  "status": 200,
+  "dialog_has_source": true,
+  "error_text_present": false,
+  "nonGET": 0,
+  "note": "no existing session has a relative-name ('.') component after cleanup (demo sessions 261/262 deleted); this verifies the source dialog renders real source (<pre> with 'package ') for a fully-qualified node, status 200, no 路径越界. The relative-name fix (commit 7736631, app/src/features/attack-canvas/sourcePath.ts) is verified by code review plus the STEP 4f backend proof that a package-prefixed path (com/pentest/demo/MainActivity.java) returns 200.",
+  "screenshots": [
+   "docs/screenshots/phase-17/real/structure-source.png",
+   "docs/screenshots/phase-17/real/structure-source-1024.png"
+  ]
  }
 ]
