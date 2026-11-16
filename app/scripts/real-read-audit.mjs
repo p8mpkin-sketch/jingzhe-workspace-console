@@ -11,6 +11,11 @@
 //   JZ_PID, JZ_SID              project and session to open; discovered from the API when not set
 //   JZ_COMPANY_PID              company project id; defaults to JZ_PID
 //   DUR                         ms per route, default 65000.  VIEW_DUR  ms per workbench surface, default 6000
+//   JZ_MATRIX_SIDS              comma-separated session ids whose auth_matrix is read directly (Phase 17 regression
+//                               check); default: the audited session plus 260 (the session that returned 500)
+//   --cadence <file>            also write the polling / stream cadence of every route and surface to <file>
+//
+// HOLD_STREAMS does not apply here: the real backend holds every SSE connection open, so nothing is simulated.
 //
 // The audit is read-only: any request that is not a GET is aborted before it leaves the browser and is
 // reported as a violation. Streams are held open by the real backend, so nothing is simulated.
@@ -124,17 +129,56 @@ report.checks = {
   consoleErrors: Object.entries(all).flatMap(([n, r]) => r.consoleErrors.map((d) => `${n}: ${d}`)),
   baselineDifferences: Object.entries(report.baseline).filter(([, d]) => d.missingOnReal.length || d.extraOnReal.length).map(([n]) => n),
 };
+
+// 6. Phase 17 checks. auth_matrix: no 5xx for any session, including one without recon data (regression for the
+//    app.py fallback that called .get() on a Path). Model list: catalog status and size, and whether the composer
+//    had a reason to fall back to providers. Polling: every repeating data request uses the 8 s or 30 s interval
+//    listed in docs/request-map.md (one second of jitter allowed).
+const matrixSids = [...new Set((process.env.JZ_MATRIX_SIDS || `${sid},260`).split(',').map((x) => x.trim()).filter(Boolean))];
+const authMatrix = [];
+for (const m of matrixSids) {
+  const r = await call(token, 'GET', `/api/pentest/sessions/${m}/auth_matrix`);
+  const j = r.json || {};
+  authMatrix.push({ session: +m, status: r.status, shape: j.status === 'error' ? `error ${j.error_class || ''}`.trim() : Array.isArray(j.rows) ? `matrix rows=${j.rows.length}` : r.status === 404 ? 'not found' : 'other', counts: j.counts ?? null });
+}
+const uiMatrix5xx = Object.entries(all).flatMap(([n, r]) => r.failed.filter((d) => /^5\d\d GET .*\/auth_matrix/.test(d)).map((d) => `${n}: ${d}`));
+report.checks.authMatrix = { direct: authMatrix, fromPages5xx: uiMatrix5xx, pass: authMatrix.every((x) => x.status < 500) && !uiMatrix5xx.length };
+const cat = await call(token, 'GET', '/api/models/catalog');
+const prov = await call(token, 'GET', '/api/models/providers');
+const composerRoutes = ['/agent', '/pentest/project/{id}/session/{id}'];
+report.checks.models = {
+  catalog: { status: cat.status, items: Array.isArray(cat.json?.models) ? cat.json.models.length : null },
+  providers: { status: prov.status, items: Array.isArray(prov.json?.providers) ? prov.json.providers.length : null },
+  providersRequestedOn: composerRoutes.filter((r) => report.routes[r]?.unique.some((k) => k === 'GET /api/models/providers')),
+  explanation: 'AgentComposer requests /api/models/providers only when /api/models/catalog fails or returns an empty list (src/features/agent/components_agent/AgentComposer.tsx). The fixture used to return an empty catalog.',
+};
+report.checks.models.pass = report.checks.models.catalog.status === 200 && (report.checks.models.catalog.items > 0) === (report.checks.models.providersRequestedOn.length === 0);
+const okGap = (g) => (g >= 7 && g <= 9) || (g >= 29 && g <= 31);
+const offCadence = Object.entries(all).flatMap(([n, r]) => r.polling.filter((p) => !p.split('gaps(s)=')[1].split(',').map(Number).every(okGap)).map((p) => `${n}: ${p}`));
+report.checks.pollingIntervals = { expected: '8 s or 30 s (docs/request-map.md)', offCadence, pass: !offCadence.length };
+report.checks.streams = { reconnects: Object.entries(all).flatMap(([n, r]) => r.streams.filter((x) => !/connections=1$/.test(x)).map((x) => `${n}: ${x}`)) };
 report.finishedAt = new Date().toISOString();
 
 const json = JSON.stringify(report, null, 1);
 if (json.includes(token)) fail('Refusing to write the result: the token survived redaction.');
 fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
 fs.writeFileSync(out, json + '\n');
+const cadenceOut = arg('cadence', '');
+if (cadenceOut) {
+  const cad = { kind: 'request cadence, real backend (streams held open by the backend)', startedAt: report.startedAt, durationMsPerRoute: DUR, durationMsPerView: VIEW_DUR,
+    routes: Object.fromEntries(Object.entries(report.routes).map(([k, r]) => [k, { initialDuplicates: r.initialDuplicates, polling: r.polling, streams: r.streams }])),
+    views: Object.fromEntries(Object.entries(report.views).map(([k, r]) => [k, { initialDuplicates: r.initialDuplicates, polling: r.polling, streams: r.streams }])),
+    pollingIntervals: report.checks.pollingIntervals };
+  const cj = JSON.stringify(cad, null, 1); if (cj.includes(token)) fail('Refusing to write the cadence file: the token survived redaction.');
+  fs.writeFileSync(cadenceOut, cj + '\n');
+}
 const c = report.checks;
 console.log(`real read audit → ${out}`);
 console.log(`routes ${Object.keys(report.routes).length}, surfaces ${Object.keys(report.views).length}, project ${pid}, session ${sid}`);
 console.log(`duplicate data requests: ${c.duplicateDataRequests.length}   duplicate stream connections: ${c.duplicateStreamConnections.length}`);
 console.log(`failed requests: ${c.failedRequests.length}   write attempts blocked: ${c.writeAttempts.length}   page errors: ${c.pageErrors.length}   console errors: ${c.consoleErrors.length}`);
 console.log(`/api/feedback single read: ${c.feedbackReads.pass ? 'yes' : 'NO'}   routes differing from fixture baseline: ${c.baselineDifferences.length}`);
+console.log(`auth_matrix: ${c.authMatrix.direct.map((x) => `${x.session}→${x.status} ${x.shape}`).join(', ')}   pass ${c.authMatrix.pass ? 'yes' : 'NO'}`);
+console.log(`models/catalog ${c.models.catalog.status} items ${c.models.catalog.items}; providers requested on ${c.models.providersRequestedOn.join(', ') || 'none'}   polling off 8/30 s: ${c.pollingIntervals.offCadence.length}`);
 for (const l of [...c.duplicateDataRequests, ...c.duplicateStreamConnections, ...c.writeAttempts, ...c.failedRequests].slice(0, 40)) console.log('  ' + l);
-process.exit(c.duplicateDataRequests.length || c.writeAttempts.length || c.failedRequests.length || c.pageErrors.length ? 1 : 0);
+process.exit(c.duplicateDataRequests.length || c.duplicateStreamConnections.length || c.writeAttempts.length || c.failedRequests.length || c.pageErrors.length || !c.authMatrix.pass || !c.pollingIntervals.pass ? 1 : 0);

@@ -32,6 +32,7 @@ const reports = Array.from({ length: 11 }, (_, i) => ({ id: 32 - i, kind: i % 4 
 const runs = [{ id: 7, status: 'done', total: 63, succeeded: 60, failed: 2, skipped: 1 }, { id: 6, status: 'running', total: 63, succeeded: 20, failed: 0, skipped: 0 }, { id: 5, status: 'failed', total: 10, succeeded: 3, failed: 7, skipped: 0 }];
 const sev = { critical: { active: 1, total: 2 }, high: { active: 3, total: 5 }, medium: { active: 6, total: 9 }, low: { active: 4, total: 4 }, info: { active: 2, total: 2 } };
 const providers = { active_id: 'p1', providers: [{ id: 'p1', name: 'Primary', kind: 'openai', base_url: 'https://llm.example.com/v1', model: 'model-large', enabled: true, healthy: true, latency_ms: 420 }, { id: 'p2', name: 'Fallback', kind: 'openai', base_url: 'https://llm2.example.com/v1', model: 'model-small', enabled: true, healthy: false, latency_ms: null }] };
+const catalog = { active_model: 'model-large', models: [{ value: 'model-large', provider_label: 'Primary', catalog_name: 'Model Large' }, { value: 'model-small', provider_label: 'Fallback', catalog_name: 'Model Small' }] };
 
 // Report center (inferred shapes: only the fields the page reads).
 const findingsOf = (sid) => {
@@ -102,7 +103,9 @@ export const routes = [
   ['GET', /^\/api\/notifications$/, { unread: 2, items: [{ id: 1, kind: 'task', level: 'success', title: '任务已完成', body: 'Compass 评估完成', created_at: now - 300, read_at: null, link: '/tasks' }, { id: 2, kind: 'system', level: 'info', title: '报告已就绪', body: '#32 项目总报告', created_at: now - 900, read_at: null, link: '/reports' }, { id: 3, kind: 'task', level: 'danger', title: '任务失败', body: 'Wallet 评估在静态分析阶段停止', created_at: now - 4000, read_at: now - 3000, link: '/tasks?focus=103' }] }],
   ['GET', /^\/api\/models\/providers$/, providers],
   ['GET', /^\/api\/models\/routing$/, { routing: { default: 'p1', chat: 'p1', audit: 'p1' } }],
-  ['GET', /^\/api\/models\/catalog$/, { models: [] }],
+  // The real backend returns a non-empty catalog, so the agent composer never falls back to /api/models/providers
+  // (Phase 17 real read audit). FIXTURE_CATALOG=empty reproduces the fallback path.
+  ['GET', /^\/api\/models\/catalog$/, () => (process.env.FIXTURE_CATALOG === 'empty' ? { models: [] } : catalog)],
   ['GET', /^\/api\/skills\/\d+\/source$/, { file: 'skills/sample/SKILL.md', bytes: 212, truncated: false, content: '# 示例知识条目\n# 用途: 复用已完成任务中的分析步骤\n\n1. 读取任务产物清单\n2. 核对网络与存储相关发现\n3. 汇总结论并附出处\n' }],
   ['GET', /^\/api\/skills$/, [1, 2, 3, 4, 5].map((i) => ({ id: i, name: `示例知识条目 ${i}`, slug: `sample-${i}`, summary: '从已完成任务中沉淀的可复用分析步骤。', description: '从已完成任务中沉淀的可复用分析步骤。', status: ['active', 'draft', 'disabled', 'active', 'active'][i - 1], tags: ['network', 'storage'], category: ['network', 'storage', 'crypto'][i % 3], source: 'distill', updated_at: now - i * 5000, created_at: now - i * 9000, owner: 'demo', version: 1 }))],
   ['GET', /^\/api\/kb\/candidates$/, { items: [1, 2, 3].map((i) => ({ id: i, title: `候选条目 ${i}`, summary: '待审核的知识候选。', status: 'pending', kind: 'pattern', score: 0.6 + i / 10, created_at: now - i * 4000, task_id: 100 + i })) }],
