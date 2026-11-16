@@ -10,9 +10,8 @@ Status values:
 - **Moved in Phase 15** – was legacy-only; now has a workbench owner.
 - **Shared owner** – two renderings of the same job exist on purpose; the reason is listed.
 
-No capability is missing an owner. Nothing was deleted. Legacy `?ui=v3` and `?ui=v2` stay reachable from
-the workbench "旧版工作台" entry and by URL until the pending real-backend checks at the end of this
-file are done.
+No capability is missing an owner. Legacy `?ui=v3` and `?ui=v2` were retired in Phase 17 after every gate item at
+the end of this file passed on the real backend; old links open the workbench.
 
 ## Panels named in the Phase 15 brief
 
@@ -71,14 +70,9 @@ findings, counters or evidence; those live on the main surface only.
 Verified with fixtures (`app/scripts/fixtures/api.mjs`, production preview build): every `?view=` id in the
 table resolves and renders, including error, forbidden, slow and empty variants (`scripts/check-workbench.mjs`).
 
-Pending real backend (127.0.0.1:8099 was not reachable from the build environment):
-
-- VulnsPanel state change, import and export against real rule cards.
-- AttackCanvas source slice with real source paths.
-- Mission start and mission status responses.
-- Clusters response shape.
-
-Legacy `?ui=v3` / `?ui=v2` can be retired only after these four checks pass.
+Real backend (Phase 17, `docs/screenshots/phase-17/`): VulnsPanel state change, import and export, AttackCanvas
+source slice, mission start and status all verified. The clusters view was part of the 65 s read audit
+(`?view=clusters`, 0 failed requests).
 
 ## Legacy retirement gate (Phase 16)
 
@@ -93,3 +87,17 @@ Legacy `?ui=v3` / `?ui=v2` can be retired only after these four checks pass.
 | No current route depends on the legacy shell for a primary job | Pass | the only link into a legacy shell is the workbench's 旧版工作台 entry (`WorkbenchPage.openLegacy`); every route renders the six-tab workbench by default |
 
 **Decision: keep `?ui=v3` and `?ui=v2`.** The write audit has two open items (a successful task start and the rule-card state change), and the Phase 15 items listed above (mission start and status, rule-card import and export, source slice) are still unverified on a real backend. Nothing is removed in Phase 16.
+
+## Legacy retirement gate (Phase 17)
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| Real-backend read audit, 0 duplicates, 0 errors, 0 5xx | Pass | `docs/screenshots/phase-17/real-read.json` |
+| Successful task start | Pass (200, `running`, then stopped) | `real-write.json` |
+| Rule-card state change | Pass (changed, read back, restored) | `real-write.json` |
+| Mission start and status | Pass (replay, reached `done`) | `real-write.json` |
+| Rule-card import / export on real data | Pass (local only; 0 non-GET requests) | `real-write.json`, `real/rulecards*.png` |
+| Source slice | Pass after the relative-name fix; checked in the UI on a fully qualified and a relative component | `real/structure-source*.png` |
+| V3 overflow, capability matrix, no route depends on the legacy shell | Pass | Phase 16 and this file |
+
+**Decision: `?ui=v3` and `?ui=v2` retired.** Details, removed modules and test data: `docs/screenshots/phase-17/legacy-retirement.md`.

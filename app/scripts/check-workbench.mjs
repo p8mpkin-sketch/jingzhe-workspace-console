@@ -132,9 +132,9 @@ for (const theme of THEMES) for (const w of WIDTHS) {
     primaryTabs: tabs, reached,
     duplicates: targets.filter((v, i) => targets.indexOf(v) !== i),
     missing: SURFACES.map((s) => s.view + (s.q.includes('trajectory') ? '+trajectory' : '')).filter((v) => !targets.includes(v)),
-    legacyEntry: (await page.locator('[data-wb-legacy]').count()) === 1,
+    legacyEntryRetired: (await page.locator('[data-wb-legacy]').count()) === 0, // Phase 17: legacy workbenches retired
   };
-  if (report.navigation.duplicates.length || report.navigation.missing.length || !report.navigation.legacyEntry) report.errors.push('navigation: ' + JSON.stringify({ d: report.navigation.duplicates, m: report.navigation.missing, legacy: report.navigation.legacyEntry }));
+  if (report.navigation.duplicates.length || report.navigation.missing.length || !report.navigation.legacyEntryRetired) report.errors.push('navigation: ' + JSON.stringify({ d: report.navigation.duplicates, m: report.navigation.missing, legacyRetired: report.navigation.legacyEntryRetired }));
   await ctx.close();
 }
 
