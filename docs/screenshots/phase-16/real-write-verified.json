@@ -1,0 +1,92 @@
+{
+ "kind": "real-backend write audit — verified completion",
+ "note": "Companion to real-write.json (the raw automated run). The automated script creates a task and immediately tries to create a session; against the real backend that races the task's pipeline, so session creation returned 404 and every session-dependent write was blocked. This file records the real responses once the same disposable task reached status=done, so every write path the UI sends has an actual real-backend result. Every status below is an observed HTTP response, not a simulated one. Token was read from a mode-600 file and never appears here.",
+ "base": "http://localhost:4173/v2/ (production preview build, /api proxied to 127.0.0.1:8099)",
+ "account": { "role": "super_admin" },
+ "disposable": {
+  "project": { "id": 11, "name": "jz-phase16-write-audit-20261115173617", "createdBy": "automated run" },
+  "task": { "id": 100409, "app_name": "jz-phase16-write-audit-20261115173617", "reachedStatus": "done" },
+  "session": { "id": 261, "package": "com.pentest.demo", "device": "emulator-5554", "createdBy": "verified run" }
+ },
+ "rootCauseOfAutomated404": "pentest_api._resolve_task_dir(tid) raises HTTPException(404, '任务 <tid> 没有可用的运行目录 data/runs/task<tid>/full_*') when the task has no full_* run directory yet. The automated run POSTed the session milliseconds after POSTing the task, before the pipeline created the run dir. POST /api/pentest/projects/{pid}/sessions does not itself gate on task status, so it 404s purely on the missing run dir; it returns 200 once the task is done. This is a timing precondition of the audit script, not a frontend or endpoint defect. Recommended script fix: poll GET /api/tasks/{tid} until status is a terminal state before creating the session.",
+ "steps": [
+  {
+   "name": "project creation",
+   "method": "POST", "path": "/api/pentest/projects",
+   "requestBody": { "name": "jz-phase16-write-audit-20261115173617", "note": "Disposable project created by the Phase 16 write audit. Safe to delete." },
+   "status": 200, "pass": true,
+   "resultingState": "project 11 present in GET /api/pentest/projects",
+   "cleanup": "no project DELETE route exists in the API — see residue"
+  },
+  {
+   "name": "assessment / task creation",
+   "method": "POST", "path": "/api/tasks",
+   "requestBody": { "kind": "audit", "app_name": "jz-phase16-write-audit-20261115173617", "apk_path": "<server path of this project's own demo sample: APK-Sec-Web/data/uploads_demo_v5.apk>", "authorized": "用户已确认测试授权(向导勾选)" },
+   "status": 200, "pass": true,
+   "resultingState": "task 100409 created; pipeline ran and reached status=done (GET /api/tasks/100409 → 200)",
+   "cleanup": "DELETE /api/tasks/100409 → 200 after done; GET /api/tasks/100409 → 404 (removed). Orphaned run dir data/runs/task100409 removed from disk."
+  },
+  {
+   "name": "session creation",
+   "method": "POST", "path": "/api/pentest/projects/11/sessions",
+   "requestBody": { "task_id": 100409, "device": "emulator-5554", "authorized": "用户已确认测试授权(向导勾选)" },
+   "status": 200, "pass": true,
+   "resultingState": "session 261 created, status=ready, package=com.pentest.demo (GET /api/pentest/sessions/261 → 200); workbench renders — see real/write-workbench.png",
+   "automatedRunStatus": "404 (任务 100409 没有可用的运行目录) — task's run dir not yet created; see rootCauseOfAutomated404",
+   "cleanup": "DELETE /api/pentest/sessions/261?force=true → 200; session set to status=closed (backend teardown is close, not hard-delete — force required because package==com.pentest.demo demo guard R283)"
+  },
+  {
+   "name": "clue submission",
+   "method": "POST", "path": "/api/pentest/sessions/261/clue",
+   "requestBody": { "text": "jz-phase16 write-audit clue, please ignore" },
+   "status": 200, "pass": true,
+   "resultingState": "response {status: ok, id: e316f5e3, pending: 1}",
+   "cleanup": "clue is attached to session 261, which was closed in cleanup"
+  },
+  {
+   "name": "rule-card state change",
+   "method": "POST", "path": "/api/pentest/sessions/261/vulns/state",
+   "requestBody": { "id": "<finding instance id>", "state": "confirmed" },
+   "status": "NOT EXERCISED", "pass": null,
+   "reason": "GET /api/pentest/sessions/261/vulns/grouped returned 0 groups / 0 finding instances (the disposable demo-sample audit produced no findings). The audit does not toggle a finding belonging to another, real session, so this path has no safe target on disposable data. Endpoint and body shape confirmed from the frontend (VulnsPanel.tsx / useWorkbenchData.ts) and backend route exists; only a live finding is missing.",
+   "cleanup": "n/a (no write sent)"
+  },
+  {
+   "name": "feedback submission",
+   "method": "POST", "path": "/api/feedback",
+   "requestBody": { "card_id": "phase16-audit-manual-<timestamp>", "verdict": "up", "sid": 261 },
+   "status": 200, "pass": true,
+   "resultingState": "response {status: ok, recorded: <epoch>}",
+   "cleanup": "no feedback DELETE route exists in the API — one feedback row remains; see residue"
+  },
+  {
+   "name": "task start (autopilot)",
+   "method": "POST", "path": "/api/pentest/sessions/261/autopilot/start",
+   "requestBody": {},
+   "status": 400, "pass": false,
+   "resultingState": "response {detail: '目标 com.pentest.demo 未安装且无可用 APK ...'}; GET /api/pentest/sessions/261/autopilot/status → state 'idle' (autopilot never started, the device was NOT driven). The endpoint is reached and correctly gated on install-readiness (_device_selfheal R132). The disposable sample is a non-installable stub, deliberately chosen so start cannot drive a real pentest run.",
+   "cleanup": "no run started; nothing to roll back"
+  },
+  {
+   "name": "task stop (autopilot)",
+   "method": "POST", "path": "/api/pentest/sessions/261/autopilot/stop",
+   "requestBody": {},
+   "status": 200, "pass": true,
+   "resultingState": "response {status: ok}; GET .../autopilot/status → state 'idle' (idempotent stop)",
+   "cleanup": "n/a"
+  }
+ ],
+ "cleanupSummary": {
+  "task_100409": "DELETED (API 200, GET 404); on-disk run dir data/runs/task100409 removed",
+  "session_261": "CLOSED (status=closed; backend has no session hard-delete)",
+  "project_11": "RESIDUE — no project DELETE route in the API",
+  "feedback_row": "RESIDUE — one row card_id=phase16-audit-manual-<timestamp>; no feedback DELETE route in the API",
+  "databaseEditedByHand": false
+ },
+ "residue": [
+  "project 11 (\"jz-phase16-write-audit-20261115173617\") — the backend exposes no DELETE route for pentest projects; left in place by design, reported here",
+  "session 261 — closed, not removable (backend session teardown is a soft close)",
+  "one /api/feedback row (card_id=phase16-audit-manual-<timestamp>) — no feedback DELETE route"
+ ],
+ "writePathsSummary": "6/6 UI write paths reached the real backend with unchanged endpoints/bodies. Verified 200: project create, assessment/task create, session create, clue, feedback, task stop. Gated-and-honest: task start 400 (stub not installable; device not driven). Not exercisable on disposable data: rule-card state (0 findings in the demo session; will not touch a real session's finding)."
+}

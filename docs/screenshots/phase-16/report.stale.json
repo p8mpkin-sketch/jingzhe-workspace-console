@@ -1,0 +1,20 @@
+{
+  "overflow": [],
+  "errors": [],
+  "stale": {
+    "/dashboard @1440": "stale notice",
+    "/pentest @1440": "no page refresh control",
+    "/pentest/project/1 @1440": "no page refresh control",
+    "/pentest/project/1/session/40 @1440": "stale notice",
+    "/company @1440": "stale notice",
+    "/company/projects/1 @1440": "stale notice",
+    "/new-audit @1440": "failure toast / alert",
+    "/tasks @1440": "stale notice",
+    "/reports @1440": "no page refresh control",
+    "/discovery @1440": "no page refresh control",
+    "/skills @1440": "no page refresh control",
+    "/ai-assistant @1440": "no page refresh control",
+    "/agent @1440": "no page refresh control",
+    "/system @1440": "no page refresh control"
+  }
+}

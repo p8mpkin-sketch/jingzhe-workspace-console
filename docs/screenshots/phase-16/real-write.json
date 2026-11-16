@@ -1,0 +1,124 @@
+{
+ "kind": "real-backend write audit",
+ "startedAt": "2026-11-15T17:36:17.865Z",
+ "base": "http://localhost:4173/v2/",
+ "marker": "jz-phase16-write-audit-20261115173617",
+ "created": {
+  "project": 11,
+  "task": 100409,
+  "session": null
+ },
+ "steps": [
+  {
+   "name": "project creation",
+   "method": "POST",
+   "path": "/api/pentest/projects",
+   "requestBody": {
+    "name": "jz-phase16-write-audit-20261115173617",
+    "note": "Disposable project created by the Phase 16 write audit. Safe to delete."
+   },
+   "status": 200,
+   "pass": true,
+   "resultingState": "project 11 listed by GET /api/pentest/projects"
+  },
+  {
+   "name": "assessment creation",
+   "method": "POST",
+   "path": "/api/tasks",
+   "requestBody": {
+    "kind": "audit",
+    "app_name": "jz-phase16-write-audit-20261115173617",
+    "apk_path": "<backend checkout>/APK-Sec-Web/data/uploads_demo_v5.apk",
+    "authorized": "用户已确认测试授权(向导勾选)"
+   },
+   "status": 200,
+   "pass": true,
+   "resultingState": "task 100409: GET /api/tasks/100409 → 200, status \"unknown\""
+  },
+  {
+   "name": "session creation",
+   "method": "POST",
+   "path": "/api/pentest/projects/11/sessions",
+   "requestBody": {
+    "task_id": 100409,
+    "device": "emulator-5554",
+    "authorized": "用户已确认测试授权(向导勾选)"
+   },
+   "status": 404,
+   "pass": false,
+   "response": "{\"detail\":\"任务 100409 没有可用的运行目录(data/runs/task100409/full_*)\"}"
+  },
+  {
+   "name": "clue submission",
+   "method": "POST",
+   "path": "/api/pentest/sessions/{sid}/clue",
+   "status": "BLOCKED",
+   "pass": false,
+   "reason": "needs the disposable session from step 3"
+  },
+  {
+   "name": "rule-card state change",
+   "method": "POST",
+   "path": "/api/pentest/sessions/{sid}/vulns/state",
+   "status": "BLOCKED",
+   "pass": false,
+   "reason": "needs the disposable session from step 3"
+  },
+  {
+   "name": "feedback submission",
+   "method": "POST",
+   "path": "/api/feedback",
+   "status": "BLOCKED",
+   "pass": false,
+   "reason": "needs the disposable session from step 3"
+  },
+  {
+   "name": "task start",
+   "method": "POST",
+   "path": "/api/pentest/sessions/{sid}/autopilot/start",
+   "status": "BLOCKED",
+   "pass": false,
+   "reason": "needs the disposable session from step 3"
+  },
+  {
+   "name": "task stop",
+   "method": "POST",
+   "path": "/api/pentest/sessions/{sid}/autopilot/stop",
+   "status": "BLOCKED",
+   "pass": false,
+   "reason": "needs the disposable session from step 3"
+  }
+ ],
+ "cleanup": [
+  {
+   "what": "task 100409",
+   "method": "DELETE",
+   "path": "/api/tasks/100409",
+   "status": 400
+  },
+  {
+   "what": "project 11",
+   "method": "DELETE",
+   "path": "/api/pentest/projects/11",
+   "status": 404
+  }
+ ],
+ "residue": [
+  "task 100409 was not removed (status 400)",
+  "project 11 (\"jz-phase16-write-audit-20261115173617\") is still there (DELETE returned 404); the frontend has no project delete, remove it with an admin tool"
+ ],
+ "account": {
+  "role": "super_admin"
+ },
+ "uiState": {
+  "projectSessionsPage": {
+   "url": "#/pentest/project/11",
+   "showsSession": null
+  },
+  "tasksPage": {
+   "url": "#/tasks?focus=100409",
+   "showsTask": true
+  }
+ },
+ "finishedAt": "2026-11-15T17:36:23.573Z"
+}

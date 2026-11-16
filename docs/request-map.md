@@ -3,7 +3,7 @@
 Everything below was recorded against fixtures (`app/scripts/fixtures/api.mjs`) on a production preview build
 (`npm run build && npx vite preview --port 4173`), not the dev server, so React StrictMode double effects are
 not in the numbers. The local backend at `127.0.0.1:8099` refused connections from the build environment, so
-**no request in this file has been seen against a real backend**. No request log here comes from a real backend.
+the per-route tables below come from fixtures. The real-backend results of Phase 16 are in their own section.
 
 ## How to replay with backend access
 
@@ -38,6 +38,78 @@ This is the number to confirm on a real backend.
 
 `/api/tasks` with different query strings (`?status=running&limit=50`, `?limit=…`) are different requests and are
 listed separately.
+
+## Real-backend audit (Phase 16)
+
+Two scripts replace the manual replay above. Both read the token from `JZ_TOKEN` or from `JZ_TOKEN_FILE`
+(a file with mode 600), never print it, and refuse to write a result that still contains it.
+
+```sh
+cd app && npm run build && npx vite preview --port 4173 --strictPort
+# read-only: 14 routes for 65 s each, then the 20 workbench surfaces; any non-GET request is aborted and reported
+JZ_TOKEN_FILE=~/.jz-token node scripts/real-read-audit.mjs --out ../docs/screenshots/phase-16/real-read.json
+# writes against a disposable project, task and session that the script creates and deletes
+JZ_TOKEN_FILE=~/.jz-token JZ_APK_PATH=<server path of your own sample> [JZ_DEVICE=<serial>] [JZ_ALLOW_START=1] \
+  node scripts/real-write-audit.mjs --out ../docs/screenshots/phase-16/real-write.json --shots ../docs/screenshots/phase-16/real
+```
+
+The real backend holds SSE connections open itself, so the read audit needs no `HOLD_STREAMS`; that switch only
+exists for the fixture run (`docs/screenshots/phase-16/request-cadence.fixtures-held.json`: 14 routes, 65 s,
+0 duplicates).
+
+### Result: read audit, real backend, 2026-11-15
+
+Run on the machine that hosts the backend, production preview build, `/api` proxied to `127.0.0.1:8099`,
+project 9, session 260 (existing data, read only). Result file: `docs/screenshots/phase-16/real-read.json`.
+
+| Check | Result |
+| --- | --- |
+| Routes / workbench surfaces replayed | 14 routes × 65 s, 20 surfaces × 6 s |
+| Duplicate data requests in the first 3 s | 0 |
+| Duplicate stream connections | 0; each SSE endpoint connected once and stayed open, no reconnect in 65 s |
+| Write attempts during load (aborted by the audit) | 0 |
+| `/api/feedback` on `/system` | 1 read, not duplicated |
+| `/api/tasks` with different query strings | 5 distinct keys, each counted separately |
+| Polling intervals | 8 s (devices, session, autopilot status, timeline, progress events, grouped findings, approvals, recent events) and 30 s (tasks summary, running tasks): same as the fixture run |
+| Page errors | 0 |
+| Failed requests | 1: `GET /api/pentest/sessions/260/auth_matrix` → 500 on `/reports` (backend response for a session without auth-matrix data; also the only console error) |
+
+Differences from the fixture request set, ids normalised:
+
+- `/tasks`: `GET /api/tasks/counts?ids=…` carries real task ids. Same request, different ids.
+- `/agent`: the agent session id is not numeric (`43bc88f6`), and the event cursor is `since_seq=21` because the
+  real session already has events. Same three requests.
+- `/pentest/project/{id}/session/{id}` and `/agent`: `GET /api/models/providers` was not requested on the real
+  backend although the fixture run requests it. The cause was not determined; nothing failed on either page.
+
+### Result: write audit, real backend, 2026-11-15
+
+Disposable data: project 11 (`jz-phase16-write-audit-20261115173617`), task 100409, session 261. Result files:
+`docs/screenshots/phase-16/real-write.json` (the automated run) and `real-write-verified.json` (the same steps
+completed after the task finished). Screenshots: `docs/screenshots/phase-16/real/`.
+
+The automated run created the session milliseconds after the task and got 404 (the task had no run directory
+yet), which blocked the session-dependent steps. They were then sent once the task was done. The script now
+waits for the task before creating the session.
+
+| Write | Method and path | Body | Status | Resulting state | Cleanup |
+| --- | --- | --- | --- | --- | --- |
+| Project creation | `POST /api/pentest/projects` | `{name, note}` | 200 | project 11 listed | none possible: no project delete route |
+| Assessment creation | `POST /api/tasks` | `{kind:"audit", app_name, apk_path, authorized}` | 200 | task 100409 ran to `done` | `DELETE /api/tasks/100409` → 200, then GET → 404 |
+| Session creation | `POST /api/pentest/projects/11/sessions` | `{task_id, device, authorized}` | 200 (404 while the task had no run directory) | session 261 `ready`, workbench renders | `DELETE /api/pentest/sessions/261?force=true` → 200, session `closed` |
+| Clue submission | `POST /api/pentest/sessions/261/clue` | `{text}` | 200 | `pending: 1` | closed with the session |
+| Feedback submission | `POST /api/feedback` | `{card_id, verdict, sid}` | 200 | recorded | none possible: no feedback delete route |
+| Task stop | `POST /api/pentest/sessions/261/autopilot/stop` | none | 200 | autopilot `idle` | n/a |
+| Task start | `POST /api/pentest/sessions/261/autopilot/start` | none | **400** | rejected: the sample is not installed on the device; autopilot stayed `idle`, the device was not driven | n/a |
+| Rule-card state change | `POST /api/pentest/sessions/261/vulns/state` | `{id, state}` | **not sent** | the disposable session has 0 findings, and the audit does not change findings of real sessions | n/a |
+
+Left on the backend, because the API has no route to remove them: project 11, session 261 (closed), and one
+feedback row (`card_id` starting `phase16-audit-manual-`). No database was edited by hand. No existing project,
+session, task or report was written to.
+
+**Still pending on a real backend:** a successful task start (needs an installable sample on a test device),
+the rule-card state change (needs a disposable session with at least one finding), and the Phase 15 items that
+were never in this audit: mission start and status, rule-card import and export, and the source slice.
 
 ## Shell (every signed-in route)
 

@@ -1,0 +1,123 @@
+{
+ "/dashboard": {
+  "total": 39,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8",
+   "GET /api/tasks?status=running&limit=50 n=3 gaps(s)=30",
+   "GET /api/pentest/events/recent?limit=30 n=8 gaps(s)=8"
+  ]
+ },
+ "/new-audit": {
+  "total": 15,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8"
+  ]
+ },
+ "/pentest": {
+  "total": 21,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8"
+  ]
+ },
+ "/system": {
+  "total": 18,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8"
+  ]
+ },
+ "/agent": {
+  "total": 29,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8",
+   "GET /api/agent/sessions/a1/events?since_seq=0 n=7 gaps(s)=1,2,3,6,10,30"
+  ]
+ },
+ "/tasks": {
+  "total": 20,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8"
+  ]
+ },
+ "/discovery": {
+  "total": 16,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8"
+  ]
+ },
+ "/pentest/project/1/session/40": {
+  "total": 73,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8",
+   "GET /api/pentest/sessions/40 n=9 gaps(s)=8",
+   "GET /api/pentest/sessions/40/autopilot/status n=9 gaps(s)=8",
+   "GET /api/pentest/sessions/40/timeline n=9 gaps(s)=8",
+   "GET /api/pentest/sessions/40/events?source=progress&limit=300 n=9 gaps(s)=8",
+   "GET /api/pentest/sessions/40/vulns/grouped n=9 gaps(s)=8",
+   "GET /api/pentest/sessions/40/approvals n=9 gaps(s)=8"
+  ]
+ },
+ "/company/projects/1": {
+  "total": 20,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8"
+  ]
+ },
+ "/skills": {
+  "total": 18,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8"
+  ]
+ },
+ "/reports": {
+  "total": 23,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8"
+  ]
+ },
+ "/company": {
+  "total": 16,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8"
+  ]
+ },
+ "/ai-assistant": {
+  "total": 19,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=29,30",
+   "GET /api/pentest/devices n=9 gaps(s)=7,8"
+  ]
+ },
+ "/pentest/project/1": {
+  "total": 17,
+  "initialDuplicates": [],
+  "repeating": [
+   "GET /api/tasks-summary n=3 gaps(s)=30",
+   "GET /api/pentest/devices n=9 gaps(s)=8"
+  ]
+ }
+}
