@@ -13,10 +13,10 @@ for (const ui of ['v3', 'v2', 'v4']) {
   const p = await ctx.newPage(); const errors = [];
   p.on('pageerror', (e) => errors.push(e.message));
   await p.route('**/api/**', async (r) => { const u = new URL(r.request().url()); if (/\/stream$/.test(u.pathname)) return; const body = fixture(r.request().method(), u); return r.fulfill({ status: 200, contentType: typeof body === 'string' ? 'text/plain' : 'application/json', body: typeof body === 'string' ? body : JSON.stringify(body) }); });
-  await p.goto(`${base}#/pentest/project/1/session/40?ui=${ui}&view=findings`); await p.waitForTimeout(2500);
+  await p.goto(`${base}#/pentest/project/1/session/40?view=stream&ui=${ui}&tab=trajectory`); await p.waitForTimeout(2500);
   const hash = new URL(p.url()).hash;
   out[ui] = { hash, workbench: (await p.locator('[data-wb-root]').count()) > 0, legacyShell: (await p.locator('[data-legacy-workbench]').count()) > 0,
-    legacyEntry: (await p.locator('[data-wb-legacy]').count()) > 0, uiParamDropped: !/[?&]ui=/.test(hash), viewKept: /[?&]view=findings/.test(hash),
+    legacyEntry: (await p.locator('[data-wb-legacy]').count()) > 0, uiParamDropped: !/[?&]ui=/.test(hash), viewKept: /[?&]view=stream/.test(hash) && /[?&]tab=trajectory/.test(hash),
     v3FlagCleared: await p.evaluate(() => localStorage.getItem('apksec-ui-v3') === null), pageErrors: errors };
   await ctx.close();
 }
