@@ -1,0 +1,35 @@
+{
+ "pass": true,
+ "out": {
+  "v3": {
+   "hash": "#/pentest/project/1/session/40?view=stream&tab=trajectory",
+   "workbench": true,
+   "legacyShell": false,
+   "legacyEntry": false,
+   "uiParamDropped": true,
+   "viewKept": true,
+   "v3FlagCleared": true,
+   "pageErrors": []
+  },
+  "v2": {
+   "hash": "#/pentest/project/1/session/40?view=stream&tab=trajectory",
+   "workbench": true,
+   "legacyShell": false,
+   "legacyEntry": false,
+   "uiParamDropped": true,
+   "viewKept": true,
+   "v3FlagCleared": true,
+   "pageErrors": []
+  },
+  "v4": {
+   "hash": "#/pentest/project/1/session/40?view=stream&tab=trajectory",
+   "workbench": true,
+   "legacyShell": false,
+   "legacyEntry": false,
+   "uiParamDropped": true,
+   "viewKept": true,
+   "v3FlagCleared": true,
+   "pageErrors": []
+  }
+ }
+}

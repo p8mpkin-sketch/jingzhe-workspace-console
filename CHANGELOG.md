@@ -5,7 +5,55 @@ Phases 1–13 are presentation only; Phase 14 also changes request dedupe and st
 Phase 15 routes the feedback requests through the shared client.
 Phase 16 verifies against the real backend and fixes the legacy V3 header overflow.
 Phase 17 closes the real-backend gaps, fixes the source-slice path and retires the legacy workbenches.
+Phase 18 closes the backend cleanup and verifies the release; no UI change.
 One entry per phase.
+
+## Phase 18 — Backend cleanup and release verification
+
+No UI change: no regression was found. Backend work happened in the separate backend repository on the machine
+that hosts it, with cz's written authorization for each step.
+
+### auth_matrix fix committed (backend)
+The Phase 17 patch applied cleanly to the backend `HEAD` and was identical to the working-tree change. It is now
+commit `ce30ad8` on the backend branch `device-diagnostics` (one file, four deletions; not pushed). Regression on
+the real backend: sessions 260, 261 and 29 return 200 with `NO_BASELINE`, no 500.
+
+### Project delete (backend)
+New `DELETE /api/pentest/projects/{id}?force=true`: admin only, soft delete only, refuses with documented errors
+(`FORCE_REQUIRED`, `HARD_DELETE_UNSUPPORTED`, `PROJECT_BUSY`, `PROJECT_HAS_OPEN_SESSIONS`), changes no child row,
+writes an audit entry and an admin notice. Contract and real results: `docs/backend/project-delete-contract.md`.
+The change is in the backend working tree, not committed; its patch is saved on the backend host. The frontend
+does not call it.
+
+### Test-data cleanup (real backend)
+| Item | Status |
+| --- | --- |
+| Tasks 100413, 100414 | `GET` → 404 |
+| Sessions 261, 262, 263 | `closed`; kept, because session delete is a soft close |
+| Feedback test rows | 0 left |
+| Project 11 | soft-deleted with the new endpoint: absent from the project list, its routes return 404, one audit entry |
+| `com.pentest.demo` on emulator-5554 | not installed |
+| Physical devices | no Phase 16–18 session used them; sessions 261–263 used emulator-5554 only |
+
+Sessions 261–263 still carry `project_id = 11`; a link from them to the project page now shows the not-found state.
+
+### Release verification (fixtures, production preview build of `main`)
+- `npm run lint:tokens`: 0. `npm run build` (includes `tsc --noEmit`) passes.
+- Old links: `?ui=v3`, `?ui=v2` and `?ui=v4` open the six-tab workbench, drop `ui` and keep `view` and `tab`
+  (`scripts/check-legacy-retired.mjs`, `docs/screenshots/phase-18/legacy-redirect.fixtures.json`).
+- Source-slice and catalog-fallback checks still pass.
+- 14 routes × 1440 / 1024, light: 0 overflow, 0 page errors; request set identical to the baseline.
+- 20 workbench surfaces (six tabs and the inspector) × 1440 / 1024 / 760 / 390 × light / dark plus data-state
+  variants: 0 overflow, 0 errors, 1974 focus stops, 0 without a focus indicator, 0 covered (same as Phase 17).
+- Screenshots: `docs/screenshots/phase-18/` (fixtures).
+- No local filesystem path or credential in the tracked tree; the only `/Users/` strings are two code comments that
+  describe hiding such paths (`features/skills/skillsShared.tsx`).
+
+### Public history
+`main` is clean. Nothing was force-pushed. The Phase 17 working branch was deleted after its squash merge; its
+earlier commits, including screenshots taken before local paths were masked, may stay reachable on GitHub by commit
+SHA until GitHub removes unreferenced objects. Deleting a branch or force-pushing does not remove every copy; if
+stronger removal is needed, ask GitHub Support.
 
 ## Phase 17 — Real-backend acceptance and legacy retirement
 
