@@ -156,6 +156,20 @@ as pages; their paths redirect. Their tables stay as the recorded pre-V3 baselin
 
 `scripts/check-requests.mjs` compares a merged route with the union of the pages it replaces.
 
+### V3 Phase 3: the workbench shell
+
+`/projects/{pid}/sessions/{sid}` issues the requests it issued in Phase 2 and nothing else. What moved:
+
+| Request | Before | Now |
+| --- | --- | --- |
+| `GET /api/pentest/sessions/{sid}/security-rounds` | Review-rounds strip under the header: once when the workbench opens; every 3.5 s while a recompute starts, a run is in progress or the rounds are missing | `shell/useSecurityRounds`, mounted by the page: same read, same poll. Rendered in Inspector › 进度 |
+| `POST /api/pentest/sessions/{sid}/security-rounds/recompute` | Strip button | Inspector › 进度 › 运行五轮复核, same body (`{}`) |
+| `GET /api/pentest/sessions/{sid}/mission/status`, `GET /api/models/routing` | Inspector brief, on open | Unchanged: Inspector › 简报, on open and after a mission start |
+| `POST /api/pentest/sessions/{sid}/autopilot/stop` | Header menu, sent on click | Header menu, sent after the confirmation dialog |
+
+The elapsed-time readout in the header is computed from the progress events the page already loads; it issues no
+request. `node scripts/check-requests.mjs <log> --against <earlier log>` compares two capture logs route by route.
+
 ### `/pentest`
 
 | Method | Route | Query | Expected unique count on load | Polling interval |

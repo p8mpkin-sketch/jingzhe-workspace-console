@@ -32,6 +32,10 @@ export const VIEWS = [
   ['projects-company', '/projects?scope=company'], ['projects-single', '/projects?scope=single'],
   ['project-reports', '/projects/1?tab=reports'], ['project-apps', '/projects/1?tab=apps'],
   ['project-candidates', '/projects/1?tab=candidates'], ['project-runs', '/projects/1?tab=runs'],
+  // Workbench (V3 Phase 3): session 41 is the fixtures' running session; one surface per primary tab.
+  ['session-live', '/projects/1/sessions/41'], ['session-overview', '/projects/1/sessions/41?view=overview'],
+  ['session-findings', '/projects/1/sessions/41?view=findings'], ['session-evidence', '/projects/1/sessions/41?view=graph'],
+  ['session-artifacts', '/projects/1/sessions/41?view=artifacts'], ['session-report', '/projects/1/sessions/41?view=report'],
 ];
 const only = arg('routes', '');
 const pool = [...ROUTES, ...VIEWS];

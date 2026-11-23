@@ -55,6 +55,45 @@ const matrixOf = (sid) => {
   return { status: 'ok', base_url: 'https://api.example.com', rows, counts: { red: count('red'), yellow: count('yellow'), green: count('green'), gray: count('gray') }, stale: sid === 41, watermark: 120, watermark_now: 134 };
 };
 
+// Workbench of a running session (sid 41): phases, steps, progress events, two approvals waiting, review rounds.
+// Other sessions keep the empty answers, so the "not started" workbench stays covered.
+const LIVE_SID = 41;
+const sidOf = (u) => Number(u.pathname.split('/')[4]);
+const stamp = (secAgo) => new Date(Date.now() - secAgo * 1000).toISOString().slice(0, 19).replace('T', ' ');
+const livePhases = [
+  { phase: 'P0', name: '范围确认', done: 2, total: 2 }, { phase: 'P1', name: '静态检查', done: 4, total: 4 },
+  { phase: 'P2', name: '权限矩阵', done: 3, total: 6 }, { phase: 'P3', name: '会话状态检查', done: 0, total: 4 },
+  { phase: 'P5', name: '报告汇总', done: 0, total: 2 },
+];
+const liveSteps = [
+  ['P0', '读取应用清单', 'manifest_read', 'ok', 0], ['P0', '确认评估范围', 'scope_check', 'ok', 0],
+  ['P1', '反编译与索引', 'decompile', 'ok', 0], ['P1', '配置项检查', 'config_scan', 'ok', 1], ['P1', '网络配置检查', 'network_scan', 'ok', 1], ['P1', '存储项检查', 'storage_scan', 'ok', 0],
+  ['P2', '接口清单梳理', 'api_inventory', 'ok', 0], ['P2', '匿名访问核对', 'anon_check', 'ok', 1], ['P2', '登录态访问核对', 'authed_check', 'ok', 0],
+  ['P2', '越权访问核对', 'scope_matrix', 'running', 0], ['P2', '导出组件核对', 'component_check', 'pending', 0], ['P2', '矩阵汇总', 'matrix_summary', 'pending', 0],
+  ['P3', '会话有效期核对', 'session_ttl', 'pending', 0], ['P3', '令牌刷新核对', 'token_refresh', 'pending', 0], ['P3', '登出核对', 'logout_check', 'pending', 0], ['P3', '多端登录核对', 'multi_login', 'pending', 0],
+  ['P5', '汇总发现', 'collect', 'pending', 0], ['P5', '生成报告', 'report_build', 'pending', 0],
+].map(([phase, name, tool, state, findings]) => ({ phase, name, tool, state, findings }));
+const liveEvents = () => {
+  const out = [{ type: 'autopilot_start', ts: stamp(2467), title: '分析引擎启动' }];
+  let t = 2400;
+  for (const st of liveSteps.filter((x) => x.state !== 'pending')) {
+    out.push({ type: 'step_start', ts: stamp(t), phase: st.phase, tool: st.tool, name: st.name });
+    t -= 190;
+    if (st.state === 'ok') out.push({ type: 'step_done', ts: stamp(t), phase: st.phase, tool: st.tool, name: st.name });
+    t -= 40;
+  }
+  out.push({ type: 'react_decision', ts: stamp(95), phase: 'P2', title: '先核对订单接口的越权访问', detail: '匿名与登录态结果一致，下一步换用第二个账号重放。' });
+  out.push({ type: 'approval_required', ts: stamp(60), phase: 'P2', title: '待人工确认：在测试设备上重放请求' });
+  return out.map((e, i) => ({ id: `ev-${i}`, seq: i + 1, ...e }));
+};
+const liveApprovals = () => [
+  { id: 'ap-1', tool: 'replay_request', name: '在测试设备上重放请求', reason: '用第二个测试账号重放 3 个订单接口，只读，不修改数据。', state: 'pending', ts: stamp(60) },
+  { id: 'ap-2', tool: 'export_component', name: '启动导出组件', reason: '需要在测试设备上启动 1 个导出页面以核对访问控制。', state: 'pending', ts: stamp(20) },
+];
+const liveRounds = { status: 'ok', running: false, can_recompute: true, rounds: [
+  { round: 1, status: 'ok', added: 3 }, { round: 2, status: 'ok', added: 1 }, { round: 3, status: 'ok', reviewed: 4 }, { round: 4, status: 'degraded', targets: 2 }, { round: 5, status: 'ok' },
+] };
+
 /** [method, RegExp on pathname, body | (url) => body] — first match wins. */
 export const routes = [
   ['GET', /^\/api\/me$/, { username: 'demo', role: 'admin' }],
@@ -75,7 +114,10 @@ export const routes = [
   ['GET', /^\/api\/pentest\/sessions\/\d+\/auth_matrix$/, (u) => { const sid = Number(u.pathname.split('/')[4]); return sid === 43 ? { status: 'error', rows: [] } : matrixOf(sid); }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/(report|apk-audit-report)$/, (u) => `# ${u.pathname.endsWith('apk-audit-report') ? '应用评估报告' : '动态验证报告'}\n\n- 应用: Example App\n- 包名: com.example.app\n- 版本: 1.0.0\n- 评估时间: 2026-11-14 16:00\n- 确认发现: 4\n- 待复核: 2\n- 风险等级: 高\n\n## 摘要\n\n本次评估共确认 4 条发现,其中 1 条需要优先处理。\n`],
   ['GET', /^\/api\/tasks\/\d+\/report-file$/, (u) => `# ${u.searchParams.get('name')}\n\n## 概述\n\n评估流程生成的报告文件示例内容。\n\n- 明文传输: 2 处\n- 调试标志开启: 1 处\n`],
-  ['GET', /^\/api\/pentest\/sessions\/\d+\/events/, { events: [], cursor: 0, total: 0 }],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/autopilot\/status$/, (u) => (sidOf(u) === LIVE_SID ? { state: 'running', status: 'running', current: 'P2', current_name: '权限矩阵', phases: livePhases } : {})],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/timeline$/, (u) => (sidOf(u) === LIVE_SID ? { steps: liveSteps } : {})],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/security-rounds$/, (u) => (sidOf(u) === LIVE_SID ? liveRounds : {})],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/events/, (u) => (sidOf(u) === LIVE_SID && u.searchParams.get('source') === 'progress' ? { events: liveEvents(), cursor: 0, total: 0 } : { events: [], cursor: 0, total: 0 })],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/graph$/, { status: 'ok', nodes: [], edges: [] }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/api_tree$/, { status: 'ok', groups: [] }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/packer$/, { status: 'ok', family: 'example-shell', family_confidence: 82, family_evidence: ['lib/arm64-v8a/libshell.so'], kb_status: { verified: 1 }, vectors: { frida: [{ evidence: 'strstr(maps, "frida")', match: 'frida', file: 'lib/arm64-v8a/libshell.so' }], root: [{ evidence: 'access("/system/xbin/su")', match: 'su', file: 'classes2.dex' }], emulator: [], ptrace: [{ evidence: 'ptrace(PTRACE_TRACEME)', match: 'ptrace', file: 'lib/arm64-v8a/libshell.so' }], proxy: [], debug: [] }, libs: [{ so: 'libshell.so', size: 1843200, sigs: [{ family: 'example-shell', sig: 'JNI_OnLoad stub' }] }] }],
@@ -85,7 +127,7 @@ export const routes = [
   ['GET', /^\/api\/pentest\/sessions\/\d+\/burp\/plugin$/, { status: 'ok', generated: false, file_name: null, mtime: null, samples: { ok: false, runs: 1, unique_pairs: 3, usable_cipher: 2, usable_mac: 0, custom: 0, reason: '样本不足：至少需要 8 组明密文样本' } }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/vulns\/clusters$/, { real: 3, clusters: 2, noise: 0, reduction: 0.33, items: [{ cluster_id: 'c1', count: 2, family: 'cleartext-transport', host: 'api.example.com', path_template: '/v1/user/{id}', title: '示例发现: 明文传输', confirmed: 2 }, { cluster_id: 'c2', count: 1, family: 'debug-flag', host: '', path_template: '', title: '示例发现: 调试标志开启', confirmed: 0 }] }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/mission\/status$/, { state: 'idle' }],
-  ['GET', /^\/api\/pentest\/sessions\/\d+\/approvals$/, { status: 'ok', approvals: [] }],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/approvals$/, (u) => ({ status: 'ok', approvals: sidOf(u) === LIVE_SID ? liveApprovals() : [] })],
   ['GET', /^\/api\/pentest\/devices$/, [{ serial: 'emulator-5554', model: 'Pixel 6', android: '13', abi: 'arm64-v8a', root: true, frida: true }, { serial: 'R58M123ABC', model: 'SM-A515F', android: '12', root: false, frida: false }]],
   ['GET', /^\/api\/pentest\/vulns\/severity-summary$/, { total_active: 16, by_session: { 40: sev, 41: sev, 43: { high: { active: 1, total: 1 } } }, ...sev }],
   ['GET', /^\/api\/pentest\/vulns\/domain-summary$/, { domains: [], items: [] }],

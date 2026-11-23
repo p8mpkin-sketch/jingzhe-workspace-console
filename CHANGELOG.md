@@ -7,6 +7,112 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 3 — Workbench shell and inspector
+
+The assessment workbench (`/projects/:pid/sessions/:sid`) has one navigation layer now: the global rail. Under the
+top bar the page is a session header, one row of six primary tabs, one surface bar, then the work surface with
+the inspector beside it. New code is in `app/src/features/pentest/workbench/shell/`. Tokens, navigation, the
+project domain, task pages and the report workspace are untouched. The work surfaces (trace, composer, findings,
+evidence, artifacts, report) are the existing implementations mounted behind the new shell; none was rewritten.
+
+**Removed layers.** The 240 px workbench rail, the review-rounds strip under the header and the numbered stage
+rail inside the header are gone. Chrome above the surface is 56 + 36 + 40 px at desktop widths (it was a 64 px
+header, a rounds strip and a surface bar beside a 240 px rail), and the surface gains the rail's width.
+
+**`SessionHeader`.** Title, package, version, device; four readouts divided by hairlines (状态 as a glyph and a
+word, 阶段 with the current stage and its steps, 已用时, 待处理); one primary run action (启动 / 暂停 / 继续 /
+重新运行); the overflow menu with the existing secondary actions (device exploration, replay inventory, stop);
+the inspector toggle. These four facts are stated here and nowhere else: not in the top bar, not in the tabs, not
+in the inspector. 已用时 is read from the progress events the page already loads (from the latest start event; it
+ticks while the run is live) and shows “—” when the stream has no start event and no step durations; nothing is
+estimated. Stopping a run asks for confirmation, with cancel as the default; a cancelled stop sends nothing.
+Before the first response the header says 正在读取… and the run action waits, so it never offers 启动 on a run it
+has not read yet; when the status or the approvals cannot be read it says 未知 or “—” instead of 未开始 or 0.
+
+**`WorkbenchTabs`.** Six tabs read from `workbench/ia.ts`, in one row that scrolls sideways at phone width. The
+findings tab carries its count; 运行 carries a marker while an approval waits. `?view=` identifiers and `?tab=`
+are unchanged, and each tab reopens on the surface it was left on. Two labels changed in `ia.ts` so that no label
+appears twice in the workbench: the findings tab is 风险发现, and the first secondary tab of 报告 is 报告草稿.
+
+**`SurfaceBar`.** Secondary tabs, the segment switch, and one live-status position on the right: 实时 / 已同步 /
+部分未更新, the time data last arrived, and refresh. The trace's follow switch and its “new entries” jump render
+into that position, so the trace no longer has a status bar of its own. The summary chips (priority counts,
+findings and instances, pending counts, steps) are removed; each of those numbers has one home.
+
+**`Inspector` and `useInspectorState`.** Four tabs: 复核队列, 简报, 进度, 日志. A docked column from 1280 px that
+pushes the surface (it docked from 1400 px); a focus-trapped drawer below 1280; a bottom sheet at 760 px and below.
+The docked column is resizable between 280 and 480 px by dragging the separator or with ← / → on it (Home / End
+for the limits, double click or Enter for 320). Open state, width and last tab are remembered per signed-in user
+(`jz.inspector.<username>`); an overlay never opens by itself on load. Ctrl/⌘ + . toggles it from anywhere on the
+page. Escape closes the drawer or sheet and returns focus to the control that opened it; in the docked column
+Escape returns focus to the toggle. It uses the surface language of the main panel: one surface, sections divided
+by hairlines, no nested cards, states as a glyph and a word. It shows no findings, reports or metrics, and the
+brief no longer repeats the application, package, device, stage and step count that the header states.
+Each inspector tab has its states: reading, empty, and, when one of the sources it reads failed on the last poll,
+a notice that names the source with a retry (the queue then says “unknown”, not “nothing waiting”).
+
+**Review rounds.** `ReviewRoundsBar` is removed. The five rounds are a section of Inspector › 进度, each with its
+state as a glyph and a word (the strip dimmed rounds that had not run) and its counts; 运行五轮复核 is there too.
+`useSecurityRounds` issues the same read when the workbench opens and keeps the same poll, so the request set of
+the route is unchanged. Every stage in 进度 opens to its steps, which replaces the stage rail's popover.
+
+**Adapters.** `ConversationView` takes `liveSlot` and renders its follow switch there; its own live bar (status
+chip, last update, 进度 and 发现 buttons) is gone. The scoped control reset in `workbench.css` skips the shell
+(`[data-wb-shell]`) so the shared controls keep their own styles; 132 lines of rules for the retired rail, header,
+stage rail, strip and context panel are deleted.
+
+**Two layout fixes outside the shell**, both class changes found by the focus audit. The file list of the artifacts
+explorer (`tasks/ArtifactsModal.tsx`, shared by the task page and the 产物 tab) keeps 10–20 rem when the panes are
+stacked below 1024 px; a fixed minimum on the explorer let wrapped filter chips squeeze the list to 20 px at phone
+width, where two of its controls could take focus out of sight. And 推理记录
+(`pentest/AiThinkPanel.tsx`): below 1280 px its four panes stack, each 14 rem with its own scroll. Two fixed rows
+for four stacked panes collapsed the first two (推理时间线, 状态与分诊记录) to a hairline whenever the session had
+events; the fixtures had no running session before this phase, so no earlier audit saw it.
+
+**Retired** (after `docs/capability-matrix.md` gained a row for each of their capabilities and hooks):
+`workbench/ContextPanel.tsx`, `ProgressPanel.tsx`, `StageRail.tsx`, `ReviewRoundsBar.tsx`.
+
+**Fixtures.** Session 41 is now a running session (five stages, eighteen steps, progress events, two approvals
+waiting, review rounds), so the shell can be checked with real-shaped data; session 40 stays “not started”.
+
+**Hooks kept:** `data-wb-root`, `data-wb-tab`, `data-wb-sub`, `data-wb-seg`, `data-wb-surfacebar`, `data-wb-view`,
+`data-wb-more`, `data-wb-stop`, `data-v3-mission-start`, `data-wb-inspector`, `data-wb-inspector-toggle`,
+`data-wb-inspector-tab`, `data-wb-inspector-target`, `data-wb-mission`, `data-v3-mission-state`,
+`data-security-rounds`, `data-round`, `data-round-status`. The selected primary tab is `aria-selected="true"`
+(it was `aria-current="page"` on a rail button).
+
+**Not in this phase.** The content of the surfaces: the overview still shows its own progress card, and the trace,
+findings, evidence, artifacts and report surfaces look as they did. They are Phase 4 and later.
+
+**Checks (fixtures).**
+
+| Check | Result |
+| --- | --- |
+| `tsc --noEmit`, production build | pass |
+| Token lint | 0 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| Workbench shell (`check-workbench-shell.mjs`, new): one navigation layer and the header → tabs → bar → surface order at 1440 / 1024 / 760 / 390; header identity, four readouts, ticking time, one primary action, overflow hooks, stop confirmation, nothing repeated in the top bar; unique labels; one live-status position and no chips; docked inspector (push, resize by keys and drag, limits, persistence across reload, reset, Escape, both shortcuts, arrow keys); inspector content (rounds, stages, steps, jump, no repeats, no findings or metrics); reading and failed-source states; drawer at 1024 and sheet at 760 / 390 (placement, focus trap, Escape, focus return); deep links and back | 87 of 87 |
+| Work surfaces (`check-workbench.mjs`), session not started: 20 surfaces × 1440 / 1024 / 760 / 390 × light and dark, keyboard focus on every tab stop, five data states | 0 overflow, 0 errors, 1221 focus stops, 0 without an indicator, 0 covered |
+| Work surfaces, running session (`--session 41`), same matrix | 0 overflow, 0 errors, 1411 focus stops, 0 without an indicator; 6 covered, all on 推理记录 below 1280 px, fixed (see Adapters) and that surface re-run for both sessions: 0 covered |
+| Routes: 13 pages and 12 sub-views (6 of them workbench) × widths 390 / 760 / 1024 / 1280 / 1440 / 1680, light and dark | 0 overflow, 0 page errors |
+| Data states empty / error / forbidden / slow / stale on the 7 workbench views at 1440 and 390 | 0 overflow, 0 page errors, no blank surface |
+| Requests per route vs the Phase 2 log (`check-requests.mjs --against`, new option) | identical on all 19 routes of the Phase 2 log, the workbench route included (14 requests); the running session issues the same 14 |
+| Requests per route vs the pre-V3 baseline | identical on 12 routes |
+| Redirects (`check-redirects.mjs`) | 28 of 28 |
+| Project domain (`check-projects.mjs`) | 43 of 43 |
+| App shell (`capture-shell.mjs`) | pass, unchanged |
+| Artifacts dialog on the task page (the shared file list) at 390 / 760 / 1440 | opens, no overflow, 0 focus stops covered |
+
+Phase 18 counted 1974 focus stops on the same matrix. The difference is the shell: it is 7 to 9 tab stops per
+surface now, because the primary and the secondary tabs are one stop each (arrow keys move inside them), where the
+rail and the stage rail were a stop per item. The surfaces themselves are still reached by Tab.
+
+Main chunk: 71.81 kB (23.86 kB gzip), 71.43 kB after Phase 2; the workbench chunk is 245.88 kB (78.54 kB gzip).
+Screenshots: `docs/screenshots/v3/phase-3/` (`shell-*` from the shell check: the four widths, the docked column,
+drawer, sheet, each inspector tab, the reading and failed-source states, dark; `session*` for the not-started
+session, the running session and one surface per primary tab at 1440 / 1024 / 760 / 390, light and dark; `states/`
+for the data states).
+
 ### V3 Phase 2 — One project domain
 
 The company project index, the assessment project index, the company project detail and the project sessions page

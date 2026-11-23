@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Assessment workbench audit against a running build (`npx vite preview --port 4173`), answered from fixtures.
-// Checks every work surface of the six-tab shell at 1440 / 1024 / 760 in both themes:
+// Checks every work surface behind the workbench shell (V3 Phase 3: session header, one tab row, surface bar,
+// inspector; `check-workbench-shell.mjs` covers the shell itself) at four widths in both themes:
 //   - every `?view=` deep link resolves to its own surface, and every surface is reachable by clicking
 //     primary tab → secondary tab → segment (no orphan panel, no duplicate owner);
 //   (widths: 1440 / 1024 / 760 / 390)
@@ -8,6 +9,7 @@
 //   - keyboard focus: every tab stop shows a focus indicator and is not covered by another element;
 //   - variants: empty / error / forbidden / slow / stale never reach the error boundary.
 // Usage: node scripts/check-workbench.mjs --out ../docs/screenshots/phase-14/workbench [--shots 1] [--base URL]
+//        [--session 40|41] [--only surface-name,...]
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 import fs from 'node:fs';
@@ -18,7 +20,8 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
 const base = arg('base', 'http://localhost:4173/v2/');
 const out = path.resolve(arg('out', '.ui-shots/workbench'));
 const shots = arg('shots', '1') === '1';
-const SESSION = '/pentest/project/1/session/40';
+// --session 41 runs the same audit on the fixtures' running session (stages, approvals, events).
+const SESSION = `/projects/1/sessions/${arg('session', '40')}`;
 const WIDTHS = [1440, 1024, 760, 390];
 const THEMES = ['light', 'dark'];
 const VARIANTS = ['empty', 'error', 'forbidden', 'slow', 'stale'];
@@ -44,7 +47,9 @@ const SURFACES = [
   ['artifacts-packaging', 'view=packer', 'artifacts'],
   ['report', 'view=report', 'report'],
   ['report-diff', 'view=diff', 'report'],
-].map(([name, q, tab, view]) => ({ name, q, tab, view: view || q.replace('view=', '') }));
+].map(([name, q, tab, view]) => ({ name, q, tab, view: view || q.replace('view=', '') }))
+  // --only a,b re-runs the named surfaces (after a fix); the full list is the default.
+  .filter((s) => !arg('only', '') || arg('only', '').split(',').includes(s.name));
 
 fs.mkdirSync(out, { recursive: true });
 const browser = await chromium.launch();
@@ -77,7 +82,7 @@ const measure = (page) => page.evaluate(() => {
   const bar = document.querySelector('[data-wb-surfacebar]');
   return {
     doc: d.scrollWidth - d.clientWidth, main: over('.wb-main'), bar: bar ? bar.scrollWidth - bar.clientWidth : 0, inspector: over('[data-wb-inspector]'),
-    tab: document.querySelector('[data-wb-tab][aria-current="page"]')?.getAttribute('data-wb-tab') || null,
+    tab: document.querySelector('[data-wb-tab][aria-selected="true"]')?.getAttribute('data-wb-tab') || null,
     view: document.querySelector('[data-wb-view]')?.getAttribute('data-wb-view') || null,
     boundary: !!document.querySelector('[data-error-boundary]') || /Something went wrong/.test(document.body.innerText.slice(0, 400)),
     root: !!document.querySelector('[data-wb-root]'),
@@ -102,7 +107,9 @@ for (const theme of THEMES) for (const w of WIDTHS) {
       await page.click('[data-wb-inspector-toggle]'); await page.waitForTimeout(250);
       flag(await measure(page), `${where} + inspector`);
       if (shots && theme === 'light') await page.screenshot({ path: path.join(out, `${s.name}.inspector-${w}-${theme}.png`) });
-      await page.keyboard.press('Escape');
+      // Drawer and sheet close on Escape; the docked column stays open until it is toggled again.
+      await page.keyboard.press('Escape'); await page.waitForTimeout(120);
+      if (await page.locator('[data-wb-inspector]').count()) { await page.keyboard.press('Control+.'); await page.waitForTimeout(120); }
     }
   }
   await ctx.close();

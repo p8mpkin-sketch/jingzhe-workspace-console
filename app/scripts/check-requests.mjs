@@ -1,7 +1,23 @@
 #!/usr/bin/env node
 // Dev-only: compare a capture request log with the baseline recorded on the untouched branch.
 // Usage: node scripts/capture.mjs --requests /tmp/req.json … && node scripts/check-requests.mjs /tmp/req.json
+//        node scripts/check-requests.mjs /tmp/req.json --against ../docs/screenshots/v3/phase-2/requests.json
+//        (second form: compare with the log of an earlier phase, route by route, for the routes both logs have)
 import fs from 'node:fs';
+const against = process.argv.indexOf('--against') > 0 ? process.argv[process.argv.indexOf('--against') + 1] : '';
+if (against) {
+  const prev = JSON.parse(fs.readFileSync(against, 'utf8')); const now = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+  const shared = Object.keys(now).filter((r) => prev[r]); let diff = 0;
+  for (const route of shared) {
+    const a = new Set(prev[route]), b = new Set(now[route]);
+    const gone = [...a].filter((x) => !b.has(x)), added = [...b].filter((x) => !a.has(x));
+    if (gone.length || added.length) { diff++; console.log(route); gone.forEach((x) => console.log('  - ' + x)); added.forEach((x) => console.log('  + ' + x)); }
+  }
+  const fresh = Object.keys(now).filter((r) => !prev[r]);
+  if (fresh.length) console.log(`not in the earlier log: ${fresh.join(', ')}`);
+  console.log(diff ? `${diff} route(s) differ from ${against}` : `request logs identical to ${against} (${shared.length} routes)`);
+  process.exit(diff ? 1 : 0);
+}
 const base = JSON.parse(fs.readFileSync(new URL('./fixtures/requests-baseline.json', import.meta.url), 'utf8'));
 const raw = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 // V3 renamed and merged routes; the baseline was recorded under the pre-V3 paths. A moved page is compared with the

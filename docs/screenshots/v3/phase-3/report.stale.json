@@ -1,0 +1,22 @@
+{
+  "overflow": [],
+  "errors": [],
+  "stale": {
+    "/projects/1/sessions/40 @1440": "stale notice",
+    "/projects/1/sessions/40 @390": "stale notice",
+    "/tasks @1440": "stale notice",
+    "/tasks @390": "stale notice",
+    "/projects/1/sessions/41 @1440": "stale notice",
+    "/projects/1/sessions/41 @390": "stale notice",
+    "/projects/1/sessions/41?view=overview @1440": "stale notice",
+    "/projects/1/sessions/41?view=overview @390": "stale notice",
+    "/projects/1/sessions/41?view=findings @1440": "stale notice",
+    "/projects/1/sessions/41?view=findings @390": "stale notice",
+    "/projects/1/sessions/41?view=graph @1440": "stale notice",
+    "/projects/1/sessions/41?view=graph @390": "stale notice",
+    "/projects/1/sessions/41?view=artifacts @1440": "stale notice",
+    "/projects/1/sessions/41?view=artifacts @390": "stale notice",
+    "/projects/1/sessions/41?view=report @1440": "stale notice",
+    "/projects/1/sessions/41?view=report @390": "stale notice"
+  }
+}

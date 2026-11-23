@@ -45,7 +45,7 @@ the end of this file passed on the real backend; old links open the workbench.
 | V3 header | Session switcher | Project › 执行 (`/projects/:pid?tab=runs`) | Owned (moved in V3 Phase 2) |
 | V3 / V2 | Operator clue (`POST /clue`) | Runtime › Agent trace composer; consumed clues appear in the trace | Owned |
 | AutopilotLaunchBar | Start / pause / resume | Header primary action | Owned |
-| AutopilotLaunchBar | Stop | Header › 更多操作 › 停止任务 (confirmation) | Owned |
+| AutopilotLaunchBar | Stop | Header › 更多操作 › 停止任务 (asks for confirmation since V3 Phase 3) | Owned |
 | SessionOverview | Session summary, usage, coverage summary | Overview | Owned |
 | AiThinkPanel | Reasoning trace | Runtime › Agent trace › 推理记录 (`ai`) | Owned |
 | V3 / V2 | Fact graph, credentials, coverage | Evidence | Owned |
@@ -107,6 +107,47 @@ Changes of behaviour, all deliberate:
 - The lead project is a row of the list (with its hooks), not a separate band, so every project appears once.
 - A single-app project is created with a name first; the session wizard no longer creates projects.
 
+## Workbench shell (V3 Phase 3)
+
+The workbench has one navigation layer: the global rail. Below the top bar the page is the session header, one row
+of six primary tabs, one surface bar, then the work surface with the inspector beside it
+(`app/src/features/pentest/workbench/shell/`). The 240 px workbench rail, the review-rounds strip and the stage
+rail in the header are gone; this table gives every capability they carried an owner. Work surfaces are mounted
+unchanged; `ConversationView` is the one adapter (its live controls render into the surface bar).
+
+| Old element | Capability | Owner now | Hooks |
+| --- | --- | --- | --- |
+| Workbench rail | Six primary tabs, findings count | `WorkbenchTabs`, one row, read from `ia.ts` | `data-wb-tab`, `data-wb-tabs` |
+| Workbench rail | Number of approvals waiting on 运行 | Marker on the 运行 tab; the number is the header readout 待处理 | `data-wb-readout="pending"` |
+| Workbench rail | 检查器 shortcuts (复核队列, 任务简报) | Inspector tabs behind the one toggle and Ctrl/⌘ + . | `data-wb-inspector-toggle`, `data-wb-inspector-tab` |
+| Workbench rail | 刷新数据 | Surface bar, live-status position | `aria-label="刷新数据"`, `data-wb-live` |
+| Workbench rail | 收起导航 | Removed with the rail; the global rail collapses as before | — |
+| Header | Back to the project | Session header; goes to `/projects/:pid?tab=runs` directly | — |
+| Header | Title, package, version, device | Session header | `data-wb-title`, `data-wb-identity` |
+| Header | Status pill | Header readout 状态 (glyph and word) | `data-wb-readout="status"` |
+| Header | Stage rail: seven numbered stages, popover with progress, duration, produced findings, state and steps | Header readout 阶段 (current stage, steps done / total); every stage with its steps in Inspector › 进度 | `data-wb-readout="stage"`, `data-wb-stage` |
+| Header | “N 项待复核” button | Header readout 待处理; the list is Inspector › 复核队列 | `data-wb-readout="pending"`, `data-wb-queue-item` |
+| Header | Start / pause / resume / run again | Session header, the one primary action | `data-wb-primary` |
+| Header | 更多操作: device exploration, replay inventory, stop | Same menu; stop asks for confirmation | `data-wb-more`, `data-v3-mission-start`, `data-wb-stop` |
+| Header | Inspector toggle | Session header | `data-wb-inspector-toggle` |
+| (new) | Elapsed time of the latest run | Header readout 已用时, read from the event stream; “—” when the stream has no start event and no step durations | `data-wb-readout="elapsed"` |
+| ReviewRoundsBar | State of the five rounds; recompute | Inspector › 进度 › 五轮复核 (same endpoint, same read when the workbench opens, same poll) | `data-security-rounds`, `data-round`, `data-round-status`, `data-round-recompute` |
+| Surface bar | Secondary tabs, segment switch | `SurfaceBar` | `data-wb-surfacebar`, `data-wb-sub`, `data-wb-seg` |
+| Surface bar | Summary chips (P0–P3 counts, findings · instances, 待审批, 待复核, steps) | Removed: the findings tab count, the findings surface, and the header readouts 待处理 and 阶段 state each of them once | — |
+| Trace live bar | Follow switch, “N 条新进展” jump | Surface bar live-status position (rendered there by `ConversationView`) | `data-wb-follow`, `data-wb-new-entries` |
+| Trace live bar | Status chip, 最后更新 | Header readout 状态; surface bar “实时 / 已同步 / 部分未更新” with the time data last arrived | `data-wb-live` |
+| Trace live bar | 进度 button, 发现 N button | Inspector › 进度; the 风险发现 tab | — |
+| ContextPanel | 复核队列: approvals waiting, current inspection target | Inspector › 复核队列 | `data-wb-inspector-target`, `data-wb-queue` |
+| ContextPanel | 简报: 授权, model routing, exploration run | Inspector › 简报, with the session and task numbers | `data-wb-mission`, `data-v3-mission-state` |
+| ContextPanel | 简报: application, package, device, current stage, steps | Session header only (not repeated in the inspector) | — |
+| ContextPanel | 进度: stage list, jump to the stage in the trace, steps of the current stage | Inspector › 进度 › 阶段 (steps of every stage) | `data-wb-stage`, `data-wb-stage-jump` |
+| ContextPanel | 日志: last 20 events | Inspector › 日志 | `data-wb-log` |
+| ContextPanel | Layout: side column from 1400 px, overlay below | Docked column from 1280 px (280–480 px, resizable, remembered per user in `jz.inspector.<username>`), drawer below 1280, bottom sheet at 760 and below | `data-wb-inspector`, `data-wb-inspector-mode` |
+| ContextPanel | Escape closes the inspector | Drawer and sheet: Escape closes and returns focus to the control that opened them. Docked: Escape returns focus to the toggle and the column stays | — |
+
+Labels in `ia.ts`: the findings tab is 风险发现 (the V3 name of a session finding); the first secondary tab of 报告 is
+报告草稿, so no tab label appears twice in the workbench. `?view=` identifiers are unchanged.
+
 ## Shared owners (kept on purpose)
 
 | Job | Renderings | Why both stay |
@@ -116,14 +157,17 @@ Changes of behaviour, all deliberate:
 
 ## Inspector ownership
 
-The inspector holds low-frequency context only: 复核队列 (pending approvals and the current inspection target),
-简报 (brief, model routing, mission status), 进度 (stages), 日志 (last 20 events). It no longer repeats recent
-findings, counters or evidence; those live on the main surface only.
+The inspector holds low-frequency context only: 复核队列 (approvals waiting and the current inspection target),
+简报 (session and task numbers, authorisation, model routing, exploration run), 进度 (stages with their steps, the
+five review rounds), 日志 (last 20 events). It repeats neither findings, reports or metrics (those live on the work
+surfaces) nor the run status, current stage, elapsed time or pending count (those live in the session header).
 
 ## Verification
 
 Verified with fixtures (`app/scripts/fixtures/api.mjs`, production preview build): every `?view=` id in the
 table resolves and renders, including error, forbidden, slow and empty variants (`scripts/check-workbench.mjs`).
+The shell itself (one navigation layer, header readouts, tabs, surface bar, the three inspector layouts, keyboard
+and focus) is covered by `scripts/check-workbench-shell.mjs`.
 
 Real backend (Phase 17, `docs/screenshots/phase-17/`): VulnsPanel state change, import and export, AttackCanvas
 source slice, mission start and status all verified. The clusters view was part of the 65 s read audit

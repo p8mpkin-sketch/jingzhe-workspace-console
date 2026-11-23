@@ -333,7 +333,7 @@ export const ArtifactsModal: React.FC<{
       )}>
       <div className={cx('flex min-h-80 flex-col gap-3', inline ? 'h-full' : 'h-[68vh]')}>
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto lg:grid-cols-2 lg:overflow-visible">
-          <div className="flex min-h-64 flex-col rounded-card border border-jz-border lg:min-h-0" data-art-explorer>
+          <div className="flex flex-col rounded-card border border-jz-border lg:min-h-0" data-art-explorer>
             <div className="flex-none space-y-2 border-b border-jz-border p-3">
               <SearchField value={q} onValueChange={setQ} label="搜索文件" placeholder="搜索文件名或路径" data-art-search />
               <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="按类型筛选" data-art-cat-filter>
@@ -366,7 +366,9 @@ export const ArtifactsModal: React.FC<{
                 {flatBusy && <span className="ml-auto text-jz-muted" role="status">正在清点文件…</span>}
               </div>
             </div>
-            <div className="min-h-0 flex-1 divide-y divide-jz-border overflow-auto" data-art-tree>
+            {/* Stacked (below lg) the explorer is as tall as its filters plus a list of 10–20rem, and the panes scroll as one
+                column; a fixed minimum on the explorer let wrapped filter chips squeeze the list to nothing at phone width. */}
+            <div className="max-h-80 min-h-40 flex-1 divide-y divide-jz-border overflow-auto lg:max-h-none lg:min-h-0" data-art-tree>
               {err && <ErrorState compact title="产物列表加载失败" message={err} onRetry={() => { load(taskId, prefix); flatten(taskId); }} />}
               {data?.empty_reason && !prefix && <p className="px-3 py-2 text-meta text-jz-muted">{data.empty_reason}</p>}
               {!data && !err && <div className="p-3"><SkeletonLoader variant="table" rows={5} /></div>}
