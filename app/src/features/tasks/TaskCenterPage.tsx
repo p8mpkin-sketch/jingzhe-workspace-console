@@ -23,7 +23,8 @@ export const TaskCenterPage: React.FC = () => {
   const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const focusParam = searchParams.get('focus');   // R94-1: AI 助手出处卡跳转高亮目标任务行
-  const statusParam = searchParams.get('status') || '';
+  // V3 spells the former pseudo-status `degraded` as `status=done&partial=1` (layout/redirects.tsx rewrites old links).
+  const statusParam = searchParams.get('status') === 'done' && searchParams.get('partial') === '1' ? 'degraded' : (searchParams.get('status') || '');
   const [tasks, setTasks] = useState<any[] | null>(null);
   const [sessions, setSessions] = useState<any[] | null>(null);
   const [filter, setFilter] = useState(statusParam);
@@ -196,7 +197,7 @@ export const TaskCenterPage: React.FC = () => {
     const hit = sessMap[t.id];
     if (!hit) return;
     const s = await api<any>(`/api/pentest/projects/${hit.pid}/sessions`, { method: 'POST', body: JSON.stringify({ task_id: t.id, device: 'emulator-5554', authorized: '任务中心接力' }) });
- if (s?.id) window.location.hash = `/pentest/project/${hit.pid}/session/${s.id}`;
+ if (s?.id) window.location.hash = `/projects/${hit.pid}/sessions/${s.id}`;
  };
 
  const allTasks = tasks || [];
@@ -318,7 +319,7 @@ export const TaskCenterPage: React.FC = () => {
   const durOf = (t: any) => (t.status === 'done' || t.status === 'failed') ? (t.updated_at || t.created_at) - t.created_at : now - t.created_at;
   const artifactsReadyOf = (t: any) => (t.kind === 'unpack' || t.kind === 'audit') && t.status === 'done';
   const canAskOf = (t: any) => t.kind === 'audit' && t.status === 'done' && !!t.result_id;
-  const gotoSession = (hit: { pid: number; sid: number }) => { window.location.hash = `/pentest/project/${hit.pid}/session/${hit.sid}`; };
+  const gotoSession = (hit: { pid: number; sid: number }) => { window.location.hash = `/projects/${hit.pid}/sessions/${hit.sid}`; };
   // Row click: linked session first, then artifacts. Rows with neither do nothing.
   const openRow = (t: any) => {
     const hit = sessMap[t.id];
@@ -524,7 +525,7 @@ export const TaskCenterPage: React.FC = () => {
               title="删除当前筛选结果里的全部失败任务,会先请你确认">
               清理失败任务 ({failedInView.length})
             </Button>
-            <Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-audit')} data-toolbar-create>新建评估</Button>
+            <Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-assessment')} data-toolbar-create>新建评估</Button>
           </div>
         )} />
 
@@ -645,7 +646,7 @@ export const TaskCenterPage: React.FC = () => {
             state={filtered.length === 0 ? (
               allTasks.length === 0
                 ? <EmptyState icon={ClipboardList} title="还没有任务" cause="创建评估后,任务会出现在这里。"
-                    action={<Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-audit')}>新建评估</Button>} />
+                    action={<Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-assessment')}>新建评估</Button>} />
                 : <EmptyState icon={ClipboardList} title="没有符合条件的任务" cause="当前的搜索或筛选条件下没有任务。"
                     action={filtersOn ? <Button variant="secondary" onClick={clearFilters}>清除筛选</Button> : undefined} />
             ) : undefined} />
@@ -669,7 +670,7 @@ export const TaskCenterPage: React.FC = () => {
               <ul className="flex gap-3 p-4">
                 {activeSids.map((s: any) => {
                   const canGo = s.project_id != null;
-                  const go = () => { if (canGo) window.location.hash = `/pentest/project/${s.project_id}/session/${s.id}`; };
+                  const go = () => { if (canGo) window.location.hash = `/projects/${s.project_id}/sessions/${s.id}`; };
                   return (
                     <li key={s.id} data-running-session={s.id} data-sess-card={canGo ? 'go' : 'blocked'}
                       className="flex w-64 flex-none items-center gap-3 rounded-card border border-jz-border px-3 py-2.5">

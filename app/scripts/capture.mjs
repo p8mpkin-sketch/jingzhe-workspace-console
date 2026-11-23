@@ -3,7 +3,7 @@
 // (`npm run build && npx vite preview --port 4173`). API calls are answered from
 // scripts/fixtures (no backend in this repo). Usage:
 //   node scripts/capture.mjs --out ../docs/screenshots/phase-1 [--theme dark|light|both]
-//        [--widths 1440,1024,760] [--routes /dashboard,/tasks] [--variant ok|empty|error|forbidden|slow|stale]
+//        [--widths 1440,1024,760,390] [--routes /dashboard,/tasks] [--variant ok|empty|error|forbidden|slow|stale]
 //        [--base http://localhost:4173/v2/] [--requests out.json]
 import { createRequire } from 'node:module';
 // Playwright is resolved from the environment (global install), not from app dependencies.
@@ -15,17 +15,19 @@ import { resolve as fixture } from './fixtures/api.mjs';
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const base = arg('base', 'http://localhost:4173/v2/');
 const out = path.resolve(arg('out', '.ui-shots'));
-const widths = arg('widths', '1440,1024,760').split(',').map(Number);
-const overflowWidths = [760, 1024, 1280, 1440, 1680];
+const widths = arg('widths', '1440,1024,760,390').split(',').map(Number);
+const overflowWidths = [390, 760, 1024, 1280, 1440, 1680];
 const themeArg = arg('theme', 'both');
 const themes = themeArg === 'both' ? ['light', 'dark'] : [themeArg];
 const variant = arg('variant', 'ok');
 const reqOut = arg('requests', '');
+// V3 canonical routes. The two `legacy-*` rows are the pre-merge assessment project pages, kept at their old paths
+// until Phase 2 gives their capabilities a new owner; they leave this list in that phase.
 export const ROUTES = [
-  ['dashboard', '/dashboard'], ['projects', '/pentest'], ['project-sessions', '/pentest/project/1'],
-  ['session', '/pentest/project/1/session/40'], ['company', '/company'], ['company-project', '/company/projects/1'],
-  ['new-assessment', '/new-audit'], ['tasks', '/tasks'], ['reports', '/reports'], ['discovery', '/discovery'],
-  ['knowledge', '/skills'], ['assistant', '/ai-assistant'], ['agent', '/agent'], ['system', '/system'],
+  ['dashboard', '/dashboard'], ['projects', '/projects'], ['project', '/projects/1'], ['session', '/projects/1/sessions/40'],
+  ['tasks', '/tasks'], ['evidence', '/evidence'], ['reports', '/reports'], ['knowledge', '/knowledge'], ['agent', '/agent'],
+  ['new-assessment', '/new-assessment'], ['system', '/system'], ['assistant', '/ai-assistant'],
+  ['legacy-projects', '/pentest'], ['legacy-project-sessions', '/pentest/project/1'],
 ];
 const only = arg('routes', '');
 const routes = only ? ROUTES.filter(([, p]) => only.split(',').includes(p)) : ROUTES;

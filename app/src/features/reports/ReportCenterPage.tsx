@@ -276,7 +276,7 @@ export const ReportCenterPage: React.FC = () => {
  if (!sess?.project_id) { toast.info('该会话没有归属项目,不能在工作区查看'); return; } // R79-2 同规矩
  const dom = DOMAINS.find((x) => x.name === name);
     const masvs = dom ? [...dom.masvs, ...(dom.cwe || [])].join(',') : '__none__';   // 「其他」行 → __none__
-    nav(`/pentest/project/${sess.project_id}/session/${selected}?tab=vulns&masvs=${encodeURIComponent(masvs)}`);
+    nav(`/projects/${sess.project_id}/sessions/${selected}?tab=vulns&masvs=${encodeURIComponent(masvs)}`);
   };
 
   // R103-10② 建/R104-2③ 收敛: 漏洞明细(扁平 /vulns 三态桶)+ 本地合并层(导入/手动新增)
@@ -533,7 +533,7 @@ export const ReportCenterPage: React.FC = () => {
               errStatus === 401 || errStatus === 403 ? <PermissionState /> : <ErrorState title="报告加载失败" message="任务列表请求没有成功,无法打开这份报告。" onRetry={loadTasks} />
             ) : (
               <HubView
-                loading={!tasksLoaded} error={loadErr} onRetry={loadTasks} onCreate={() => nav('/new-audit')}
+                loading={!tasksLoaded} error={loadErr} onRetry={loadTasks} onCreate={() => nav('/new-assessment')}
                 entries={entries} filtered={filtered} paged={paged} kpi={kpi}
                 hub={{ ...hub, page }} patch={patchHub}
                 onOpen={openTask} onExportOne={onExportOne} onExportBatch={onExportBatch} batchBusy={batchBusy}

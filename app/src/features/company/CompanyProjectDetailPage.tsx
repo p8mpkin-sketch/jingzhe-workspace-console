@@ -155,7 +155,7 @@ export const CompanyProjectDetailPage: React.FC = () => {
   };
 
   const pct = apps.length ? Math.round(done / apps.length * 100) : 0;
-  const back = <Link to="/company" className="inline-flex items-center gap-1 hover:text-jz-ink"><ArrowLeft size={14} aria-hidden />公司项目</Link>;
+  const back = <Link to="/projects" className="inline-flex items-center gap-1 hover:text-jz-ink"><ArrowLeft size={14} aria-hidden />公司项目</Link>;
 
   if (loading && !project) {
     return (
@@ -174,7 +174,7 @@ export const CompanyProjectDetailPage: React.FC = () => {
         <Panel>
           {st === 401 || st === 403 ? <PermissionState />
             : loadErr ? <ErrorState message={loadErr instanceof Error ? loadErr.message : String(loadErr)} onRetry={load} />
-            : <EmptyState title="没有找到这个项目" cause="项目可能已被移除，或编号不正确。" action={<Link to="/company" className="text-label font-medium text-jz-brand hover:underline">返回公司项目</Link>} />}
+            : <EmptyState title="没有找到这个项目" cause="项目可能已被移除，或编号不正确。" action={<Link to="/projects" className="text-label font-medium text-jz-brand hover:underline">返回公司项目</Link>} />}
         </Panel>
       </Page>
     );

@@ -35,9 +35,9 @@ const ProjectCard: React.FC<{ p: Project }> = ({ p }) => {
   const count = appCount(p);
   return (
     <ObjectCard compact data-company-project={p.id}
-      title={<Link to={'/company/projects/' + p.id} className="hover:text-jz-brand">{p.name}</Link>}
+      title={<Link to={'/projects/' + p.id} className="hover:text-jz-brand">{p.name}</Link>}
       subtitle={p.company_name || '未填写公司或集团'}
-      badge={<Link to={'/company/projects/' + p.id} aria-label={`打开项目 ${p.name}`} className={cx(openLink, '-mr-2 -mt-1')}>
+      badge={<Link to={'/projects/' + p.id} aria-label={`打开项目 ${p.name}`} className={cx(openLink, '-mr-2 -mt-1')}>
         打开 <ArrowRight size={14} aria-hidden />
       </Link>}>
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1.5">
@@ -91,14 +91,14 @@ const SoloNext: React.FC<{ p: Project }> = ({ p }) => {
         <p className="mt-1 text-label text-jz-ink-2">
           {empty ? '这个项目的应用清单还是空的，评估和报告都要从导入应用开始。' : `清单里有 ${appCount(p)} 个应用，可以在项目里执行评估并生成项目总报告。`}
         </p>
-        <Link to={'/company/projects/' + p.id} className={cx(nextLink, '-ml-2 mt-1')} data-company-next-project>
+        <Link to={'/projects/' + p.id} className={cx(nextLink, '-ml-2 mt-1')} data-company-next-project>
           {empty ? '进入项目导入应用' : '进入项目生成报告'} <ArrowRight size={14} aria-hidden />
         </Link>
       </div>
       <div className="min-w-0 tablet:border-l tablet:border-jz-border tablet:pl-4">
         <h3 className="text-body font-semibold text-jz-ink">扩大范围</h3>
         <p className="mt-1 text-label text-jz-ink-2">候选发现列出了尚未归属到任何项目的应用，可以从中确认归属，或为另一家公司新建项目。</p>
-        <Link to="/discovery" className={cx(nextLink, '-ml-2 mt-1')} data-company-discovery>查看候选发现 <ArrowRight size={14} aria-hidden /></Link>
+        <Link to="/evidence" className={cx(nextLink, '-ml-2 mt-1')} data-company-discovery>查看候选发现 <ArrowRight size={14} aria-hidden /></Link>
       </div>
     </section>
   );
@@ -135,7 +135,7 @@ const StartNext: React.FC<{ onCreate: () => void }> = ({ onCreate }) => (
       <p className="mt-1 text-label text-jz-ink-2">项目列表加载成功，结果为空。可以直接新建；不确定范围时，先看候选发现里尚未归属的应用。</p>
     </div>
     <div className="flex flex-wrap items-center gap-2">
-      <Link to="/discovery" className="inline-flex h-jz-control items-center gap-1.5 rounded-control border border-jz-border bg-jz-surface px-3 text-label font-medium text-jz-ink hover:bg-jz-surface-2" data-company-discovery>
+      <Link to="/evidence" className="inline-flex h-jz-control items-center gap-1.5 rounded-control border border-jz-border bg-jz-surface px-3 text-label font-medium text-jz-ink hover:bg-jz-surface-2" data-company-discovery>
         先看候选发现
       </Link>
       <Button icon={<Plus size={16} aria-hidden />} onClick={onCreate} data-company-start-create>新建公司项目</Button>
@@ -146,7 +146,7 @@ const StartNext: React.FC<{ onCreate: () => void }> = ({ onCreate }) => (
 const projectColumns: Column<Project>[] = [
   { key: 'name', header: '项目', card: 'title', cell: (p) => (
     <div className="min-w-0">
-      <Link to={'/company/projects/' + p.id} className="font-medium text-jz-ink hover:text-jz-brand">{p.name}</Link>
+      <Link to={'/projects/' + p.id} className="font-medium text-jz-ink hover:text-jz-brand">{p.name}</Link>
       <div className="truncate text-meta text-jz-muted">{p.company_name || '未填写公司或集团'}</div>
     </div>
   ) },
@@ -162,7 +162,7 @@ const projectColumns: Column<Project>[] = [
   } },
   { key: 'id', header: '编号', mono: true, width: 'w-20', card: 'hidden', cell: (p) => <span className="text-jz-muted">#{p.id}</span> },
   { key: 'open', header: <span className="sr-only">操作</span>, label: '操作', align: 'right', width: 'w-24', card: 'action', cell: (p) => (
-    <Link to={'/company/projects/' + p.id} aria-label={`打开项目 ${p.name}`} className={openLink}>打开 <ArrowRight size={14} aria-hidden /></Link>
+    <Link to={'/projects/' + p.id} aria-label={`打开项目 ${p.name}`} className={openLink}>打开 <ArrowRight size={14} aria-hidden /></Link>
   ) },
 ];
 
@@ -218,7 +218,7 @@ export const CompanyProjectsPage: React.FC = () => {
         method: 'POST',
         body: JSON.stringify({ ...form, kind: 'company', status: 'draft', brands }),
       });
-      nav('/company/projects/' + r.id);
+      nav('/projects/' + r.id);
     } catch (e: any) {
       setFormErr('创建失败：' + (e?.message || e));
     } finally {
@@ -273,9 +273,11 @@ export const CompanyProjectsPage: React.FC = () => {
 
   return (
     <Page data-company-projects>
-      <PageHeader title={moduleLabel('/company')}
+      <PageHeader title={moduleLabel('/projects')}
         description="以公司或集团为范围维护应用清单，批量执行评估，并生成单应用报告与合集报告。"
         actions={<>
+          {/* Interim (Phase 1 only): the session index keeps its own page until Phase 2 merges it into this one. */}
+          <Button variant="ghost" onClick={() => nav('/pentest')} data-projects-legacy-sessions>会话索引</Button>
           <Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} loading={refreshing} onClick={() => load(true)}>刷新</Button>
           <Button icon={<Plus size={16} aria-hidden />} onClick={openCreate} data-company-create>新建公司项目</Button>
         </>} />
@@ -285,7 +287,7 @@ export const CompanyProjectsPage: React.FC = () => {
       {!loading && primary && (
         <FeatureBand variant="editorial" data-company-primary={primary.id}
           eyebrow={primary.kind === 'company' ? '最近创建的公司项目' : '最近创建的项目'}
-          title={<Link to={'/company/projects/' + primary.id} className="hover:text-jz-brand">{primary.name}</Link>}
+          title={<Link to={'/projects/' + primary.id} className="hover:text-jz-brand">{primary.name}</Link>}
           subtitle={<>{primary.company_name || '未填写公司或集团'}<span className="text-jz-muted"> · {kindLabel(primary)} · <span className="font-mono">#{primary.id}</span></span></>}
           tags={primaryBrands.length ? primaryBrands.slice(0, 8).map((b) => <Tag key={b}>{b}</Tag>) : undefined}
           facts={[
@@ -293,7 +295,7 @@ export const CompanyProjectsPage: React.FC = () => {
             { label: '品牌', value: primaryBrands.length || '—' },
             { label: '来源', value: primary.source ? sourceLabel(primary.source) : '未标注' },
           ]}
-          actions={<Link to={'/company/projects/' + primary.id} data-company-primary-open
+          actions={<Link to={'/projects/' + primary.id} data-company-primary-open
             className="inline-flex h-jz-control-lg items-center gap-2 rounded-control bg-jz-brand px-4 text-body font-medium text-jz-on-brand hover:bg-jz-brand/90">
             打开项目 <ArrowRight size={16} aria-hidden />
           </Link>}

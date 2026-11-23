@@ -44,6 +44,16 @@ for (const theme of ['light', 'dark']) {
     expect(page.url().endsWith('#/reports') && await page.locator('[data-nav-drawer]').count() === 0, 'drawer navigation failed');
     await page.click('[data-notif-toggle]'); await page.waitForTimeout(200); await shot(page, `notifications-760-${theme}`);
     await ctx.close(); }
+  // Phone: the top bar keeps the place and the primary action; the drawer fits the viewport.
+  { const { ctx, page } = await open(theme, 390, 844);
+    expect(await page.locator('[data-topbar-action]').isVisible(), 'primary action missing from the phone top bar');
+    const tb = await page.evaluate(() => { const d = document.documentElement; return d.scrollWidth - d.clientWidth; });
+    expect(tb <= 1, `top bar overflows at 390 by ${tb}px`);
+    await page.click('[data-nav-open]'); await page.waitForTimeout(300);
+    const dw = await page.locator('[data-nav-drawer] [data-nav-rail]').evaluate((el) => el.getBoundingClientRect().right);
+    expect(dw <= 390, `drawer is wider than the phone viewport (${dw}px)`);
+    await shot(page, `drawer-390-${theme}`);
+    await ctx.close(); }
   // Tablet: rail starts collapsed below 1024 and expands on demand.
   { const { ctx, page } = await open(theme, 900);
     expect(await page.locator('[data-nav-rail="collapsed"]').count() === 1, 'rail not collapsed at 900');
@@ -55,10 +65,10 @@ for (const theme of ['light', 'dark']) {
   { const { ctx, page } = await open(theme, 1440);
     const w = await page.locator('[data-nav-rail]').evaluate((el) => el.getBoundingClientRect().width);
     const h = await page.locator('[data-topbar]').evaluate((el) => el.getBoundingClientRect().height);
-    expect(w === 232 && h === 52, `rail ${w}px / top bar ${h}px, expected 232 / 52`);
+    expect(w === 220 && h === 48, `rail ${w}px / top bar ${h}px, expected 220 / 48`);
     await page.click('[data-nav-collapse]'); await page.waitForTimeout(350);
     const wc = await page.locator('[data-nav-rail]').evaluate((el) => el.getBoundingClientRect().width);
-    expect(wc === 68, `collapsed rail ${wc}px, expected 68`);
+    expect(wc === 56, `collapsed rail ${wc}px, expected 56`);
     await page.click('[data-nav-collapse]'); await page.waitForTimeout(350);
     await page.click('[data-notif-toggle]'); await page.waitForTimeout(200); await shot(page, `notifications-1440-${theme}`);
     await page.keyboard.press('Escape');
@@ -69,10 +79,15 @@ for (const theme of ['light', 'dark']) {
     expect(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= 1440 && box.y + box.height <= 900, 'rail device popover leaves the viewport');
     await shot(page, `devices-rail-1440-${theme}`);
     await page.keyboard.press('Escape'); await page.waitForTimeout(100);
-    await page.click('[data-capsule-device]'); await page.waitForTimeout(200);
-    const box2 = await page.locator('[data-device-flyout]').boundingBox();
-    expect(box2 && box2.y >= 44 && box2.x + box2.width <= 1440, 'top bar device popover leaves the viewport');
-    await page.keyboard.press('Escape'); await page.waitForTimeout(100);
+    // V3: the top bar carries no device, queue or session facts, and the rail entries show state words, not counts.
+    expect(await page.locator('[data-topbar] [data-capsule-device], [data-topbar] [data-capsule-session], [data-topbar] [data-pf-badge]').count() === 0, 'top bar still shows session or device pills');
+    const infra = await page.locator('[data-rail-infra]').innerText();
+    expect(!/\d/.test(infra), `rail infrastructure entries show a number: ${JSON.stringify(infra)}`);
+    expect(await page.locator('[data-nav-rail] [data-nav-item]').count() === 8, 'rail must hold the primary action and seven destinations');
+    await page.click('[data-cmdk-open]'); await page.waitForTimeout(250);
+    expect(await page.locator('[data-cmdk]').count() === 1, 'top bar command button did not open the palette');
+    await page.keyboard.press('Escape'); await page.waitForTimeout(150);
+    expect(await page.evaluate(() => document.activeElement?.hasAttribute('data-cmdk-open')), 'Escape did not return focus to the command button');
     await page.keyboard.press('Control+k'); await page.waitForTimeout(250); await shot(page, `palette-1440-${theme}`);
     await page.keyboard.type('报告'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
     expect(page.url().endsWith('#/reports'), 'palette Enter did not navigate');

@@ -44,7 +44,7 @@ export const Popover: React.FC<{
       {trigger({ onClick: () => setOpen((v) => !v), 'aria-expanded': open, 'aria-controls': id, 'aria-haspopup': role })}
       {open && (
         <div id={id} role={role} aria-label={label}
-          className={cx('absolute z-30 min-w-48 max-w-[92vw] rounded-card border border-jz-border bg-jz-surface p-1.5 shadow-dialog',
+          className={cx('absolute z-30 min-w-48 max-w-[92vw] rounded-card border border-jz-border bg-jz-raised p-1 shadow-raised',
             side === 'bottom' ? 'top-full mt-1.5' : 'bottom-full mb-1.5', align === 'end' ? 'right-0' : 'left-0', className)}>
           {typeof children === 'function' ? children(close) : children}
         </div>
@@ -57,7 +57,7 @@ export const Popover: React.FC<{
 export const MenuItem: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement> & { icon?: React.ReactNode; danger?: boolean }> =
   ({ icon, danger, className, children, type = 'button', ...rest }) => (
     <button type={type} role="menuitem" className={cx('flex w-full items-center gap-2 rounded-control px-2.5 h-jz-control max-[760px]:h-jz-touch text-label text-left whitespace-nowrap disabled:opacity-45',
-      danger ? 'text-jz-red hover:bg-jz-red/10' : 'text-jz-ink hover:bg-jz-surface-2', className)} {...rest}>
+      danger ? 'text-jz-red hover:bg-jz-red/10' : 'text-jz-ink hover:bg-jz-hover', className)} {...rest}>
       {icon}{children}
     </button>
   );

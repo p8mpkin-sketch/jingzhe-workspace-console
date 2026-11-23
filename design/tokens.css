@@ -1,71 +1,107 @@
 /* Jingzhe Workspace tokens — neutral namespace only.
    Single source of truth: app/src/styles/index.css imports this file; app/tailwind.config.js maps
    utilities onto these variables. No color, size, radius or shadow literal lives anywhere else. */
+/* ── V3 (Jingzhe 1.0), direction A+ "Living Instrument Panel" ──
+   Panes divided by hairlines; depth comes from six surface steps and one overlay shadow. The instrument is alive
+   through structure (stages), row types and state changes, never through decoration. Spec: docs/v3-plan.md §6. */
 :root {
   /* ── Color (RGB triplets, used as rgb(var(--jz-x) / alpha)) ── */
-  --jz-canvas: 246 245 242;      /* warm neutral (v2.5); was 245 246 248 */
-  --jz-surface: 255 255 255;
-  --jz-surface-2: 240 239 235;
-  --jz-rail: 239 238 233;        /* navigation rail: one step below the canvas, so content reads as the raised layer */
-  --jz-ink: 22 24 29;
-  --jz-ink-2: 67 74 86;
-  --jz-muted: 97 104 118;        /* was 107 114 128: 4.47:1 on canvas, below AA; now >= 4.5 on every surface */
-  --jz-border: 228 226 220;
-  --jz-border-strong: 139 146 160; /* control outlines that must reach 3:1 (inputs, checkboxes) */
-  --jz-brand: 54 87 214;
-  --jz-brand-soft: 233 237 255;
-  --jz-on-brand: 255 255 255;    /* text on a brand fill */
-  --jz-teal: 14 143 126;
-  --jz-amber: 178 106 0;
-  --jz-orange: 184 58 10;        /* added: "high" finding level only */
-  --jz-red: 180 35 24;
+  /* Surface levels, lowest to highest: rail < inset < canvas < surface < raised = overlay. None is pure white or black. */
+  --jz-canvas: 243 242 238;      /* page ground */
+  --jz-rail: 235 234 229;        /* navigation */
+  --jz-surface: 250 249 246;     /* panes */
+  --jz-raised: 254 253 251;      /* menus, selected tab, sticky bars */
+  --jz-inset: 239 238 233;       /* wells: code, log, table head */
+  --jz-overlay: 254 253 251;     /* dialogs, drawers */
+  --jz-surface-2: 238 237 232;   /* subtle fill: chips, hover on a pane */
+  --jz-ink: 24 25 28;
+  --jz-ink-2: 62 66 74;
+  --jz-muted: 88 92 102;         /* >= 4.5:1 on every surface level, rail included */
+  --jz-border: 222 220 213;      /* hairlines */
+  --jz-border-strong: 122 126 136; /* control outlines, >= 3:1 on every surface */
+  --jz-brand: 48 76 204;
+  --jz-brand-soft: 229 233 250;
+  --jz-on-brand: 250 249 246;    /* text on a brand fill */
+  --jz-teal: 12 130 116;
+  --jz-amber: 176 104 0;
+  --jz-orange: 158 50 8;         /* identity of risk findings: the left rule of every finding row, critical / high labels */
+  --jz-red: 176 36 26;           /* errors, blocked operations, destructive actions. Never a finding. */
   /* Text-safe variants: teal and amber fills are below 4.5:1 as text on light surfaces. */
-  --jz-teal-ink: 9 110 97;
-  --jz-amber-ink: 138 82 0;
-  --jz-on-red: 255 255 255;
-  --jz-scrim: 16 24 40;          /* overlay behind dialogs and drawers */
+  --jz-teal-ink: 8 104 92;
+  --jz-amber-ink: 132 78 0;
+  --jz-on-red: 250 249 246;
+  --jz-scrim: 20 22 26;          /* overlay behind dialogs and drawers */
   --jz-paper: 255 255 255;       /* print only */
   --jz-print-ink: 0 0 0;         /* print only */
   --jz-print-rule: 204 204 204;  /* print only */
 
-  /* Finding severity: always rendered with a text label, never color alone. */
-  --jz-sev-critical: var(--jz-red);
+  /* Finding severity: always rendered with a text label, never color alone, and never red. Critical and high
+     share orange and differ by text, weight and shape. */
+  --jz-sev-critical: var(--jz-orange);
   --jz-sev-high: var(--jz-orange);
   --jz-sev-medium: var(--jz-amber-ink);
   --jz-sev-low: var(--jz-ink-2);
   --jz-sev-info: var(--jz-muted);
 
+  /* ── Interaction state (layers, not hues) ── */
+  --jz-state-hover: rgb(var(--jz-ink) / .05);
+  --jz-state-pressed: rgb(var(--jz-ink) / .09);
+  --jz-state-selected: rgb(var(--jz-brand-soft));
+  --jz-state-selected-ink: rgb(var(--jz-brand));
+  --jz-focus: rgb(var(--jz-brand));
+  --jz-focus-width: 2px;
+  --jz-focus-offset: 2px;
+  --jz-focus-inset: -2px;        /* rows and tabs that clip their outline */
+
+  /* ── Trace and stages (A+). Semantic names for existing values; no new hue. Emphasis is never done by opacity. ── */
+  --jz-trace-body: var(--jz-ink);            /* event body */
+  --jz-trace-secondary: var(--jz-ink-2);     /* tool arguments, evidence counts, state */
+  --jz-trace-time: var(--jz-muted);          /* time column: quiet, still >= 4.5:1 on every surface */
+  --jz-trace-active-row: var(--jz-surface-2);/* the current row */
+  --jz-line-active: var(--jz-brand);         /* active stage rule and run-strip progress */
+  --jz-line-finding: var(--jz-orange);       /* every finding row; severity is line width + text + cap, not hue */
+  --jz-line-error: var(--jz-red);            /* error rows, always with the word 错误 */
+  --jz-line-w: 2px;
+  --jz-line-w-strong: 3px;                   /* critical and high findings */
+  --jz-line-cap-w: 7px;                      /* small filled cap on top of a critical / high rule */
+  --jz-line-cap-h: 3px;
+  --jz-approval-surface: var(--jz-raised);   /* approval rows: the only raised rows in a trace */
+
   /* ── Radius ── */
-  --jz-radius-tag: 4px;          /* checkbox, inline tag */
-  --jz-radius-control: 8px;
-  --jz-radius-card: 12px;
-  --jz-radius-panel: 16px;
-  --jz-radius-dialog: 20px;
+  --jz-radius-tag: 3px;          /* checkbox, inline tag */
+  --jz-radius-control: 6px;
+  --jz-radius-card: 8px;
+  --jz-radius-panel: 10px;
+  --jz-radius-dialog: 12px;
   --jz-radius-pill: 999px;
 
-  /* ── Type ── */
-  --jz-font-display: "Instrument Sans", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
-  --jz-font-body: "Inter", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
-  --jz-font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  /* ── Type ── Latin from the brand faces, Chinese from the best system face on each platform. */
+  --jz-font-cjk: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei UI", "Microsoft YaHei";
+  --jz-font-display: "Instrument Sans", var(--jz-font-cjk), system-ui, sans-serif;
+  --jz-font-body: "Inter", var(--jz-font-cjk), system-ui, sans-serif;
+  --jz-font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, var(--jz-font-cjk), monospace;
   --jz-text-meta: 12px;      --jz-leading-meta: 1.45;
+  --jz-text-mono: 12px;      --jz-leading-mono: 1.5;     /* ids, hashes, timestamps */
+  --jz-text-log: 12.5px;     --jz-leading-log: 1.6;      /* terminal and log output */
   --jz-text-label: 13px;     --jz-leading-label: 1.4;
-  --jz-text-body: 14px;      --jz-leading-body: 1.6;
-  --jz-text-section: 17px;   --jz-leading-section: 1.35;
-  --jz-text-title: 20px;     --jz-leading-title: 1.25;   /* dialog title, compact metric */
-  --jz-text-headline: 24px;  --jz-leading-headline: 1.2; /* primary object on a page (feature band, signal) */
-  --jz-text-page: 30px;      --jz-leading-page: 1.2;
-  --jz-text-metric: 32px;    --jz-leading-metric: 1.1;
-  --jz-text-display: 36px;   --jz-leading-display: 1.1;
+  --jz-text-data: 13px;      --jz-leading-data: 1.4;     /* numeric table cells, mono + tabular */
+  --jz-text-body: 14px;      --jz-leading-body: 1.55;
+  --jz-text-section: 15px;   --jz-leading-section: 1.4;
+  --jz-text-title: 18px;     --jz-leading-title: 1.3;    /* dialog title, pane title */
+  --jz-text-headline: 22px;  --jz-leading-headline: 1.25; /* primary object on a page */
+  --jz-text-page: 24px;      --jz-leading-page: 1.25;
+  --jz-text-metric: 28px;    --jz-leading-metric: 1.1;
+  --jz-text-display: 40px;   --jz-leading-display: 1.05; /* the one dominant readout on a page */
   /* Text drawn by chart libraries on canvas (ECharts): read in JS through tokenPx(). */
-  --jz-text-chart-label: 11px; /* axis names, radar indicators */
-  --jz-text-chart-tick: 10px;  /* tick labels, legends, graph node labels */
+  --jz-text-chart-label: 12px; /* axis names, radar indicators */
+  --jz-text-chart-tick: 11px;  /* tick labels, legends, graph node labels */
   --jz-weight-regular: 400;
   --jz-weight-medium: 500;
   --jz-weight-strong: 600;
   --jz-tracking-display: -0.02em;
-  --jz-tracking-page: -0.015em;
+  --jz-tracking-page: -0.01em;
 
-  /* ── Spacing (8px grid; half steps 0-5 / 1-5 / 2-5 are for dense workbench rows only) ── */
+  /* ── Spacing (8px grid; half steps 0-5 / 1-5 / 2-5 are for dense rows only) ── */
   --jz-space-0-5: 2px;
   --jz-space-1: 4px;
   --jz-space-1-5: 6px;
@@ -79,71 +115,84 @@
   --jz-space-12: 48px;
 
   /* ── Layout ── */
-  --jz-sidebar-w: 232px;
-  --jz-sidebar-w-collapsed: 68px;
-  --jz-topbar-h: 52px;
+  --jz-sidebar-w: 220px;
+  --jz-sidebar-w-collapsed: 56px;
+  --jz-topbar-h: 48px;
   --jz-content-max: 1680px;
   --jz-page-pad: 24px;
-  --jz-prose-max: 720px;
+  --jz-prose-max: 760px;
   --jz-dialog-max: 640px;
-  --jz-control-h: 36px;
-  --jz-control-h-lg: 40px;
+  --jz-control-h: 32px;
+  --jz-control-h-lg: 36px;
   --jz-touch-min: 44px;
-  --jz-table-head-h: 36px;
+  --jz-table-head-h: 32px;
+  --jz-row-h-dense: 36px;
   --jz-row-h: 44px;
   --jz-row-h-lg: 52px;
+  --jz-inspector-min: 280px;
+  --jz-inspector-max: 480px;
+  --jz-inspector-w: 340px;
+  --jz-icon-stroke: 1.5;
 
-  /* ── Elevation ── */
-  --jz-shadow-card: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px -18px rgba(16,24,40,.18);
-  --jz-shadow-dialog: 0 20px 60px -24px rgba(16,24,40,.30);
-  --jz-shadow-raised: 0 1px 2px rgba(16,24,40,.05), 0 14px 32px -20px rgba(16,24,40,.28); /* hover on interactive cards */
-  --jz-shadow-none: none; /* explicit reset (flat cards inside a surface, print) */
-  /* One soft tint behind the page header (design-system.md §5: max 8% opacity). */
-  --jz-header-tint: radial-gradient(70% 100% at 0% 0%, rgb(var(--jz-brand) / .07), transparent 70%), radial-gradient(40% 80% at 100% 0%, rgb(var(--jz-teal) / .05), transparent 70%);
+  /* ── Elevation ── Separation is a hairline and spacing; a shadow means "floats above the page". */
+  --jz-shadow-card: none;
+  --jz-shadow-raised: 0 1px 2px rgba(20,22,26,.06), 0 10px 28px -16px rgba(20,22,26,.28); /* menus, popovers */
+  --jz-shadow-dialog: 0 24px 64px -28px rgba(20,22,26,.36);                              /* dialogs, drawers */
+  --jz-shadow-none: none;
+  --jz-header-tint: none;        /* V2's header gradient is retired; the name stays so old classes resolve to nothing */
 
-  /* ── Motion and focus ── */
-  --jz-motion-hover: 120ms;
-  --jz-motion-expand: 180ms;
-  --jz-motion-page: 220ms;
+  /* ── Motion ── */
+  --jz-motion-instant: 80ms;     /* pressed */
+  --jz-motion-fast: 120ms;       /* hover, focus ring, selection fill */
+  --jz-motion-base: 180ms;       /* disclosure, tab indicator, inspector, status change */
+  --jz-motion-slow: 240ms;       /* stage completion, drawer, dialog */
+  --jz-motion-pulse: 1600ms;     /* the one loop: the active-stage dot on the run strip */
+  --jz-rise: 4px;                /* new trace row: fade + rise, transform only (no layout change) */
+  --jz-motion-hover: var(--jz-motion-fast);
+  --jz-motion-expand: var(--jz-motion-base);
+  --jz-motion-page: var(--jz-motion-slow);
   --jz-ease: cubic-bezier(.2, 0, 0, 1);
-  --jz-focus-width: 2px;
-  --jz-focus-offset: 2px;
+  --jz-ease-exit: cubic-bezier(.4, 0, 1, 1);
 
   color-scheme: light;
 }
 /* Scoped to html.dark, not .dark: React Flow adds its own `dark` class to canvas containers,
-   and a bare .dark selector would pin the canvas subtree to dark values in light mode. */
+   and a bare .dark selector would pin the canvas subtree to dark values in light mode.
+   Dark is tuned on its own, not inverted: the rail and the wells sit below the canvas in both themes. */
 html.dark {
-  --jz-canvas: 14 17 22;
-  --jz-surface: 21 26 33;
-  --jz-surface-2: 27 34 44;
-  --jz-rail: 17 21 27;
-  --jz-ink: 242 244 247;
-  --jz-ink-2: 196 203 214;
-  --jz-muted: 139 149 165;
-  --jz-border: 40 49 61;
-  --jz-border-strong: 107 118 135;
-  --jz-brand: 142 162 255;
-  --jz-brand-soft: 27 37 74;
-  --jz-on-brand: 14 17 22;       /* white on the light indigo fill is 2.4:1 */
-  --jz-teal: 79 209 197;
-  --jz-amber: 245 184 75;
-  --jz-orange: 255 160 110;
-  --jz-red: 255 138 128;
-  --jz-teal-ink: 79 209 197;
-  --jz-amber-ink: 245 184 75;
-  --jz-on-red: 14 17 22;
+  --jz-canvas: 17 18 21;
+  --jz-rail: 13 14 17;
+  --jz-surface: 23 25 29;
+  --jz-raised: 30 33 38;
+  --jz-inset: 12 13 16;
+  --jz-overlay: 34 37 43;
+  --jz-surface-2: 33 36 42;
+  --jz-ink: 236 237 240;
+  --jz-ink-2: 190 195 204;
+  --jz-muted: 158 164 175;
+  --jz-border: 38 41 48;
+  --jz-border-strong: 112 118 130;
+  --jz-brand: 138 158 255;
+  --jz-brand-soft: 28 36 72;
+  --jz-on-brand: 15 17 22;       /* light text on the light indigo fill is 2.4:1 */
+  --jz-teal: 76 200 186;
+  --jz-amber: 240 180 78;
+  --jz-orange: 250 156 108;
+  --jz-red: 250 134 124;
+  --jz-teal-ink: 76 200 186;
+  --jz-amber-ink: 240 180 78;
+  --jz-on-red: 15 17 22;
   --jz-scrim: 0 0 0;
-  --jz-shadow-card: 0 1px 2px rgba(0,0,0,.24), 0 8px 24px -18px rgba(0,0,0,.6);
-  --jz-shadow-dialog: 0 20px 60px -24px rgba(0,0,0,.7);
-  --jz-shadow-raised: 0 1px 2px rgba(0,0,0,.3), 0 14px 32px -20px rgba(0,0,0,.75);
-  --jz-header-tint: radial-gradient(70% 100% at 0% 0%, rgb(var(--jz-brand) / .08), transparent 70%), radial-gradient(40% 80% at 100% 0%, rgb(var(--jz-teal) / .05), transparent 70%);
+  --jz-state-hover: rgb(var(--jz-ink) / .06);
+  --jz-state-pressed: rgb(var(--jz-ink) / .09);
+  --jz-shadow-raised: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px -16px rgba(0,0,0,.7);
+  --jz-shadow-dialog: 0 24px 64px -28px rgba(0,0,0,.8);
   color-scheme: dark;
 }
 @media (max-width: 1100px) { :root { --jz-page-pad: 16px; } }
-@media (max-width: 760px) { :root { --jz-page-pad: 12px; } }
+@media (max-width: 760px) { :root { --jz-page-pad: 12px; --jz-control-h: 36px; } }
 @media (prefers-reduced-motion: reduce) {
-  :root { --jz-motion-hover: 0ms; --jz-motion-expand: 0ms; --jz-motion-page: 0ms; }
+  :root { --jz-motion-instant: 0ms; --jz-motion-fast: 0ms; --jz-motion-base: 0ms; --jz-motion-slow: 0ms; --jz-motion-pulse: 0ms; --jz-rise: 0px; }
 }
 
 html, body { background: rgb(var(--jz-canvas)); color: rgb(var(--jz-ink)); }
@@ -152,7 +201,9 @@ body { font-family: var(--jz-font-body); font-size: var(--jz-text-body); line-he
 .jz-page-title { font-family: var(--jz-font-display); font-size: var(--jz-text-page); line-height: var(--jz-leading-page); font-weight: var(--jz-weight-strong); letter-spacing: var(--jz-tracking-page); }
 .jz-section { font-size: var(--jz-text-section); line-height: var(--jz-leading-section); font-weight: var(--jz-weight-strong); }
 .jz-meta { font-size: var(--jz-text-meta); line-height: var(--jz-leading-meta); color: rgb(var(--jz-muted)); }
-.jz-mono { font-family: var(--jz-font-mono); font-variant-numeric: tabular-nums; }
+.jz-mono { font-family: var(--jz-font-mono); font-size: var(--jz-text-mono); line-height: var(--jz-leading-mono); font-variant-numeric: tabular-nums; }
+.jz-data { font-family: var(--jz-font-mono); font-size: var(--jz-text-data); line-height: var(--jz-leading-data); font-variant-numeric: tabular-nums; }
+.jz-log { font-family: var(--jz-font-mono); font-size: var(--jz-text-log); line-height: var(--jz-leading-log); }
 
 /* ── Font faces ── Self-hosted Latin subsets, bundled by Vite from app/node_modules (no network font
    request). The family names are the first entries of --jz-font-*; Chinese glyphs fall back to the

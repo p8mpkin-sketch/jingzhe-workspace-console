@@ -4,8 +4,8 @@ import { cx, useOverlay, StatusBadge, EmptyState } from '@/components/ui';
 
 /**
  * Device and Frida status popover. Presentation only: the list is the shared `usePentest.devices` value that the
- * top bar's single 8 s poll writes, so opening it issues no request. Used by the rail's device card and the
- * top bar's device pill; each owner keeps its own open state.
+ * shell's single 8 s poll writes (layout/useDevicePoll), so opening it issues no request. Opened from the rail's
+ * device entry; this is where device counts live.
  */
 export const DeviceFridaFlyout: React.FC<{
   open: boolean;
@@ -21,7 +21,7 @@ export const DeviceFridaFlyout: React.FC<{
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden />
       <div ref={ref} tabIndex={-1} data-device-flyout role="dialog" aria-label="设备与 Frida 状态"
-        className={cx('absolute z-50 w-[340px] max-w-[calc(100vw-1.5rem)] space-y-2 rounded-card border border-jz-border bg-jz-surface p-3 shadow-dialog outline-none',
+        className={cx('absolute z-50 w-[340px] max-w-[calc(100vw-1.5rem)] space-y-2 rounded-card border border-jz-border bg-jz-raised p-3 shadow-raised outline-none',
           placement === 'above-start' ? 'bottom-full left-0 mb-2' : 'right-0 top-full mt-3')}>
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-label font-semibold text-jz-ink">设备与 Frida 状态</span>

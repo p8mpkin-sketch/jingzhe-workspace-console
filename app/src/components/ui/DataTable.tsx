@@ -50,7 +50,8 @@ export interface DataTableProps<T> {
 const alignCls = (a?: 'left' | 'right' | 'center') => (a === 'right' ? 'text-right' : a === 'center' ? 'text-center' : 'text-left');
 
 /**
- * The one table. Header 36 px, rows 44 / 52 px, hover surface-2, semantic <th>, numeric columns right-aligned.
+ * The one table. Header 32 px on the inset level, rows 44 / 52 px divided by hairlines, hover and selection as state
+ * layers, semantic <th>, numeric columns right-aligned in mono with tabular figures.
  * Below 900 px it renders the same columns as stacked record cards; never a horizontally scrolling table.
  */
 export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact', onRowClick, selected, onToggle, onToggleAll,
@@ -75,7 +76,7 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
             {rows.map((row, i) => {
               const k = keys[i];
               return (
-                <li key={k} {...rowDataAttrs?.(row)} className={cx('flex gap-3 px-5 py-3', rowClassName?.(row))}>
+                <li key={k} {...rowDataAttrs?.(row)} className={cx('flex gap-3 px-4 py-3', rowClassName?.(row))}>
                   {selectable && (
                     <label className="flex h-jz-touch w-6 flex-none items-start justify-center pt-1">
                       <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand" checked={selected!.has(k)} onChange={() => onToggle!(k, row)} aria-label="选择此行" {...selectAttrs?.row?.(row)} />
@@ -110,15 +111,15 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
     <div className={cx('min-w-0', className)} data-table-layout="table">
       <table aria-label={label} className="w-full border-collapse text-label">
         <thead className={cx(stickyHeader && 'sticky top-0 z-[1]')}>
-          <tr className="h-jz-table-head bg-jz-surface-2/70 text-meta text-jz-muted">
+          <tr className="h-jz-table-head bg-jz-inset text-meta text-jz-muted">
             {selectable && (
-              <th scope="col" className="w-10 pl-5 text-left">
+              <th scope="col" className="w-9 pl-4 text-left">
                 <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand align-middle" checked={allSelected}
                   ref={(el) => { if (el) el.indeterminate = !allSelected && someSelected; }}
                   onChange={() => onToggleAll?.(keys, allSelected)} aria-label="选择本页全部" {...selectAttrs?.all} />
               </th>
             )}
-            {columns.map((c) => <th key={c.key} scope="col" className={cx('px-4 first:pl-5 last:pr-5 font-medium whitespace-nowrap', alignCls(c.align), c.width)}>{c.header}</th>)}
+            {columns.map((c) => <th key={c.key} scope="col" className={cx('px-3 first:pl-4 last:pr-4 font-medium whitespace-nowrap', alignCls(c.align), c.width)}>{c.header}</th>)}
           </tr>
         </thead>
         {!state && (
@@ -129,14 +130,14 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
               return (
                 <tr key={k} {...rowDataAttrs?.(row)} aria-selected={selectable ? on : undefined} tabIndex={onRowClick ? 0 : undefined}
                   onClick={onRowClick ? () => onRowClick(row) : undefined} onKeyDown={activate(row)}
-                  className={cx(rowH, 'border-t border-jz-border text-jz-ink transition-colors duration-hover hover:bg-jz-surface-2', on && 'bg-jz-brand-soft', onRowClick && 'cursor-pointer', rowClassName?.(row))}>
+                  className={cx(rowH, 'border-t border-jz-border text-jz-ink transition-colors duration-fast hover:bg-jz-hover', on && 'bg-jz-selected hover:bg-jz-selected', onRowClick && 'cursor-pointer', rowClassName?.(row))}>
                   {selectable && (
-                    <td className="w-10 pl-5" onClick={(e) => e.stopPropagation()}>
+                    <td className="w-9 pl-4" onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand align-middle" checked={on} onChange={() => onToggle!(k, row)} aria-label="选择此行" {...selectAttrs?.row?.(row)} />
                     </td>
                   )}
                   {columns.map((c) => (
-                    <td key={c.key} className={cx('px-4 py-2 first:pl-5 last:pr-5 align-middle', alignCls(c.align), c.mono && 'font-mono text-meta', c.align === 'right' && 'tnum')}>{c.cell(row, i)}</td>
+                    <td key={c.key} className={cx('px-3 py-1.5 first:pl-4 last:pr-4 align-middle', alignCls(c.align), c.mono && 'font-mono text-mono', c.align === 'right' && 'font-mono text-data tnum')}>{c.cell(row, i)}</td>
                   ))}
                 </tr>
               );
@@ -168,7 +169,7 @@ export const Pagination: React.FC<{
   const [to, setTo] = React.useState('');
   const nav = 'grid h-8 w-8 place-items-center rounded-control border border-jz-border text-jz-ink-2 hover:bg-jz-surface-2 disabled:opacity-45 disabled:pointer-events-none max-[760px]:h-jz-touch max-[760px]:w-jz-touch';
   return (
-    <nav aria-label="分页" className={cx('flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-jz-border px-5 py-2.5 text-label text-jz-muted', className)} {...dataAttrs}>
+    <nav aria-label="分页" className={cx('flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-jz-border px-4 py-2 text-label text-jz-muted', className)} {...dataAttrs}>
       <span>{summary ?? <>共 <span className="tnum text-jz-ink-2">{total}</span> 条</>}</span>
       <div className="flex flex-wrap items-center gap-2">
         {onPageSize && (

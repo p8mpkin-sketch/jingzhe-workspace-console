@@ -59,7 +59,7 @@ export const Dialog: React.FC<DialogProps> = ({ open, onClose, title, descriptio
       onMouseDown={dismissible ? onClose : undefined} data-unified-modal {...dataAttrs}>
       <div ref={ref} role={role} aria-modal="true" aria-labelledby={title ? titleId : undefined} aria-label={title ? undefined : '对话框'} tabIndex={-1}
         onMouseDown={(e) => e.stopPropagation()}
-        className={cx(widthClass, 'flex max-h-[86vh] max-w-[92vw] flex-col rounded-dialog border border-jz-border bg-jz-surface shadow-dialog outline-none modal-panel-in',
+        className={cx(widthClass, 'flex max-h-[86vh] max-w-[92vw] flex-col rounded-dialog border border-jz-border bg-jz-overlay shadow-dialog outline-none modal-panel-in',
           'max-[760px]:w-full max-[760px]:max-w-full max-[760px]:max-h-[92vh] max-[760px]:rounded-b-none')}>
         <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
           <div className="min-w-0">

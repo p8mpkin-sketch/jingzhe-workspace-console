@@ -1,34 +1,20 @@
 import React, { Suspense, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '@/stores/auth';
 import { usePentest } from '@/stores/pentest';
 import { api } from '@/services/api';
 import { TopBar } from '@/layout/TopBar';
 import { Sidebar } from '@/layout/Sidebar';
-import { AiSidebar } from '@/layout/AiSidebar';
-import { ProjectsPage, ProjectSessionsPage } from '@/features/pentest/PentestPages';
-import { TaskCenterPage } from '@/features/tasks/TaskCenterPage';
-import { NewAuditPage } from '@/features/new-audit/NewAuditPage';
-import { AiAssistantPage } from '@/features/ai-assistant/AiAssistantPage';
-import { AgentPage } from '@/features/agent/AgentPage';
-import { SystemPage } from '@/features/system/SystemPage';
-import { SkillsPage } from '@/features/skills/SkillsPage';
-import { ReportCenterPage } from '@/features/reports/ReportCenterPage';
-import { DiscoveryPage } from '@/features/discovery/DiscoveryPage';
-import { CompanyProjectsPage } from '@/features/company/CompanyProjectsPage';
-import { CompanyProjectDetailPage } from '@/features/company/CompanyProjectDetailPage';
+import { Redirect, canonicalTaskSearch } from '@/layout/redirects';
+import { useDevicePoll } from '@/layout/useDevicePoll';
+import { PATHS } from '@/layout/navigation';
 import { LoginGate } from './LoginGate';
+import { PAGES } from './routes';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-// SessionShell renders the six-tab workbench; the legacy ?ui=v3 / ?ui=v2 shells were retired in Phase 17.
-import { SessionShell } from '@/features/pentest/v3/SessionShell';
 import { CmdPalette } from '@/components/CmdPalette';
 import { RefreshCw } from 'lucide-react';
 import { Button, Skeleton } from '@/components/ui';
 import { useNotifications } from '@/stores/notifications';
-// R104-7 收口: R104-1 临时组件展示路由 /dev/ui-kit 已删除(四组件以业务页消费点为验收载体)。
-// R108-4 收口: R108-1 临时组件三态展示页 /dev/ui-kit2 已删除(三件套以业务页消费点为验收载体)。
-
-const DashboardPage = React.lazy(() => import('@/features/dashboard/DashboardPage'));
 
 function PentestFlow() {
   const sid = Number(useParams().sid || 0);
@@ -45,9 +31,18 @@ function PentestFlow() {
   return (
     // R105-2(指令2): 千层饼(DockView 九面板)→ IDE 三区骨架(复合顶栏 46px/主视口 Tab 化/底部 Dock+右抽屉)
     // EnvBar 语义并入骨架顶栏(组件/门控/数据源不变);R52 workbench 收折语义、R76-5 ?tab=vulns 深链照旧
-    <SessionShell />
+    <PAGES.session />
   );
 }
+
+/** `/tasks` with the retired pseudo-status `degraded` is rewritten to its V3 spelling; everything else renders the page. */
+function TasksRoute() {
+  const { search } = useLocation();
+  const next = canonicalTaskSearch(search);
+  if (next) return <Navigate to={{ pathname: PATHS.tasks, search: next }} replace />;
+  return <PAGES.tasks />;
+}
+
 
 
 function BuildVersionGuard() {
@@ -92,11 +87,7 @@ function PageFallback() {
 }
 
 function Shell() {
-  // R101(用户裁定): 「AI 决策助手」栏只在渗透会话工作台渲染——它按会话聚合 Agent 决策时间线,
-  // 在仪表盘等无会话页面=静态 IDLE 死占位(kimi 问题②的全局解)。AI 助手页 R100-3 亦被本白名单覆盖。
-  const { pathname } = useLocation();
-  const onSessionPage = /^\/pentest\/project\/[^/]+\/session\/[^/]+/.test(pathname);
-  // R121: 通知中心 SSE——Shell 只在登录态渲染,挂载即连/卸载即断;token 变化(重登)自动重连
+  // Notification stream: connected while signed in, reconnected when the token changes.
   const token = useAuth((s) => s.token);
   const connectNotif = useNotifications((s) => s.connect);
   const disconnectNotif = useNotifications((s) => s.disconnect);
@@ -104,11 +95,13 @@ function Shell() {
     if (token) connectNotif();
     return () => disconnectNotif();
   }, [token]);
+  useDevicePoll();
   const [navOpen, setNavOpen] = React.useState(false);
+  const { pathname } = useLocation();
   return (
     <div className="flex h-full">
       <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }}
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[110] focus:rounded-control focus:bg-jz-surface focus:px-3 focus:py-2 focus:text-label focus:text-jz-ink focus:shadow-dialog">
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[110] focus:rounded-control focus:bg-jz-overlay focus:px-3 focus:py-2 focus:text-label focus:text-jz-ink focus:shadow-dialog">
         跳到主要内容
       </a>
       <Sidebar mobileOpen={navOpen} onMobileClose={() => setNavOpen(false)} />
@@ -118,35 +111,46 @@ function Shell() {
         <BuildVersionGuard />
         <main id="main" tabIndex={-1} className="flex min-h-0 min-w-0 flex-1 flex-col outline-none">
           <ErrorBoundary>
+          {/* Keyed by the first path segment: moving between modules fades the content in, moving inside one does not remount it. */}
+          <Suspense fallback={<PageFallback />}>
+          <div key={pathname.split('/')[1] || ''} className="route-in flex min-h-0 min-w-0 flex-1 flex-col" data-route>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Suspense fallback={<PageFallback />}><DashboardPage /></Suspense>} />
-            <Route path="/pentest" element={<ProjectsPage />} />
-            <Route path="/pentest/project/:pid" element={<ProjectSessionsPage />} />
-            <Route path="/pentest/project/:pid/session/:sid" element={<PentestFlow />} />
-            <Route path="/tasks" element={<TaskCenterPage />} />
-            <Route path="/new-audit" element={<NewAuditPage />} />
-            <Route path="/reports" element={<ReportCenterPage />} />
-            <Route path="/company" element={<CompanyProjectsPage />} />
-            <Route path="/company/projects/:pid" element={<CompanyProjectDetailPage />} />
-            <Route path="/discovery" element={<DiscoveryPage />} />
-            <Route path="/skills" element={<SkillsPage />} />
-            <Route path="/ai-assistant" element={<AiAssistantPage />} />
-            <Route path="/agent" element={<AgentPage />} />
-            <Route path="/system" element={<SystemPage />} />
-            {/* R47 P0-2: catch-all——已退役旧路由的旧书签直接跳 dashboard,不再白屏 */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to={PATHS.dashboard} replace />} />
+            <Route path="/dashboard" element={<PAGES.dashboard />} />
+            <Route path="/projects" element={<PAGES.projects />} />
+            <Route path="/projects/:pid" element={<PAGES.project />} />
+            <Route path="/projects/:pid/sessions/:sid" element={<PentestFlow />} />
+            <Route path="/tasks" element={<TasksRoute />} />
+            <Route path="/evidence" element={<PAGES.evidence />} />
+            <Route path="/reports" element={<PAGES.reports />} />
+            <Route path="/knowledge" element={<PAGES.knowledge />} />
+            <Route path="/agent" element={<PAGES.agent />} />
+            <Route path="/new-assessment" element={<PAGES.newAssessment />} />
+            <Route path="/system" element={<PAGES.system />} />
+            <Route path="/ai-assistant" element={<PAGES.archive />} />
+
+            {/* Pre-V3 paths. Permanent redirects; the query string is forwarded (layout/redirects.tsx). */}
+            <Route path="/company" element={<Redirect to={PATHS.projects} add={{ scope: 'company' }} />} />
+            <Route path="/company/projects/:pid" element={<Redirect to={(p) => PATHS.project(p.pid || '')} />} />
+            <Route path="/pentest/project/:pid/session/:sid" element={<Redirect to={(p) => PATHS.session(p.pid || 0, p.sid || '')} />} />
+            <Route path="/new-audit" element={<Redirect to={PATHS.newAssessment} />} />
+            <Route path="/skills" element={<Redirect to={PATHS.knowledge} />} />
+            <Route path="/discovery" element={<Redirect to={PATHS.evidence} />} />
+            {/* Assessment project index and its sessions page stay at their old paths until Phase 2 merges them into /projects. */}
+            <Route path="/pentest" element={<PAGES.legacyProjects />} />
+            <Route path="/pentest/project/:pid" element={<PAGES.legacyProjectSessions />} />
+
+            {/* Unknown paths (retired routes, old bookmarks) land on the overview instead of a blank page. */}
+            <Route path="*" element={<Navigate to={PATHS.dashboard} replace />} />
           </Routes>
+          </div>
+          </Suspense>
           </ErrorBoundary>
         </main>
       </div>
-      {/* Session pages show the assistant in the workspace's own right drawer; the global side panel stays off. */}
-      {false && onSessionPage && <AiSidebar />}
     </div>
   );
 }
-
-import { useParams } from 'react-router-dom';
 
 export default function App() {
   const ready = useAuth((s) => s.ready);

@@ -25,6 +25,11 @@ export type { ToolbarFilter, ToolbarSortOption, ToolbarPager } from './DataToolb
 
 // Status
 export { StatusBadge } from './StatusBadge';
+export { StatusGlyph, StatusText } from './StatusGlyph';
+export type { GlyphKind } from './StatusGlyph';
+export { Readout } from './Readout';
+export type { ReadoutCell } from './Readout';
+export { SplitPane } from './SplitPane';
 export type { StatusTone } from './StatusBadge';
 export { Badge, SeverityBadge, Tag } from './Badge';
 export type { SevLevel } from './Badge';

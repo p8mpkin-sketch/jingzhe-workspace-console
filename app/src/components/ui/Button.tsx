@@ -7,21 +7,21 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dang
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const VARIANT: Record<ButtonVariant, string> = {
-  primary: 'bg-jz-brand text-jz-on-brand border border-transparent hover:bg-jz-brand/90',
-  secondary: 'bg-jz-surface text-jz-ink border border-jz-border hover:bg-jz-surface-2',
-  subtle: 'bg-jz-surface text-jz-ink border border-jz-border hover:bg-jz-surface-2',
-  ghost: 'bg-transparent text-jz-ink-2 border border-transparent hover:bg-jz-surface-2 hover:text-jz-ink',
+  primary: 'bg-jz-brand text-jz-on-brand border border-transparent hover:bg-jz-brand/90 active:bg-jz-brand/80',
+  secondary: 'bg-jz-raised text-jz-ink border border-jz-border hover:border-jz-border-strong active:bg-jz-surface-2',
+  subtle: 'bg-jz-raised text-jz-ink border border-jz-border hover:border-jz-border-strong active:bg-jz-surface-2',
+  ghost: 'bg-transparent text-jz-ink-2 border border-transparent hover:bg-jz-hover hover:text-jz-ink active:bg-jz-pressed',
   danger: 'bg-transparent text-jz-red border border-jz-red/40 hover:bg-jz-red/10',
   'danger-solid': 'bg-jz-red text-jz-on-red border border-transparent hover:bg-jz-red/90',
 };
-/** sm is for dense toolbars and table rows only; md / lg are the 36 / 40 px controls of the design system. */
+/** sm (28 px) is for dense toolbars and table rows only; md / lg are the 32 / 36 px controls of the design system. */
 const SIZE: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-meta gap-1.5',
-  md: 'h-jz-control px-3.5 text-label gap-2',
+  sm: 'h-7 px-2.5 text-meta gap-1.5',
+  md: 'h-jz-control px-3 text-label gap-1.5',
   lg: 'h-jz-control-lg px-4 text-label gap-2',
 };
 const BASE = 'inline-flex items-center justify-center rounded-control font-medium whitespace-nowrap select-none ' +
-  'transition-colors duration-hover disabled:opacity-45 disabled:pointer-events-none';
+  'transition-colors duration-fast disabled:opacity-45 disabled:pointer-events-none';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -48,7 +48,7 @@ export interface IconButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLBut
   variant?: Exclude<ButtonVariant, 'subtle'>;
   size?: ButtonSize;
 }
-const ICON_SIZE: Record<ButtonSize, string> = { sm: 'h-8 w-8', md: 'h-jz-control w-jz-control', lg: 'h-jz-control-lg w-jz-control-lg' };
+const ICON_SIZE: Record<ButtonSize, string> = { sm: 'h-7 w-7', md: 'h-jz-control w-jz-control', lg: 'h-jz-control-lg w-jz-control-lg' };
 
 export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
   ({ label, variant = 'ghost', size = 'md', className, children, type = 'button', ...rest }, ref) => (

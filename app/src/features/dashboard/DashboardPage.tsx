@@ -297,10 +297,10 @@ export const DashboardPage: React.FC = () => {
         if (!sid) return;
         if (!pid) { toast.info('该会话未归属项目,域下钻不可用'); return; }   // R79-2: 轻提示替代静默
         // R78-2: 「其他」兜底轴(无 d)下钻 → masvs=__none__(VulnsPanel 解析为 masvs 空过滤)
-        if (!d) { nav(`/pentest/project/${pid}/session/${sid}?tab=vulns&masvs=__none__`); return; }
+        if (!d) { nav(`/projects/${pid}/sessions/${sid}?tab=vulns&masvs=__none__`); return; }
         const matchers = [...d.masvs, ...(d.cwe || [])].join(',');
         if (!matchers) return;
-        nav(`/pentest/project/${pid}/session/${sid}?tab=vulns&masvs=${encodeURIComponent(matchers)}`);
+        nav(`/projects/${pid}/sessions/${sid}?tab=vulns&masvs=${encodeURIComponent(matchers)}`);
       };
       chart.on('click', (p: any) => {
         navDomain(DOMAINS.find((x) => x.name === p?.name));
@@ -393,7 +393,7 @@ export const DashboardPage: React.FC = () => {
       });
       toast.ok(`渗透会话 #${s.id} 已创建 · ${r.app_name || r.package || `#${r.id}`}`);
       loadSessMap();
-      nav(`/pentest/project/${s.project_id ?? 0}/session/${s.id}`);
+      nav(`/projects/${s.project_id ?? 0}/sessions/${s.id}`);
     } catch (e) {
       toast.err(e instanceof ApiError ? e.message : '发起渗透失败');
       setCreatingTid(null);
@@ -526,7 +526,7 @@ export const DashboardPage: React.FC = () => {
   const goSession = (r: any) => {
     const link = sessMap[r.id];
     if (!link) return;
-    nav(`/pentest/project/${link.pid}/session/${link.sid}`);
+    nav(`/projects/${link.pid}/sessions/${link.sid}`);
   };
 
   // R104-3②: 雷达悬浮读数(「悬浮查看各域得分」;hoverIdx=null 时行位保留防跳动)
@@ -620,7 +620,7 @@ export const DashboardPage: React.FC = () => {
         actions={(
           <>
             <Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} onClick={loadSummary} data-dashboard-refresh>刷新</Button>
-            <Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-audit')} data-dashboard-new>新建评估</Button>
+            <Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-assessment')} data-dashboard-new>新建评估</Button>
           </>
         )} />
 
@@ -659,7 +659,7 @@ export const DashboardPage: React.FC = () => {
                       <span className="min-w-0 flex-1 truncate text-meta text-jz-muted" title={t.progress || '还没有上报进度'}>{t.progress || '正在执行，还没有上报进度'}</span>
                       <span className="hidden flex-none font-mono text-meta tnum text-jz-ink-2 tablet:inline" title="从创建到现在">{fmtDur(now - t.created_at)}</span>
                       {hit
-                        ? <Button size="sm" variant="ghost" icon={<ArrowUpRight size={14} aria-hidden />} onClick={() => nav(`/pentest/project/${hit.pid}/session/${hit.sid}`)} data-lw-goto-session={t.id}>会话</Button>
+                        ? <Button size="sm" variant="ghost" icon={<ArrowUpRight size={14} aria-hidden />} onClick={() => nav(`/projects/${hit.pid}/sessions/${hit.sid}`)} data-lw-goto-session={t.id}>会话</Button>
                         : <Tag mono>{t.kind || 'audit'}</Tag>}
                     </li>
                   );
@@ -793,7 +793,7 @@ export const DashboardPage: React.FC = () => {
             state={apkRows.length === 0 ? (
               apkLoading ? <div className="p-4"><SkeletonLoader variant="table" rows={4} /></div>
                 : <EmptyState icon={Database} title="还没有评估" cause="创建评估后,最近的任务会显示在这里。"
-                    action={<Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-audit')}>新建评估</Button>} />
+                    action={<Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={() => nav('/new-assessment')}>新建评估</Button>} />
             ) : undefined} />
         </div>
       </Panel>

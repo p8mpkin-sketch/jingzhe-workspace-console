@@ -24,16 +24,25 @@ You are working on the Jingzhe Workspace UI, a neutral design-system and fronten
 
 ## Visual target
 
+V3 direction: **A+ · Living Instrument Panel** (`docs/v3-plan.md` §2, decided by cz on 2026-11-23).
+
 ```text
-Editorial operations console
-Warm neutral canvas
-Graphite typography
+Living instrument panel: panes divided by hairlines, not floating cards
+Alive through structure and state: run strip, stage stack, typed trace rows
+Warm neutral canvas, six surface levels, no pure white or black
+Graphite typography; mono with tabular figures for data
 Indigo primary
 Teal success/health
 Amber attention
-Red only for blocking failures
-Quiet borders, layered surfaces, restrained motion
+Orange is the identity of risk findings (severity = line width, text and a cap marker)
+Red only for errors, blocked operations and destructive actions; never for a finding
+Status is a glyph shape plus a word, never color alone, never dimmed by opacity
+Quiet borders, layered surfaces, motion only for state changes
 ```
+
+One looping animation is allowed: the opacity pulse on the active-stage dot of the run strip (`.jz-live-dot`),
+at most one on screen and off under `prefers-reduced-motion`. The skeleton shimmer while a request is pending is
+the only other loop. Everything else in "Absolute design rules" stands.
 
 ## Font stack
 

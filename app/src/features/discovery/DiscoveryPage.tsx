@@ -98,7 +98,7 @@ export const DiscoveryPage: React.FC = () => {
 
   return (
     <Page data-discovery-page>
-      <PageHeader title={moduleLabel('/discovery')}
+      <PageHeader title={moduleLabel('/evidence')}
         description="候选路径经过性质、假设、调用图、规划、判定和核验几个环节;只有通过判定并经独立核验的候选才计为已确认。"
         meta={data && (
           <>

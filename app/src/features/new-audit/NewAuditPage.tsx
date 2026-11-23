@@ -436,7 +436,7 @@ export const NewAuditPage: React.FC = () => {
 
   return (
     <Page data-new-audit-page>
-      <PageHeader title={moduleLabel('/new-audit')}
+      <PageHeader title={moduleLabel('/new-assessment')}
         description="提供安装包,选择范围和模式,按需挂载设备,然后创建评估任务。" />
 
       {/* Readiness steps: each links to its section and shows whether it is complete. */}

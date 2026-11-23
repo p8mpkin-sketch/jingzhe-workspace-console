@@ -1,5 +1,97 @@
 # Changelog
 
+## V3 (Jingzhe 1.0) — direction A+ "Living Instrument Panel"
+
+Plan: `docs/v3-plan.md` (Chinese). API contracts, permissions, task and report behavior are unchanged; no backend
+endpoint is added. Every result below was measured on fixtures (`app/scripts/fixtures/api.mjs`) against a production
+preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
+are untouched.
+
+### V3 Phase 1 — Tokens, typography and shell
+
+**Tokens (`design/tokens.css`, single source).** Six surface levels (`rail`, `inset`, `canvas`, `surface`, `raised`,
+`overlay`), none pure white or black; light and dark tuned separately. Interaction is a state layer
+(`--jz-state-hover`, `-pressed`, `-selected`), focus has its own tokens including an inset variant for rows and
+tabs that clip. Type scale tightened (page 24, headline 22, title 18, section 15, body 14 / 1.55) with three new
+mono roles (`data` 13, `mono` 12, `log` 12.5) and a first-class CJK stack (`--jz-font-cjk`). Radii 3 / 6 / 8 / 10 /
+12. Cards no longer cast a shadow; `raised` is for menus, `dialog` for dialogs. The header tint gradient is gone.
+Controls are 32 px (36 large, 44 touch at phone width), top bar 48, rail 220 / 56. Motion tokens `instant` 80,
+`fast` 120, `base` 180, `slow` 240 ms, plus `pulse` 1600 ms for the single allowed loop. Icon stroke 1.5.
+A+ trace tokens are in place for Phase 4: `--jz-trace-*`, `--jz-line-active` (brand), `--jz-line-finding` (orange,
+the identity line of every finding), `--jz-line-error` (red), line widths 2 / 3 px and the cap marker.
+Severity tokens no longer use red: critical and high share orange and differ by text, weight and fill.
+`design/tokens.json` is now generated from the CSS (`scripts/build-tokens-json.mjs`, `--check` to verify).
+
+**Contrast.** `scripts/check-contrast.mjs` covers every text token on all eight grounds, the hover and pressed
+layers over each surface, `on-brand` / `on-red`, control outlines (>= 3:1) and the three trace rules (>= 3:1):
+0 failing pairs. `muted`, `border-strong` and `orange` were adjusted to pass.
+
+**Navigation.** Seven destinations: 概览 / 项目 / 任务 / 证据 / 报告 / 知识 / Agent. 新建评估 is the global primary
+action (rail button, phone top bar, first palette entry), not a destination. 系统 and AI 助手归档 moved to the
+account menu and the palette. One source: `layout/navigation.ts` (`PATHS`, `NAV_PRIMARY`, `NAV_ACTION`, `NAV_SCOPES`).
+
+**Rail.** 220 px by default on desktop, 56 px only when the user collapses it (remembered); starts collapsed below
+1024 px; a drawer at 760 px and below. The workbench and Agent no longer collapse it on their own. The footer has
+two entry points, 设备 and 队列, that show a state word and a shape-coded glyph and no number; the account block
+left the rail (the top bar owns it).
+
+**Top bar.** Breadcrumb (place only, derived from the path; pages can publish object names through
+`layout/breadcrumb.ts`), command button, notifications, theme, account. The device pill, session pill, package
+pill, platform badge and reload button are removed. The 8 s device poll moved unchanged to
+`layout/useDevicePoll.ts`; the top bar now issues no request.
+
+**Command palette.** Opens from Ctrl/⌘+K or the top bar button; lists the primary action, the theme switch, the
+destinations and their sub-scopes with the same labels as the rail; Escape returns focus to the opener; the active
+option is kept in view without `scrollIntoView`.
+
+**Routes.** Canonical: `/projects`, `/projects/:pid`, `/projects/:pid/sessions/:sid`, `/evidence`, `/knowledge`,
+`/new-assessment`. Permanent redirects that forward the query string and hash (`layout/redirects.tsx`):
+`/company` → `/projects?scope=company`, `/company/projects/:pid` → `/projects/:pid`,
+`/pentest/project/:pid/session/:sid` → `/projects/:pid/sessions/:sid`, `/new-audit` → `/new-assessment`,
+`/skills` → `/knowledge`, `/discovery` → `/evidence`, `/tasks?status=degraded` → `/tasks?status=done&partial=1`
+(the task page reads the new spelling). Internal links were moved to the canonical paths.
+**Interim until Phase 2:** `/projects` and `/projects/:pid` are served by the existing company project pages
+(the index already lists every project kind); the assessment project index and its sessions page stay at
+`/pentest` and `/pentest/project/:pid`, reachable from the 会话索引 button on `/projects`. Phase 2 merges them and
+turns those two paths into redirects. No capability lost its owner.
+
+**Primitives.** `Panel`, `Metric`, `ObjectCard`, `Button`, `Tabs`, `SegmentedControl`, `DataTable`, `Popover`,
+`Dialog`, `Page` retuned to the V3 spec (hairlines instead of shadows, inset table head, state-layer hover and
+selection, mono counts on tabs). `StatusBadge` is now a glyph plus a word, not a pill. New: `StatusGlyph` /
+`StatusText` (ten shapes, so a state is readable without color), `Readout` (labelled cells divided by hairlines),
+`SplitPane` (separator with pointer and keyboard resizing). Not used by pages yet; they arrive with their phases.
+
+**Performance.** Every page is a lazy route (`app/routes.tsx`); the rail preloads a page's chunk on hover or
+focus. Main chunk **873.67 kB → 71.81 kB** (277.25 → 23.81 kB gzip). ECharts (589 kB) and the vendor chunk (431 kB)
+load only with the routes that use them.
+
+**Retired.** `layout/AiSidebar.tsx` (unreachable since Phase 15) and `layout/routeChrome.ts` (its only use was
+auto-collapsing the rail).
+
+**Checks (fixtures).**
+
+| Check | Result |
+| --- | --- |
+| `tsc --noEmit`, production build | pass |
+| Token lint | 0 |
+| Contrast | 0 failing pairs |
+| Routes: 14 × widths 390 / 760 / 1024 / 1280 / 1440 / 1680, light; 390 / 760 / 1024 / 1440, dark | 0 overflow, 0 page errors |
+| Data states empty / error / forbidden / slow / stale, 14 routes at 1440 and 390 | 0 overflow, 0 page errors, no error boundary |
+| Shell (`capture-shell.mjs`): drawer at 760 and 390, collapsed rail, popovers in viewport, palette, focus ring on the first 15 tab stops, no number in the rail footer, no pill in the top bar | pass |
+| Redirects (`check-redirects.mjs`, new) | 22 of 22 |
+| Requests per route vs the V2 baseline (`check-requests.mjs`, V3 paths mapped to the pages they render) | identical |
+
+**Known, by design.** Pages still have their V2 layout; only tokens, primitives and the shell changed in this
+phase. The workbench keeps its own left rail until Phase 3, so at 1440 px it shows two rails. Page copy that
+refers to the removed top bar device pill is corrected with each page's phase.
+
+Screenshots: `docs/screenshots/v3/phase-1/` (all routes: light at 1440 / 1024 / 760 / 390, dark at 1440 / 390;
+shell overlays; `states/` for data states).
+
+---
+
+## V2 design-system migration (Phases 1–18)
+
 Design-system migration of `app/`. Routes, API calls, permissions, task and report behavior are unchanged.
 Phases 1–13 are presentation only; Phase 14 also changes request dedupe and stream reconnect pacing;
 Phase 15 routes the feedback requests through the shared client.

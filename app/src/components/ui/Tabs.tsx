@@ -35,16 +35,16 @@ export function Tabs<K extends string>({ items, value, onChange, label, sticky =
   const { refs, onKeyDown } = useRoving(items, value, onChange);
   return (
     <div role="tablist" aria-label={label} onKeyDown={onKeyDown}
-      className={cx('flex items-stretch gap-1 overflow-x-auto border-b border-jz-border [scrollbar-width:none]', sticky && 'sticky top-0 z-10 bg-jz-canvas', className)}>
+      className={cx('flex items-stretch gap-1 overflow-x-auto overflow-y-hidden border-b border-jz-border [scrollbar-width:none]', sticky && 'sticky top-0 z-10 bg-jz-canvas', className)}>
       {items.map((t) => {
         const on = t.key === value;
         return (
           <button key={t.key} ref={(el) => { refs.current[t.key] = el; }} type="button" role="tab" aria-selected={on} tabIndex={on ? 0 : -1}
             disabled={t.disabled} onClick={() => onChange(t.key)} {...t.dataAttrs}
-            className={cx('relative flex-none inline-flex items-center gap-2 px-3 h-jz-control-lg max-[760px]:h-jz-touch text-body whitespace-nowrap -mb-px border-b-2 transition-colors duration-hover disabled:opacity-45',
-              on ? 'border-jz-brand text-jz-ink font-semibold' : 'border-transparent text-jz-ink-2 hover:text-jz-ink hover:border-jz-border-strong')}>
+            className={cx('relative flex-none inline-flex items-center gap-1.5 px-2.5 h-jz-control-lg max-[760px]:h-jz-touch text-label whitespace-nowrap -mb-px border-b-2 transition-colors duration-fast disabled:opacity-45',
+              on ? 'border-jz-brand text-jz-ink font-semibold' : 'border-transparent font-medium text-jz-ink-2 hover:text-jz-ink hover:border-jz-border-strong')}>
             {t.label}
-            {t.count != null && <span className={cx('rounded-pill px-1.5 text-meta tnum font-medium', on ? 'bg-jz-brand-soft text-jz-brand' : 'bg-jz-surface-2 text-jz-muted')}>{t.count}</span>}
+            {t.count != null && <span className={cx('font-mono text-mono tnum', on ? 'text-jz-brand' : 'text-jz-muted')}>{t.count}</span>}
           </button>
         );
       })}
@@ -59,16 +59,16 @@ export function SegmentedControl<K extends string>({ items, value, onChange, lab
   const { refs, onKeyDown } = useRoving(items, value, onChange);
   return (
     <div role="radiogroup" aria-label={label} onKeyDown={onKeyDown}
-      className={cx('inline-flex items-center gap-0.5 rounded-control border border-jz-border bg-jz-surface-2 p-0.5', className)}>
+      className={cx('inline-flex items-center gap-px rounded-control border border-jz-border bg-jz-inset p-px', className)}>
       {items.map((t) => {
         const on = t.key === value;
         return (
           <button key={t.key} ref={(el) => { refs.current[t.key] = el; }} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1}
             disabled={t.disabled} onClick={() => onChange(t.key)} {...t.dataAttrs}
-            className={cx('inline-flex items-center gap-1.5 h-8 px-3 rounded-tag text-label whitespace-nowrap transition-colors duration-hover disabled:opacity-45',
-              on ? 'bg-jz-surface text-jz-ink font-medium shadow-card' : 'text-jz-ink-2 hover:text-jz-ink')}>
+            className={cx('inline-flex items-center gap-1.5 h-7 px-2.5 rounded-tag text-label whitespace-nowrap transition-colors duration-fast disabled:opacity-45 max-[760px]:h-9',
+              on ? 'bg-jz-raised text-jz-ink font-medium ring-1 ring-jz-border' : 'text-jz-ink-2 hover:text-jz-ink')}>
             {t.label}
-            {t.count != null && <span className="text-meta tnum text-jz-muted">{t.count}</span>}
+            {t.count != null && <span className="font-mono text-mono tnum text-jz-muted">{t.count}</span>}
           </button>
         );
       })}

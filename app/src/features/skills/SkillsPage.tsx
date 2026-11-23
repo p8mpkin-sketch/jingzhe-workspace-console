@@ -408,7 +408,7 @@ export const SkillsPage: React.FC = () => {
 
   return (
     <Page data-skills-page>
-      <PageHeader title={moduleLabel('/skills')}
+      <PageHeader title={moduleLabel('/knowledge')}
         description="评估中沉淀的可复用技能。AI 会自动选用、挂载并记录结果;手动操作只用于补挂历史任务和从成功任务提炼。"
         actions={<>
           <Button variant="secondary" onClick={() => setManualOpen(!manualOpen)} data-manual-toggle aria-expanded={manualOpen}

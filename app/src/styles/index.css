@@ -14,6 +14,8 @@ body {
   transition: background-color var(--jz-motion-page) var(--jz-ease), color var(--jz-motion-page) var(--jz-ease);
 }
 h1, h2 { font-family: var(--jz-font-display); }
+/* Chinese text takes no tracking: display tracking applies to Latin headings only through the .jz-* classes. */
+code, kbd, pre, samp { font-family: var(--jz-font-mono); }
 
 /* Scrollbars */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -25,7 +27,7 @@ h1, h2 { font-family: var(--jz-font-display); }
 .dockview-theme-abyss {
   --dv-color-groupview-background: rgb(var(--jz-surface));
   --dv-background: rgb(var(--jz-canvas));
-  --dv-tabs-container-background-color: rgb(var(--jz-surface-2));
+  --dv-tabs-container-background-color: rgb(var(--jz-inset));
   --dv-active-tab-visible-color: rgb(var(--jz-ink));
   --dv-inactive-tab-visible-color: rgb(var(--jz-muted));
   --dv-separator-border: rgb(var(--jz-border));
@@ -34,6 +36,21 @@ h1, h2 { font-family: var(--jz-font-display); }
 
 @layer utilities {
   .tnum { font-variant-numeric: tabular-nums; }
+  /* Focus ring drawn inside the box, for rows and tabs whose container clips. */
+  .focus-inset:focus-visible { outline-offset: var(--jz-focus-inset); }
+  /* A control that keeps a 44 px hit area at phone width without growing visually on desktop. */
+  .touch-target { @apply max-[760px]:min-h-jz-touch; }
+}
+
+@layer components {
+  /* Pane: the V3 unit of layout. A surface bounded by hairlines, never a floating card. */
+  .jz-pane { @apply min-w-0 border border-jz-border bg-jz-surface; }
+  /* Ruled row: one line of a list, log or table. Hover and selection are state layers. */
+  .jz-row { @apply flex min-h-jz-row-dense items-center border-b border-jz-border transition-colors duration-fast; }
+  .jz-row[data-interactive]:hover { background: var(--jz-state-hover); }
+  .jz-row[aria-selected="true"], .jz-row[data-selected="true"] { background: var(--jz-state-selected); }
+  /* Section label inside a pane: small, medium weight, muted. Not uppercase, not tracked. */
+  .jz-eyebrow { @apply text-meta font-medium text-jz-muted; }
 }
 
 /* Theme switch icon: a short fade, no rotation */
@@ -42,12 +59,17 @@ h1, h2 { font-family: var(--jz-font-display); }
 
 /* List rows inside one surface, separated by hairlines */
 @layer components {
-  .divided-card-list { @apply bg-jz-surface rounded-panel divide-y divide-jz-border; }
+  .divided-card-list { @apply bg-jz-surface rounded-card divide-y divide-jz-border; }
 }
 
 /* Dialog entrance */
 @keyframes modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes modal-scale-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes modal-scale-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes drawer-in-right { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+.drawer-in-right { animation: drawer-in-right var(--jz-motion-slow) var(--jz-ease); }
+/* Route content: opacity only, no slide. */
+@keyframes route-in { from { opacity: 0; } to { opacity: 1; } }
+.route-in { animation: route-in var(--jz-motion-fast) var(--jz-ease); }
 .modal-overlay-in { animation: modal-fade-in var(--jz-motion-expand) var(--jz-ease); }
 .modal-panel-in { animation: modal-scale-in var(--jz-motion-page) var(--jz-ease); }
 
@@ -67,8 +89,16 @@ h1, h2 { font-family: var(--jz-font-display); }
 .jz-toast-progress { transform-origin: left; animation: jz-toast-progress 3.5s linear forwards; }
 
 /* New row in a live feed: one fade on mount, never looping */
-@keyframes feed-row-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
-.feed-row-in { animation: feed-row-in var(--jz-motion-page) var(--jz-ease); }
+@keyframes feed-row-in { from { opacity: 0; transform: translateY(var(--jz-rise)); } to { opacity: 1; transform: translateY(0); } }
+.feed-row-in { animation: feed-row-in var(--jz-motion-fast) var(--jz-ease); }
+/* Approval row settling onto its raised surface; step and stage changes (A+ motion spec, docs/v3-plan.md §6.5). */
+.trace-approval { transition: background-color var(--jz-motion-base) var(--jz-ease), border-color var(--jz-motion-base) var(--jz-ease); }
+.stage-collapse { transition: grid-template-rows var(--jz-motion-slow) var(--jz-ease); }
+/* The one loop in the app: the dot of the active stage on the run strip. Opacity only; at most one on screen.
+   Reduced motion sets the duration token to 0, and the rule below stops it outright. */
+@keyframes jz-live { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.jz-live-dot { animation: jz-live var(--jz-motion-pulse) ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .jz-live-dot { animation: none; } }
 
 /* Interaction: state transitions only */
 button { transition: background-color var(--jz-motion-hover) var(--jz-ease), color var(--jz-motion-hover) var(--jz-ease), border-color var(--jz-motion-hover) var(--jz-ease), opacity var(--jz-motion-hover) var(--jz-ease); }
@@ -78,11 +108,18 @@ input, select, textarea { transition: border-color var(--jz-motion-hover) var(--
 /* Keyboard focus: 2px brand ring with 2px offset on every interactive control */
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
 summary:focus-visible, [role="button"]:focus-visible, [role="tab"]:focus-visible, [tabindex]:focus-visible {
-  outline: var(--jz-focus-width) solid rgb(var(--jz-brand));
+  outline: var(--jz-focus-width) solid var(--jz-focus);
   outline-offset: var(--jz-focus-offset);
 }
+/* Controls that sit flush inside a clipping container draw the ring inside. */
+tr:focus-visible, [role="row"]:focus-visible, [role="option"]:focus-visible, [role="tab"]:focus-visible, [role="separator"]:focus-visible, [data-focus-inset]:focus-visible {
+  outline-offset: var(--jz-focus-inset);
+}
+/* A focused control scrolled into view clears the sticky top bar and sticky table headers. */
+:root { scroll-padding-top: calc(var(--jz-topbar-h) + var(--jz-space-2)); }
+:focus-visible { scroll-margin-top: calc(var(--jz-table-head-h) + var(--jz-space-3)); scroll-margin-bottom: var(--jz-space-12); }
 ::selection { background: rgb(var(--jz-brand-soft)); color: rgb(var(--jz-ink)); }
-svg.lucide { stroke-width: 1.75; }
+svg.lucide { stroke-width: var(--jz-icon-stroke); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
