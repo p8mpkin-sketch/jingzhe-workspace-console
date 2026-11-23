@@ -1,0 +1,220 @@
+<!doctype html>
+<!-- Jingzhe V3 direction study. Static mock, not shipped: three directions for the same screen
+     (assessment workbench › Runtime › Agent trace, with a task strip). All data is placeholder.
+     Open with ?d=a|b|c and &t=light|dark. The chosen direction is A; see docs/v3-plan.md §2. -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Jingzhe V3 · direction study</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font:14px/1.55 Inter,"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.root{display:none;height:100%}
+body[data-d=a] .a,body[data-d=b] .b,body[data-d=c] .c{display:flex}
+
+/* ───────── A · Instrument Panel ───────── */
+.a{--canvas:#F3F2EE;--rail:#EBEAE5;--surface:#FAF9F6;--inset:#EEEDE8;--raised:#FEFDFB;--ink:#18191C;--ink2:#3E424A;--muted:#60646E;--line:#DEDCD5;--line2:#8C9099;--brand:#304CCC;--soft:#E5E9FA;--onbrand:#FAF9F6;--teal:#08685C;--amber:#844E00;--red:#B0241A;
+  background:var(--canvas);color:var(--ink)}
+body[data-t=dark] .a{--canvas:#111215;--rail:#0D0E11;--surface:#17191D;--inset:#0F1013;--raised:#1E2126;--ink:#ECEDF0;--ink2:#BEC3CC;--muted:#8A909C;--line:#26292F;--line2:#686E7A;--brand:#8A9EFF;--soft:#1C2448;--onbrand:#0F1116;--teal:#4CC8BA;--amber:#F0B44E;--red:#FA867C}
+.a .rail{width:56px;background:var(--rail);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:4px}
+.a .rail i{width:36px;height:36px;border-radius:6px;display:grid;place-items:center;color:var(--muted);font-style:normal;font-size:12px}
+.a .rail i.on{background:var(--surface);color:var(--brand);box-shadow:inset 2px 0 0 var(--brand)}
+.a .col{flex:1;min-width:0;display:flex;flex-direction:column}
+.a .top{height:48px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 16px;font-size:13px;color:var(--ink2)}
+.a .top b{color:var(--ink);font-weight:600}
+.a .kbd{margin-left:auto;border:1px solid var(--line);border-radius:6px;padding:3px 10px;color:var(--muted);font-size:12px;background:var(--surface)}
+.a .head{display:flex;align-items:center;gap:16px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.a .head h1{font:600 18px/1.3 "Instrument Sans",Inter,"PingFang SC",sans-serif;letter-spacing:-.01em}
+.a .head .sub{font-size:12px;color:var(--muted)}
+.a .readout{margin-left:auto;display:flex;align-items:stretch;border:1px solid var(--line);border-radius:6px;overflow:hidden;font-size:12px}
+.a .readout div{padding:5px 12px;border-right:1px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.a .readout div:last-child{border:0}
+.a .readout span{color:var(--muted)}
+.a .readout b{font-weight:500;font-size:13px}
+.a .btn{height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);font-size:13px;font-weight:500}
+.a .btn.p{background:var(--brand);border-color:var(--brand);color:var(--onbrand)}
+.a .tabs{display:flex;align-items:stretch;gap:0;padding:0 8px;background:var(--surface);border-bottom:1px solid var(--line);height:40px}
+.a .tabs button{padding:0 14px;font-size:13px;font-weight:500;color:var(--ink2);border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px}
+.a .tabs button.on{color:var(--ink);border-color:var(--brand);font-weight:600}
+.a .tabs em{font-style:normal;font-size:12px;color:var(--muted)}
+.a .body{flex:1;min-height:0;display:flex}
+.a .main{flex:1;min-width:0;display:flex;flex-direction:column}
+.a .sub2{height:36px;display:flex;align-items:center;gap:4px;padding:0 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink2)}
+.a .sub2 button{height:26px;padding:0 10px;border-radius:5px}
+.a .sub2 button.on{background:var(--inset);color:var(--ink);font-weight:600}
+.a .sub2 .r{margin-left:auto;font-size:12px;color:var(--muted)}
+.a .trace{flex:1;overflow:hidden;font-size:13px}
+.a .row{display:grid;grid-template-columns:76px 20px 1fr 72px;gap:10px;padding:7px 16px;border-bottom:1px solid var(--line);align-items:baseline}
+.a .row .t{color:var(--muted);font-size:12px}
+.a .row .g{font-size:12px}
+.a .row .d{color:var(--muted);font-size:12px;text-align:right}
+.a .row p{color:var(--ink2)}
+.a .row code{display:block;margin-top:4px;padding:6px 8px;background:var(--inset);border-radius:5px;font-size:12px;color:var(--ink2)}
+.a .stage{padding:6px 16px;background:var(--inset);border-bottom:1px solid var(--line);font-size:12px;color:var(--ink2);display:flex;gap:10px}
+.a .stage b{color:var(--ink);font-weight:600}
+.a .comp{border-top:1px solid var(--line2);background:var(--surface);padding:10px 16px}
+.a .comp .chips{display:flex;gap:6px;margin-bottom:8px;font-size:12px}
+.a .chip{border:1px solid var(--line);border-radius:5px;padding:2px 8px;color:var(--ink2);background:var(--canvas)}
+.a .comp .in{min-height:44px;color:var(--muted);font-size:14px}
+.a .comp .bar{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.a .comp .bar .send{margin-left:auto}
+.a .insp{width:312px;border-left:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;font-size:13px}
+.a .insp .it{display:flex;height:36px;border-bottom:1px solid var(--line);padding:0 8px;gap:2px;align-items:center}
+.a .insp .it button{padding:0 8px;height:26px;border-radius:5px;color:var(--ink2);font-size:12px}
+.a .insp .it button.on{background:var(--inset);color:var(--ink);font-weight:600}
+.a .insp dl{display:grid;grid-template-columns:72px 1fr;gap:6px 10px;padding:12px;font-size:12px}
+.a .insp dt{color:var(--muted)}
+.a .insp h3{font-size:12px;font-weight:600;padding:10px 12px 0;color:var(--ink2)}
+.a .q{margin:8px 12px;padding:8px 10px;border:1px solid var(--line);border-left:2px solid var(--amber);border-radius:5px;font-size:12px}
+.a .q b{display:block;font-weight:600;font-size:13px}
+
+/* ───────── B · Editorial Operations ───────── */
+.b{--canvas:#F6F5F2;--surface:#FFFFFF;--ink:#16181D;--ink2:#434A56;--muted:#616876;--line:#E4E2DC;--brand:#3657D6;--soft:#E9EDFF;--amber:#8A5200;
+  background:var(--canvas);color:var(--ink)}
+body[data-t=dark] .b{--canvas:#0E1116;--surface:#151A21;--ink:#F2F4F7;--ink2:#C4CBD6;--muted:#8B95A5;--line:#28313D;--brand:#8EA2FF;--soft:#1B254A;--amber:#F5B84B}
+.b .rail{width:232px;border-right:1px solid var(--line);padding:20px 12px;font-size:13px;color:var(--ink2)}
+.b .rail h2{font:600 17px "Instrument Sans",Inter,sans-serif;color:var(--ink);padding:0 10px 18px}
+.b .rail a{display:block;padding:8px 10px;border-radius:8px}
+.b .rail a.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.06)}
+.b .col{flex:1;min-width:0;overflow:hidden;padding:36px 48px 0;display:flex;flex-direction:column}
+.b .eyebrow{font-size:13px;color:var(--brand);font-weight:500}
+.b h1{font:600 36px/1.1 "Instrument Sans",Inter,"PingFang SC",sans-serif;letter-spacing:-.02em;margin:6px 0 8px}
+.b .lede{color:var(--ink2);font-size:15px;max-width:720px}
+.b .tabs{display:flex;gap:24px;border-bottom:1px solid var(--line);margin-top:24px;font-size:14px;color:var(--muted)}
+.b .tabs span{padding:10px 0}
+.b .tabs .on{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--ink)}
+.b .grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,720px) 280px;gap:56px;padding-top:28px}
+.b article h3{font:600 20px/1.3 "Instrument Sans",Inter,"PingFang SC",sans-serif;margin-bottom:6px}
+.b article .by{font-size:12px;color:var(--muted);margin-bottom:14px}
+.b article p{font-size:15px;line-height:1.75;color:var(--ink2);margin-bottom:14px}
+.b article blockquote{border-left:2px solid var(--line);padding-left:16px;color:var(--muted);font-size:14px;margin-bottom:18px}
+.b aside{font-size:13px;color:var(--ink2)}
+.b aside h4{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:8px}
+.b aside .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.b aside b{font:600 28px "Instrument Sans",Inter,sans-serif;display:block;color:var(--ink)}
+.b .foot{border-top:1px solid var(--line);padding:14px 0 18px;color:var(--muted);font-size:14px;display:flex;justify-content:space-between;max-width:720px}
+
+/* ───────── C · AI-Native Canvas ───────── */
+.c{--canvas:#EFEFF2;--surface:#FBFBFC;--ink:#17181C;--ink2:#444852;--muted:#666B77;--line:#DCDDE3;--brand:#3A4FCF;--soft:#E7EAFB;--teal:#0A6F63;
+  background:var(--canvas);color:var(--ink);flex-direction:column}
+body[data-t=dark] .c{--canvas:#101114;--surface:#191B20;--ink:#EEEFF2;--ink2:#C0C4CE;--muted:#8C92A0;--line:#2A2D35;--brand:#93A4FF;--soft:#1D2550;--teal:#52CDBE}
+.c .top{height:52px;display:flex;align-items:center;gap:10px;padding:0 20px;font-size:13px;color:var(--ink2)}
+.c .top b{color:var(--ink)}
+.c .pill{border:1px solid var(--line);border-radius:999px;padding:4px 12px;background:var(--surface);font-size:12px}
+.c .stagebox{flex:1;min-height:0;display:grid;grid-template-columns:260px minmax(0,1fr) 280px;gap:20px;padding:8px 20px 0}
+.c .float{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;font-size:13px;color:var(--ink2);align-self:start;box-shadow:0 10px 30px -22px rgba(16,24,40,.35)}
+.c .float h4{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:8px}
+.c .float li{list-style:none;padding:7px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between}
+.c .float li:first-of-type{border:0}
+.c .thread{display:flex;flex-direction:column;gap:14px;max-width:760px;width:100%;margin:0 auto;overflow:hidden}
+.c .msg{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;font-size:14px;color:var(--ink2)}
+.c .msg.u{align-self:flex-end;background:var(--soft);border-color:transparent;color:var(--ink);max-width:70%}
+.c .msg h5{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px;display:flex;gap:8px}
+.c .tool{margin-top:8px;border:1px dashed var(--line);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--muted)}
+.c .dock{padding:14px 20px 20px}
+.c .composer{max-width:760px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:14px 16px;box-shadow:0 18px 48px -28px rgba(16,24,40,.4)}
+.c .composer .chips{display:flex;gap:6px;margin-bottom:10px;font-size:12px}
+.c .composer .chips span{background:var(--soft);color:var(--brand);border-radius:999px;padding:3px 10px}
+.c .composer .in{min-height:48px;color:var(--muted);font-size:15px}
+.c .composer .bar{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.c .composer .send{margin-left:auto;width:36px;height:36px;border-radius:999px;background:var(--brand);color:#FBFBFC;display:grid;place-items:center}
+</style>
+</head>
+<body>
+<script>const q=new URLSearchParams(location.search);document.body.dataset.d=q.get('d')||'a';document.body.dataset.t=q.get('t')||'light';</script>
+
+<!-- A -->
+<div class="root a">
+  <nav class="rail"><i>概</i><i class="on">项</i><i>任</i><i>证</i><i>报</i><i>知</i><i>Ag</i></nav>
+  <div class="col">
+    <div class="top"><span>项目</span>/<span>Example Holdings 2026</span>/<b>Compass</b><span class="mono">#40</span><span class="kbd">搜索或跳转 ⌘K</span></div>
+    <div class="head">
+      <div><h1>Compass</h1><div class="sub mono">com.example.compass · v3.2.1 · emulator-5554</div></div>
+      <div class="readout">
+        <div><span>状态</span><b>◐ 运行中</b></div>
+        <div><span>阶段</span><b class="mono">P2 · 3/12</b></div>
+        <div><span>已用时</span><b class="mono">00:41:07</b></div>
+        <div><span>待复核</span><b class="mono" style="color:var(--amber)">2</b></div>
+      </div>
+      <button class="btn p">暂停</button><button class="btn">⋯</button><button class="btn">检查器</button>
+    </div>
+    <div class="tabs"><button>概览</button><button class="on">运行</button><button>风险发现 <em class="mono">7</em></button><button>证据</button><button>产物</button><button>报告</button></div>
+    <div class="body">
+      <div class="main">
+        <div class="sub2"><button class="on">Agent 轨迹</button><button>终端</button><button>接口与请求</button><span class="r mono">实时 · 最后事件 00:00:04 前</span></div>
+        <div class="trace">
+          <div class="stage"><b>P2 动态验证</b><span class="mono">步骤 3/12</span><span>2 条风险发现 · 1 项待审批</span></div>
+          <div class="row"><span class="t mono">14:02:11</span><span class="g">◆</span><div><b>判断</b><p>登录后接口返回了未脱敏字段，先核对同一接口在匿名状态下的响应。</p></div><span class="d mono">—</span></div>
+          <div class="row"><span class="t mono">14:02:13</span><span class="g">▸</span><div><b>工具 · request.replay</b><code class="mono">GET /api/v1/profile → 200 · 1.2 kB · 匿名</code></div><span class="d mono">1.84s</span></div>
+          <div class="row"><span class="t mono">14:02:15</span><span class="g" style="color:var(--amber)">▲</span><div><b>风险发现 · 匿名可访问个人资料接口</b><p>证据 2 项 · 置信度 高 · 待复核</p></div><span class="d mono">P1</span></div>
+          <div class="row"><span class="t mono">14:02:21</span><span class="g">▸</span><div><b>工具 · storage.inspect</b><code class="mono">shared_prefs/session.xml · 3 keys</code></div><span class="d mono">0.42s</span></div>
+          <div class="row"><span class="t mono">14:02:30</span><span class="g" style="color:var(--teal)">●</span><div><b>步骤完成</b><p>会话存储检查完成，没有新的风险发现。</p></div><span class="d mono">9.1s</span></div>
+        </div>
+        <div class="comp">
+          <div class="chips"><span class="chip mono">会话 #40</span><span class="chip">风险发现 · 匿名可访问个人资料接口</span><span class="chip">+ 上下文</span></div>
+          <div class="in">输入引导，或输入 / 调用命令…</div>
+          <div class="bar"><span class="mono">路由 · model-large</span><span>Enter 发送 · Shift+Enter 换行 · / 命令</span><button class="btn p send">发送</button></div>
+        </div>
+      </div>
+      <aside class="insp">
+        <div class="it"><button class="on">复核队列 2</button><button>简报</button><button>进度</button><button>日志</button></div>
+        <h3>待处理的审批</h3>
+        <div class="q"><b>执行已登录状态下的请求重放</b>等待人工确认 · 14:02:16</div>
+        <div class="q"><b>读取应用私有目录</b>等待人工确认 · 14:01:48</div>
+        <h3>当前检查对象</h3>
+        <dl><dt>类型</dt><dd>接口</dd><dt>标识</dt><dd class="mono">/api/v1/profile</dd><dt>来源</dt><dd>证据 › 关系图</dd></dl>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<!-- B -->
+<div class="root b">
+  <nav class="rail"><h2>惊蛰</h2><a>概览</a><a class="on">项目</a><a>任务</a><a>证据</a><a>报告</a><a>知识</a><a>Agent</a></nav>
+  <div class="col">
+    <div class="eyebrow">Example Holdings 2026 · 会话 #40</div>
+    <h1>Compass 的评估进行到第二阶段</h1>
+    <p class="lede">动态验证已完成 12 步中的 3 步。目前有 2 条风险发现等待复核，1 项动作等待审批。</p>
+    <div class="tabs"><span>概览</span><span class="on">运行</span><span>风险发现</span><span>证据</span><span>产物</span><span>报告</span></div>
+    <div class="grid">
+      <article>
+        <h3>P2 动态验证</h3>
+        <div class="by">14:02 开始 · 步骤 3/12</div>
+        <p>登录后接口返回了未脱敏字段。Agent 先核对同一接口在匿名状态下的响应，重放请求后得到 200，说明这个接口不要求登录。</p>
+        <blockquote>GET /api/v1/profile → 200 · 匿名 · 1.2 kB</blockquote>
+        <p>由此记录了一条风险发现：匿名可访问个人资料接口，证据 2 项，等待复核。随后检查了会话存储，没有新的发现。</p>
+        <div class="foot"><span>输入引导…</span><span>发送</span></div>
+      </article>
+      <aside>
+        <div class="card"><h4>待复核</h4><b>2</b>条风险发现</div>
+        <div class="card"><h4>待审批</h4><b>1</b>项动作</div>
+        <h4>旁注</h4><p>审批在正文的审批段落处理，批准后评估继续。</p>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<!-- C -->
+<div class="root c">
+  <div class="top"><b>惊蛰</b><span class="pill">Compass · 会话 #40</span><span class="pill">运行中 · P2 3/12</span><span style="margin-left:auto" class="pill">概览 · 运行 · 风险发现 · 证据 · 产物 · 报告</span></div>
+  <div class="stagebox">
+    <div class="float"><h4>上下文</h4><ul><li>会话 <span>#40</span></li><li>设备 <span>emulator-5554</span></li><li>风险发现 <span>7</span></li><li>待审批 <span>1</span></li></ul></div>
+    <div class="thread">
+      <div class="msg u">先确认个人资料接口在匿名状态下能不能访问。</div>
+      <div class="msg"><h5><span>Agent</span><span>14:02</span></h5>已重放请求。接口在匿名状态下返回 200，记录为一条风险发现，等待复核。<div class="tool">request.replay · GET /api/v1/profile → 200 · 1.84s</div></div>
+      <div class="msg"><h5><span>Agent</span><span>14:02</span></h5>会话存储检查完成，没有新的风险发现。<div class="tool">storage.inspect · shared_prefs/session.xml · 0.42s</div></div>
+    </div>
+    <div class="float"><h4>需要你处理</h4><ul><li>请求重放审批 <span>批准</span></li><li>匿名可访问个人资料接口 <span>复核</span></li></ul></div>
+  </div>
+  <div class="dock"><div class="composer">
+    <div class="chips"><span>会话 #40</span><span>匿名可访问个人资料接口</span></div>
+    <div class="in">问一个问题，或告诉 Agent 下一步做什么…</div>
+    <div class="bar"><span>model-large</span><span>/ 命令</span><span class="send">↑</span></div>
+  </div></div>
+</div>
+</body>
+</html>
