@@ -1,246 +1,225 @@
-# Jingzhe 1.0 / V3 — product plan
+# 惊蛰 1.0 / V3 产品方案
 
-Written before any V3 code change. Baseline: `main` at `da8907a` (Phase 18). Scope: UI, interaction and
-information architecture only. API contracts, permissions, task behavior and report behavior do not change;
-no backend endpoint is added.
+本方案写于任何 V3 代码改动之前。基线是 `main` 的 `da8907a`（Phase 18）。范围只包括界面、交互和信息架构。
+API 契约、权限、任务行为和报告行为都不变，不新增任何后端接口。
 
-Verification in this plan runs on fixtures (`app/scripts/fixtures/api.mjs`) against a production preview build
-in the cloud container. The canary at `http://localhost:8108/v2/` and the backend on 8099 live on the host
-machine and are not reachable from the container; nothing here claims a canary or production deployment.
-Section 9 says how the canary gets updated and checked.
+本方案里的验证都跑在测试夹具数据上（`app/scripts/fixtures/api.mjs`），对象是云端容器里的生产预览构建。
+金丝雀 `http://localhost:8108/v2/` 和 8099 上的后端都在宿主机上，容器连不到，所以这里不声称任何金丝雀或生产部署。
+第 9 节说明金丝雀如何更新和检查。
 
-Contents: 1 audit · 2 directions · 3 navigation · 4 workbench · 5 tasks · 6 tokens · 7 phases ·
-8 test plan · 9 risks · 10 merge / rename / redirect / retire.
+目录：1 现状审计 · 2 三个方向 · 3 导航 · 4 评估工作台 · 5 任务 · 6 令牌 · 7 阶段 · 8 测试计划 ·
+9 风险 · 10 合并 / 改名 / 重定向 / 退役。
 
 ---
 
-## 1. Current-state audit and duplicate map
+## 1. 现状审计与重复地图
 
-### 1.1 What V2 is
+### 1.1 V2 是什么
 
-14 routes behind a hash router (`app/src/app/App.tsx`), one persistent shell (232 px rail + 52 px top bar),
-a `jz` token set (`design/tokens.css`) and a primitive library (`components/ui`). Token lint is 0, build passes,
-the main chunk is **873.67 kB** (277 kB gzip) because every page except the dashboard is imported eagerly.
+哈希路由下的 14 个路由（`app/src/app/App.tsx`），一个常驻外壳（232 px 导航栏加 52 px 顶栏），
+一套 `jz` 令牌（`design/tokens.css`）和一个基础组件库（`components/ui`）。令牌检查为 0，构建通过，
+主包 **873.67 kB**（gzip 后 277 kB），因为除概览以外的每个页面都是同步引入的。
 
-V2 is consistent at the component level and inconsistent at the product level: the same job has more than
-one home, and each page was restyled in place rather than re-owned.
+V2 在组件层是一致的，在产品层不一致：同一件事有不止一个去处，每个页面都是原地换了样式，而没有重新划定归属。
 
-### 1.2 Duplicate map
+### 1.2 重复地图
 
-| # | Job | Where it lives today | Problem | V3 owner |
+| # | 事项 | 现在在哪里 | 问题 | V3 归属 |
 | --- | --- | --- | --- | --- |
-| D1 | Project index | `/pentest` (`PentestProjectsPage`) and `/company` (`CompanyProjectsPage`) | Both read `GET /api/pentest/projects`; two lists, two card designs, two filter models, two "create" flows | `/projects` with scope all / company / single |
-| D2 | Project detail | `/pentest/project/:pid` (sessions only) and `/company/projects/:pid` (reports, overview, apps, candidates, runs) | Two shells for one entity; a project opened from one index hides the other half | `/projects/:pid`, one shell, five tabs |
-| D3 | Create project | "新建评估项目" wizard, "新建公司项目" dialog, JSON/CSV import | Three entry points, two data models | One "新建项目" dialog with a kind choice; import stays as a secondary action |
-| D4 | Task lists | `/tasks` table; `/tasks` "正在运行" lanes; `/tasks` "关联的渗透会话" rail; dashboard "正在运行" lanes; dashboard task table; project "执行记录"; project sessions table | Seven renderings of running work, three of them on one page | `/tasks` (four sub-scopes); project **执行** tab is the same table filtered by project; dashboard shows at most five rows and links out |
-| D5 | Task detail | 520 px drawer with a `<dl>` and three `<pre>` blocks; artifacts in a separate modal; report on another page | Cramped; log, artifacts and timeline are three unrelated overlays | `/tasks/:id` full-page split view |
-| D6 | Report lists | `/reports` hub (task reports); project detail › 报告 history; workbench › 报告 (local projection); dashboard recent reports | Three lists, three row designs, three action sets | `/reports` with scopes all / project / session / app; the other two are scoped views built from the same components |
-| D7 | Report view modes | `/reports` 预览 / 卡片 / 表格 with separate KPI strip | Already view modes; the KPI strip repeats row data | Kept as view modes; strip removed |
-| D8 | Export actions | Workbench report: export + print in the chapter column **and** in the paper header; report detail: export menu + per-section buttons | Same action twice on one screen | One export group per reader |
-| D9 | "发现" | Rail item 发现 (`/discovery`, hypothesis pipeline); workbench tab 发现 (risk findings); project tab 候选应用 (app candidates); knowledge 候选审核 | One word for three objects | 证据 (`/evidence`), 风险发现 (workbench), 候选应用 (project), 知识候选 (knowledge) |
-| D10 | Device and queue status | Top bar device pill; rail device card; rail queue card; tasks fact row "在线设备"; dashboard header "执行节点"; dashboard queue signal; projects fact row "在线设备" | Same counts in up to four places on one screen | Rail owns the entry points and shows state, not counts; the dashboard owns the queue numbers; `/tasks` owns concurrency |
-| D11 | Summary strips above tables | `/tasks` fact row + lanes, `/pentest` fact row, `/reports` KPI strip, workbench findings count bar + stream summary chips | Repeat what the rows and tabs already say | Removed; counts live on scope tabs |
-| D12 | Workbench chrome | Global rail (collapsed) + workbench rail (240 px) + header + 五轮复核 bar + surface bar | Five layers of navigation before content; 308 px of width and 150 px of height spent on chrome | One header, one tab row, one secondary bar; the second rail and the rounds bar go away (rounds move to the inspector) |
-| D13 | Inspector entry points | Header button "N 项待复核", rail "复核队列", rail "任务简报", header toggle, stream "进度" button | Five ways to open one panel | One toggle (and one keyboard shortcut); inspector tabs do the rest |
-| D14 | Findings triage | 主发现 detail has 确认 / 排除 / 标记待复核 as three equal buttons; "批量确认（预览）" does nothing; 规则卡 has its own state control | No primary action; one fake control | One primary triage action with a menu; real batch triage or none |
-| D15 | Conversation surfaces | `/agent`, `/ai-assistant` (archive), workbench composer, hidden `AiSidebar` | Four composers, three designs | One `Composer` component; `/ai-assistant` leaves navigation; `AiSidebar` is retired (already unreachable) |
-| D16 | Confirmation patterns | `ConfirmDialog` in most places, `window.confirm` in Agent and the archive | Two patterns for destructive actions | `ConfirmDialog` only |
-| D17 | New assessment | Rail item competing with destinations; header button on `/tasks`, `/dashboard`; empty-state links | A verb in a list of nouns | Global primary action in the rail and the command palette |
-| D18 | Session context | Top bar breadcrumb `#40 com.example…`, top bar pills (platform, session, package, device), workbench header (title, package, device, status) | Package and device shown twice | Breadcrumb names the place; the workbench header owns the session facts |
+| D1 | 项目索引 | `/pentest`（`PentestProjectsPage`）和 `/company`（`CompanyProjectsPage`） | 两者读同一个 `GET /api/pentest/projects`；两个列表、两套卡片、两套筛选、两条创建流程 | `/projects`，范围为 全部 / 公司级 / 单应用 |
+| D2 | 项目详情 | `/pentest/project/:pid`（只有会话）和 `/company/projects/:pid`（报告、概览、应用、候选、执行） | 一个实体两个外壳；从一个索引打开的项目看不到另一半 | `/projects/:pid`，一个外壳，五个标签 |
+| D3 | 创建项目 | “新建评估项目”向导、“新建公司项目”对话框、JSON/CSV 导入 | 三个入口，两套数据模型 | 一个“新建项目”对话框，内含类型选择；导入保留为次要操作 |
+| D4 | 任务列表 | `/tasks` 表格；`/tasks` 的“正在运行”泳道；`/tasks` 的“关联的渗透会话”栏；概览页的“正在运行”泳道；概览页任务表；项目“执行记录”；项目会话表 | 运行中的工作有七种呈现，其中三种在同一页 | `/tasks`（四个子范围）；项目的 **执行** 标签是同一张表按项目筛选；概览页最多显示五行并链接出去 |
+| D5 | 任务详情 | 520 px 抽屉，一个 `<dl>` 加三个 `<pre>`；产物在另一个弹窗；报告在另一个页面 | 拥挤；日志、产物、时间线是三个互不相干的浮层 | `/tasks/:id` 整页分栏 |
+| D6 | 报告列表 | `/reports` 中心（任务报告）；项目详情 › 报告历史；工作台 › 报告（本地投影）；概览页最近报告 | 三个列表、三种行样式、三套操作 | `/reports`，范围为 全部 / 项目 / 会话 / 单应用；另外两处是用同一批组件搭的限定范围视图 |
+| D7 | 报告视图模式 | `/reports` 的 预览 / 卡片 / 表格，另有一条 KPI 带 | 本来就是视图模式；KPI 带重复了行里的数据 | 保留为视图模式；去掉 KPI 带 |
+| D8 | 导出操作 | 工作台报告：章节栏里有导出和打印，纸面页头里 **又有一份**；报告详情：导出菜单加各节按钮 | 同一屏上同一个操作出现两次 | 每个阅读器一组导出 |
+| D9 | “发现” | 导航项“发现”（`/discovery`，假设管线）；工作台标签“发现”（风险发现）；项目标签“候选应用”；知识“候选审核” | 一个词指三种对象 | 证据（`/evidence`）、风险发现（工作台）、候选应用（项目）、知识候选（知识） |
+| D10 | 设备与队列状态 | 顶栏设备胶囊；导航栏设备卡；导航栏队列卡；任务页事实行“在线设备”；概览页头“执行节点”；概览页队列信号；项目页事实行“在线设备” | 同一组数字在一屏上最多出现四处 | 导航栏负责入口，只显示状态不显示数字；概览页负责队列数字；`/tasks` 负责并发 |
+| D11 | 表格上方的汇总条 | `/tasks` 事实行加泳道、`/pentest` 事实行、`/reports` KPI 带、工作台发现计数条加流汇总标签 | 重复了行和标签已经说过的内容 | 移除；数量放在范围标签上 |
+| D12 | 工作台外框 | 全局导航栏（收起）+ 工作台导航栏（240 px）+ 页头 + 五轮复核条 + 界面栏 | 到内容之前有五层导航；外框占掉 308 px 宽和 150 px 高 | 一个页头、一行标签、一条二级栏；第二条导航栏和复核条取消（复核并入检查器） |
+| D13 | 检查器入口 | 页头按钮“N 项待复核”、导航栏“复核队列”、导航栏“任务简报”、页头开关、流里的“进度”按钮 | 打开同一个面板有五种方式 | 一个开关（加一个快捷键）；其余由检查器标签完成 |
+| D14 | 发现的处置 | 主发现详情里 确认 / 排除 / 标记待复核 是三个同等的按钮；“批量确认（预览）”不起任何作用；规则卡有自己的状态控件 | 没有主操作；有一个假控件 | 一个带菜单的主处置操作；批量处置要么是真的，要么没有 |
+| D15 | 对话界面 | `/agent`、`/ai-assistant`（归档）、工作台输入框、隐藏的 `AiSidebar` | 四个输入框，三种设计 | 一个 `Composer` 组件；`/ai-assistant` 离开导航；`AiSidebar` 退役（本来就已无法到达） |
+| D16 | 确认方式 | 多数地方用 `ConfirmDialog`，Agent 和归档里用 `window.confirm` | 破坏性操作有两种确认方式 | 只用 `ConfirmDialog` |
+| D17 | 新建评估 | 导航项，和目的地并列；`/tasks`、`/dashboard` 页头按钮；空状态链接 | 一个动词混在一列名词里 | 导航栏和命令面板里的全局主操作 |
+| D18 | 会话上下文 | 顶栏面包屑 `#40 com.example…`、顶栏胶囊（平台、会话、包名、设备）、工作台页头（标题、包名、设备、状态） | 包名和设备显示了两次 | 面包屑只说明位置；会话信息由工作台页头负责 |
 
-### 1.3 Other findings
+### 1.3 其他发现
 
-- Surfaces are pure white (`--jz-surface: 255 255 255`) on light and the brief asks for no pure white.
-- Page titles are 30 px and cost about 120 px before content starts on every index.
-- Status uses pill badges in up to four hues per row (`/tasks`: status, 慢, kind tag, packer chip).
-- Chart tick text is 10 px.
-- Workbench styles are a 729-line hand-written CSS file with its own button, chip and table classes parallel to
-  the primitives.
-- `ConversationView` scrolls with `scrollIntoView` in `jumpStage` (known to scroll clipped ancestors).
+- 浅色下的表面是纯白（`--jz-surface: 255 255 255`），而需求要求不用纯白。
+- 页面标题 30 px，每个索引页在内容开始前要花掉约 120 px。
+- 状态用胶囊徽标，一行里最多四种色相（`/tasks`：状态、慢、类型标签、加固标签）。
+- 图表刻度文字是 10 px。
+- 工作台样式是一份 729 行的手写 CSS，自带一套按钮、标签和表格类，与基础组件平行。
+- `ConversationView` 的 `jumpStage` 用 `scrollIntoView` 滚动（已知会滚动被裁剪的祖先元素）。
 
-### 1.4 What is sound and stays
+### 1.4 哪些是可靠的，予以保留
 
-The data layer (`services`, `stores`, `types`), `useWorkbenchData` (single 8 s poll), `workbench/ia.ts`
-(six tabs, `?view=` ids), the capability matrix, the fixtures and the audit scripts. V3 changes ownership and
-presentation on top of them.
+数据层（`services`、`stores`、`types`）、`useWorkbenchData`（单一的 8 秒轮询）、`workbench/ia.ts`
+（六个标签和 `?view=` 标识）、能力矩阵、夹具数据和审计脚本。V3 在它们之上调整归属和呈现。
 
 ---
 
-## 2. Three visual directions
+## 2. 三个视觉方向
 
-Static study: `design/v3-directions.html` (`?d=a|b|c&t=light|dark`). Renders of the same screen (workbench ›
-Runtime › Agent trace): `docs/screenshots/v3/directions/`.
+静态研究稿：`design/v3-directions.html`（`?d=a|b|c&t=light|dark`）。同一屏（工作台 › 运行 › Agent 轨迹）
+的渲染图在 `docs/screenshots/v3/directions/`。
 
-### A. Instrument Panel — **chosen**
+### A. 仪表面板（Instrument Panel）— **选定**
 
-Panes divided by hairlines, not cards on a canvas. Horizontal tab row, a secondary bar that names the owner of
-the surface, a trace laid out as a ruled log (mono time column, glyph column, content, mono duration column), a
-status readout made of labelled cells, and a composer docked as the control strip of the pane. Density comes
-from alignment and tabular numerals; depth comes from three surface steps and one overlay shadow.
+用细线分隔的面板，而不是画布上的卡片。横向标签行；一条二级栏说明当前界面归谁；轨迹排成带格线的日志
+（等宽时间列、图形列、内容、等宽耗时列）；状态读数由带标签的单元格组成；输入框停靠在面板底部，作为这块面板的控制条。
+密度来自对齐和等宽数字；层次来自三级表面和一种浮层阴影。
 
-### B. Editorial Operations
+### B. 编辑式运营（Editorial Operations）
 
-A reading column with a 36 px headline that states the situation, margin notes for counts, generous whitespace,
-narrative paragraphs for the trace. Calm and legible.
+一条阅读栏，36 px 的标题直接陈述现状，数量写在页边注里，留白充足，轨迹写成叙述段落。安静、易读。
 
-### C. AI-Native Canvas
+### C. AI 原生画布（AI-Native Canvas）
 
-The composer is the centre of the screen, the trace is a conversation thread, context and "needs you" float as
-cards on either side, navigation recedes into pills.
+输入框在屏幕中心，轨迹是一条对话线，上下文和“需要你处理”作为卡片浮在两侧，导航退成胶囊。
 
-### Decision
+### 决定
 
-**A.** The two primary surfaces are a live workbench and a task table. Both are comparison-and-scan work:
-many rows, several numeric columns, state that changes while you look at it. A is the only direction whose
-basic unit is the aligned row.
+**选 A。** 两个核心界面是实时工作台和任务表，都是“比较和扫视”的工作：行很多，有几列数字，状态在你看的时候会变。
+A 是唯一以对齐的行为基本单位的方向。
 
-**Why B loses.** B is V2's stated direction ("editorial operations console"); choosing it would be a reskin.
-More importantly a reading column is narrow by design, which the brief rules out for primary work areas, and
-narrative paragraphs hide the things an operator compares (time, duration, status). B survives in exactly one
-place where reading is the job: the report reader, which is a typographic surface inside A's frame.
+**B 为什么落选。** B 就是 V2 自己声明的方向（“editorial operations console”），选它等于换皮。
+更重要的是，阅读栏天生就窄，而需求明确排除了窄的主工作区；叙述段落还会把操作者要比较的东西（时间、耗时、状态）藏起来。
+B 只在一个以阅读为本的地方保留：报告阅读器，它是 A 框架里的一块排版界面。
 
-**Why C loses.** Only two of fourteen routes are conversations. Putting the composer at the centre makes
-findings, evidence, artifacts and tasks second-class, turns a 500-event trace into a wall of bubbles, and
-floating cards are the "collection of floating cards" the brief excludes. C's real contribution — context
-chips, a command menu, a strong composer — is a component, not a layout; it is built as the `Composer` and
-docked into A's panes.
+**C 为什么落选。** 十四个路由里只有两个是对话。把输入框放在中心，会让发现、证据、产物和任务降为二等，
+会把 500 条事件的轨迹变成一墙气泡，而浮动卡片正是需求排除的“一堆浮动卡片”。
+C 真正的贡献是上下文标签、命令菜单和一个强输入框，这些是组件而不是布局；它们做成 `Composer`，停靠在 A 的面板里。
 
-This is not a blend: layout, surfaces, density and type scale all come from A. The reader and the composer are
-content types that A hosts.
+这不是混搭：布局、表面、密度和字阶全部来自 A。阅读器和输入框是 A 承载的两种内容类型。
 
-Constraint kept from `CLAUDE.md`: warm neutral canvas, graphite ink, indigo primary, teal health, amber
-attention, red for blocking failures; Instrument Sans / Inter / IBM Plex Mono. No new font family is added.
-`CLAUDE.md`'s "visual target" line is updated in Phase 1 to name the V3 direction.
+沿用 `CLAUDE.md` 的约束：暖中性画布、石墨色文字、靛蓝主色、青绿表示健康、琥珀表示注意、红色只用于阻断性失败；
+字体为 Instrument Sans / Inter / IBM Plex Mono，不新增字体。`CLAUDE.md` 的“visual target”一行在阶段 1 更新为 V3 方向。
 
 ---
 
-## 3. Final navigation and page hierarchy
+## 3. 最终导航与页面层级
 
-### 3.1 Primary navigation
+### 3.1 主导航
 
 ```text
-[ 新建评估 ]                    global primary action (rail, command palette, mobile top bar)
+[ 新建评估 ]                    全局主操作（导航栏、命令面板、手机顶栏）
 
 概览      /dashboard
-项目      /projects              scope: 全部 · 公司级 · 单应用        (?scope=all|company|single)
-任务      /tasks                 scope: 运行中 · 排队 · 失败 · 已完成   (?status=running|queued|failed|done; none = 全部)
+项目      /projects              范围：全部 · 公司级 · 单应用            (?scope=all|company|single)
+任务      /tasks                 范围：运行中 · 排队 · 失败 · 已完成      (?status=running|queued|failed|done；不带参数 = 全部)
 证据      /evidence
-报告      /reports               scope: 全部 · 项目报告 · 会话报告 · 单应用报告 (?scope=all|project|session|app)
-知识      /knowledge             知识库 · 候选审核                     (?tab=library|review)
+报告      /reports               范围：全部 · 项目报告 · 会话报告 · 单应用报告 (?scope=all|project|session|app)
+知识      /knowledge             知识库 · 候选审核                        (?tab=library|review)
 Agent     /agent
 
-rail footer: 设备 (state + flyout) · 队列 (state → /tasks?status=failed) · collapse
+导航栏底部：设备（状态 + 浮层） · 队列（状态 → /tasks?status=failed） · 收起
 ```
 
-Not in the rail: 系统 (`/system`, from the account menu and the palette), AI 助手归档 (`/ai-assistant`, from
-the Agent session list and the palette), 登录.
+不在导航栏里的：系统（`/system`，从账户菜单和命令面板进入）、AI 助手归档（`/ai-assistant`，
+从 Agent 会话列表和命令面板进入）、登录。
 
-### 3.2 Page hierarchy
+### 3.2 页面层级
 
 ```text
 /dashboard
 /projects
-  /projects/:pid                       tabs: 概览 · 报告 · 应用 · 候选应用 · 执行      (?tab=)
-    /projects/:pid/sessions/:sid       assessment workbench
-       tabs: 概览 · 运行 · 风险发现 · 证据 · 产物 · 报告                               (?view= ids unchanged)
-       inspector: 复核队列 · 简报 · 进度 · 日志
+  /projects/:pid                       标签：概览 · 报告 · 应用 · 候选应用 · 执行        (?tab=)
+    /projects/:pid/sessions/:sid       评估工作台
+       标签：概览 · 运行 · 风险发现 · 证据 · 产物 · 报告                               (?view= 标识不变)
+       检查器：复核队列 · 简报 · 进度 · 日志
 /tasks
-  /tasks/:id                           tabs: 输出 · 产物 · 时间线 · 报告(link)          (?tab=)
+  /tasks/:id                           标签：输出 · 产物 · 时间线 · 报告（链接）         (?tab=)
 /evidence
 /reports
-  /reports?taskId=:id                  reader (existing deep link, unchanged)
+  /reports?taskId=:id                  阅读器（已有深链，不变）
 /knowledge
 /agent
 /new-assessment
-/system                                tabs: 模型 · 环境 · 审计日志 · 偏好 (+ 用户与权限, API Token for admins)
-/ai-assistant                          archive, read path kept
+/system                                标签：模型 · 环境 · 审计日志 · 偏好（管理员另有 用户与权限、API Token）
+/ai-assistant                          归档，保留只读路径
 ```
 
-The 14 audited routes: dashboard, projects, project detail, workbench, tasks, task detail, evidence, reports,
-report reader, knowledge, agent, new assessment, system, login. The archive and every redirect are checked
-separately.
+接受审计的 14 个路由：概览、项目、项目详情、工作台、任务、任务详情、证据、报告、报告阅读器、知识、Agent、
+新建评估、系统、登录。归档页和每一条重定向单独检查。
 
-### 3.3 Naming rules
+### 3.3 命名规则
 
-| Object | Name | Scope |
+| 对象 | 名称 | 范围 |
 | --- | --- | --- |
-| Conclusion about risk | 风险发现 | session; counted on dashboard and reports |
-| Supporting material | 证据 | session (workbench › 证据) and global (`/evidence`) |
-| App that may belong to a project | 候选应用 | project |
-| Knowledge item awaiting approval | 知识候选 | knowledge |
-| Hypothesis not yet verified | 待证假设 | `/evidence` (was "候选路径") |
+| 关于风险的结论 | 风险发现 | 会话；在概览页和报告里计数 |
+| 支撑材料 | 证据 | 会话（工作台 › 证据）和全局（`/evidence`） |
+| 可能属于某个项目的应用 | 候选应用 | 项目 |
+| 等待批准的知识条目 | 知识候选 | 知识 |
+| 尚未验证的假设 | 待证假设 | `/evidence`（原“候选路径”） |
 
-No screen, tab or column is titled 发现 alone. Findings, evidence and app candidates stay three data objects
-with three sets of endpoints; only names and owners change.
+没有任何页面、标签或列只叫“发现”。风险发现、证据和候选应用仍是三种数据对象，各有各的接口；改的只是名称和归属。
 
-### 3.4 Shell
+### 3.4 外壳
 
 ```text
 ┌──────┬──────────────────────────────────────────────────────────────────┐
-│ mark │ breadcrumb (place)            [搜索或跳转 ⌘K]   🔔  ◐  account    │ 48
+│ 标识 │ 面包屑（位置）                [搜索或跳转 ⌘K]   🔔  ◐  账户        │ 48
 │ 新建 ├──────────────────────────────────────────────────────────────────┤
-│ nav  │                                                                  │
-│  ×7  │  page (full width, one gutter: 24 / 16 / 12)                     │
+│ 导航 │                                                                  │
+│  ×7  │  页面（全宽，一种页边距：24 / 16 / 12）                            │
 │      │                                                                  │
 │ 设备 │                                                                  │
 │ 队列 │                                                                  │
 │  «   │                                                                  │
 └──────┴──────────────────────────────────────────────────────────────────┘
- 220 / 56 (collapsed) / drawer ≤ 760
+ 220 / 56（收起） / ≤ 760 时为抽屉
 ```
 
-- Top bar: breadcrumb, command button, notifications, theme, account. No device or queue counts, no session
-  pills (D10, D18). Refresh moves into the pages that have data (each already has one).
-- Rail: device and queue rows show a state word and a shape-coded dot (在线 / 离线, 空闲 / 运行中 / 有失败);
-  numbers are in the flyout and on the pages that own them.
-- Command palette: the navigation list with the same labels, the sub-scopes, 新建评估, 系统, AI 助手归档,
-  theme switch. One source: `layout/navigation.ts`.
+- 顶栏：面包屑、命令按钮、通知、主题、账户。没有设备或队列数字，没有会话胶囊（D10、D18）。
+  刷新移到有数据的页面里（每个页面本来就有）。
+- 导航栏：设备和队列两行显示一个状态词和一个用形状区分的点（在线 / 离线，空闲 / 运行中 / 有失败）；
+  数字在浮层里，以及在各自负责的页面上。
+- 命令面板：导航列表（文字完全相同）、子范围、新建评估、系统、AI 助手归档、主题切换。唯一来源是 `layout/navigation.ts`。
 
 ---
 
-## 4. Assessment workspace: wireframes and component ownership
+## 4. 评估工作台：线框与组件归属
 
-### 4.1 Shell
+### 4.1 外壳
 
 ```text
-breadcrumb: 项目 / Example Holdings 2026 / Compass #40
+面包屑：项目 / Example Holdings 2026 / Compass #40
 ┌────────────────────────────────────────────────────────────────────────────────────────────┐
 │ ← Compass                            ┌状态────┬阶段─────┬已用时────┬待处理┐ [暂停] [⋯] [▯检查器] │ 56
 │   com.example.compass · v3.2.1 · dev │◐ 运行中 │P2 · 3/12│ 00:41:07 │  3   │                     │
 ├────────────────────────────────────────────────────────────────────────────────────────────┤
-│ 概览   运行   风险发现 7   证据   产物   报告                                                 │ 40  primary tabs
+│ 概览   运行   风险发现 7   证据   产物   报告                                                 │ 40  主标签
 ├───────────────────────────────────────────────────────────────┬─┬──────────────────────────┤
-│ Agent 轨迹 │ 终端 │ 接口与请求        [研判|取证|推理]   实时 · 4s │ │ 复核队列 3  简报  进度  日志 │ 36  secondary bar
+│ Agent 轨迹 │ 终端 │ 接口与请求        [研判|取证|推理]   实时 · 4s │ │ 复核队列 3  简报  进度  日志 │ 36  二级栏
 ├───────────────────────────────────────────────────────────────┤║├──────────────────────────┤
 │                                                               │║│                          │
-│  work surface (owns its scroll)                               │║│  inspector (280–480,      │
-│                                                               │║│  remembered)             │
+│  工作界面（自己管自己的滚动）                                    │║│  检查器（280–480，        │
+│                                                               │║│  记住宽度）               │
 └───────────────────────────────────────────────────────────────┴─┴──────────────────────────┘
-                                                                 ↑ separator: drag, ← → keys
+                                                                 ↑ 分隔条：拖拽，或 ← → 键
 ```
 
-| Element | Component (new unless noted) | Owns | Does not show |
+| 元素 | 组件（未注明即为新增） | 负责 | 不显示 |
 | --- | --- | --- | --- |
-| Session header | `workbench/shell/SessionHeader` | title, package, version, device, run status readout, the one primary run action (启动 / 暂停 / 继续), overflow (设备探索, 回放盘点, 停止), inspector toggle | findings counts by priority, stage chips |
-| Primary tabs | `shell/WorkbenchTabs` (reads `ia.ts`) | six tabs; count on 风险发现; attention dot on 运行 when an approval waits | — |
-| Secondary bar | `shell/SurfaceBar` | secondary tabs, segment switch, one live status slot | summary chips (D11) |
-| Inspector | `shell/Inspector` + `useInspectorState` | 复核队列 (approvals + current inspection target), 简报 (brief, model route, mission status), 进度 (stages, 五轮复核 with recompute), 日志 (last events) | findings, reports, metrics |
-| Degraded notice | existing | which sources failed, retry | — |
+| 会话页头 | `workbench/shell/SessionHeader` | 标题、包名、版本、设备、运行状态读数、唯一的主运行操作（启动 / 暂停 / 继续）、更多菜单（设备探索、回放盘点、停止）、检查器开关 | 按优先级的发现数量、阶段标签 |
+| 主标签 | `shell/WorkbenchTabs`（读 `ia.ts`） | 六个标签；“风险发现”上带数量；有审批等待时“运行”上带提示点 | — |
+| 二级栏 | `shell/SurfaceBar` | 二级标签、分段切换、一个实时状态位 | 汇总标签（D11） |
+| 检查器 | `shell/Inspector` + `useInspectorState` | 复核队列（审批加当前检查对象）、简报（任务简报、模型路由、任务状态）、进度（阶段、五轮复核及重算）、日志（最近事件） | 发现、报告、指标 |
+| 降级提示 | 现有组件 | 哪些数据源失败、重试 | — |
 
-Inspector behavior:
+检查器的行为：
 
-- Docked column at ≥ 1280 px (pushes the surface, covers nothing); drawer with focus trap below 1280; full-width
-  sheet at ≤ 760.
-- Width 280–480 px, drag on the separator or ← / → with the separator focused (`role="separator"`,
-  `aria-valuenow`). Double-click resets to 320.
-- Open state, width and last tab are stored per user (`jz.inspector.<username>`).
-- `Ctrl/⌘ + .` toggles it from anywhere in the workbench; Escape closes the drawer form and returns focus to the
-  toggle. Tabs are a `tablist` with arrow keys.
-- Closes itself on surface change only in drawer form.
+- 1280 px 及以上是停靠列（把主界面往左推，不遮挡任何东西）；1280 以下是带焦点陷阱的抽屉；760 及以下是全宽底部面板。
+- 宽度 280–480 px，拖动分隔条，或让分隔条获得焦点后按 ← / →（`role="separator"`，`aria-valuenow`）。双击恢复为 320。
+- 开合状态、宽度和上次所在的标签按用户保存（`jz.inspector.<username>`）。
+- 在工作台任何位置按 `Ctrl/⌘ + .` 可以开合；抽屉形态下 Escape 关闭并把焦点还给开关。标签是 `tablist`，支持方向键。
+- 只有在抽屉形态下，切换主界面时才会自动关闭。
 
-Layout at widths: 1440 docked inspector optional; 1024 inspector is a drawer, tabs fit; 760 header wraps to two
-lines, readout keeps status + stage; 390 primary tabs scroll horizontally inside their own row, secondary tabs
-stack above the segment switch, one surface at a time.
+各宽度下的布局：1440 时检查器可选停靠；1024 时检查器是抽屉，标签放得下；760 时页头折成两行，读数保留状态和阶段；
+390 时主标签在自己那一行里横向滚动，二级标签叠在分段切换上方，一次只显示一个界面。
 
 ### 4.2 概览
 
@@ -248,32 +227,31 @@ stack above the segment switch, one surface at a time.
 ┌──────────────────────────────────────────────────────────────┬─────────────────────────────┐
 │ 动态验证进行到第 3 步，共 12 步                                 │ 现在需要处理                  │
 │ ◐ 运行中 · P2 · 已用时 00:41:07 · 最后事件 4 秒前               │ ▲ 1 项动作等待审批      处理 → │
-│ ▰▰▰▱▱▱▱▱▱▱▱▱  (stage rail: P0 P1 [P2] LOGIN P3 P4 P5)        │ ▲ 2 条风险发现待复核    复核 → │
-├──────────────────────────────────────────────────────────────┤ ◇ 设备离线 (if real)          │
-│ 风险发现 7 │ 实例 12 │ 已降噪 3 │ 步骤 3/12 │ 模型调用 23 │ Token │ (nothing to do → one line)  │
+│ ▰▰▰▱▱▱▱▱▱▱▱▱  （阶段条：P0 P1 [P2] LOGIN P3 P4 P5）           │ ▲ 2 条风险发现待复核    复核 → │
+├──────────────────────────────────────────────────────────────┤ ◇ 设备离线（确有其事才显示）   │
+│ 风险发现 7 │ 实例 12 │ 已降噪 3 │ 步骤 3/12 │ 模型调用 23 │ Token │ （无事可做时只显示一行）      │
 ├──────────────────────────────────────────────────────────────┴─────────────────────────────┤
-│ 应用                         │ 环境                        │ 最近活动 (only when events exist) │
+│ 应用                         │ 环境                        │ 最近活动（有事件才显示）          │
 │ 包名 · 版本 · SDK · 加固 · 授权 │ 设备 · 系统 · Root · 代理    │ 14:02:30 步骤完成 …               │
-│ (definition rows, no cards)  │                             │ 14:02:15 风险发现 …               │
+│ （定义行，不用卡片）           │                             │ 14:02:15 风险发现 …               │
 └──────────────────────────────┴─────────────────────────────┴──────────────────────────────────┘
 ```
 
-One sentence is the protagonist; it is generated from the run state (not started / running at step n of m /
-waiting for sign-in / paused / interrupted / completed with n findings / failed with the reason). The fact row
-is quiet (label 12, value 20 mono). "现在需要处理" lists only real items and each has one action. Requests are
-the ones `SessionOverview` makes today.
+主角是一句话，由运行状态生成（未开始 / 运行到第 n 步共 m 步 / 等待登录 / 已暂停 / 已中断 / 已完成并有 n 条发现 / 失败及原因）。
+事实行是安静的（标签 12，数值 20 等宽）。“现在需要处理”只列真实存在的事项，每项只有一个操作。
+请求就是 `SessionOverview` 今天发的那些。
 
-Components: `surfaces/OverviewSurface` (replaces `SessionOverview`'s three cards; its data hook is extracted
-unchanged), `ui/Readout`, `ui/FactRow` (existing), `ui/AttentionList`.
+组件：`surfaces/OverviewSurface`（替换 `SessionOverview` 的三张卡片；它的数据钩子原样抽出）、`ui/Readout`、
+`ui/FactRow`（已有）、`ui/AttentionList`。
 
 ### 4.3 运行
 
-Three peer surfaces under secondary tabs: **Agent 轨迹** · **终端** · **接口与请求**.
+二级标签下三个同级界面：**Agent 轨迹** · **终端** · **接口与请求**。
 
 ```text
 Agent 轨迹   [研判 | 取证 | 推理记录]                      实时 · 最后事件 4s 前  [跟随 ✓]
 ┌──────────────────────────────────────────────────────────────────────────────────┐
-│ P2 动态验证   步骤 3/12   2 条风险发现 · 1 项待审批                    (sticky stage row)
+│ P2 动态验证   步骤 3/12   2 条风险发现 · 1 项待审批                    （吸顶的阶段行）
 │ 14:02:11  ◆  判断        登录后接口返回了未脱敏字段 …                            —
 │ 14:02:13  ▸  工具 request.replay      GET /api/v1/profile → 200          1.84s  ⧉ 🔗
 │              ▸ 展开输入 / 输出
@@ -287,20 +265,16 @@ Agent 轨迹   [研判 | 取证 | 推理记录]                      实时 · �
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Agent 轨迹** (`surfaces/runtime/TraceSurface`): a virtualized ruled list. Row kinds: judgement, tool call,
-  finding, approval, step result, operator guidance, error. Each row: time (mono), glyph (shape-coded), body,
-  duration or priority, copy and deep-link actions on hover and focus. Tool rows expand to input and output;
-  reasoning is collapsed by default. Stage rows are sticky. New rows append; when the user has scrolled up the
-  list stops following and shows "n 条新事件 ↓". No skeleton text pretending to type, no progress bar that is
-  not backed by a step count. Stop is the composer's stop; retry appears on a failed guidance send.
-- **终端** (`surfaces/runtime/TerminalSurface`, wraps the existing `VirtualTerminal`): virtualized output,
-  follow with pause on scroll-up, search with match count and next / previous, copy selection or all, clear
-  (view only), fullscreen, wrap toggle, command input where the session supports it; a state line says running /
-  waiting / failed / not connected.
-- **接口与请求** (`surfaces/runtime/RequestsSurface`): segment 接口资产 | 代理流量; a filter row (method, host,
-  status, text); selecting a row opens the request in a detail drawer (not inline expansion); bridge and plugin
-  health in one status line; empty and unavailable states say what is missing (no device, proxy not set, no
-  traffic captured yet).
+- **Agent 轨迹**（`surfaces/runtime/TraceSurface`）：虚拟化的带格线列表。行的种类有判断、工具调用、风险发现、审批、
+  步骤结果、操作者引导、错误。每行有时间（等宽）、图形（用形状区分）、正文、耗时或优先级，悬停和聚焦时出现复制与深链操作。
+  工具行可展开看输入和输出；推理默认折叠。阶段行吸顶。新行追加在末尾；用户向上滚动后列表停止跟随，
+  并显示“n 条新事件 ↓”。没有假装打字的骨架文字，没有不以步数为依据的进度条。停止就是输入框的停止；引导发送失败时出现重试。
+- **终端**（`surfaces/runtime/TerminalSurface`，包住现有的 `VirtualTerminal`）：虚拟化输出，跟随并在向上滚动时暂停，
+  带匹配数量和上一个 / 下一个的搜索，复制选区或全部，清屏（仅视图），全屏，换行开关，会话支持时提供命令输入；
+  一行状态说明 运行中 / 等待 / 失败 / 未连接。
+- **接口与请求**（`surfaces/runtime/RequestsSurface`）：分段为 接口资产 | 代理流量；一行筛选（方法、主机、状态、文本）；
+  选中一行会在详情抽屉里打开该请求（不是行内展开）；桥接和插件的健康状况写在一行状态里；
+  空状态和不可用状态说明缺的是什么（没有设备、未设置代理、还没有捕获到流量）。
 
 ### 4.4 风险发现
 
@@ -311,39 +285,38 @@ Agent 轨迹   [研判 | 取证 | 推理记录]                      实时 · �
 │ ☐ ■ P1   匿名可访问个人资料接口      ○ 待复核  高   ▤▦   2 │ 匿名可访问个人资料接口                 │
 │ ☐ ▲ P2   调试标志开启              ◑ 部分    中   ▤    1 │ [确认 ▾]   2 个实例 · 运行时            │
 │   …                                                  │ 概览 · 证据 2 · 代码 · 轨迹 · 修复       │
-│  (virtualized; ↑ ↓ move, Enter open, Esc close)      │ …                                     │
+│  （虚拟化；↑ ↓ 移动，Enter 打开，Esc 关闭）            │ …                                     │
 └──────────────────────────────────────────────────────┴─────────────────────────────────────┘
 ```
 
-- `surfaces/findings/FindingsSurface` (table) + `FindingDetail` (pane ≥ 1280, drawer below).
-- Four visually distinct encodings: **severity** = filled shape + P-label; **status** = outline glyph + word;
-  **confidence** = word (高 / 中 / 低) in ink-2; **evidence** = small type icons with a text alternative.
-- One primary triage action: a split button whose default is 确认 and whose menu holds 排除 and 恢复待复核.
-  Batch triage applies the same menu to the selection through the existing per-instance endpoint, with a
-  confirmation that lists the rows; the non-functional "批量确认（预览）" is removed.
-- Keyboard: ↑ ↓ move the row focus, Enter opens the detail and moves focus into it, Escape closes it and returns
-  focus to the row, Space toggles selection.
-- No summary above the table; the scope line is part of the toolbar ("7 条 · 12 个实例 · 3 条已降噪").
-- 规则卡, Shadow 对照 and 聚类 stay as segments (capability matrix unchanged).
+- `surfaces/findings/FindingsSurface`（表格）加 `FindingDetail`（1280 及以上是并排面板，以下是抽屉）。
+- 四种视觉上互不相同的编码：**严重度** = 实心形状加 P 标号；**状态** = 空心图形加文字；
+  **置信度** = 文字（高 / 中 / 低），用 ink-2；**证据** = 小的类型图标，带文字替代。
+- 一个主处置操作：一个分裂按钮，默认是“确认”，菜单里有“排除”和“恢复待复核”。
+  批量处置把同一个菜单用在选中的行上，通过现有的按实例接口执行，并有一个列出这些行的确认；
+  不起作用的“批量确认（预览）”被移除。
+- 键盘：↑ ↓ 移动行焦点，Enter 打开详情并把焦点移进去，Escape 关闭详情并把焦点还给那一行，空格切换选中。
+- 表格上方没有汇总；范围说明是工具栏的一部分（“7 条 · 12 个实例 · 3 条已降噪”）。
+- 规则卡、Shadow 对照和聚类仍是分段（能力矩阵不变）。
 
 ### 4.5 证据
 
 ```text
 证据关系 │ 凭据 │ 覆盖矩阵         [关系图 | 事实图谱 | 应用结构]     节点 42 · 边 67   [列表视图]
 ┌───────────────────────────────────────────────────┬────────────────────────────────┐
-│ step 1  overview: node types as grouped lanes      │ selection                      │
-│         with counts (接口 12 · 组件 9 · 凭据 4 …)    │ type · id · attributes         │
-│ step 2  select a group or a node → neighbours      │ linked 风险发现 (links)          │
-│ step 3  inspect → right pane                       │ [展开邻居] [设为检查对象]          │
-│ step 4  expand → one more hop, on demand           │                                │
+│ 第 1 步  总览：节点类型分成带数量的泳道              │ 选中项                          │
+│          （接口 12 · 组件 9 · 凭据 4 …）            │ 类型 · 标识 · 属性               │
+│ 第 2 步  选一个分组或节点 → 显示邻居                 │ 关联的风险发现（链接）            │
+│ 第 3 步  检查 → 右侧面板                            │ [展开邻居] [设为检查对象]          │
+│ 第 4 步  展开 → 按需再走一跳                        │                                │
 └───────────────────────────────────────────────────┴────────────────────────────────┘
 ```
 
-- `surfaces/evidence/EvidenceSurface` hosts the three secondary tabs in one workspace with one selection model.
-- The default graph is never the full hairball: above 40 nodes it opens as the grouped overview; the full
-  layout is something the user asks for. A list view is always one click away and is the default at ≤ 1024.
-- 覆盖矩阵 states per row what is missing and why (no dynamic run yet, device offline, not in scope).
-- At 760 the graph and its side pane stack; at 390 the list view is the only view.
+- `surfaces/evidence/EvidenceSurface` 把三个二级标签放在一个工作区里，共用一套选中模型。
+- 默认图绝不是一团乱麻：超过 40 个节点时以分组总览打开；完整布局要用户主动要求。
+  列表视图始终一键可达，并且在 1024 及以下是默认视图。
+- 覆盖矩阵逐行说明缺什么、为什么缺（还没有动态运行、设备离线、不在范围内）。
+- 760 时图和侧面板上下堆叠；390 时只有列表视图。
 
 ### 4.6 产物
 
@@ -351,79 +324,77 @@ Agent 轨迹   [研判 | 取证 | 推理记录]                      实时 · �
 分析输出 │ 加固信息
 ┌──────────────────────────────┬─────────────────────────────────────────────────────┐
 │ ▾ report/            3       │ report/security_report.md        86 kB · Markdown    │
-│     security_report.md 86 kB │ 来源: 任务 #100 · 已就绪              [下载]          │
+│     security_report.md 86 kB │ 来源：任务 #100 · 已就绪              [下载]          │
 │     executive_summary.md     │ ─────────────────────────────────────────────────── │
-│ ▸ unpacked/          2       │ rendered preview (text / JSON / Markdown / image)    │
-│   run.log            48 kB   │ unsupported type → size, type, download              │
+│ ▸ unpacked/          2       │ 渲染后的预览（文本 / JSON / Markdown / 图片）          │
+│   run.log            48 kB   │ 不支持的类型 → 显示大小、类型和下载                    │
 └──────────────────────────────┴─────────────────────────────────────────────────────┘
 ```
 
-- `surfaces/artifacts/ArtifactBrowser` (shared with task detail; replaces the inline mode of `ArtifactsModal`).
-- Each file shows type, size, source and state. One download control: on the selected file. "打包下载" is the
-  single bulk action in the browser header.
-- 加固信息 (`PackerPanel`) stays a separate secondary surface.
+- `surfaces/artifacts/ArtifactBrowser`（与任务详情共用；替换 `ArtifactsModal` 的内嵌模式）。
+- 每个文件显示类型、大小、来源和状态。只有一个下载控件：在选中的文件上。“打包下载”是浏览器页头里唯一的批量操作。
+- 加固信息（`PackerPanel`）仍是一个独立的二级界面。
 
 ### 4.7 报告
 
 ```text
-报告 │ 版本对比                                   状态: 草稿 · 2 条待复核        [导出 ▾]
+报告 │ 版本对比                                   状态：草稿 · 2 条待复核        [导出 ▾]
 ┌───────────────────┬────────────────────────────────────────────────────────────┐
 │ 1 执行结论与口径    │  Compass 评估报告                                           │
 │ 2 风险发现  (7)    │  会话 #40 · com.example.compass · 2026-11-23               │
 │ 3 覆盖与限制       │                                                            │
 │ 4 复核状态         │  1 执行结论与口径  …                                         │
-│ (sticky, scrollspy)│  2 风险发现   table: 优先级 · 标题 · 状态 · 实例             │
+│ （吸顶，随滚动高亮）│  2 风险发现   表格：优先级 · 标题 · 状态 · 实例               │
 │                   │  …                                                         │
 └───────────────────┴────────────────────────────────────────────────────────────┘
 ```
 
-- `features/reports/reader/` holds `ReaderLayout`, `ChapterNav`, `ReportFindingsTable`, `ExportMenu` and the
-  print stylesheet; the workbench report and `/reports?taskId=` both use them.
-- Review status is one line in the bar: 草稿 while any finding is pending, 可发布 otherwise.
-- Export is one menu: JSON, 打印 / PDF, and "在报告工作区打开" when the session has a task.
-- Print: A4, chapter starts avoid orphaned headings, table header repeats, chrome hidden, paper tokens.
+- `features/reports/reader/` 里放 `ReaderLayout`、`ChapterNav`、`ReportFindingsTable`、`ExportMenu` 和打印样式表；
+  工作台报告和 `/reports?taskId=` 都用它们。
+- 复核状态是栏里的一行：只要还有发现待复核就是“草稿”，否则是“可发布”。
+- 导出是一个菜单：JSON、打印 / PDF，以及会话有任务时的“在报告工作区打开”。
+- 打印：A4，章节开头避免孤立标题，表头每页重复，隐藏外框，使用纸面令牌。
 
-### 4.8 Composer
+### 4.8 输入框（Composer）
 
-`features/composer/Composer.tsx`, used by workbench › Agent 轨迹 and `/agent`.
+`features/composer/Composer.tsx`，用于工作台 › Agent 轨迹和 `/agent`。
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
-│ [会话 #40] [风险发现 · 匿名可访问…  ×] [文件 · run.log ×]  [+ 上下文]          │ context row
-│ 输入引导，或输入 / 调用命令…                                                  │ textarea 1–8 lines
-│ ┌ / menu ───────────────┐                                                  │
+│ [会话 #40] [风险发现 · 匿名可访问…  ×] [文件 · run.log ×]  [+ 上下文]          │ 上下文行
+│ 输入引导，或输入 / 调用命令…                                                  │ 文本框 1–8 行
+│ ┌ / 菜单 ───────────────┐                                                  │
 │ │ /暂停   暂停当前评估     │                                                  │
 │ │ /引用   引用风险发现…    │                                                  │
 │ └───────────────────────┘                                                  │
-│ 路由 · model-large ▾   模式 · 评估 Agent        ⏎ 发送 · ⇧⏎ 换行 · / 命令  [发送] │ control row
+│ 路由 · model-large ▾   模式 · 评估 Agent        ⏎ 发送 · ⇧⏎ 换行 · / 命令  [发送] │ 控制行
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-| Capability | Behavior | Backed by |
+| 能力 | 行为 | 依托 |
 | --- | --- | --- |
-| Multi-line input | grows 1–8 lines, then scrolls; height changes never move the list above (the list owns the flex space) | — |
-| Keyboard | Enter send, Shift+Enter newline, `/` command menu, `@` context menu, ↑ on empty input recalls the last message for edit, Escape closes menus then blurs | — |
-| Context chips | session (fixed), finding, evidence, task, file; picked from real lists; removable | Serialized as a reference block at the top of the message text. The composer says so ("引用会作为文本随消息发送"). No new field is sent. |
-| Model / route | shows the active route; menu lists the catalog | `GET /api/models/catalog`, fallback `/providers` (unchanged); the workbench sends no model, so there it is a read-only indicator |
-| Attachments | "引用产物文件" attaches an artifact path as a chip. Local file upload is shown disabled with the reason: the current endpoints accept text only | existing artifact list |
-| Slash commands | workbench: 启动, 暂停, 继续, 停止 (confirmed), 设备探索, 回放盘点, 引用; agent: 新会话, 分支, 导出轨迹, 联网开关 | existing actions only |
-| Send / stop | send while idle; stop replaces send while running | existing |
-| Retry / edit | a failed send keeps the text and offers 重试; "编辑后重发" refills the input from the last message (a new message is sent; nothing is rewritten) | existing |
-| States | idle, focused, sending, streaming (control row shows "接收中 · 00:12" with a real timer), disabled with reason, error with reason, permission denied (403 → explains and disables) | — |
-| 390 px | chips scroll horizontally, control row keeps route + send; hints are hidden | — |
+| 多行输入 | 从 1 行长到 8 行，之后内部滚动；高度变化不会移动上方的列表（弹性空间归列表） | — |
+| 键盘 | Enter 发送，Shift+Enter 换行，`/` 打开命令菜单，`@` 打开上下文菜单，输入为空时按 ↑ 调回上一条消息以便编辑，Escape 先关菜单再失焦 | — |
+| 上下文标签 | 会话（固定）、风险发现、证据、任务、文件；从真实列表里挑选；可移除 | 序列化成消息文本顶部的一段引用。输入框会明说（“引用会作为文本随消息发送”）。不发送任何新字段。 |
+| 模型 / 路由 | 显示当前路由；菜单列出目录 | `GET /api/models/catalog`，回退到 `/providers`（不变）；工作台不发送模型，所以在那里是只读指示 |
+| 附件 | “引用产物文件”把一个产物路径作为标签附上。本地文件上传显示为禁用并说明原因：现有接口只接受文本 | 现有的产物列表 |
+| 斜杠命令 | 工作台：启动、暂停、继续、停止（需确认）、设备探索、回放盘点、引用；Agent：新会话、分支、导出轨迹、联网开关 | 只映射到已有的操作 |
+| 发送 / 停止 | 空闲时发送；运行时“停止”取代“发送” | 已有 |
+| 重试 / 编辑 | 发送失败时保留文本并提供“重试”；“编辑后重发”把上一条消息填回输入框（发送的是一条新消息，不改写任何东西） | 已有 |
+| 状态 | 空闲、聚焦、发送中、接收中（控制行显示“接收中 · 00:12”，是真实计时）、禁用并说明原因、出错并说明原因、无权限（403 → 说明并禁用） | — |
+| 390 px | 标签横向滚动，控制行保留路由和发送；提示文字隐藏 | — |
 
-No typing dots, no particles, no gradient border. The composer reads as the bottom strip of the pane it
-controls: same surface, one stronger top rule.
+没有打字圆点，没有粒子，没有渐变边框。输入框读起来就是它所控制的那块面板的底部一条：同一个表面，顶部一条更重的线。
 
 ---
 
-## 5. Tasks: list and detail wireframes
+## 5. 任务：列表与详情线框
 
-### 5.1 List
+### 5.1 列表
 
 ```text
 任务                                                   并发 2/4   [刷新] [导出 ▾] [⋯]
-全部 128 │ ◐ 运行中 2 │ ○ 排队 13 │ ✕ 失败 3 │ ✓ 已完成 110          (sticky with the toolbar)
+全部 128 │ ◐ 运行中 2 │ ○ 排队 13 │ ✕ 失败 3 │ ✓ 已完成 110          （与工具栏一起吸顶）
 搜索…        类型 ▾   加固 ▾   负责人 ▾   ☐ 仅部分完成   ☐ 隐藏即时失败
 ┌──┬───────────────────────────┬──────────────┬────────────────┬──────────┬───────────────┬────┐
 │☐ │ 目标                       │ 状态          │ 项目 / 来源      │ 耗时      │ 风险发现        │    │
@@ -436,23 +407,21 @@ controls: same surface, one stronger top rule.
 已选 3 · 跨 2 页     [重新运行] [导出 ▾] [对比报告] [删除]                  1–20 / 128   ‹ ›   20 ▾
 ```
 
-- Row hierarchy: line 1 target name (label 13 / 600) and state; line 2 package + id (mono 12, muted) and the
-  state detail. Failure reason spans the row's remaining columns on line 2, wraps to two lines and is never
-  only a tooltip.
-- Status glyphs are shape-coded and always carry a word: ◐ 运行中, ○ 排队, ✕ 失败, ✓ 已完成, ◑ 部分完成,
-  ⊘ 受阻. Color: brand for running, muted for queued, red for failed, teal-ink for done, amber-ink for partial
-  and blocked. No other colored badge in the row: 类型, 加固 and 慢 become plain text in line 2.
-- Durations, ids, counts and timestamps are mono with tabular figures, right-aligned where they are compared.
-- Risk summary is four fixed mono cells (严重 · 高 · 中 · 低); zeros are muted; no bar.
-- Sticky: scope tabs + toolbar + table header stick under the top bar; bulk bar sticks to the bottom of the
-  list. Selection survives pagination and filtering (as today) and says so ("跨 2 页").
-- Row click opens the task detail. The row menu keeps every existing action (打开会话, 重试, 报告, 产物,
-  向 Agent 提问, 重新运行, 删除) with its `data-*` hook.
-- Removed: the fact row, the "正在运行" lanes and the session rail (D4, D11). 并发 stays as one mono readout in
-  the header because no row carries it. 批量脱壳 summary becomes a collapsed section under the table.
-- Table from 1024 px; record cards below, or by explicit choice. Page sizes of 100 and above are virtualized.
+- 行内层级：第一行是目标名称（label 13 / 600）和状态；第二行是包名加编号（等宽 12，muted）和状态细节。
+  失败原因占用该行第二行余下的各列，最多折两行，绝不只放在悬停提示里。
+- 状态图形用形状区分，并且始终带文字：◐ 运行中、○ 排队、✕ 失败、✓ 已完成、◑ 部分完成、⊘ 受阻。
+  颜色：运行中用主色，排队用 muted，失败用红，已完成用 teal-ink，部分完成和受阻用 amber-ink。
+  行里不再有别的彩色徽标：类型、加固和“慢”变成第二行里的纯文字。
+- 耗时、编号、数量和时间戳用等宽字体加等宽数字，需要比较的列右对齐。
+- 风险摘要是四个固定的等宽单元格（严重 · 高 · 中 · 低）；0 用 muted；不用条形图。
+- 吸顶：范围标签、工具栏和表头吸在顶栏下方；批量操作条吸在列表底部。
+  选中状态在翻页和筛选后仍然保留（和今天一样），并明确说出来（“跨 2 页”）。
+- 点击行打开任务详情。行菜单保留现有的每一个操作（打开会话、重试、报告、产物、向 Agent 提问、重新运行、删除）及其 `data-*` 钩子。
+- 移除：事实行、“正在运行”泳道和会话栏（D4、D11）。并发保留为页头里的一个等宽读数，因为没有哪一行带着它。
+  批量脱壳汇总变成表格下方一个折叠的区块。
+- 1024 px 起用表格；更窄时用记录卡片，或由用户明确选择。每页 100 条及以上时做虚拟化。
 
-### 5.2 Detail (`/tasks/:id`)
+### 5.2 详情（`/tasks/:id`）
 
 ```text
 任务 / Wallet #101
@@ -463,277 +432,267 @@ controls: same surface, one stronger top rule.
 ├──────────────────────────────────────────────────────────────────────────────────────┤
 │ 输出 │ 产物 4 │ 时间线 │ 报告 ↗                                                          │
 ├───────────────────────────────────────────────────────────┬──────────────────────────┤
-│ 搜索…  2/14  ‹ ›   [换行 ✓] [跟随 ✓] [复制] [下载]           │ 时间线 (pinned ≥ 1280)    │
+│ 搜索…  2/14  ‹ ›   [换行 ✓] [跟随 ✓] [复制] [下载]           │ 时间线（≥ 1280 时固定显示） │
 │ 07:52:31  Unpack: 100% · 3 dex                            │ ✓ 脱壳        00:03:12    │
 │ 07:55:43  Decompile: 42% · jadx 4200/10000 classes        │ ◐ 反编译      03:58:00    │
-│ ▌失败原因 (failed tasks: full text, red rule, selectable)   │ ○ 评估                    │
+│ ▌失败原因（失败任务：全文、红色竖线、可选中）                 │ ○ 评估                    │
 │                                                           │ ○ 报告                    │
 └───────────────────────────────────────────────────────────┴──────────────────────────┘
 ```
 
-- `features/tasks/TaskDetailPage` (route), `TaskHeader`, `TaskOutput`, `TaskTimeline`; 产物 reuses
-  `ArtifactBrowser`; 报告 is a link into `/reports?taskId=`.
-- Data: the task row from the existing list request, `GET /api/tasks/counts`, the artifact endpoints, and for
-  tasks with a session the existing session timeline. No new endpoint. Output is the task's progress text and,
-  when the artifact list contains a log file, that file through the existing artifact endpoint; when neither
-  exists the surface says so.
-- Output: mono 12.5 / 1.6, soft wrap by default with a toggle to horizontal scroll, search with match count,
-  copy, download, follow while running with pause on scroll-up; error lines carry a red left rule and a "错误"
-  label (not color alone); virtualized.
-- Timeline: stages with state glyph, duration (mono) and, on failure, the reason in full.
-- Keyboard: Escape returns to the list and restores focus to the row it came from (the list keeps
-  `?focus=<id>`); tabs are a `tablist`; every header action is reachable in order.
-- Not found, forbidden, load error and stale each have a state; a deleted task says so and links back.
+- `features/tasks/TaskDetailPage`（路由）、`TaskHeader`、`TaskOutput`、`TaskTimeline`；“产物”复用 `ArtifactBrowser`；
+  “报告”是指向 `/reports?taskId=` 的链接。
+- 数据：现有列表请求里的任务行、`GET /api/tasks/counts`、产物接口，以及有会话的任务所对应的现有会话时间线。
+  不新增接口。输出是任务的进度文本；当产物列表里有日志文件时，再通过现有的产物接口读那个文件；两者都没有时，界面如实说明。
+- 输出：等宽 12.5 / 1.6，默认软换行，可切换为横向滚动；带匹配数量的搜索、复制、下载；
+  运行时跟随，向上滚动即暂停；错误行带红色左竖线和“错误”标签（不只靠颜色）；虚拟化。
+- 时间线：各阶段带状态图形、耗时（等宽），失败时给出完整原因。
+- 键盘：Escape 返回列表并把焦点还给来时的那一行（列表保留 `?focus=<id>`）；标签是 `tablist`；页头的每个操作都能按顺序到达。
+- 未找到、无权限、加载出错和数据过期各有一个状态；已删除的任务会说明并提供返回链接。
 
-### 5.3 Task typography inside the global system
+### 5.3 全局体系里的任务排版
 
-| Role | Token | Use |
+| 角色 | 令牌 | 用途 |
 | --- | --- | --- |
-| Row title | label 13 / 600, ink | target name |
-| Row meta | mono 12 / 400, muted | package, `#id` |
-| State word | label 13 / 500, state color + glyph | status |
-| State detail | meta 12 / 400, ink-2 | progress, partial reason, failure reason (2 lines) |
-| Data | data 13 mono tabular, ink | duration, counts |
-| Timestamp | mono 12 tabular, muted | created / updated |
-| Detail title | headline 22 / 600 | task detail header |
-| Log | mono 12.5 / 1.6 | output |
+| 行标题 | label 13 / 600，ink | 目标名称 |
+| 行元信息 | mono 12 / 400，muted | 包名、`#id` |
+| 状态词 | label 13 / 500，状态色加图形 | 状态 |
+| 状态细节 | meta 12 / 400，ink-2 | 进度、部分完成的原因、失败原因（两行） |
+| 数据 | data 13 等宽等宽数字，ink | 耗时、数量 |
+| 时间戳 | mono 12 等宽数字，muted | 创建 / 更新时间 |
+| 详情标题 | headline 22 / 600 | 任务详情页头 |
+| 日志 | mono 12.5 / 1.6 | 输出 |
 
 ---
 
-## 6. Design tokens, type scale and motion
+## 6. 设计令牌、字阶与动效
 
-All of it lands in `design/tokens.css` (single source), mirrored by `design/tokens.json` and mapped in
-`app/tailwind.config.js`. Existing token names keep working; values change, names are added.
+全部落在 `design/tokens.css`（唯一来源），由 `design/tokens.json` 镜像，并在 `app/tailwind.config.js` 里映射。
+现有令牌名继续可用；改的是数值，新增的是名称。
 
-### 6.1 Color
+### 6.1 颜色
 
-RGB triplets. Every text token is checked by `scripts/check-contrast.mjs` against every surface it may sit on
-(≥ 4.5 : 1); the script is extended to the new surfaces and state layers.
+RGB 三元组。每个文字令牌都由 `scripts/check-contrast.mjs` 对照它可能落在的每一级表面检查（≥ 4.5 : 1）；
+脚本已扩展到新的表面和状态层。下表是通过检查后的最终数值（muted、border-strong、orange 在检查后调深或调亮过）。
 
-| Token | Light | Dark | Role |
+| 令牌 | 浅色 | 深色 | 角色 |
 | --- | --- | --- | --- |
-| `canvas` | 243 242 238 | 17 18 21 | page ground |
-| `rail` | 235 234 229 | 13 14 17 | navigation |
-| `surface` | 250 249 246 | 23 25 29 | panes |
-| `raised` | 254 253 251 | 30 33 38 | menus, selected tab, sticky bars |
-| `inset` | 239 238 233 | 12 13 16 | wells: code, log, table head |
-| `overlay` | 254 253 251 | 34 37 43 | dialogs, drawers |
-| `surface-2` | 238 237 232 | 33 36 42 | subtle fill (kept name; chips, hover on a pane) |
-| `ink` | 24 25 28 | 236 237 240 | primary text |
-| `ink-2` | 62 66 74 | 190 195 204 | secondary text |
-| `muted` | 96 100 110 | 138 144 156 | meta text |
-| `border` | 222 220 213 | 38 41 48 | hairlines |
-| `border-strong` | 140 144 153 | 104 110 122 | control outlines (≥ 3 : 1) |
-| `brand` | 48 76 204 | 138 158 255 | primary accent |
-| `brand-soft` | 229 233 250 | 28 36 72 | selection |
-| `on-brand` | 250 249 246 | 15 17 22 | text on brand |
-| `teal` / `teal-ink` | 12 130 116 / 8 104 92 | 76 200 186 | health |
-| `amber` / `amber-ink` | 176 104 0 / 132 78 0 | 240 180 78 | attention |
-| `orange` | 180 60 12 | 250 156 108 | "high" severity only |
-| `red` | 176 36 26 | 250 134 124 | blocking failure, destructive |
+| `canvas` | 243 242 238 | 17 18 21 | 页面底色 |
+| `rail` | 235 234 229 | 13 14 17 | 导航栏 |
+| `surface` | 250 249 246 | 23 25 29 | 面板 |
+| `raised` | 254 253 251 | 30 33 38 | 菜单、选中的标签、吸顶栏 |
+| `inset` | 239 238 233 | 12 13 16 | 凹槽：代码、日志、表头 |
+| `overlay` | 254 253 251 | 34 37 43 | 对话框、抽屉 |
+| `surface-2` | 238 237 232 | 33 36 42 | 轻微填充（沿用旧名；标签、面板上的悬停） |
+| `ink` | 24 25 28 | 236 237 240 | 主要文字 |
+| `ink-2` | 62 66 74 | 190 195 204 | 次要文字 |
+| `muted` | 88 92 102 | 158 164 175 | 元信息文字 |
+| `border` | 222 220 213 | 38 41 48 | 细线 |
+| `border-strong` | 122 126 136 | 112 118 130 | 控件轮廓（≥ 3 : 1） |
+| `brand` | 48 76 204 | 138 158 255 | 主强调色 |
+| `brand-soft` | 229 233 250 | 28 36 72 | 选中 |
+| `on-brand` | 250 249 246 | 15 17 22 | 主色上的文字 |
+| `teal` / `teal-ink` | 12 130 116 / 8 104 92 | 76 200 186 | 健康 |
+| `amber` / `amber-ink` | 176 104 0 / 132 78 0 | 240 180 78 | 注意 |
+| `orange` | 158 50 8 | 250 156 108 | 仅用于“高”严重度 |
+| `red` | 176 36 26 | 250 134 124 | 阻断性失败、破坏性操作 |
 
-No pure black or white outside the print tokens. Light and dark are tuned separately (dark is not an inversion:
-the rail is darker than the canvas in both). Semantic color never appears without a glyph or a word.
+除打印令牌外没有纯黑或纯白。浅色和深色分别调校（深色不是反色：两套主题里导航栏都比画布更深）。
+语义色出现时一定带着图形或文字。
 
-State tokens: `--jz-state-hover` (ink 5%), `--jz-state-pressed` (ink 9%), `--jz-state-selected` (brand-soft),
-`--jz-state-selected-ink` (brand), `--jz-focus` (brand), `--jz-focus-width` 2 px, `--jz-focus-offset` 2 px,
-`--jz-focus-inset` −2 px for rows and tabs that clip.
+状态令牌：`--jz-state-hover`（ink 5%，深色 6%）、`--jz-state-pressed`（ink 9%）、`--jz-state-selected`（brand-soft）、
+`--jz-state-selected-ink`（brand）、`--jz-focus`（brand）、`--jz-focus-width` 2 px、`--jz-focus-offset` 2 px，
+以及给会裁剪的行和标签用的 `--jz-focus-inset` −2 px。
 
-### 6.2 Typography
+### 6.2 字体排印
 
-Display: **Instrument Sans**. UI: **Inter**. Mono: **IBM Plex Mono** (all self-hosted, as today).
-Chinese: `--jz-font-cjk: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Source Han Sans SC",
-"Microsoft YaHei UI", "Microsoft YaHei"` is part of all three stacks, so Latin comes from the brand face and
-Chinese from the best system face on each platform. Rules for Chinese: no letter-spacing, no synthesized bold
-below 13 px, body line-height ≥ 1.55, weight 600 only from 13 px up.
+展示：**Instrument Sans**。界面：**Inter**。等宽：**IBM Plex Mono**（全部自托管，和现在一样）。
+中文：`--jz-font-cjk: "PingFang SC", "HarmonyOS Sans SC", "Noto Sans SC", "Source Han Sans SC",
+"Microsoft YaHei UI", "Microsoft YaHei"` 是三套字体栈的一部分，所以拉丁字符来自品牌字体，中文来自各平台最好的系统字体。
+中文的规则：不加字间距，13 px 以下不用合成粗体，正文行高 ≥ 1.55，600 字重只从 13 px 起用。
 
-| Role | Token | Size / line | Weight | Face |
+| 角色 | 令牌 | 字号 / 行高 | 字重 | 字体 |
 | --- | --- | --- | --- | --- |
-| Display (readout) | `display` | 40 / 1.05 | 600 | display, −0.02em |
-| Metric | `metric` | 28 / 1.1 | 600 | display |
-| Page title | `page` | 24 / 1.25 | 600 | display, −0.01em |
-| Headline | `headline` | 22 / 1.25 | 600 | display |
-| Title | `title` | 18 / 1.3 | 600 | display |
-| Section | `section` | 15 / 1.4 | 600 | UI |
-| Body | `body` | 14 / 1.55 | 400 | UI |
-| Label | `label` | 13 / 1.4 | 500 | UI |
-| Meta | `meta` | 12 / 1.45 | 400 | UI |
-| Data | `data` (new) | 13 / 1.4 | 400 / 500 | mono, tabular |
-| Mono | `mono` (new) | 12 / 1.5 | 400 | mono, tabular |
-| Log | `log` (new) | 12.5 / 1.6 | 400 | mono |
+| 展示（读数） | `display` | 40 / 1.05 | 600 | 展示，−0.02em |
+| 指标 | `metric` | 28 / 1.1 | 600 | 展示 |
+| 页面标题 | `page` | 24 / 1.25 | 600 | 展示，−0.01em |
+| 大标题 | `headline` | 22 / 1.25 | 600 | 展示 |
+| 标题 | `title` | 18 / 1.3 | 600 | 展示 |
+| 小节 | `section` | 15 / 1.4 | 600 | 界面 |
+| 正文 | `body` | 14 / 1.55 | 400 | 界面 |
+| 标签 | `label` | 13 / 1.4 | 500 | 界面 |
+| 元信息 | `meta` | 12 / 1.45 | 400 | 界面 |
+| 数据 | `data`（新增） | 13 / 1.4 | 400 / 500 | 等宽，等宽数字 |
+| 等宽 | `mono`（新增） | 12 / 1.5 | 400 | 等宽，等宽数字 |
+| 日志 | `log`（新增） | 12.5 / 1.6 | 400 | 等宽 |
 
-Smallest text is 12 px; chart tick text goes from 10 to 11 and chart labels from 11 to 12. Hierarchy uses
-weight and spacing first; color only separates ink / ink-2 / muted. Three weights: 400, 500, 600.
+最小文字是 12 px；图表刻度文字从 10 提到 11，图表标签从 11 提到 12。层级先靠字重和间距；
+颜色只用来区分 ink / ink-2 / muted。三种字重：400、500、600。
 
-### 6.3 Surface, radius, elevation
+### 6.3 表面、圆角、层次
 
-Levels: canvas → rail → surface → raised → inset → overlay. Separation is a 1 px `border` and spacing.
-`--jz-shadow-card` becomes none; `--jz-shadow-raised` is for menus and popovers; `--jz-shadow-dialog` for
-dialogs and drawers. The header tint gradient is removed.
+层级：canvas → rail → surface → raised → inset → overlay。分隔靠 1 px 的 `border` 和间距。
+`--jz-shadow-card` 变为 none；`--jz-shadow-raised` 用于菜单和气泡；`--jz-shadow-dialog` 用于对话框和抽屉。
+页头的渐变色调被移除。
 
-Radii: tag 3 · control 6 · card 8 · panel 10 · dialog 12 · pill 999.
+圆角：tag 3 · control 6 · card 8 · panel 10 · dialog 12 · pill 999。
 
-### 6.4 Layout
+### 6.4 布局
 
-8 px grid (4 px half step in dense rows only). One page gutter: 24 / 16 (≤ 1100) / 12 (≤ 760).
-Top bar 48. Rail 220 / 56. Controls 32 (36 large, 44 touch at ≤ 760). Table head 32, row 36 dense / 44 regular,
-two-line row 52. Working pages use the full width; prose (reader, markdown) is capped at 760 px inside a
-full-width frame.
+8 px 网格（4 px 半步只用于密集行）。一种页边距：24 / 16（≤ 1100）/ 12（≤ 760）。
+顶栏 48。导航栏 220 / 56。控件 32（大号 36，≤ 760 时触控 44）。表头 32，密集行 36，常规行 44，两行的行 52。
+工作页面用满宽度；文章类内容（阅读器、Markdown）在全宽框架内限宽 760 px。
 
-### 6.5 Motion
+### 6.5 动效
 
-| Token | Value | Use |
+| 令牌 | 数值 | 用途 |
 | --- | --- | --- |
-| `--jz-motion-instant` | 80 ms | pressed |
-| `--jz-motion-fast` (`hover`) | 120 ms | hover, focus ring, selection fill |
-| `--jz-motion-base` (`expand`) | 180 ms | disclosure, tab indicator, inspector open/close, status change |
-| `--jz-motion-slow` (`page`) | 240 ms | drawer, dialog, route content |
-| `--jz-ease` | cubic-bezier(.2, 0, 0, 1) | default |
-| `--jz-ease-exit` | cubic-bezier(.4, 0, 1, 1) | leaving |
+| `--jz-motion-instant` | 80 ms | 按下 |
+| `--jz-motion-fast`（`hover`） | 120 ms | 悬停、焦点环、选中填充 |
+| `--jz-motion-base`（`expand`） | 180 ms | 展开收起、标签指示条、检查器开合、状态变化 |
+| `--jz-motion-slow`（`page`） | 240 ms | 抽屉、对话框、路由内容 |
+| `--jz-ease` | cubic-bezier(.2, 0, 0, 1) | 默认 |
+| `--jz-ease-exit` | cubic-bezier(.4, 0, 1, 1) | 离开 |
 
-| Event | Motion |
+| 事件 | 动效 |
 | --- | --- |
-| Streaming | rows append with a 120 ms opacity fade; no transform, no caret, no reflow above the fold (the list is bottom-anchored and the composer height is outside it) |
-| Selection | background fill 120 ms |
-| Drawer / dialog | translate 16 px + fade, 240 ms in, 180 ms out |
-| Inspector | width 180 ms on toggle; none while dragging |
-| Task status | glyph and word cross-fade 180 ms; the row does not move |
-| Route | content opacity 120 ms; no slide |
-| Reduced motion | all durations 0; follow-scroll jumps instead of smooth-scrolling |
+| 流式输出 | 新行以 120 ms 的透明度淡入追加；不位移，没有光标，首屏以上不重排（列表贴底，输入框高度在列表之外） |
+| 选中 | 背景填充 120 ms |
+| 抽屉 / 对话框 | 位移 16 px 加淡入，进入 240 ms，离开 180 ms |
+| 检查器 | 开合时宽度变化 180 ms；拖拽时没有动效 |
+| 任务状态 | 图形和文字交叉淡化 180 ms；行不移动 |
+| 路由 | 内容透明度 120 ms；不滑动 |
+| 减少动效 | 所有时长为 0；跟随滚动改为直接跳转而不是平滑滚动 |
 
-No looping animation anywhere except the skeleton shimmer while a request is pending.
+除了请求进行中的骨架屏微光外，任何地方都没有循环动画。
 
-### 6.6 Iconography
+### 6.6 图标
 
-Lucide only. 16 px in controls, 14 px in dense rows, 18 px in the rail; stroke 1.5 at every size
-(`--jz-icon-stroke`). Icons accompany labels; an icon-only control has an `aria-label` and a tooltip, and
-destructive or primary actions always have text. Status glyphs are a fixed set in `ui/StatusGlyph`.
+只用 Lucide。控件里 16 px，密集行里 14 px，导航栏里 18 px；所有尺寸的描边都是 1.5（`--jz-icon-stroke`）。
+图标伴随文字出现；只有图标的控件带 `aria-label` 和提示，破坏性操作和主操作一定有文字。
+状态图形是 `ui/StatusGlyph` 里的一组固定图形。
 
 ---
 
-## 7. Implementation phases and file map
+## 7. 实施阶段与文件地图
 
-Each phase ends with: `tsc --noEmit` + production build, token lint 0, capture at 1440 / 1024 / 760 / 390 in
-light and dark, the five data states, overflow and focus checks, screenshots in `docs/screenshots/v3/phase-N/`
-(copied to the project folder), a `CHANGELOG.md` entry with the main chunk size, one commit. The app stays
-runnable after every phase.
+每个阶段结束时：`tsc --noEmit` 加生产构建，令牌检查为 0，在 1440 / 1024 / 760 / 390 四个宽度、明暗两套主题下截图，
+五种数据状态，溢出和焦点检查，截图放进 `docs/screenshots/v3/phase-N/`（并复制到项目共享目录），
+`CHANGELOG.md` 里写一条并附主包大小，一次提交。每个阶段之后应用都能运行。
 
-| Phase | Deliverable | New files | Changed | Retired at end of phase |
+| 阶段 | 交付 | 新文件 | 修改 | 阶段末退役 |
 | --- | --- | --- | --- | --- |
-| 1 Tokens, type, shell | V3 tokens; `Readout`, `StatusGlyph`, `ScopeTabs`, `SplitPane`; new rail, top bar, palette; canonical routes + redirects; lazy routes | `design/tokens.css` (values), `ui/StatusGlyph.tsx`, `ui/Readout.tsx`, `ui/SplitPane.tsx`, `layout/redirects.tsx`, `layout/QueueDeviceEntry.tsx` | `tailwind.config.js`, `styles/index.css`, `layout/{navigation,Sidebar,TopBar,routeChrome}.ts(x)`, `components/CmdPalette.tsx`, `app/App.tsx`, `ui/{Button,Field,Tabs,DataTable,Page,Panel,StatusBadge}.tsx`, `scripts/{capture,check-contrast}.mjs`, `CLAUDE.md` (visual target) | `layout/AiSidebar.tsx` (unreachable since Phase 15) |
-| 2 Project domain | `/projects` index with scopes; `/projects/:pid` shell with five tabs; one create dialog | `features/projects/{ProjectsPage,ProjectDetailPage,ProjectCreateDialog,projectModel}.tsx`, `features/projects/tabs/{Overview,Reports,Apps,Candidates,Runs}.tsx` | `pentest/NewProjectWizard.tsx` (session creation only), fixtures | `pentest/PentestProjectsPage.tsx`, `pentest/PentestPages.tsx`, `pentest/ProjectCard.tsx`, `company/*` |
-| 3 Assessment shell, inspector | header, primary tabs, surface bar, resizable remembered inspector, rounds moved in | `workbench/shell/{SessionHeader,WorkbenchTabs,SurfaceBar,Inspector,useInspectorState}.tsx` | `workbench/{WorkbenchPage,ia,workbench.css,ContextPanel}`, `pentest/v3/SessionShell.tsx` | `workbench/ReviewRoundsBar.tsx` (content moves), workbench rail CSS |
-| 4 Overview, runtime, composer | overview surface; trace, terminal, requests; `Composer` | `workbench/surfaces/OverviewSurface.tsx`, `surfaces/runtime/{TraceSurface,TraceRow,TerminalSurface,RequestsSurface}.tsx`, `features/composer/{Composer,CommandMenu,ContextChips,useComposer}.tsx` | `pentest/{VirtualTerminal,ApiTreePanel,BurpBridgePanel,AiThinkPanel}.tsx`, `workbench/{ConversationView,TrajectoryView,CaseEntry}` | `pentest/SessionOverview.tsx`, `workbench/ConversationView.tsx` |
-| 5 Findings, evidence | table + detail + triage; evidence workspace with progressive graph | `surfaces/findings/{FindingsSurface,FindingDetail,TriageButton}.tsx`, `surfaces/evidence/{EvidenceSurface,GraphOverview,EvidenceList}.tsx` | `workbench/{GraphView,FactGraphView,CredentialsView,EvidenceMatrix,ClustersView}`, `pentest/VulnsPanel.tsx`, `attack-canvas/AttackCanvas.tsx` | `workbench/FindingsView.tsx` |
-| 6 Artifacts, report | artifact browser; shared reader; print | `features/artifacts/{ArtifactBrowser,ArtifactPreview}.tsx`, `features/reports/reader/{ReaderLayout,ChapterNav,ReportFindingsTable,ExportMenu}.tsx`, `styles/print.css` | `pentest/{PackerPanel,ReportDiffPanel}.tsx`, `tasks/ArtifactsModal.tsx` | inline mode of `ArtifactsModal`, `ReportView` in `WorkbenchPage` |
-| 7 Tasks | list; `/tasks/:id` | `features/tasks/{TaskListPage,TaskTable,TaskRow,TaskDetailPage,TaskHeader,TaskOutput,TaskTimeline,taskModel}.tsx` | `tasks/{taskParts,RerunTaskModal}.tsx`, `projects/tabs/Runs.tsx` (uses `TaskTable`) | `tasks/TaskCenterPage.tsx` |
-| 8 Dashboard, reports | dashboard signal; report workspace with scopes | `features/dashboard/{DashboardPage,GlobalSignal,RecentWork}.tsx` (rewritten), `features/reports/{ReportsPage,ReportTable,reportScopes}.tsx` | `reports/{HubView,DetailView,ReportCenterPage}`, `projects/tabs/Reports.tsx` | KPI strips, duplicate device / queue blocks |
-| 9 Knowledge, Agent, evidence, system | knowledge library + review with reasons; Agent three panes on `Composer`; `/evidence`; system tabs | `features/evidence/EvidencePage.tsx`, `features/knowledge/*` (moved from `skills`) | `agent/*`, `system/*`, `ai-assistant/*` (confirm dialogs, archive banner) | `discovery/DiscoveryPage.tsx`, `agent/components_agent/AgentComposer.tsx`, `window.confirm` calls |
-| 10 Responsive, a11y, performance | full matrix, focus and contrast audit, reduced motion, virtualization check, chunk budget, docs | `scripts/check-v3.mjs` (routes × widths × themes × states + focus), `docs/v3-acceptance.md` | `docs/{architecture,page-matrix,design-system,page-specs,capability-matrix}.md`, `README.md` | dead CSS and exports found by the audit |
+| 1 令牌、字体、外壳 | V3 令牌；`Readout`、`StatusGlyph`、`ScopeTabs`、`SplitPane`；新导航栏、顶栏、命令面板；规范路由加重定向；路由懒加载 | `design/tokens.css`（数值）、`ui/StatusGlyph.tsx`、`ui/Readout.tsx`、`ui/SplitPane.tsx`、`layout/redirects.tsx`、`layout/QueueDeviceEntry.tsx` | `tailwind.config.js`、`styles/index.css`、`layout/{navigation,Sidebar,TopBar,routeChrome}.ts(x)`、`components/CmdPalette.tsx`、`app/App.tsx`、`ui/{Button,Field,Tabs,DataTable,Page,Panel,StatusBadge}.tsx`、`scripts/{capture,check-contrast}.mjs`、`CLAUDE.md`（visual target） | `layout/AiSidebar.tsx`（自 Phase 15 起已无法到达） |
+| 2 项目域 | 带范围的 `/projects` 索引；五个标签的 `/projects/:pid` 外壳；一个创建对话框 | `features/projects/{ProjectsPage,ProjectDetailPage,ProjectCreateDialog,projectModel}.tsx`、`features/projects/tabs/{Overview,Reports,Apps,Candidates,Runs}.tsx` | `pentest/NewProjectWizard.tsx`（只留创建会话）、夹具 | `pentest/PentestProjectsPage.tsx`、`pentest/PentestPages.tsx`、`pentest/ProjectCard.tsx`、`company/*` |
+| 3 评估外壳、检查器 | 页头、主标签、二级栏、可调宽并记忆的检查器、五轮复核并入 | `workbench/shell/{SessionHeader,WorkbenchTabs,SurfaceBar,Inspector,useInspectorState}.tsx` | `workbench/{WorkbenchPage,ia,workbench.css,ContextPanel}`、`pentest/v3/SessionShell.tsx` | `workbench/ReviewRoundsBar.tsx`（内容迁走）、工作台导航栏的 CSS |
+| 4 概览、运行、输入框 | 概览界面；轨迹、终端、请求；`Composer` | `workbench/surfaces/OverviewSurface.tsx`、`surfaces/runtime/{TraceSurface,TraceRow,TerminalSurface,RequestsSurface}.tsx`、`features/composer/{Composer,CommandMenu,ContextChips,useComposer}.tsx` | `pentest/{VirtualTerminal,ApiTreePanel,BurpBridgePanel,AiThinkPanel}.tsx`、`workbench/{ConversationView,TrajectoryView,CaseEntry}` | `pentest/SessionOverview.tsx`、`workbench/ConversationView.tsx` |
+| 5 风险发现、证据 | 表格加详情加处置；渐进式图的证据工作区 | `surfaces/findings/{FindingsSurface,FindingDetail,TriageButton}.tsx`、`surfaces/evidence/{EvidenceSurface,GraphOverview,EvidenceList}.tsx` | `workbench/{GraphView,FactGraphView,CredentialsView,EvidenceMatrix,ClustersView}`、`pentest/VulnsPanel.tsx`、`attack-canvas/AttackCanvas.tsx` | `workbench/FindingsView.tsx` |
+| 6 产物、报告 | 产物浏览器；共用阅读器；打印 | `features/artifacts/{ArtifactBrowser,ArtifactPreview}.tsx`、`features/reports/reader/{ReaderLayout,ChapterNav,ReportFindingsTable,ExportMenu}.tsx`、`styles/print.css` | `pentest/{PackerPanel,ReportDiffPanel}.tsx`、`tasks/ArtifactsModal.tsx` | `ArtifactsModal` 的内嵌模式、`WorkbenchPage` 里的 `ReportView` |
+| 7 任务 | 列表；`/tasks/:id` | `features/tasks/{TaskListPage,TaskTable,TaskRow,TaskDetailPage,TaskHeader,TaskOutput,TaskTimeline,taskModel}.tsx` | `tasks/{taskParts,RerunTaskModal}.tsx`、`projects/tabs/Runs.tsx`（改用 `TaskTable`） | `tasks/TaskCenterPage.tsx` |
+| 8 概览页、报告 | 概览页信号；带范围的报告工作区 | `features/dashboard/{DashboardPage,GlobalSignal,RecentWork}.tsx`（重写）、`features/reports/{ReportsPage,ReportTable,reportScopes}.tsx` | `reports/{HubView,DetailView,ReportCenterPage}`、`projects/tabs/Reports.tsx` | KPI 带、重复的设备 / 队列区块 |
+| 9 知识、Agent、证据、系统 | 知识库加带理由的审核；Agent 三栏改用 `Composer`；`/evidence`；系统标签 | `features/evidence/EvidencePage.tsx`、`features/knowledge/*`（从 `skills` 迁来） | `agent/*`、`system/*`、`ai-assistant/*`（确认对话框、归档横幅） | `discovery/DiscoveryPage.tsx`、`agent/components_agent/AgentComposer.tsx`、所有 `window.confirm` 调用 |
+| 10 响应式、无障碍、性能 | 完整矩阵、焦点与对比度审计、减少动效、虚拟化检查、包体预算、文档 | `scripts/check-v3.mjs`（路由 × 宽度 × 主题 × 状态 + 焦点）、`docs/v3-acceptance.md` | `docs/{architecture,page-matrix,design-system,page-specs,capability-matrix}.md`、`README.md` | 审计找出的无用 CSS 和导出 |
 
-Rules for every phase: a file is retired only in the phase where its last capability has a new owner and the
-capability matrix row has been updated; `data-*` hooks used by the audit scripts move with their controls;
-`services`, `stores` and `types` are not edited except to add a type.
+每个阶段都遵守的规则：一个文件只在它最后一项能力有了新归属、并且能力矩阵那一行已经更新的那个阶段退役；
+审计脚本用到的 `data-*` 钩子跟着它们的控件走；`services`、`stores` 和 `types` 不改，新增类型除外。
 
-Performance budget: main chunk ≤ 350 kB (from 873.67 kB) through route-level lazy loading in Phase 1; ECharts
-and React Flow stay in their own chunks and load only on the routes that draw them; the size is reported in
-each changelog entry.
+阶段 1 到阶段 2 之间的过渡：阶段 1 让“项目”指向 `/projects`（暂由现有的公司项目索引承载，它本来就列出所有类型的项目），
+`/pentest` 和 `/pentest/project/:pid` 这两个旧页面在阶段 1 仍然原地可用，到阶段 2 合并完成后才改为重定向。
+这样任何能力都不会在没有新归属之前消失。
+
+性能预算：主包 ≤ 350 kB（原为 873.67 kB），靠阶段 1 的路由级懒加载实现；ECharts 和 React Flow 留在各自的包里，
+只在用到它们的路由加载；每条变更日志里都报告主包大小。
 
 ---
 
-## 8. Screenshot, state and accessibility test plan
+## 8. 截图、状态与无障碍测试计划
 
-| Check | Tool | Scope | Pass |
+| 检查项 | 工具 | 范围 | 通过标准 |
 | --- | --- | --- | --- |
-| Typecheck, build | `npm run build` | every phase | passes |
-| Token lint | `npm run lint:tokens` | every phase | 0 |
-| Contrast | `scripts/check-contrast.mjs` (extended to all V3 surfaces and state layers) | tokens | 0 failing text pairs, controls ≥ 3 : 1 |
-| Route capture | `scripts/capture.mjs` (V3 route list, widths 1440 / 1024 / 760 / 390) | 14 routes × 4 widths × 2 themes | 0 overflow, 0 page errors |
-| Data states | same script, `--variant empty|error|forbidden|slow|stale` | 14 routes at 1440 and 390 | no error boundary; each state has its message and a next step |
-| Workbench | `scripts/check-workbench.mjs` (updated selectors) | 20 surfaces + inspector × 4 widths × 2 themes × states | 0 overflow, every `?view=` resolves, every surface reachable by click |
-| Focus | workbench script + new `check-v3.mjs` | every tab stop on every route | visible indicator, not covered by a sticky bar, logical order |
-| Keyboard paths | `check-v3.mjs` scripted: tabs (arrows), tables (↑ ↓ Enter Esc), menus, dialogs, drawers, inspector separator, composer menus | listed controls | Escape returns focus to the opener |
-| Redirects | `scripts/check-redirects.mjs` (new) | every old path in §10 with its query string | lands on the canonical route with parameters intact |
-| Requests | `scripts/check-requests.mjs` against a new V3 baseline | 14 routes | no request outside the documented set; differences from the V2 baseline are listed and explained in the changelog |
-| Reduced motion | capture with `reducedMotion: 'reduce'` | workbench, tasks | no transition longer than 0.01 ms; follow still works |
-| Screen reader labels | DOM assertions in `check-v3.mjs` | status glyphs, counts on tabs, icon buttons | every glyph has a text alternative; counts are part of the accessible name |
-| Streaming stability | scripted: append 200 events while scrolled up | trace, terminal, task output | scroll offset unchanged; layout shift 0 |
-| Print | `page.pdf()` of the reader | report | chrome absent, table header repeats |
-| Chunk size | build output | every phase | main chunk within budget, reported |
+| 类型检查、构建 | `npm run build` | 每个阶段 | 通过 |
+| 令牌检查 | `npm run lint:tokens` | 每个阶段 | 0 |
+| 对比度 | `scripts/check-contrast.mjs`（已扩展到全部 V3 表面和状态层） | 令牌 | 文字对 0 项不达标，控件 ≥ 3 : 1 |
+| 路由截图 | `scripts/capture.mjs`（V3 路由表，宽度 1440 / 1024 / 760 / 390） | 14 个路由 × 4 个宽度 × 2 套主题 | 0 溢出，0 页面错误 |
+| 数据状态 | 同一脚本，`--variant empty|error|forbidden|slow|stale` | 14 个路由，1440 和 390 | 不出现错误边界；每种状态都有说明和下一步 |
+| 工作台 | `scripts/check-workbench.mjs`（更新选择器） | 20 个界面加检查器 × 4 个宽度 × 2 套主题 × 状态 | 0 溢出，每个 `?view=` 都能解析，每个界面都能点到 |
+| 焦点 | 工作台脚本加新的 `check-v3.mjs` | 每个路由上的每个 Tab 停靠点 | 指示可见，不被吸顶栏遮挡，顺序合理 |
+| 键盘路径 | `check-v3.mjs` 脚本化：标签（方向键）、表格（↑ ↓ Enter Esc）、菜单、对话框、抽屉、检查器分隔条、输入框菜单 | 列出的控件 | Escape 把焦点还给打开它的控件 |
+| 重定向 | `scripts/check-redirects.mjs`（新增） | 第 10 节里每条旧路径，带查询参数 | 落在规范路由上，参数完整 |
+| 请求 | `scripts/check-requests.mjs` 对照新的 V3 基线 | 14 个路由 | 没有文档之外的请求；与 V2 基线的差异在变更日志里逐条列出并说明 |
+| 减少动效 | 用 `reducedMotion: 'reduce'` 截图 | 工作台、任务 | 没有超过 0.01 ms 的过渡；跟随仍然有效 |
+| 读屏标签 | `check-v3.mjs` 里的 DOM 断言 | 状态图形、标签上的数量、图标按钮 | 每个图形都有文字替代；数量是可访问名称的一部分 |
+| 流式稳定性 | 脚本化：在向上滚动的状态下追加 200 条事件 | 轨迹、终端、任务输出 | 滚动位置不变；布局偏移为 0 |
+| 打印 | 对阅读器执行 `page.pdf()` | 报告 | 没有外框，表头每页重复 |
+| 包体大小 | 构建输出 | 每个阶段 | 主包在预算内，并已报告 |
 
-Screenshots: `docs/screenshots/v3/phase-N/` in the repo and
-`/mnt/project-files/jingzhe-migration/v3/phase-N/` for review. Every changed page at 1440 and 1024 minimum,
-plus 760 and 390 where layout changes; light and dark.
+截图：仓库里的 `docs/screenshots/v3/phase-N/`，以及供评审用的 `/mnt/project-files/jingzhe-migration/v3/phase-N/`。
+每个改动过的页面至少有 1440 和 1024，布局有变化的再加 760 和 390；明暗两套主题。
 
-Real backend: the read and write audits from Phases 16–17 (`real-read-audit.mjs`, `real-write-audit.mjs`) are
-rerun on the host machine before the canary is called reviewable. That step needs a session on that machine
-and is reported separately; until then every result is labelled "fixtures".
+真实后端：Phase 16–17 的读写审计（`real-read-audit.mjs`、`real-write-audit.mjs`）会在宿主机上重跑一遍，
+之后才说金丝雀可以评审。这一步需要在那台机器上开一个会话，会单独汇报；在那之前，每个结果都标注为“夹具数据”。
 
 ---
 
-## 9. Risks and rollback
+## 9. 风险与回滚
 
-| Risk | Likelihood | Effect | Mitigation |
+| 风险 | 可能性 | 影响 | 应对 |
 | --- | --- | --- | --- |
-| A redirect drops a query parameter that a deep link depends on (`?view=`, `?tab=`, `?finding=`, `?masvs=`, `?taskId=`, `?sid=&cmp=`, `?focus=`, `?status=`, `?task=`) | medium | broken bookmarks and notification links | one redirect component that forwards `location.search`; `check-redirects.mjs` covers each one; links written by the backend (notifications) keep working because old paths stay as redirects permanently |
-| Unified project detail calls company endpoints for single-app projects | low | error state on a tab | V2 already opens any project id on `/company/projects/:pid`; each tab loads and fails independently instead of one `Promise.all` |
-| Project 执行 tab needs tasks per project and there is no such filter | medium | incomplete list | join the existing task list with sessions (`task_id` → `project_id`), as `/tasks` does today; say "按会话关联" in the tab; no endpoint added |
-| Report workspace needs project reports for every project | medium | N requests | reuse the existing queue (4 concurrent); fetch only when the scope needs them; documented in the request map |
-| Task output has no log endpoint on the real backend | medium | 输出 shows only progress text | the surface states its source and falls back honestly; nothing is fabricated |
-| Composer context chips imply structured context the backend does not parse | medium | false expectation | chips serialize to visible text and the composer says so |
-| Token value changes shift every page before it is redesigned | certain | intermediate phases look half-V3 | Phase 1 retunes the primitives so untouched pages stay coherent; each phase's screenshots include the untouched routes |
-| Lazy routes flash a fallback | low | perceived slowness | skeleton sized to the page frame; prefetch on rail hover |
-| Fixture shapes differ from the real backend | medium | regressions visible only on the host | rerun the real read / write audits before canary review |
-| Workbench audit selectors (`data-wb-*`) move | certain | audit script breaks | hooks are preserved on the new elements; the script changes in the same commit as the markup |
-| Scope: ten phases in one branch | — | large review | one commit per phase, each runnable and revertible on its own |
+| 某条重定向丢掉深链依赖的查询参数（`?view=`、`?tab=`、`?finding=`、`?masvs=`、`?taskId=`、`?sid=&cmp=`、`?focus=`、`?status=`、`?task=`） | 中 | 书签和通知链接失效 | 只用一个转发 `location.search` 的重定向组件；`check-redirects.mjs` 逐条覆盖；后端写出的链接（通知）继续可用，因为旧路径永久保留为重定向 |
+| 统一后的项目详情对单应用项目调用公司项目接口 | 低 | 某个标签出现错误状态 | V2 已经能在 `/company/projects/:pid` 打开任何项目编号；每个标签各自加载、各自失败，不再用一个 `Promise.all` |
+| 项目的“执行”标签需要按项目取任务，而没有这样的筛选 | 中 | 列表不完整 | 把现有任务列表和会话做关联（`task_id` → `project_id`），和 `/tasks` 今天的做法一样；在标签里写明“按会话关联”；不新增接口 |
+| 报告工作区需要每个项目的项目报告 | 中 | N 个请求 | 复用现有的队列（并发 4）；只在范围需要时才取；写进请求地图 |
+| 真实后端没有任务输出的日志接口 | 中 | “输出”只显示进度文本 | 界面说明数据来源并如实回退；不编造任何内容 |
+| 输入框的上下文标签暗示了后端并不解析的结构化上下文 | 中 | 产生错误预期 | 标签序列化为可见文本，输入框明说 |
+| 令牌数值的变化会在页面重新设计之前就影响每个页面 | 必然 | 中间阶段看起来只有一半是 V3 | 阶段 1 重新调校基础组件，让未改动的页面保持协调；每个阶段的截图都包含未改动的路由 |
+| 懒加载路由闪现占位 | 低 | 感觉变慢 | 骨架屏按页面框架定尺寸；鼠标悬停导航项时预取 |
+| 夹具的数据形状和真实后端不同 | 中 | 回归只在宿主机上才看得到 | 金丝雀评审前重跑真实读 / 写审计 |
+| 工作台审计选择器（`data-wb-*`）位置变化 | 必然 | 审计脚本失效 | 钩子保留在新元素上；脚本和标记在同一次提交里改 |
+| 范围：十个阶段在一个分支上 | — | 评审量大 | 每阶段一次提交，各自可运行、可单独回退 |
 
-Rollback:
+回滚：
 
-- **Per phase:** `git revert` of that phase's commit; phases depend on Phase 1 and otherwise only on their own
-  files (Phase 7's `TaskTable` is used by Phase 2's 执行 tab through a thin adapter that falls back to a plain
-  table).
-- **Canary:** the canary serves a build directory; keeping the previous `dist` beside the new one makes rollback
-  a directory swap. `BuildVersionGuard` already tells open tabs to reload.
-- **Production:** untouched. Port 8099 keeps serving the old frontend until the canary passes the acceptance
-  list and cz says to replace it.
-- **Routes:** old paths remain as redirects, so rolling the frontend back never strands a link created under
-  V3 except the three new paths (`/projects/…`, `/tasks/:id`, `/evidence`), which a rolled-back build sends to
-  the dashboard through the existing catch-all.
+- **按阶段：** `git revert` 该阶段的提交；各阶段依赖阶段 1，除此之外只依赖自己的文件
+  （阶段 7 的 `TaskTable` 通过一个薄适配层被阶段 2 的“执行”标签使用，该适配层可回退为普通表格）。
+- **金丝雀：** 金丝雀提供的是一个构建目录；把上一份 `dist` 留在新的旁边，回滚就是换一下目录。
+  `BuildVersionGuard` 本来就会提示已打开的标签页刷新。
+- **生产：** 不动。8099 端口继续提供旧前端，直到金丝雀通过验收清单并且 cz 说可以替换。
+- **路由：** 旧路径保留为重定向，所以把前端回滚不会让 V3 期间产生的链接悬空，
+  只有三条新路径例外（`/projects/…`、`/tasks/:id`、`/evidence`），回滚后的构建会通过现有的兜底路由把它们送到概览页。
 
 ---
 
-## 10. Merged, renamed, redirected, retired
+## 10. 合并、改名、重定向、退役
 
-### Merged
+### 合并
 
-| From | Into |
+| 原来 | 并入 |
 | --- | --- |
-| 评估项目 index + 公司项目 index | 项目 (`/projects`), scopes 全部 / 公司级 / 单应用 |
-| Project sessions page + company project detail | `/projects/:pid` (sessions live in the 执行 tab) |
-| 新建评估项目 wizard (create mode) + 新建公司项目 dialog | 新建项目 dialog |
-| `/tasks` lanes, session rail, fact row | task table and its scope tabs |
-| Task detail drawer + artifacts modal | `/tasks/:id` |
-| Report hub + project report history + workbench report list | 报告 workspace (shared table, reader, export menu) |
-| Workbench rail + 五轮复核 bar + five inspector entry points | tab row + inspector |
-| `AgentComposer` (agent) + workbench composer | `Composer` |
-| Top bar device pill + rail device card + rail queue card | rail entries (设备, 队列) |
+| 评估项目索引 + 公司项目索引 | 项目（`/projects`），范围 全部 / 公司级 / 单应用 |
+| 项目会话页 + 公司项目详情 | `/projects/:pid`（会话放在“执行”标签里） |
+| 新建评估项目向导（创建模式）+ 新建公司项目对话框 | “新建项目”对话框 |
+| `/tasks` 的泳道、会话栏、事实行 | 任务表及其范围标签 |
+| 任务详情抽屉 + 产物弹窗 | `/tasks/:id` |
+| 报告中心 + 项目报告历史 + 工作台报告列表 | 报告工作区（共用表格、阅读器、导出菜单） |
+| 工作台导航栏 + 五轮复核条 + 五个检查器入口 | 标签行 + 检查器 |
+| `AgentComposer`（Agent）+ 工作台输入框 | `Composer` |
+| 顶栏设备胶囊 + 导航栏设备卡 + 导航栏队列卡 | 导航栏入口（设备、队列） |
 
-### Renamed
+### 改名
 
-| Was | Is |
+| 原名 | 现名 |
 | --- | --- |
-| 公司项目, 评估项目 | 项目 › 公司级, 项目 › 单应用 |
-| 发现 (rail, `/discovery`) | 证据 |
-| 发现 (workbench tab) | 风险发现 |
-| 候选路径 (discovery) | 待证假设 |
-| 候选审核 items (knowledge) | 知识候选 |
-| 执行记录 (project) | 执行 |
-| 应用清单 (project) | 应用 |
-| AI 助手（归档） | AI 助手归档 (out of navigation) |
+| 公司项目、评估项目 | 项目 › 公司级、项目 › 单应用 |
+| 发现（导航栏，`/discovery`） | 证据 |
+| 发现（工作台标签） | 风险发现 |
+| 候选路径（发现页） | 待证假设 |
+| 候选审核里的条目（知识） | 知识候选 |
+| 执行记录（项目） | 执行 |
+| 应用清单（项目） | 应用 |
+| AI 助手（归档） | AI 助手归档（移出导航） |
 
-### Redirected (permanent, query string forwarded)
+### 重定向（永久，查询参数原样转发）
 
-| Old | New |
+| 旧路径 | 新路径 |
 | --- | --- |
 | `/pentest` | `/projects` |
 | `/company` | `/projects?scope=company` |
@@ -744,41 +703,40 @@ Rollback:
 | `/skills` | `/knowledge` |
 | `/discovery` | `/evidence` |
 | `/tasks?status=degraded` | `/tasks?status=done&partial=1` |
-| `?ui=v2|v3|v4` on a session | dropped (as in Phase 17) |
+| 会话上的 `?ui=v2|v3|v4` | 丢弃（和 Phase 17 一样） |
 
-Unchanged paths: `/dashboard`, `/tasks`, `/reports` (and `?taskId=`, `?sid=&cmp=`), `/agent` (and `?task=`),
-`/system`, `/ai-assistant`.
+不变的路径：`/dashboard`、`/tasks`、`/reports`（以及 `?taskId=`、`?sid=&cmp=`）、`/agent`（以及 `?task=`）、
+`/system`、`/ai-assistant`。
 
-### Retired (each only after its capability has an owner)
+### 退役（每一项都在其能力有了归属之后）
 
-| Item | Capability goes to |
+| 条目 | 能力去向 |
 | --- | --- |
-| `PentestProjectsPage`, `ProjectCard`, `CompanyProjectsPage`, `CompanyProjectDetailPage`, `ProjectSessionsPage` | `features/projects/*` |
-| `TaskCenterPage` detail drawer, running lanes, session rail | `TaskListPage`, `TaskDetailPage`, project 执行 tab |
-| `SessionOverview` three-card layout | `OverviewSurface` |
-| `ReviewRoundsBar` as a bar | Inspector › 进度 |
-| Workbench left rail | `WorkbenchTabs` |
-| "批量确认（预览）" | real batch triage |
-| Duplicate export buttons in the workbench report | reader `ExportMenu` |
-| `DiscoveryPage` | `EvidencePage` (same endpoint) |
+| `PentestProjectsPage`、`ProjectCard`、`CompanyProjectsPage`、`CompanyProjectDetailPage`、`ProjectSessionsPage` | `features/projects/*` |
+| `TaskCenterPage` 的详情抽屉、运行泳道、会话栏 | `TaskListPage`、`TaskDetailPage`、项目“执行”标签 |
+| `SessionOverview` 的三卡片布局 | `OverviewSurface` |
+| 作为横条的 `ReviewRoundsBar` | 检查器 › 进度 |
+| 工作台左侧导航栏 | `WorkbenchTabs` |
+| “批量确认（预览）” | 真实的批量处置 |
+| 工作台报告里重复的导出按钮 | 阅读器的 `ExportMenu` |
+| `DiscoveryPage` | `EvidencePage`（同一个接口） |
 | `AgentComposer` | `Composer` |
-| `AiSidebar` | nothing: unreachable since Phase 15, its feedback call already has another owner |
-| `window.confirm` (Agent, archive) | `ConfirmDialog` |
-| KPI / fact strips above tables | scope tabs |
-| Header tint gradient, card shadows, 30 px page titles | V3 tokens |
+| `AiSidebar` | 无：自 Phase 15 起无法到达，它的反馈调用已有别的归属 |
+| `window.confirm`（Agent、归档） | `ConfirmDialog` |
+| 表格上方的 KPI / 事实条 | 范围标签 |
+| 页头渐变色调、卡片阴影、30 px 页面标题 | V3 令牌 |
 
-Nothing in the capability matrix loses its owner. `docs/capability-matrix.md` is updated in the phase that
-moves each row.
+能力矩阵里没有任何一项失去归属。`docs/capability-matrix.md` 在迁移每一行的那个阶段更新。
 
 ---
 
-## Open decisions taken on defaults
+## 按默认值做出的待定决定
 
-cz can overturn any of these; none blocks implementation.
+cz 可以推翻其中任何一条；它们都不阻塞实施。
 
-1. Direction A, with the fonts already approved in `CLAUDE.md`.
-2. Canonical routes change (`/projects`, `/knowledge`, `/evidence`, `/new-assessment`); the earlier default
-   "paths stay as in code" is replaced by permanent redirects because the brief asks for one project domain.
-3. Noto Sans SC stays unbundled; Chinese uses the system face through `--jz-font-cjk`.
-4. The inspector docks from 1280 px (was 1400).
-5. `/reports` keeps 预览 as its default view mode.
+1. 选方向 A，使用 `CLAUDE.md` 里已经批准的字体。
+2. 规范路由改变（`/projects`、`/knowledge`、`/evidence`、`/new-assessment`）；之前的默认做法“路径保持代码里的样子”
+   改为永久重定向，因为需求要求只有一个项目域。
+3. Noto Sans SC 仍不打包；中文通过 `--jz-font-cjk` 使用系统字体。
+4. 检查器从 1280 px 起停靠（原为 1400）。
+5. `/reports` 保留“预览”作为默认视图模式。
