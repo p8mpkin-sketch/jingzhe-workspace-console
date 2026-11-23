@@ -8,11 +8,8 @@ type Loader = () => Promise<{ default: React.ComponentType<any> }>;
 
 const LOADERS = {
   dashboard: () => import('@/features/dashboard/DashboardPage'),
-  projects: () => import('@/features/company/CompanyProjectsPage').then((m) => ({ default: m.CompanyProjectsPage })),
-  project: () => import('@/features/company/CompanyProjectDetailPage').then((m) => ({ default: m.CompanyProjectDetailPage })),
-  // Pre-merge assessment project pages: alive at their old paths until Phase 2 gives their capabilities a new owner.
-  legacyProjects: () => import('@/features/pentest/PentestPages').then((m) => ({ default: m.ProjectsPage })),
-  legacyProjectSessions: () => import('@/features/pentest/PentestPages').then((m) => ({ default: m.ProjectSessionsPage })),
+  projects: () => import('@/features/projects/ProjectsPage'),
+  project: () => import('@/features/projects/ProjectDetailPage'),
   session: () => import('@/features/pentest/v3/SessionShell').then((m) => ({ default: m.SessionShell })),
   tasks: () => import('@/features/tasks/TaskCenterPage').then((m) => ({ default: m.TaskCenterPage })),
   newAssessment: () => import('@/features/new-audit/NewAuditPage').then((m) => ({ default: m.NewAuditPage })),

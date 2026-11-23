@@ -31,8 +31,6 @@ export function buildCrumbs(pathname: string, names: Record<string, string>): Cr
     if (seg[2] === 'sessions' && seg[3]) out.push(named(pathname, `会话 #${seg[3]}`));
     return out;
   }
-  // Pre-merge project pages, alive until Phase 2 gives them a new owner.
-  if (seg[0] === 'pentest' && seg[1] === 'project' && seg[2]) return [root, named(`/projects/${seg[2]}`, `#${seg[2]}`), { label: '会话' }];
   if (seg[0] === 'tasks' && seg[1]) return [root, named(pathname, `#${seg[1]}`)];
   return [{ label: root.label }];
 }

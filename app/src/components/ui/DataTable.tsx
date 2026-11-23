@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cx } from './cx';
 import { useCompactTable } from './useMediaQuery';
@@ -40,6 +40,11 @@ export interface DataTableProps<T> {
   /** data-* hooks for the selection checkboxes, so existing probes keep their targets. */
   /** `cards` forces the record-card layout above 900 px, for tables too wide for their container. */
   layout?: 'auto' | 'cards';
+  /** In the forced card layout, set the records in a hairline grid (1 / 2 / 3 across) instead of one column. */
+  cardGrid?: boolean;
+  /** Narrowest container (px) in which the columns still fit. Below it the table renders as record cards, whatever
+   *  the viewport is: a wide table inside a pane next to the rail must not be clipped by that pane. */
+  minTableWidth?: number;
   selectAttrs?: { all?: Record<string, string | number | undefined>; row?: (row: T) => Record<string, string | number | undefined> };
   /** Rendered instead of rows (loading / empty / error states supplied by the page, usually via AsyncBoundary). */
   state?: React.ReactNode;
@@ -55,8 +60,20 @@ const alignCls = (a?: 'left' | 'right' | 'center') => (a === 'right' ? 'text-rig
  * Below 900 px it renders the same columns as stacked record cards; never a horizontally scrolling table.
  */
 export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact', onRowClick, selected, onToggle, onToggleAll,
-  stickyHeader = true, rowDataAttrs, rowClassName, selectAttrs, layout = 'auto', state, footer, className }: DataTableProps<T>) {
-  const narrow = useCompactTable();
+  stickyHeader = true, rowDataAttrs, rowClassName, selectAttrs, layout = 'auto', cardGrid, minTableWidth, state, footer, className }: DataTableProps<T>) {
+  const viewportNarrow = useCompactTable();
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [boxNarrow, setBoxNarrow] = useState(false);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el || !minTableWidth || typeof ResizeObserver === 'undefined') { setBoxNarrow(false); return; }
+    const apply = () => setBoxNarrow(el.clientWidth > 0 && el.clientWidth < minTableWidth);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [minTableWidth]);
+  const narrow = viewportNarrow || boxNarrow;
   const compact = narrow || layout === 'cards';
   const selectable = !!(selected && onToggle);
   const keys = rows.map(rowKey);
@@ -69,14 +86,15 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
     const title = columns.find((c) => c.card === 'title') ?? columns[0];
     const actions = columns.filter((c) => c.card === 'action');
     const fields = columns.filter((c) => c !== title && c.card !== 'action' && c.card !== 'hidden');
+    const grid = !!cardGrid && layout === 'cards' && !viewportNarrow;
     return (
-      <div className={cx('min-w-0', className)} data-table-layout="cards">
+      <div ref={boxRef} className={cx('min-w-0', grid && 'overflow-hidden', className)} data-table-layout="cards">
         {state ?? (
-          <ul aria-label={label} className="divide-y divide-jz-border">
+          <ul aria-label={label} className={grid ? '-mb-px -mr-px grid grid-cols-1 table:grid-cols-2 desktop:grid-cols-3' : 'divide-y divide-jz-border'}>
             {rows.map((row, i) => {
               const k = keys[i];
               return (
-                <li key={k} {...rowDataAttrs?.(row)} className={cx('flex gap-3 px-4 py-3', rowClassName?.(row))}>
+                <li key={k} {...rowDataAttrs?.(row)} className={cx('flex gap-3 px-4 py-3', grid && 'border-b border-r border-jz-border', rowClassName?.(row))}>
                   {selectable && (
                     <label className="flex h-jz-touch w-6 flex-none items-start justify-center pt-1">
                       <input type="checkbox" className="h-4 w-4 rounded-tag accent-jz-brand" checked={selected!.has(k)} onChange={() => onToggle!(k, row)} aria-label="选择此行" {...selectAttrs?.row?.(row)} />
@@ -108,7 +126,7 @@ export function DataTable<T>({ columns, rows, rowKey, label, density = 'compact'
   }
 
   return (
-    <div className={cx('min-w-0', className)} data-table-layout="table">
+    <div ref={boxRef} className={cx('min-w-0', className)} data-table-layout="table">
       <table aria-label={label} className="w-full border-collapse text-label">
         <thead className={cx(stickyHeader && 'sticky top-0 z-[1]')}>
           <tr className="h-jz-table-head bg-jz-inset text-meta text-jz-muted">

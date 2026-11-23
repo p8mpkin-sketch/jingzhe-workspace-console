@@ -27,7 +27,7 @@ export const Readout: React.FC<{ cells: ReadoutCell[]; className?: string; dense
         <dt className="truncate text-meta text-jz-muted">{c.label}</dt>
         <dd className={cx('mt-0.5 truncate', c.text ? 'text-label font-medium text-jz-ink' : 'font-mono tnum text-jz-ink',
           !c.text && (c.emphasis ? 'text-title font-semibold' : dense ? 'text-data' : 'text-section font-medium'))}>{c.value}</dd>
-        {c.hint && <dd className="truncate text-meta text-jz-muted">{c.hint}</dd>}
+        {c.hint && <dd className="break-words text-meta text-jz-muted">{c.hint}</dd>}
       </div>
     ))}
   </dl>

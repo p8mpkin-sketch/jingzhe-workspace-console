@@ -143,6 +143,19 @@ These come from the app shell, so they appear on every route below and are not r
 | GET | `/api/tasks` | `status=queued&limit=2000` | 1 | none (on load only) |
 | GET | `/api/tasks` | `status=running&limit=50` | 1 | every 30 s |
 
+### V3 Phase 2: the project routes merged
+
+The four project pages below (`/pentest`, `/pentest/project/1`, `/company`, `/company/projects/1`) no longer exist
+as pages; their paths redirect. Their tables stay as the recorded pre-V3 baseline. The merged routes issue:
+
+| V3 route | Requests on load | Polling |
+| --- | --- | --- |
+| `/projects` (any `?scope=`) | the union of `/pentest` and `/company` below: projects, `sessions?limit=500`, `vulns/severity-summary`, one `projects/{pid}/sessions` per project | none |
+| `/projects/1` (any `?tab=`) | the union of `/company/projects/1` and `/pentest/project/1` below: projects, and the project's `overview`, `apps`, `candidates`, `reports`, `runs`, `sessions`; each one an independent request | none |
+| `/projects/1?tab=runs`, while the tab is open | in addition `GET /api/tasks?limit=2000` and `GET /api/pentest/sessions` (the two lists `/tasks` reads), to show each session's task | none |
+
+`scripts/check-requests.mjs` compares a merged route with the union of the pages it replaces.
+
 ### `/pentest`
 
 | Method | Route | Query | Expected unique count on load | Polling interval |
@@ -360,5 +373,5 @@ duplicated in the fixture runs.
 | `features/pentest/AiThinkPanel.tsx` | orchestrator and progress events |
 | `features/agent/useAgentSession.ts` | agent events poll, trajectory download |
 | `features/ai-assistant/AiAssistantPage.tsx` | chat send stream |
-| `features/tasks/ArtifactsModal.tsx`, `features/company/CompanyProjectDetailPage.tsx`, `features/new-audit/NewAuditPage.tsx`, `features/pentest/BurpBridgePanel.tsx` | downloads and uploads |
+| `features/tasks/ArtifactsModal.tsx`, `features/projects/ProjectDetailPage.tsx`, `features/new-audit/NewAuditPage.tsx`, `features/pentest/BurpBridgePanel.tsx` | downloads and uploads |
 | `stores/auth.ts` | login |

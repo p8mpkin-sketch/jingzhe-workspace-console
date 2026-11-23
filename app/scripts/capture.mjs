@@ -21,16 +21,21 @@ const themeArg = arg('theme', 'both');
 const themes = themeArg === 'both' ? ['light', 'dark'] : [themeArg];
 const variant = arg('variant', 'ok');
 const reqOut = arg('requests', '');
-// V3 canonical routes. The two `legacy-*` rows are the pre-merge assessment project pages, kept at their old paths
-// until Phase 2 gives their capabilities a new owner; they leave this list in that phase.
+// V3 canonical routes: 13 pages plus the sign-in gate (captured separately below). Task detail joins in Phase 7.
 export const ROUTES = [
   ['dashboard', '/dashboard'], ['projects', '/projects'], ['project', '/projects/1'], ['session', '/projects/1/sessions/40'],
-  ['tasks', '/tasks'], ['evidence', '/evidence'], ['reports', '/reports'], ['knowledge', '/knowledge'], ['agent', '/agent'],
-  ['new-assessment', '/new-assessment'], ['system', '/system'], ['assistant', '/ai-assistant'],
-  ['legacy-projects', '/pentest'], ['legacy-project-sessions', '/pentest/project/1'],
+  ['tasks', '/tasks'], ['evidence', '/evidence'], ['reports', '/reports'], ['report-reader', '/reports?taskId=100'], ['knowledge', '/knowledge'],
+  ['agent', '/agent'], ['new-assessment', '/new-assessment'], ['system', '/system'], ['assistant', '/ai-assistant'],
+];
+// Sub-views of a route (scopes, tabs). Captured with --views, or when named in --routes.
+export const VIEWS = [
+  ['projects-company', '/projects?scope=company'], ['projects-single', '/projects?scope=single'],
+  ['project-reports', '/projects/1?tab=reports'], ['project-apps', '/projects/1?tab=apps'],
+  ['project-candidates', '/projects/1?tab=candidates'], ['project-runs', '/projects/1?tab=runs'],
 ];
 const only = arg('routes', '');
-const routes = only ? ROUTES.filter(([, p]) => only.split(',').includes(p)) : ROUTES;
+const pool = [...ROUTES, ...VIEWS];
+const routes = only ? pool.filter(([, p]) => only.split(',').includes(p)) : process.argv.includes('--views') ? pool : ROUTES;
 
 fs.mkdirSync(out, { recursive: true });
 const browser = await chromium.launch();

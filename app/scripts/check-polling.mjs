@@ -12,7 +12,7 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 import { resolve as fixture } from './fixtures/api.mjs';
 const REAL = process.env.REAL === '1';
 const HOLD = process.env.HOLD_STREAMS === '1';
-const ROUTES = [['dashboard','/dashboard'],['projects','/pentest'],['project-sessions','/pentest/project/1'],['session','/pentest/project/1/session/40'],['company','/company'],['company-project','/company/projects/1'],['new-assessment','/new-audit'],['tasks','/tasks'],['reports','/reports'],['discovery','/discovery'],['knowledge','/skills'],['assistant','/ai-assistant'],['agent','/agent'],['system','/system']];
+const ROUTES = [['dashboard','/dashboard'],['projects','/projects'],['project','/projects/1'],['project-runs','/projects/1?tab=runs'],['session','/projects/1/sessions/40'],['new-assessment','/new-assessment'],['tasks','/tasks'],['reports','/reports'],['evidence','/evidence'],['knowledge','/knowledge'],['assistant','/ai-assistant'],['agent','/agent'],['system','/system']];
 const DUR = +(process.env.DUR || 65000);
 const b = await chromium.launch();
 const out = {};

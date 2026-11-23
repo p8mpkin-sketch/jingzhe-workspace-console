@@ -1,0 +1,221 @@
+{
+  "passed": 43,
+  "failed": 0,
+  "results": [
+    {
+      "name": "index renders the unified page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "temporary \"会话索引\" entry is gone",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "rail has one project entry",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "all scope lists every project",
+      "pass": true,
+      "detail": "rows: company,single,single"
+    },
+    {
+      "name": "scope company",
+      "pass": true,
+      "detail": "rows 1, ?scope=company"
+    },
+    {
+      "name": "scope single",
+      "pass": true,
+      "detail": "rows 2, ?scope=single"
+    },
+    {
+      "name": "scope all",
+      "pass": true,
+      "detail": "rows 3, ?scope=null"
+    },
+    {
+      "name": "index hooks present",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "row menu hooks present",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "export menu hooks present",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "card view uses the same row component",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "risk filter narrows the list",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "filtered-empty state with reset",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "one create dialog with both types",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "company payload unchanged",
+      "pass": true,
+      "detail": "{\"name\":\"Fixture company project\",\"company_name\":\"\",\"brands\":[\"Alpha\",\"Beta\"],\"source\":\"device\",\"note\":\"\",\"kind\":\"company\",\"status\":\"draft\"}"
+    },
+    {
+      "name": "company create lands on the project",
+      "pass": true,
+      "detail": "/projects/1"
+    },
+    {
+      "name": "dialog preselects the scope on screen",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "single type hides the company fields",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "single payload is name + note",
+      "pass": true,
+      "detail": "{\"name\":\"Fixture single project\",\"note\":\"\"}"
+    },
+    {
+      "name": "single create opens the session wizard on the runs tab",
+      "pass": true,
+      "detail": "/projects/1?tab=runs"
+    },
+    {
+      "name": "detail renders",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "default tab does not load the task list",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "tab reports",
+      "pass": true,
+      "detail": "?tab=reports"
+    },
+    {
+      "name": "tab apps",
+      "pass": true,
+      "detail": "?tab=apps"
+    },
+    {
+      "name": "tab candidates",
+      "pass": true,
+      "detail": "?tab=candidates"
+    },
+    {
+      "name": "tab runs",
+      "pass": true,
+      "detail": "?tab=runs"
+    },
+    {
+      "name": "tab overview",
+      "pass": true,
+      "detail": "?tab=null"
+    },
+    {
+      "name": "detail hooks present",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "report hooks present",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "runs lists only this project's sessions",
+      "pass": true,
+      "detail": "40,41,44"
+    },
+    {
+      "name": "runs joins each session to its task",
+      "pass": true,
+      "detail": "100,101,104"
+    },
+    {
+      "name": "runs reads the task list the task page reads",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "runs scope filters by task status",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "session hooks present",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "closing a session asks for confirmation",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a failing tab shows its own error",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the shell and the other tabs stay up",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "another tab still shows its data",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "identity falls back to the project list when the overview endpoint fails",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "focus not occluded on /projects @1440",
+      "pass": true,
+      "detail": "59 stops, 0 covered"
+    },
+    {
+      "name": "focus not occluded on /projects/1?tab=apps @1440",
+      "pass": true,
+      "detail": "59 stops, 0 covered"
+    },
+    {
+      "name": "focus not occluded on /projects/1?tab=runs @1024",
+      "pass": true,
+      "detail": "59 stops, 0 covered"
+    },
+    {
+      "name": "focus not occluded on /projects @390",
+      "pass": true,
+      "detail": "59 stops, 0 covered"
+    }
+  ]
+}

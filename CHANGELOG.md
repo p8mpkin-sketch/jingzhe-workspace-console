@@ -7,6 +7,76 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 2 — One project domain
+
+The company project index, the assessment project index, the company project detail and the project sessions page
+are one domain now: `app/src/features/projects/`. Tokens, shell, navigation, lazy loading and the Phase 1 redirects
+are untouched; the workbench, task pages and report workspace are untouched.
+
+**One model, one table.** `projectModel.ts` holds the single project model (`ProjectRow`: the project entity joined
+with its sessions, device presence, step progress and open-finding counts) and every label helper. `ProjectTable`
+is the only project row: it renders as a table, as record cards when its container is narrower than its columns,
+and as a hairline grid of the same records in the card view.
+
+**Index — `/projects?scope=all|company|single`.** Scope tabs with counts; a readout of six facts; the sessions under
+way; search, six sort orders, table / card view; filter chips for findings, packer and status (each project falls in
+exactly one class, so counts add up to the scope on screen); pagination; import (JSON / CSV), export (CSV / JSON /
+Markdown) and refresh. Requests are the union of the two old indexes and nothing else; the device count comes from
+the shell's device poll.
+
+**Detail — `/projects/:pid?tab=overview|reports|apps|candidates|runs`.** One shell: header, a readout of six
+facts, a sticky tab bar. Each endpoint is its own resource (`useResource`), so every tab loads and fails on its
+own; the single `Promise.all` is gone. The project's identity comes from the overview endpoint and falls back to
+the project list, so a failing overview endpoint no longer blanks the page. `?tab=` is in the URL.
+
+**Runs tab = the task model filtered to the project.** A task belongs to a project through its session
+(`session.task_id`), the join `/tasks` already uses. The tab lists the project's sessions with the task each one
+runs, offers the task page's four scopes (运行中 / 排队 / 失败 / 已完成), links every task to `/tasks?focus=`, and
+keeps continue / open / close-with-confirmation for sessions. Batch runs of the inventory are a second pane. While
+the tab is open it reads `GET /api/tasks?limit=2000` and `GET /api/pentest/sessions`, the two lists the task page
+reads; no other tab issues them.
+
+**One create dialog.** 新建项目 with a type choice. 公司级 posts the body the company form posted; 单应用 posts
+`{name, note}` (the body the wizard and the import use) and then opens the session wizard on the new project.
+`NewProjectWizard` creates sessions only; its create-project mode is removed.
+
+**Redirects.** `/pentest` → `/projects` and `/pentest/project/:pid` → `/projects/:pid?tab=runs` are permanent
+redirects that forward the query string (an incoming `?tab=` wins). The temporary 会话索引 button is removed.
+
+**Retired** (after `docs/capability-matrix.md` gained a row for each of their capabilities and hooks):
+`features/company/CompanyProjectsPage.tsx`, `features/company/CompanyProjectDetailPage.tsx`,
+`features/pentest/PentestProjectsPage.tsx`, `features/pentest/PentestPages.tsx`, `features/pentest/ProjectCard.tsx`.
+
+**Primitives.** `DataTable` gained `minTableWidth` (record cards when the container, not the viewport, is too
+narrow: a table inside a pane beside the 220 px rail was clipped at 1024 px) and `cardGrid`. `Readout` hints wrap.
+
+**Deliberate changes of behaviour.** A project opens on 概览 (the company detail opened on 报告). The lead project
+is a row of the list, not a separate band. The company form no longer pre-fills sample brand names. Single-app
+projects are named in the dialog before the session wizard opens. A packer value of `''` is classed as
+unrecognised instead of matching the "all" chip.
+
+**Checks (fixtures).**
+
+| Check | Result |
+| --- | --- |
+| `tsc --noEmit`, production build | pass |
+| Token lint | 0 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| Project domain (`check-projects.mjs`, new): one index and no second entry, three scopes, row hooks and menus, card view, filters, both create payloads, five tabs, runs joined to tasks and filtered by status, close confirmation, a failing tab leaves the shell and the other tabs up, identity fallback, focus not covered on four route / width pairs | 43 of 43 |
+| Routes: 13 pages, the sign-in gate and 6 project views × widths 390 / 760 / 1024 / 1280 / 1440 / 1680, light; 1440 / 390, dark | 0 overflow, 0 page errors |
+| Data states empty / error / forbidden / slow / stale, the same 19 views at 1440 and 390 | 0 overflow, 0 page errors, no error boundary; a stale notice on every project view |
+| Redirects (`check-redirects.mjs`) | 28 of 28, query string kept |
+| Requests per route vs the pre-V3 baseline (`check-requests.mjs`; a merged route is compared with the union of the pages it replaces) | identical on 12 routes; `/reports?taskId=` has no pre-V3 baseline and is listed, not judged |
+| Shell (`capture-shell.mjs`) | pass, unchanged |
+
+"14 routes" in the acceptance list is counted here as the 13 pages above plus the sign-in gate; task detail gets
+its own route in Phase 7.
+
+Main chunk: 71.43 kB (23.76 kB gzip); Phase 1 ended at 71.81 kB. Screenshots: `docs/screenshots/v3/phase-2/`
+(13 pages and the sign-in gate, plus the two scopes and four tabs: light at 1440 / 1024 / 760 / 390, dark at
+1440 / 390; `states/` holds the data states of the project views; `project-apps.tab-error-1440-light.png` shows one
+tab failing on its own).
+
 ### V3 Phase 1 — Tokens, typography and shell
 
 **Tokens (`design/tokens.css`, single source).** Six surface levels (`rail`, `inset`, `canvas`, `surface`, `raised`,
@@ -53,7 +123,7 @@ option is kept in view without `scrollIntoView`.
 **Interim until Phase 2:** `/projects` and `/projects/:pid` are served by the existing company project pages
 (the index already lists every project kind); the assessment project index and its sessions page stay at
 `/pentest` and `/pentest/project/:pid`, reachable from the 会话索引 button on `/projects`. Phase 2 merges them and
-turns those two paths into redirects. No capability lost its owner.
+turns those two paths into redirects. No capability lost its owner. (Done in Phase 2.)
 
 **Primitives.** `Panel`, `Metric`, `ObjectCard`, `Button`, `Tabs`, `SegmentedControl`, `DataTable`, `Popover`,
 `Dialog`, `Page` retuned to the V3 spec (hairlines instead of shadows, inset table head, state-layer hover and

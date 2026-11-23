@@ -136,9 +136,9 @@ function Shell() {
             <Route path="/new-audit" element={<Redirect to={PATHS.newAssessment} />} />
             <Route path="/skills" element={<Redirect to={PATHS.knowledge} />} />
             <Route path="/discovery" element={<Redirect to={PATHS.evidence} />} />
-            {/* Assessment project index and its sessions page stay at their old paths until Phase 2 merges them into /projects. */}
-            <Route path="/pentest" element={<PAGES.legacyProjects />} />
-            <Route path="/pentest/project/:pid" element={<PAGES.legacyProjectSessions />} />
+            {/* The assessment project index and its sessions page merged into the project domain (V3 Phase 2). */}
+            <Route path="/pentest" element={<Redirect to={PATHS.projects} />} />
+            <Route path="/pentest/project/:pid" element={<Redirect to={(p) => PATHS.project(p.pid || '')} add={{ tab: 'runs' }} />} />
 
             {/* Unknown paths (retired routes, old bookmarks) land on the overview instead of a blank page. */}
             <Route path="*" element={<Navigate to={PATHS.dashboard} replace />} />

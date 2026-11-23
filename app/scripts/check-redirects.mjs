@@ -33,8 +33,13 @@ const CASES = [
   ['/system', '/system'],
   ['/ai-assistant', '/ai-assistant'],
   ['/no-such-route', '/dashboard'],
-  // Phase 2 adds: /pentest → /projects, /pentest/project/:pid → /projects/:pid?tab=runs.
-  ...(process.argv.includes('--phase2') ? [['/pentest', '/projects'], ['/pentest/project/1', '/projects/1?tab=runs'], ['/pentest/project/1?tab=overview', '/projects/1?tab=overview']] : []),
+  // Merged into the project domain in V3 Phase 2.
+  ['/pentest', '/projects'],
+  ['/pentest?scope=single', '/projects?scope=single'],
+  ['/pentest/project/1', '/projects/1?tab=runs'],
+  ['/pentest/project/1?tab=overview&from=notice', '/projects/1?tab=overview&from=notice'],
+  ['/company?q=alpha', '/projects?scope=company&q=alpha'],
+  ['/company/projects/1?tab=runs', '/projects/1?tab=runs'],
 ];
 const norm = (hash) => { const [p, q = ''] = hash.replace(/^#/, '').split('?'); return p + '?' + [...new URLSearchParams(q)].map(([k, v]) => `${k}=${v}`).sort().join('&'); };
 
