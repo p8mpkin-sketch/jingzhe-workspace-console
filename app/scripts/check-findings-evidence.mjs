@@ -2,8 +2,8 @@
 // Dev-only acceptance for the findings and evidence surfaces of the assessment workbench (V3 Phase 5), on fixtures.
 // Session 41 is the running session of the fixtures: 7 findings (12 instances) and 1 de-noised, a relation graph of
 // 45 nodes, 3 Shadow findings. Session 40 has not started and has no graph.
-// F = FindingsSurface, E = EvidenceSurface. Needs `npx vite preview --port 4173`.
-// Usage: node scripts/check-findings-evidence.mjs [--out dir] [--only F1,E3] [--base url]
+// F = FindingsSurface, E = EvidenceSurface, R = rule cards, S = structure canvas. Needs `npx vite preview --port 4173`.
+// Usage: node scripts/check-findings-evidence.mjs [--out dir] [--only F1,E3,R4,S2] [--base url]
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 import fs from 'node:fs';
@@ -635,6 +635,356 @@ if (want('E14')) { group = 'E14';
   const m = await page.evaluate(() => ({ open: document.querySelectorAll('[data-ev-lane-toggle][aria-expanded="true"]').length, lanes: document.querySelectorAll('[data-ev-lane]').length, nodes: document.querySelectorAll('[data-ev-node]').length }));
   ok('a graph of 40 nodes or fewer opens with its groups unfolded', m.lanes === 4 && m.open === 4 && m.nodes === small.nodes.length, JSON.stringify(m));
   await ctx.close();
+}
+
+// ───────────────────────── Rule cards (Phase 5 follow-up) ─────────────────────────
+const RC = `${LIVE}?view=rulecards`;
+const ruleTitles = (page) => page.locator('[data-rule-card] [data-rule-title]').allInnerTexts();
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/u;
+/** Elements of a region that are drawn with an opacity below 1 (disabled controls are left out: that is the kit's disabled style). */
+const dimmed = (page, sel) => page.evaluate((s) => [...document.querySelectorAll(`${s}, ${s} *`)].filter((e) => !e.closest('button:disabled, [aria-hidden="true"]') && +getComputedStyle(e).opacity < 1).length, sel);
+const redInk = (page, sel, red) => page.evaluate(([s, c]) => [...document.querySelectorAll(`${s} *`)].filter((e) => { const cs = getComputedStyle(e); return cs.color === c || cs.borderLeftColor === c || cs.backgroundColor === c; }).length, [sel, red]);
+
+if (want('R1')) { group = 'R1';
+  const { ctx, page, gets } = await open(RC);
+  ok('?view=rulecards mounts the rule-card surface, once', (await count(page, '[data-rulecards]')) === 1 && /view=rulecards/.test(await hash(page)));
+  const scope = await text(page, '[data-rulecards-scope]');
+  ok('the scope statement counts rule cards, instances and de-noised', scope === '8 张规则卡 · 13 个实例 · 1 张已降噪', scope);
+  const t = await ruleTitles(page);
+  ok('7 rule cards are listed, the de-noised one is not', t.length === 7 && !t.some((x) => /第三方库版本提示/.test(x)), t.join(' | '));
+  const open1 = await page.locator('[data-rule-toggle][aria-expanded="true"]').count();
+  ok('the first rule card is open, the others are closed', open1 === 1 && (await page.locator('[data-rule-card]').first().locator('[data-rule-open]').count()) === 1, `${open1} open`);
+  ok('the old panel is gone: no status select, no English severity pill', (await count(page, '[data-vulns-state-select], [data-vulns-row], select[title*="状态流转"]')) === 0 && !/\bcritical\b|\bhigh\b|\bmedium\b/.test(await text(page, '[data-rulecards-list]')));
+  const surface = await text(page, '[data-rulecards]');
+  ok('no emoji and no pictograph characters in the copy', !EMOJI.test(surface) && !/[✓✕…]\s*(已确认|已排除|待复核)/.test(surface), surface.slice(0, 80));
+  ok('it reads what the earlier panel read: grouped findings and the hook events', gets.some((g) => /\/sessions\/41\/vulns\/grouped$/.test(g)) && gets.some((g) => /\/sessions\/41\/events\?source=hook&since_seq=0&limit=200$/.test(g)), gets.filter((g) => /events|grouped/.test(g)).join(' '));
+  ok('no horizontal overflow', (await overflow(page)) <= 1);
+  await shot(page, 'rulecards-1440-light');
+  await ctx.close();
+}
+
+if (want('R2')) { group = 'R2';
+  for (const theme of ['light', 'dark']) {
+    const { ctx, page } = await open(RC, { theme });
+    await page.click('[data-rulecards-noise]'); await page.waitForTimeout(200);
+    const orange = await token(page, '--jz-line-finding'); const red = await token(page, '--jz-red');
+    const rows = await page.locator('[data-rule-card]').evaluateAll((els) => els.map((li) => {
+      const b = li.querySelector('[data-rule-toggle]'); const cs = getComputedStyle(b);
+      return { p: li.getAttribute('data-rule-priority'), color: cs.borderLeftColor, w: cs.borderLeftWidth, cap: !!b.querySelector('[data-row-cap]'),
+        sev: b.querySelector('[data-severity]')?.textContent.replace(/\s+/g, ' ').trim() || '', shape: !!b.querySelector('[data-severity] svg'),
+        review: b.querySelector('[data-review]')?.textContent.trim() || '', glyph: !!b.querySelector('[data-review] svg') };
+    }));
+    ok(`${theme}: every rule card carries the orange finding line`, rows.length === 8 && rows.every((r) => r.color === orange), JSON.stringify(rows.map((r) => r.color)));
+    ok(`${theme}: 3 px with a cap for P0 / P1, 2 px without for P2 / P3`, rows.every((r) => (/P0|P1/.test(r.p) ? r.w === '3px' && r.cap : r.w === '2px' && !r.cap)), JSON.stringify(rows.map((r) => `${r.p}:${r.w}:${r.cap}`)));
+    ok(`${theme}: severity is a shape with its P label and word`, rows.every((r) => r.shape && new RegExp(`^${r.p} ?(严重|高|中|低)$`).test(r.sev)), rows.map((r) => r.sev).join(','));
+    ok(`${theme}: the status of a card is a glyph and a word`, rows.every((r) => r.glyph && /^(待复核|已确认|已排除|部分确认)$/.test(r.review)), rows.map((r) => r.review).join(','));
+    ok(`${theme}: a de-noised card says so in words and nothing is dimmed`, /已降噪/.test(await text(page, '[data-rule-card="R-008"]')) && (await dimmed(page, '[data-rulecards-list]')) === 0, `${await dimmed(page, '[data-rulecards-list]')} dimmed`);
+    ok(`${theme}: nothing on the surface is red`, (await redInk(page, '[data-rulecards]', red)) === 0, `${await redInk(page, '[data-rulecards]', red)} red`);
+    const bg = await page.evaluate(() => { const p = document.createElement('i'); p.style.backgroundColor = 'rgb(var(--jz-surface-2))'; document.body.appendChild(p); const c = getComputedStyle(p).backgroundColor; p.remove();
+      return [c, getComputedStyle(document.querySelector('[data-rule-toggle][aria-expanded="true"]')).backgroundColor]; });
+    ok(`${theme}: the open card's row sits on surface-2`, bg[0] === bg[1], bg.join(' vs '));
+    if (theme === 'dark') await shot(page, 'rulecards-1440-dark');
+    await ctx.close();
+  }
+}
+
+if (want('R3')) { group = 'R3';
+  const { ctx, page } = await open(RC);
+  await page.click('[data-rule-card="R-001"] [data-rule-toggle]'); await page.waitForTimeout(200);
+  const st = await page.evaluate(() => [...document.querySelectorAll('[data-rule-toggle][aria-expanded="true"]')].map((b) => b.closest('[data-rule-card]').getAttribute('data-rule-card')).join(','));
+  ok('opening another card closes the first: one card is open at a time', st === 'R-001', st);
+  const body = await text(page, '[data-rule-card="R-001"] [data-rule-open]');
+  ok('an open card lists its instances with their evidence slices', (await count(page, '[data-rule-card="R-001"] [data-rule-instance]')) === 2 && (await count(page, '[data-rule-card="R-001"] [data-rule-slice]')) === 2, body.slice(0, 80));
+  ok('the five-part chain and the review steps of an instance are shown', /发现 静态规则在 Api\.java/.test(body) && /触发/.test(body) && /复现报文/.test(body) && /证明/.test(body) && /修复建议 改用 HTTPS/.test(body) && /复现步骤/.test(body) && (await count(page, '[data-rule-instance="f11"] [data-rule-chain="has"] ol li')) === 2, body.slice(0, 200));
+  ok('an instance without a chain says the chain was not collected', (await count(page, '[data-rule-instance="f12"] [data-rule-chain="none"]')) === 1);
+  ok('the model verdict of an instance is words', /模型复核：确认/.test(await text(page, '[data-rule-instance="f11"] [data-rule-verdict]')));
+  const dims = await page.locator('[data-rule-card="R-001"] [data-rule-dim]').evaluateAll((els) => els.map((e) => `${e.textContent.replace(/\s+/g, '')}:${e.getAttribute('data-rule-dim')}`).join(','));
+  ok('evidence dimensions are stated with an icon and 有 / 无', dims === '源码行有:yes,组件声明无:no,流量报文有:yes', dims);
+  await page.locator('[data-rule-card="R-001"] [data-rule-toggle]').focus(); await page.keyboard.press('Enter'); await page.waitForTimeout(150);
+  ok('Enter on the row closes it again', (await count(page, '[data-rule-toggle][aria-expanded="true"]')) === 0);
+  await page.keyboard.press('Enter'); await page.waitForTimeout(150);
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
+  await page.click('[data-rule-instance="f11"] [data-rule-copy]'); await page.waitForTimeout(300);
+  ok('复制 states its result on the button', (await page.locator('[data-rule-instance="f11"] [data-rule-copy]').getAttribute('data-rule-copy')) === 'done' && /已复制/.test(await text(page, '[data-rule-instance="f11"] [data-rule-copy]')));
+  await ctx.close();
+  { const { ctx, page } = await open(RC, { over: (m, u) => (m === 'GET' && /\/sessions\/41\/events$/.test(u.pathname) && u.searchParams.get('source') === 'hook'
+      ? { body: { events: [{ seq: 1, ts: '10:02:11', type: 'hook', cls: 'javax.crypto.Cipher', method: 'init' }, { seq: 2, ts: '10:02:14', type: 'hook', cls: 'okhttp3.Request', method: 'header' }], cursor: 2, total: 2 } } : undefined) });
+    const h = await text(page, '[data-rule-hooks]');
+    ok('the hook events of the session are listed, newest first', (await count(page, '[data-rule-hooks] li')) === 2 && /#2 .*okhttp3\.Request.*#1 .*javax\.crypto\.Cipher/.test(h), h.slice(0, 160));
+    await ctx.close(); }
+}
+
+if (want('R4')) { group = 'R4';
+  const { ctx, page, posts, gets } = await open(RC);
+  const m = await page.evaluate(() => ({ secondary: document.querySelectorAll('[data-rulecards] [data-triage="secondary"]').length, primary: document.querySelectorAll('[data-rulecards] [data-triage="primary"]').length,
+    selects: document.querySelectorAll('[data-rule-instance] select').length }));
+  ok('each instance of the open card has the split button, as a secondary control; there is no status select', m.secondary === 2 && m.primary === 0 && m.selects === 0, JSON.stringify(m));
+  const before = gets.filter((g) => /vulns\/grouped$/.test(g)).length;
+  await page.click('[data-rule-instance="f31"] [data-triage-primary]'); await page.waitForTimeout(700);
+  ok('确认 writes that instance through POST vulns/state', stateWrites(posts).join(',') === 'f31:confirmed', stateWrites(posts).join(','));
+  ok('the list is read again after the write, and nothing is kept as a local value', gets.filter((g) => /vulns\/grouped$/.test(g)).length === before + 1 && (await page.evaluate(() => localStorage.getItem('apksec-vuln-local-state-41'))) === '{}'
+    && (await count(page, '[data-rulecards-notice]')) === 0, `${gets.filter((g) => /vulns\/grouped$/.test(g)).length - before} re-reads`);
+  await page.click('[data-rule-instance="f32"] [data-triage-more]'); await page.waitForTimeout(200);
+  const items = await page.locator('[role="menu"] [role="menuitem"]').allInnerTexts();
+  ok('the menu offers 排除 and 恢复待复核; the state an instance has is not offered', items.map((x) => x.trim()).join(',') === '排除,恢复待复核' && await page.locator('[role="menu"] [data-triage-item="pending"]').isDisabled(), items.join(','));
+  await page.click('[role="menu"] [data-triage-item="excluded"]'); await page.waitForTimeout(700);
+  ok('排除 from the menu writes that instance', stateWrites(posts).join(',') === 'f31:confirmed,f32:excluded', stateWrites(posts).join(','));
+  await page.click('[data-rule-card="R-001"] [data-rule-toggle]'); await page.waitForTimeout(200);
+  ok('an instance that is already confirmed has 确认 disabled', await page.locator('[data-rule-instance="f11"] [data-triage-primary]').isDisabled());
+  await ctx.close();
+}
+
+if (want('R5')) { group = 'R5';
+  { const { ctx, page, posts } = await open(RC, { over: (m, u) => (m === 'POST' && /\/vulns\/state$/.test(u.pathname) ? { status: 403, body: { detail: 'fixture: forbidden' } } : undefined) });
+    await page.click('[data-rule-instance="f31"] [data-triage-primary]'); await page.waitForTimeout(600);
+    const n = await text(page, '[data-rulecards-notice]');
+    ok('a refused write (403) is stated as a permission matter, without retry wording', (await count(page, '[data-rulecards-notice="forbidden"]')) === 1 && /无权处置/.test(n) && /403/.test(n) && !RETRY.test(n) && (await count(page, '[data-rulecards-retry]')) === 0, n.slice(0, 160));
+    ok('a refused write is not kept as a local value: the instance stays as the server has it', !/f31/.test((await page.evaluate(() => localStorage.getItem('apksec-vuln-local-state-41'))) || '') && /待复核/.test(await text(page, '[data-rule-instance="f31"] [data-review]'))
+      && !/仅本地/.test(await text(page, '[data-rule-instance="f31"]')) && stateWrites(posts).length === 1);
+    await shot(page, 'rulecards-write-forbidden-1440-light');
+    await ctx.close(); }
+  { let fail = true;
+    const { ctx, page, posts } = await open(RC, { over: (m, u) => (m === 'POST' && /\/vulns\/state$/.test(u.pathname) && fail ? { status: 500, body: { detail: 'fixture failure' } } : undefined) });
+    await page.click('[data-rule-instance="f31"] [data-triage-primary]'); await page.waitForTimeout(600);
+    const n = await text(page, '[data-rulecards-notice]');
+    ok('another failure says the state was not written and offers a retry', (await count(page, '[data-rulecards-notice="error"]')) === 1 && /没有写入服务端/.test(n) && (await count(page, '[data-rulecards-retry]')) === 1, n.slice(0, 160));
+    ok('the choice is kept in this browser and the instance is marked 仅本地', /仅本地/.test(await text(page, '[data-rule-instance="f31"]')) && /"f31":"confirmed"/.test(await page.evaluate(() => localStorage.getItem('apksec-vuln-local-state-41'))));
+    fail = false;
+    await page.click('[data-rulecards-retry]'); await page.waitForTimeout(800);
+    ok('the retry writes it; the mark and the notice go away', stateWrites(posts).join(',') === 'f31:confirmed,f31:confirmed' && !/仅本地/.test(await text(page, '[data-rule-instance="f31"]')) && (await count(page, '[data-rulecards-notice]')) === 0
+      && (await page.evaluate(() => localStorage.getItem('apksec-vuln-local-state-41'))) === '{}', stateWrites(posts).join(','));
+    await ctx.close(); }
+  { let n = 0;
+    const { ctx, page } = await open(RC, { over: grouped(() => (++n > 1 ? { status: 500, body: { detail: 'fixture failure' } } : undefined)) });
+    await page.click('[data-rule-instance="f31"] [data-triage-primary]'); await page.waitForTimeout(800);
+    ok('when the re-read after a write fails, the earlier cards stay under a strip that says so', (await count(page, '[data-rulecards-stale]')) === 1 && (await page.locator('[data-rulecards]').getAttribute('data-state')) === 'stale' && (await count(page, '[data-rule-card]')) === 7);
+    await ctx.close(); }
+}
+
+if (want('R6')) { group = 'R6';
+  { const { ctx, page } = await open(RC, { over: grouped(() => ({ status: 403, body: { detail: 'fixture: forbidden' } })) });
+    const t = await text(page, '[data-rulecards]');
+    ok('read 403: a permission state without retry wording', (await page.locator('[data-rulecards]').getAttribute('data-state')) === 'forbidden' && /没有权限读取规则卡/.test(t) && !RETRY.test(t) && (await count(page, '[data-rulecards] [data-state="permission"]')) === 1, t.slice(0, 120));
+    ok('read 403: no toolbar and no count for a list that was not read', (await count(page, '[data-rulecards-toolbar]')) === 0 && !/\d+ 张/.test(t));
+    await shot(page, 'rulecards-forbidden-1440-light');
+    await ctx.close(); }
+  { let n = 0;
+    const { ctx, page } = await open(RC, { over: grouped(() => (++n <= 2 ? { status: 500, body: { detail: 'fixture failure' } } : undefined)) });
+    const t = await text(page, '[data-rulecards]');
+    ok('read 500: an error state with retry, no toolbar', (await page.locator('[data-rulecards]').getAttribute('data-state')) === 'error' && /规则卡没有读到/.test(t) && (await count(page, '[data-rulecards] [data-state="error"] button')) === 1 && (await count(page, '[data-rulecards-toolbar]')) === 0, t.slice(0, 120));
+    n = 5; await page.click('[data-rulecards] [data-state="error"] button'); await page.waitForTimeout(2600);
+    ok('重试 reads again and lists the cards', (await count(page, '[data-rule-card]')) === 7, `${await count(page, '[data-rule-card]')} cards`);
+    await ctx.close(); }
+  { const { ctx, page } = await open(RC, { delay: 2500 });
+    ok('loading: a skeleton, no toolbar', (await page.locator('[data-rulecards]').getAttribute('data-state')) === 'loading' && (await count(page, '[data-rulecards] [aria-busy="true"]')) === 1 && (await count(page, '[data-rulecards-toolbar]')) === 0);
+    await ctx.close(); }
+  { const { ctx, page } = await open(RC, { over: grouped(() => ({ body: cards([]) })) });
+    const t = await text(page, '[data-rulecards]');
+    ok('empty: says why and offers 手动补录', (await page.locator('[data-rulecards]').getAttribute('data-state')) === 'empty' && /还没有规则卡/.test(t) && /0 张规则卡/.test(t), t.slice(0, 160));
+    await ctx.close(); }
+}
+
+if (want('R7')) { group = 'R7';
+  const { ctx, page } = await open(RC);
+  await page.fill('[data-rulecards-search]', 'MASVS-NETWORK'); await page.waitForTimeout(200);
+  ok('search matches title, CWE, MASVS and rule id; the scope says a / b', (await ruleTitles(page)).length === 1 && (await text(page, '[data-rulecards-scope]')) === '显示 1 / 8 张规则卡', await text(page, '[data-rulecards-scope]'));
+  await page.fill('[data-rulecards-search]', '没有这样的规则'); await page.waitForTimeout(200);
+  ok('nothing matches: says so and offers 清除筛选', /当前条件下没有规则卡/.test(await text(page, '[data-rulecards-body]')) && (await count(page, '[data-rulecards-body] button')) === 1);
+  await page.click('[data-rulecards-body] button'); await page.waitForTimeout(200);
+  await page.selectOption('[data-rulecards-severity]', 'high'); await page.waitForTimeout(200);
+  ok('the level filter lists its counts and filters', (await ruleTitles(page)).length === 2 && /P1 高（2）/.test(await text(page, '[data-rulecards-severity]')), (await ruleTitles(page)).join('|'));
+  await page.click('[data-rulecards-clear]'); await page.waitForTimeout(150);
+  await page.click('[data-rulecards-credential]'); await page.waitForTimeout(200);
+  ok('硬编码凭据 is a pressed toggle that keeps the credential cards', (await page.locator('[data-rulecards-credential]').getAttribute('aria-pressed')) === 'true' && (await ruleTitles(page)).join('|') === '示例发现: 硬编码密钥', (await ruleTitles(page)).join('|'));
+  await page.click('[data-rulecards-credential]');
+  await page.click('[role="radiogroup"][aria-label="按来源面筛选"] [role="radio"]:has-text("WEB 运行时")'); await page.waitForTimeout(200);
+  ok('WEB 运行时 with no card says why it is empty', /WEB 运行时面还没有规则卡/.test(await text(page, '[data-rulecards-body]')));
+  await page.click('[role="radiogroup"][aria-label="按来源面筛选"] [role="radio"]:has-text("全部")');
+  await page.click('[data-rulecards-noise]'); await page.waitForTimeout(200);
+  ok('显示已降噪 lists the de-noised card too, marked 已降噪 and 提示级', (await ruleTitles(page)).length === 8 && /提示级/.test(await text(page, '[data-rule-card="R-008"]')) && /已降噪/.test(await text(page, '[data-rule-card="R-008"]')));
+  await ctx.close();
+  { const { ctx, page } = await open(`${RC}&severity=high`);
+    ok('?severity= from a link filters and is shown as a removable filter', (await ruleTitles(page)).length === 2 && /来自链接的筛选： 等级 high/.test(await text(page, '[data-rulecards-link-filters]')), await text(page, '[data-rulecards-link-filters]'));
+    await page.click('[data-clear-sev]'); await page.waitForTimeout(300);
+    ok('removing it drops the parameter and keeps the view', !/severity=/.test(await hash(page)) && /view=rulecards/.test(await hash(page)) && (await ruleTitles(page)).length === 7, await hash(page));
+    await ctx.close(); }
+  { const { ctx, page } = await open(`${RC}&masvs=MASVS-CRYPTO,CWE-319`);
+    ok('?masvs= from a link filters by rule family', (await ruleTitles(page)).join('|') === '示例发现: 硬编码密钥' && /MASVS-CRYPTO, CWE-319/.test(await text(page, '[data-rulecards-link-filters]')), (await ruleTitles(page)).join('|'));
+    await ctx.close(); }
+}
+
+if (want('R8')) { group = 'R8';
+  const { ctx, page, posts } = await open(RC);
+  await page.click('[data-rulecards-add]'); await page.waitForTimeout(150);
+  ok('手动补录 opens a form that says where the entry is kept; 补录 needs a title', (await count(page, '[data-rulecards-form]')) === 1 && /只保存在这个浏览器里/.test(await text(page, '[data-rulecards-form]')) && await page.locator('[data-rulecards-form-submit]').isDisabled());
+  await page.fill('[data-rulecards-form-title]', '示例补录: 手动记录的一条'); await page.selectOption('[data-rulecards-form-severity]', 'medium'); await page.fill('[data-rulecards-form-masvs]', 'MASVS-CODE-4');
+  await page.fill('[data-rulecards-form-evidence]', '手动记录的证据'); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+  await page.click('[data-rulecards-form-submit]').catch(() => {}); await page.waitForTimeout(300);
+  const t = await ruleTitles(page);
+  const local = page.locator('[data-rule-card^="LOCAL-"]');
+  ok('the entry is listed with a 本地 mark and nothing is sent', t.length === 8 && (await local.count()) === 1 && /本地/.test(await local.innerText()) && posts.length === 0 && (await count(page, '[data-rulecards-notice="info"]')) === 1, t.join('|'));
+  ok('it is kept in this browser for the session', /示例补录/.test(await page.evaluate(() => localStorage.getItem('apksec-vuln-manual-41') || '')));
+  await local.locator('[data-rule-toggle]').click(); await page.waitForTimeout(200);
+  await local.locator('[data-triage-more]').click(); await page.waitForTimeout(150);
+  await page.click('[role="menu"] [data-triage-item="excluded"]'); await page.waitForTimeout(400);
+  ok('the state of a local entry changes in this browser only, and the notice says so', posts.length === 0 && /已排除/.test(await local.locator('[data-rule-instance] [data-review]').innerText()) && /只保存在这个浏览器里，没有发送/.test(await text(page, '[data-rulecards-notice]')), await text(page, '[data-rulecards-notice]'));
+  await page.click('[data-rulecards-export]'); await page.waitForTimeout(200);
+  const fm = await page.locator('[role="menu"] [data-rulecards-export-item]').evaluateAll((els) => els.map((e) => e.getAttribute('data-rulecards-export-item')).join(','));
+  ok('导出 offers CSV, JSON, Markdown and SARIF', fm === 'csv,json,md,sarif', fm);
+  const dl = page.waitForEvent('download', { timeout: 4000 }).catch(() => null);
+  await page.click('[role="menu"] [data-rulecards-export-item="json"]');
+  const file = await dl;
+  ok('an export downloads a file named after the session', !!file && /session41_vulns/.test(file.suggestedFilename()), file ? file.suggestedFilename() : 'no download');
+  await page.click('[data-rulecards-import]'); await page.waitForTimeout(300);
+  ok('导入 opens the import dialog', (await count(page, '[role="dialog"]')) >= 1 && /导入规则卡/.test(await text(page, '[role="dialog"]')));
+  await ctx.close();
+}
+
+if (want('R9')) { group = 'R9';
+  for (const width of [1024, 760, 390]) {
+    const { ctx, page } = await open(RC, { width, height: width === 390 ? 844 : 900 });
+    const m = await page.evaluate(() => { const b = document.querySelector('[data-rule-instance] [data-triage-primary]').getBoundingClientRect(); const t = document.querySelector('[data-rule-toggle]').getBoundingClientRect();
+      return { h: Math.round(b.height), row: Math.round(t.height), cards: document.querySelectorAll('[data-rule-card]').length }; });
+    ok(`@${width} no horizontal overflow, the cards and the open instance are there`, (await overflow(page)) <= 1 && m.cards === 7, JSON.stringify(m));
+    if (width <= 760) ok(`@${width} the triage control and the row are at least 44 px high`, m.h >= 44 && m.row >= 44, JSON.stringify(m));
+    await shot(page, `rulecards-${width}-light`);
+    await ctx.close();
+  }
+}
+
+// ───────────────────────── Structure canvas (Phase 5 follow-up) ─────────────────────────
+const SC = `${LIVE}?view=structure`;
+const canvasReady = async (page) => { await page.waitForSelector('[data-attack-canvas] [data-node-id]', { timeout: 8000 }).catch(() => {}); await page.waitForTimeout(1600); };
+const showAll = async (page) => { await page.click('[data-canvas-btn="all"]'); await page.waitForTimeout(1200); };
+
+if (want('S1')) { group = 'S1';
+  const { ctx, page, gets } = await open(SC); await canvasReady(page);
+  ok('应用结构 mounts the canvas with a toolbar above it (no floating tool card)', (await count(page, '[data-attack-canvas][data-state="ok"]')) === 1 && (await count(page, '[role="toolbar"][data-canvas-dock]')) === 1 && (await count(page, '.react-flow [data-canvas-dock]')) === 0);
+  await page.click('[data-canvas-legend-toggle]'); await page.waitForTimeout(200);
+  const all = await text(page, '[data-attack-canvas]');
+  ok('no emoji in the copy', !EMOJI.test(all), all.match(EMOJI)?.[0] || '');
+  ok('neutral wording: none of the earlier terms', !/战果|攻击|作战|利用链|红光|兜底|诚实|编造/.test(all), (all.match(/战果|攻击|作战|利用链|红光|兜底|诚实|编造/) || []).join(','));
+  ok('the legend explains every stroke in words', (await count(page, '[data-canvas-legend-flow] li')) === 6 && /实线加粗：通向已确认的风险发现/.test(all) && /保持原样/.test(all));
+  await page.keyboard.press('Escape');
+  const scope = await text(page, '[data-canvas-scope]');
+  ok('the toolbar states how much of the graph is drawn', /^显示 \d+ \/ 50 个节点 · 已识别接口 \d+$/.test(scope), scope);
+  ok('it reads what the earlier canvas read: graph and api_tree', gets.filter((g) => /\/sessions\/41\/graph$/.test(g)).length === 1 && gets.filter((g) => /\/sessions\/41\/api_tree$/.test(g)).length >= 1, gets.filter((g) => /graph|api_tree/.test(g)).join(' '));
+  ok('no dotted grid behind the canvas', (await count(page, '.react-flow__background')) === 0);
+  ok('no horizontal overflow', (await overflow(page)) <= 1);
+  await shot(page, 'structure-1440-light');
+  await ctx.close();
+}
+
+if (want('S2')) { group = 'S2';
+  for (const theme of ['light', 'dark']) {
+    const { ctx, page } = await open(SC, { theme }); await canvasReady(page); await showAll(page);
+    const orange = await token(page, '--jz-line-finding'); const red = await token(page, '--jz-red'); const active = await token(page, '--jz-brand');
+    const cardsF = await page.locator('[data-node-id^="vuln:"]').evaluateAll((els) => els.map((e) => { const cs = getComputedStyle(e); return { id: e.getAttribute('data-node-id'), color: cs.borderLeftColor, w: cs.borderLeftWidth, cap: !!e.querySelector('[data-row-cap]'), text: e.textContent.replace(/\s+/g, ' ') }; }));
+    ok(`${theme}: a finding node carries the orange finding line, 3 px with a cap for P0 / P1`, cardsF.length >= 6 && cardsF.every((c) => c.color === orange && (/P0|P1/.test(c.text) ? c.w === '3px' && c.cap : c.w === '2px' && !c.cap)), JSON.stringify(cardsF.slice(0, 3)));
+    ok(`${theme}: a finding node says its priority and its status in words`, cardsF.every((c) => /P[0-3] (严重|高|中|低)/.test(c.text) && /待复核|已确认|已排除/.test(c.text)), cardsF.map((c) => c.text).slice(0, 2).join(' / '));
+    const other = await page.locator('[data-node-id^="comp:"]').first().evaluate((e) => ({ l: getComputedStyle(e).borderLeftColor, t: getComputedStyle(e).borderTopColor }));
+    ok(`${theme}: other node types have no coloured rule: the type is an icon and a word`, other.l === other.t && other.l !== orange && (await count(page, '[data-node-id^="comp:"] [data-node-mark="component"]')) >= 1, JSON.stringify(other));
+    await page.click('[data-node-id="comp:PayActivity"]'); await page.waitForTimeout(900);
+    const sel = await page.evaluate(() => {
+      const op = (e) => +getComputedStyle(e).opacity;
+      const nodes = [...document.querySelectorAll('.react-flow__node')]; const paths = [...document.querySelectorAll('.react-flow__edge-path')];
+      const p = document.createElement('i'); p.style.backgroundColor = 'rgb(var(--jz-surface-2))'; document.body.appendChild(p); const s2 = getComputedStyle(p).backgroundColor; p.remove();
+      const card = document.querySelector('[data-node-id="comp:PayActivity"]');
+      return { dimNodes: nodes.filter((n) => op(n) < 1 || [...n.querySelectorAll('[data-node-id]')].some((c) => op(c) < 1)).length, dimEdges: paths.filter((e) => op(e) < 1 || op(e.parentElement) < 1 || (e.style.opacity && +e.style.opacity < 1)).length,
+        rel: card.getAttribute('data-node-rel'), onS2: getComputedStyle(card).backgroundColor === s2, near: document.querySelectorAll('[data-node-rel="near"]').length,
+        strokes: paths.map((e) => `${getComputedStyle(e).stroke}|${getComputedStyle(e).strokeWidth}`) };
+    });
+    ok(`${theme}: selecting a node dims nothing: every node and relation stays at full opacity`, sel.dimNodes === 0 && sel.dimEdges === 0, `${sel.dimNodes} nodes, ${sel.dimEdges} relations`);
+    ok(`${theme}: the selected node sits on surface-2 and its direct neighbours are marked`, sel.rel === 'sel' && sel.onS2 && sel.near >= 2, JSON.stringify({ rel: sel.rel, onS2: sel.onS2, near: sel.near }));
+    const heavy = sel.strokes.filter((s) => s === `${active}|2px`).length;
+    ok(`${theme}: its relations are 2 px in the active line colour; the others keep their own stroke`, heavy >= 2 && heavy < sel.strokes.length, `${heavy} of ${sel.strokes.length}`);
+    ok(`${theme}: nothing on the canvas is red`, (await redInk(page, '[data-attack-canvas]', red)) === 0, `${await redInk(page, '[data-attack-canvas]', red)} red`);
+    ok(`${theme}: the toolbar names the selected node and offers to open it`, /已选 组件 PayActivity/.test(await text(page, '[data-canvas-selected]')) && (await count(page, '[data-canvas-open]')) === 1, await text(page, '[data-canvas-selected]'));
+    await shot(page, `structure-selected-1440-${theme}`);
+    await ctx.close();
+  }
+}
+
+if (want('S3')) { group = 'S3';
+  const { ctx, page } = await open(SC); await canvasReady(page); await showAll(page);
+  await page.locator('.react-flow__node[data-id="key:PAY_KEY"]').focus(); await page.keyboard.press('Enter'); await page.waitForTimeout(900);
+  ok('Enter on a focused node picks it as the inspect target', (await page.locator('[data-attack-canvas]').getAttribute('data-canvas-sel')) === 'key:PAY_KEY' && (await page.locator('[data-attack-canvas]').getAttribute('data-canvas-it')) === 'key:PAY_KEY');
+  const ring = await page.locator('.react-flow__node[data-id="key:PAY_KEY"]').evaluate((e) => getComputedStyle(e).outlineStyle + ' ' + getComputedStyle(e).outlineWidth);
+  ok('a focused node shows the focus ring', /solid 2px/.test(ring), ring);
+  await page.click('[data-canvas-open]'); await page.waitForTimeout(400);
+  const info = await text(page, '[role="dialog"]');
+  ok('打开所选节点 shows the fields of the node in a dialog (the same as a double click)', (await count(page, '[role="dialog"] [data-canvas-node-info]')) === 1 && /名称 PAY_KEY/.test(info), info.slice(0, 120));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+  ok('Escape closes the dialog', (await count(page, '[role="dialog"]')) === 0);
+  await page.dblclick('[data-node-id="vuln:f11"]'); await page.waitForTimeout(500);
+  const fi = await text(page, '[role="dialog"]');
+  ok('a double click on a finding node shows priority and status in words', /优先级 P1 高/.test(fi) && /状态 已确认/.test(fi), fi.slice(0, 160));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  await page.click('.react-flow__pane', { position: { x: 5, y: 5 } }); await page.waitForTimeout(300);
+  ok('a click on the empty canvas clears the selection', (await page.locator('[data-attack-canvas]').getAttribute('data-canvas-sel')) === '' && (await count(page, '[data-canvas-selected]')) === 0);
+  const tabbableEdges = await page.evaluate(() => [...document.querySelectorAll('.react-flow__edge')].filter((e) => e.tabIndex >= 0).length);
+  ok('relations are not tab stops', tabbableEdges === 0, `${tabbableEdges}`);
+  await ctx.close();
+}
+
+if (want('S4')) { group = 'S4';
+  { const { ctx, page } = await open(SC); await canvasReady(page);
+    const a = await count(page, '[data-attack-canvas] [data-node-id]');
+    ok('it opens on the confirmed findings and what leads to them', (await page.locator('[data-canvas-btn="focus"]').getAttribute('aria-checked')) === 'true' && a > 0 && a < 20, `${a} nodes`);
+    await showAll(page);
+    const b = await count(page, '[data-attack-canvas] [data-node-id]');
+    ok('全部 draws the whole structure', b > a, `${a} → ${b}`);
+    const w1 = await page.locator('[data-node-id="comp:PayActivity"]').evaluate((e) => e.offsetWidth);
+    await page.click('[data-canvas-btn="dense"]'); await page.waitForTimeout(600);
+    const w2 = await page.locator('[data-node-id="comp:PayActivity"]').evaluate((e) => e.offsetWidth);
+    ok('紧凑 narrows the nodes', w1 === 220 && w2 === 150, `${w1} → ${w2}`);
+    ok('with no path in the graph the path control is disabled', await page.locator('[data-canvas-chain]').isDisabled());
+    await ctx.close(); }
+  { const g = liveGraph();
+    const withPath = { ...g, status: 'ok', chains: [{ title: '示例路径', severity: 'high', path: ['comp:WebHostActivity', 'vuln:f41'] }] };
+    const { ctx, page } = await open(SC, { over: (m, u) => (m === 'GET' && /\/sessions\/41\/graph$/.test(u.pathname) ? { body: withPath } : undefined) }); await canvasReady(page);
+    await page.click('[data-canvas-chain]'); await page.waitForTimeout(500);
+    const on = await page.evaluate(() => ({ path: [...document.querySelectorAll('[data-node-rel="path"]')].map((e) => e.getAttribute('data-node-id')).sort().join(','), dim: [...document.querySelectorAll('.react-flow__node, .react-flow__edge-path')].filter((e) => +getComputedStyle(e).opacity < 1).length }));
+    ok('关联路径 marks the nodes of the path and dims nothing', on.path === 'comp:WebHostActivity,vuln:f41' && on.dim === 0 && /1\/1/.test(await text(page, '[data-canvas-chain]')), JSON.stringify(on));
+    await page.click('[data-canvas-chain]'); await page.waitForTimeout(300);
+    ok('after the last path the control returns to no path', (await count(page, '[data-node-rel="path"]')) === 0 && /0\/1/.test(await text(page, '[data-canvas-chain]')));
+    await ctx.close(); }
+  { const g = liveGraph();
+    const none = { status: 'ok', nodes: g.nodes.map((n) => (n.type === 'finding' ? { ...n, state: 'pending' } : n)), edges: g.edges };
+    const { ctx, page } = await open(SC, { over: (m, u) => (m === 'GET' && /\/sessions\/41\/graph$/.test(u.pathname) ? { body: none } : undefined) }); await canvasReady(page);
+    ok('with no confirmed finding it draws everything and says so', /还没有已确认的风险发现，所以现在画的是全部节点/.test(await text(page, '[data-canvas-nofocus]')) && (await count(page, '[data-attack-canvas] [data-node-id]')) > 20);
+    await ctx.close(); }
+}
+
+if (want('S5')) { group = 'S5';
+  { const { ctx, page } = await open(SC, { over: (m, u) => (m === 'GET' && /\/sessions\/41\/graph$/.test(u.pathname) ? { status: 403, body: { detail: 'fixture: forbidden' } } : undefined) }); await page.waitForTimeout(600);
+    const t = await text(page, '[data-evidence="structure"]');
+    ok('read 403: a permission state without retry wording, not an empty canvas', (await count(page, '[data-attack-canvas][data-state="forbidden"]')) === 1 && /没有权限读取应用结构/.test(t) && !RETRY.test(t) && !/还没有数据/.test(t), t.slice(0, 120));
+    await shot(page, 'structure-forbidden-1440-light');
+    await ctx.close(); }
+  { let n = 0;
+    const { ctx, page } = await open(SC, { over: (m, u) => (m === 'GET' && /\/sessions\/41\/graph$/.test(u.pathname) && ++n <= 1 ? { status: 500, body: { detail: 'fixture failure' } } : undefined) }); await page.waitForTimeout(600);
+    const t = await text(page, '[data-evidence="structure"]');
+    ok('read 500: an error state with retry, not an empty canvas', /应用结构没有读到/.test(t) && (await count(page, '[data-evidence="structure"] [data-state="error"] button')) === 1 && !/还没有数据/.test(t), t.slice(0, 120));
+    await page.waitForTimeout(2200); await page.click('[data-evidence="structure"] [data-state="error"] button'); await canvasReady(page);
+    ok('重试 reads again and draws the canvas', (await count(page, '[data-attack-canvas][data-state="ok"]')) === 1 && (await count(page, '[data-node-id]')) > 0);
+    await ctx.close(); }
+  { const { ctx, page } = await open(`${IDLE}?view=structure`); await page.waitForTimeout(600);
+    const t = await text(page, '[data-evidence="structure"]');
+    ok('empty: says there is no structure yet and why', (await count(page, '[data-attack-canvas][data-state="empty"]')) === 1 && /应用结构还没有数据/.test(t) && /评估运行后/.test(t), t.slice(0, 120));
+    await ctx.close(); }
+}
+
+if (want('S6')) { group = 'S6';
+  for (const width of [1024, 760, 390]) {
+    const { ctx, page } = await open(SC, { width, height: width === 390 ? 844 : 900 }); await canvasReady(page);
+    const m = await page.evaluate(() => ({ tools: [...document.querySelectorAll('[data-canvas-dock] button')].filter((b) => b.getBoundingClientRect().width > 0).length,
+      small: [...document.querySelectorAll('[data-canvas-dock] button')].filter((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && (r.height < 44 && innerWidth <= 760 && !b.matches('[role="radio"]')); }).length }));
+    ok(`@${width} no horizontal overflow and every tool is reachable`, (await overflow(page)) <= 1 && m.tools >= 12, JSON.stringify(m));
+    if (width <= 760) ok(`@${width} the tool buttons are at least 44 px high`, m.small === 0, `${m.small} small`);
+    await shot(page, `structure-${width}-light`);
+    await ctx.close();
+  }
 }
 
 await browser.close();

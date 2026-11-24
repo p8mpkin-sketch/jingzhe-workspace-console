@@ -1,63 +1,49 @@
+// "应用结构": the structure of the application as layers (application, exposed entries, interfaces and
+// configuration, approvals, findings) on a pannable canvas (React Flow). Presentation follows the A+ rules:
+//   - a node is a hairline card; its type is an icon and a word, never a colour alone;
+//   - a finding node carries the orange finding line (3 px with a cap for P0 / P1) and its P label and status word;
+//   - nothing is dimmed: the selected node sits on surface-2 with an active outline, its direct neighbours get a
+//     stronger outline and their relations are drawn heavier in the active line colour; everything else stays as it is;
+//   - a relation says what it is by its stroke: solid heavy = to a confirmed finding, dashed = excluded,
+//     dotted = waiting for review, long dash = an interface group that was probed;
+//   - the tools are a toolbar above the canvas, not floating cards over it.
+// The data blocks marked "数据面(冻结)" (aggregation over 200 nodes, drill-down, layer order, folding at 12 / 60)
+// are unchanged from the earlier canvas. Requests are unchanged: graph and api_tree on mount, the session and
+// /api/chat/source when a component or deep link is opened.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ReactFlow, ReactFlowProvider, Background, BackgroundVariant, MiniMap, Panel,
+  ReactFlow, ReactFlowProvider, MiniMap, Panel,
   useNodesState, useEdgesState, useReactFlow,
   type Node, type Edge, type NodeProps, Handle } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { ChevronUp, Download, FileJson, Plus, Minus, Scan, LayoutGrid, Shield } from 'lucide-react';
-import { toPng } from 'html-to-image';
+import { FileJson, Image as ImageIcon, Info, LayoutGrid, LocateFixed, Minus, Plus, Scan } from 'lucide-react';
 import { api } from '@/services/api';
 import { sourcePathFor } from './sourcePath';
 import { usePentest } from '@/stores/pentest';
 import { useTheme } from '@/theme/ThemeContext';
-// R108-2①②: 三件套接入——graph===null(首载)呈 SkeletonLoader 图表骨架(替既有裸 pulse 骨架);
-// graph.nodes 为空呈 EmptyStatePlaceholder(文案沿既有「攻击面画布还是空的——等待 autopilot 侦察产出」逐字)。
-// 冻结疆域口径: 仅替换既有 loading/empty 呈现,装配层与数据消费零触碰(R108 全局红线 2)。
-import { EmptyStatePlaceholder, SkeletonLoader, UnifiedModal } from '@/components/ui';
-
-/* R105-3(指令3)模块3 作战画布 V3: React Flow(@xyflow/react v12)重构。
- * 红线 2①: 本轮只动 UI 展示层+交互接线 —— 节点/边数据构造、利用链链表、R41 聚合/下钻、
- * 折叠(FOLD/CAP)、LAYERS 分层排序、严重度/三态语义全部【只读消费】既有逻辑(下方标注
- * 「数据面(冻结)」的代码块与旧版逐字同源,行为不变);后端 /graph 与 pentest/graph_builder.py 零触碰。
- * ① 滚轮缩放/拖拽平移/Fit View + 左浮工具坞(+/-/适应/智能重排=既有简单分层重排,不引布局库)
- *    + 右下半透明 Minimap;② 节点卡重塑: 根卡=图标+包名+攻击面计数(端点 node_counts 真值)/
- *    组件=exported 琥珀描边(真值: 本图仅绘导出组件,graph_builder 自 exported_components)+ctype 角标
- *    (permission_protected=false 红点警示沿用旧语义)/接口=等宽 Path 采样(graph 数据面无 Method 字段,
- *    诚实不编造)/发现=严重度徽章(无 CVSS 字段,不编评分)+红光/确认/排除三态;③ 边=贝塞尔+链边静态辉光
- *    (运行态流数据源不存在,不假造流动);④ 单击=平滑聚焦+上下游高亮+他节点降透明+写 inspectorTarget
- *    (R105-2 契约红线 4①);双击=UnifiedModal 反编译源码切片(既有 /api/chat/source 数据链)。
- * 视觉编码常量(TYPE_STYLE/SEV)沿 R39 原值 —— 既有画布色板语义不变。
- * R107-5(指令5)布局装配层拉开: 层间距 56→120/垂直步距 ROW=典型卡高72+24=96/节点宽 220+p-3 微排版(正文 12px 标题加粗,
- * 关联数浅灰等宽微徽标)/AppCard 高度自适应;进入/切至画布 Tab 自动平滑 fitView({padding:.2,duration:400})与
- * fit 钮/智能重排合并为单一 fit()。数据面(冻结)块零触碰 —— 聚合/下钻/LAYERS 排序/FOLD 折叠语义逐字保留。 */
+import { Button, Dialog, EmptyState, ErrorState, IconButton, PermissionState, Popover, SegmentedControl, SkeletonLoader, StatusGlyph, Tag, cx, stateOf } from '@/components/ui';
+import { priorityOf, type FindingVM, type Priority } from '@/features/pentest/workbench/model';
+import { PRIORITY_WORD, isStrong } from '@/features/pentest/workbench/surfaces/runtime/trace';
+import { FindingCap, StatusMark } from '@/features/pentest/workbench/surfaces/findings/marks';
+import { NodeMark } from '@/features/pentest/workbench/surfaces/evidence/GraphOverview';
+import { typeLabel } from '@/features/pentest/workbench/surfaces/evidence/graph';
 
 // ───────────────────────── 数据面(冻结) ─────────────────────────
-const TYPE_STYLE: Record<string, { col: string; kind: string; dash?: boolean; mono?: boolean }> = {
-  app: { col: 'rgb(var(--jz-brand))', kind: '目标' },
-  component: { col: 'rgb(var(--jz-teal))', kind: '组件' },
-  deeplink: { col: 'rgb(var(--jz-teal))', kind: '深链', dash: true },
-  api_group: { col: 'rgb(var(--jz-brand))', kind: '接口组', mono: true },
-  key: { col: 'rgb(var(--jz-amber))', kind: '密钥', mono: true },
-  approval: { col: 'rgb(var(--jz-orange))', kind: '审批' },
-  finding: { col: 'rgb(var(--jz-ink-2))', kind: '发现' },
-  more: { col: 'rgb(var(--jz-muted))', kind: '更多', dash: true },
-};
-const TYPE_ICON: Record<string, string> = { app: '📱', component: '🧩', deeplink: '🔗', api_group: '🔌', key: '🔑', approval: '🛡', finding: '🎯', more: '…' };
-const SEV: Record<string, string> = { critical: 'rgb(var(--jz-sev-critical))', high: 'rgb(var(--jz-sev-high))', medium: 'rgb(var(--jz-sev-medium))', low: 'rgb(var(--jz-sev-low))', info: 'rgb(var(--jz-sev-info))' };
 const SEV_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 const LAYERS = [
-  { key: 'target', title: '目标', types: ['app'] },
+  { key: 'target', title: '应用', types: ['app'] },
   { key: 'surface', title: '暴露面', types: ['component', 'deeplink'] },
-  { key: 'asset', title: '接口/资产', types: ['api_group', 'key'] },
+  { key: 'asset', title: '接口与配置', types: ['api_group', 'key'] },
   { key: 'approve', title: '审批', types: ['approval'] },
-  { key: 'finding', title: '发现', types: ['finding'] },
+  { key: 'finding', title: '风险发现', types: ['finding'] },
 ];
-const FOLD = 12, CAP = 60;   // 折叠语义冻结(R105-3 契约: 阈值 12/60 零改动)——NW/NH/ROW 属布局装配层,R107-5 移至下方常量段
+const FOLD = 12, CAP = 60;   // folding thresholds, unchanged
 
 interface GNode { id: string; type: string; label: string; severity?: string; state?: string; meta?: any; }
 interface GEdge { from: string; to: string; type: string; }
 interface GraphData { nodes: GNode[]; edges: GEdge[]; chains?: any[]; node_counts?: Record<string, number>; }
 // ────────────────────────────────────────────────────────────────
+
 
 // ───────────── 布局装配层(R107-5 指令5: 仅间距/尺寸/fitView 调参;聚合/排序/FOLD 折叠语义冻结零触碰) ─────────────
 const NW = 220;               // ② 节点宽统一 220px(R105-3 为 200)
@@ -81,61 +67,55 @@ const cssVar = (name: string, alpha = 1): string | undefined => {
 };
 const PACKER_LABEL: Record<string, string> = { none: '无壳', '360_jiagu': '360加固', ijiami: '爱加密' };
 
-// ── ② 节点卡(RF 自定义节点;全部只读消费 GNode 真值) ──
-interface CardData { g: GNode; dim?: boolean; sel?: boolean; }
-const NCard: React.FC<{ children: React.ReactNode; d: CardData; accent: string; emphasis?: boolean; dash?: boolean; style?: React.CSSProperties }> =
-({ children, d, accent, emphasis, dash, style }) => (
-  <div data-node-id={d.g.id}
-    style={{
-      width: 'var(--ac-nw, 220px)', border: `1.3px ${dash ? 'dashed' : 'solid'} ${accent}`,
-      borderLeftWidth: 4, borderRadius: 'var(--jz-radius-card)', opacity: d.dim ? 0.16 : 1,
-      boxShadow: d.sel ? '0 0 0 2px rgb(var(--jz-brand))' : undefined, borderWidth: emphasis ? 2 : undefined,
-      transition: 'opacity .2s, box-shadow .2s',
-      ...style,
-    }}
-    className="bg-jz-surface-2/80 overflow-hidden select-none">
+// ── Node cards (custom React Flow nodes; they only read the node they are given) ──
+/** How a node relates to what is selected: the selected node, a direct neighbour, or a node on the path in view. */
+type Rel = 'sel' | 'near' | 'path';
+interface CardData { g: GNode; rel?: Rel; counts?: Record<string, number>; }
+const EDGE_OF: Record<'none' | Rel, string> = { none: 'border-jz-border', near: 'border-jz-border-strong', path: 'border-jz-line-active', sel: 'border-jz-line-active' };
+const EDGE_OF_FINDING: Record<'none' | Rel, string> = {
+  none: 'border-y-jz-border border-r-jz-border', near: 'border-y-jz-border-strong border-r-jz-border-strong',
+  path: 'border-y-jz-line-active border-r-jz-line-active', sel: 'border-y-jz-line-active border-r-jz-line-active',
+};
+const NCard: React.FC<{ children: React.ReactNode; d: CardData; dash?: boolean; priority?: Priority }> = ({ children, d, dash, priority }) => (
+  <div data-node-id={d.g.id} data-node-rel={d.rel || 'none'} style={{ width: 'var(--ac-nw)' }}
+    className={cx('relative select-none rounded-control border px-2.5 py-1.5', dash && 'border-dashed',
+      d.rel === 'sel' ? 'bg-jz-surface-2 ring-1 ring-jz-line-active' : 'bg-jz-surface',
+      priority ? cx('border-l-jz-line-finding', isStrong(priority) ? 'border-l-line-strong' : 'border-l-line', EDGE_OF_FINDING[d.rel || 'none']) : EDGE_OF[d.rel || 'none'])}>
+    {priority && <FindingCap priority={priority} />}
     {children}
-    {/* R315: v12 EdgeRenderer 需节点含 Handle 才计算连接点——自定义卡零 Handle
-        导致边全部不渲染(存量断裂,最小边试验实证 {id,source,target} 也不出);
-        隐藏样式不参与视觉(nodesConnectable=false 不可拖连) */}
+    {/* React Flow only computes connection points for nodes that have handles; these are never shown or used. */}
     <Handle type="target" position={'left' as any} style={{ visibility: 'hidden', pointerEvents: 'none' }} isConnectable={false} />
     <Handle type="source" position={'right' as any} style={{ visibility: 'hidden', pointerEvents: 'none' }} isConnectable={false} />
   </div>
 );
-const CardTitle: React.FC<{ t: string; mono?: boolean; size?: number }> = ({ t, mono, size = 12 }) => (
-  <div className={`px-3 pt-1.5 truncate text-jz-ink ${mono ? 'font-mono' : 'font-semibold'}`} style={{ fontSize: size }}>{t}</div>
+const CardHead: React.FC<{ type: string; word?: string; right?: React.ReactNode }> = ({ type, word, right }) => (
+  <div className="flex min-w-0 items-center gap-2">
+    {word ? <span className="inline-flex min-w-0 items-center gap-1.5 text-meta text-jz-ink-2"><NodeMark type={type} word={false} /><span className="truncate">{word}</span></span> : <NodeMark type={type} />}
+    {right && <span className="ml-auto flex min-w-0 flex-none items-center gap-1 text-meta text-jz-ink-2">{right}</span>}
+  </div>
+);
+const CardTitle: React.FC<{ t: string; mono?: boolean }> = ({ t, mono }) => (
+  <div className={cx('truncate text-jz-ink', mono ? 'font-mono text-mono' : 'text-label font-medium')} title={t}>{t}</div>
 );
 const CardRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="px-3 pt-1 pb-2 flex items-center gap-1.5 text-meta text-jz-muted min-w-0">{children}</div>
-);
-const CardHead: React.FC<{ label: React.ReactNode; color: string; right?: React.ReactNode }> = ({ label, color, right }) => (
-  // R117-3②: 铬饰去硬编码——rgba(255,255,255,·) 白系底在亮色模式不可辨,改 --jz-canvas token 双模带
-  <div className="h-5 flex items-center gap-1.5 px-3" style={{ background: 'rgb(var(--jz-canvas) / 0.45)' }}>
-    <span className="text-meta" style={{ color }}>{label}</span>
-    {right}
-  </div>
+  <div className="flex min-w-0 items-center gap-2 text-meta text-jz-ink-2">{children}</div>
 );
 
 const AppCard = ({ data }: NodeProps) => {
   const d = data as unknown as CardData; const m = d.g.meta || {};
-  const c = (d as any).counts || {};
-  const accent = TYPE_STYLE.app.col;
+  const c = d.counts || {};
   return (
-    <NCard d={d} accent={accent}>
-      <CardHead label={<>📱 目标 APP</>} color={accent}
-        right={m.packer ? <span className="ml-auto text-meta px-1.5 rounded-pill border border-jz-border text-jz-muted"
-          title={`packer 真值: ${m.packer}`}>{PACKER_LABEL[m.packer] || m.packer}</span> : null} />
+    <NCard d={d}>
+      <CardHead type="app" right={m.packer ? <Tag title={`加固：${m.packer}`}>{PACKER_LABEL[m.packer] || m.packer}</Tag> : null} />
       <CardTitle t={d.g.label} />
       <CardRow>
-        <span className="font-mono" title={`组件(导出) ${c.component || 0}`}>🧩{c.component || 0}</span>
-        <span className="font-mono" title={`深链 ${c.deeplink || 0}`}>🔗{c.deeplink || 0}</span>
-        <span className="font-mono" title={`接口组 ${c.api_group || 0}`}>🔌{c.api_group || 0}</span>
-        <span className="font-mono" title={`密钥 ${c.key || 0}`}>🔑{c.key || 0}</span>
-        <span className="font-mono" title={`发现 ${c.finding || 0}`}>🎯{c.finding || 0}</span>
+        {(['component', 'deeplink', 'api_group', 'key', 'finding'] as const).map((t) => (
+          <span key={t} className="inline-flex items-center gap-1 font-mono tnum text-jz-ink" title={`${typeLabel(t)} ${c[t] || 0}`}><NodeMark type={t} word={false} />{c[t] || 0}</span>
+        ))}
       </CardRow>
       {(m.version || m.device) && <CardRow>
-        {m.version ? <span className="font-mono truncate">v{m.version}</span> : null}
-        {m.device ? <span className="font-mono truncate">{m.device}</span> : null}
+        {m.version ? <span className="truncate font-mono">v{m.version}</span> : null}
+        {m.device ? <span className="truncate font-mono">{m.device}</span> : null}
       </CardRow>}
     </NCard>
   );
@@ -143,18 +123,13 @@ const AppCard = ({ data }: NodeProps) => {
 
 const CompCard = ({ data }: NodeProps) => {
   const d = data as unknown as CardData; const m = d.g.meta || {};
-  const st = TYPE_STYLE.component;
-  const unprot = m.protected === false;   // 真值警示沿用旧语义(permission_protected=false)
   return (
-    <NCard d={d} accent={st.col}>
-      <CardHead label={<>🧩 组件</>} color={st.col}
-        right={<span className="ml-auto font-mono text-meta px-1 rounded-control" title="组件类型(真值)"
-          style={{ background: 'rgb(var(--jz-canvas) / 0.55)', color: st.col }}>{m.ctype || '?'}</span>} />
+    <NCard d={d}>
+      <CardHead type="component" right={<span className="font-mono" title="组件类型">{m.ctype || '未知类型'}</span>} />
       <CardTitle t={d.g.label} />
       <CardRow>
-        <span className="px-1 rounded-control text-meta" title="exported=true(真值: 画布仅绘 manifest.exported_components 导出组件)"
-          style={{ border: '1px solid rgb(var(--jz-amber))', color: 'rgb(var(--jz-amber-ink))' }}>exported</span>
-        {unprot && <span className="text-meta" style={{ color: 'rgb(var(--jz-red))' }} title="permission_protected=false(真值)">● 无权限保护</span>}
+        <span className="whitespace-nowrap" title="清单里声明为导出（exported=true）；这里只列导出的组件">已导出</span>
+        {m.protected === false && <span className="inline-flex items-center gap-1 whitespace-nowrap text-jz-ink" title="清单里没有为它声明权限（permission_protected=false）"><StatusGlyph kind="attention" />无权限保护</span>}
       </CardRow>
     </NCard>
   );
@@ -162,30 +137,24 @@ const CompCard = ({ data }: NodeProps) => {
 
 const DlCard = ({ data }: NodeProps) => {
   const d = data as unknown as CardData; const m = d.g.meta || {};
-  const st = TYPE_STYLE.deeplink;
   return (
-    <NCard d={d} accent={st.col} dash>
-      <CardHead label={<>🔗 深链</>} color={st.col}
-        right={m.browsable != null ? <span className="ml-auto font-mono text-meta text-jz-muted" title="browsable(真值)">{String(m.browsable)}</span> : null} />
+    <NCard d={d} dash>
+      <CardHead type="deeplink" right={m.browsable != null ? <span title={`browsable=${String(m.browsable)}`}>{m.browsable ? '可从浏览器打开' : '不可从浏览器打开'}</span> : null} />
       <CardTitle t={d.g.label} />
-      <CardRow><span className="font-mono truncate" title={m.uri || ''}>{trunc(String(m.uri || ''), 26)}</span></CardRow>
+      <CardRow><span className="truncate font-mono" title={m.uri || ''}>{trunc(String(m.uri || ''), 26)}</span></CardRow>
     </NCard>
   );
 };
 
 const ApiCard = ({ data }: NodeProps) => {
   const d = data as unknown as CardData; const m = d.g.meta || {};
-  const st = TYPE_STYLE.api_group;
   const sample: string[] = m.sample || [];
   return (
-    <NCard d={d} accent={st.col}>
-      <CardHead label={<>🔌 接口组</>} color={st.col}
-        right={m.count != null ? <span className="ml-auto font-mono text-meta px-1.5 rounded-pill text-jz-muted" style={{ background: 'rgb(var(--jz-canvas) / 0.55)' }} title={`关联接口数(真值): ${m.count}`}>{Number(m.count) > 999 ? '999+' : m.count}</span> : null} />
+    <NCard d={d}>
+      <CardHead type="api_group" right={m.count != null ? <span className="font-mono tnum text-jz-ink" title={`这个组里的接口数：${m.count}`}>{Number(m.count) > 999 ? '999+' : m.count}</span> : null} />
       <CardTitle t={d.g.label} />
       <CardRow>
-        {sample.length ? <span className="font-mono truncate" title={`采样真值: ${sample.join(', ')}`}>{trunc(sample[0], 22)}</span>
-          : <span className="text-jz-muted">无采样</span>}
-        {/* graph 数据面无 HTTP Method 字段 —— 诚实只显 Path 采样,不编造 */}
+        {sample.length ? <span className="truncate font-mono" title={`路径采样：${sample.join(', ')}`}>{trunc(sample[0], 22)}</span> : <span>没有路径采样</span>}
       </CardRow>
     </NCard>
   );
@@ -193,12 +162,11 @@ const ApiCard = ({ data }: NodeProps) => {
 
 const KeyCard = ({ data }: NodeProps) => {
   const d = data as unknown as CardData; const m = d.g.meta || {};
-  const st = TYPE_STYLE.key;
   return (
-    <NCard d={d} accent={st.col}>
-      <CardHead label={<>🔑 密钥</>} color={st.col}
-        right={m.verified != null ? <span className="ml-auto text-meta" style={{ color: m.verified ? 'rgb(var(--jz-teal-ink))' : 'rgb(var(--jz-muted))' }}
-          title={`verified_exploitable(真值): ${m.verified}`}>{m.verified ? '✓ 已验证成立' : '未验证'}</span> : null} />
+    <NCard d={d}>
+      <CardHead type="key" right={m.verified != null ? (
+        <span className="inline-flex items-center gap-1 whitespace-nowrap" title={`verified_exploitable=${m.verified}`}><StatusGlyph kind={m.verified ? 'done' : 'queued'} />{m.verified ? '已验证' : '未验证'}</span>
+      ) : null} />
       <CardTitle t={d.g.label} mono />
     </NCard>
   );
@@ -206,36 +174,28 @@ const KeyCard = ({ data }: NodeProps) => {
 
 const ApprCard = ({ data }: NodeProps) => {
   const d = data as unknown as CardData; const m = d.g.meta || {};
-  const st = TYPE_STYLE.approval;
   return (
-    <NCard d={d} accent={st.col}>
-      <CardHead label={<>🛡 审批</>} color={st.col}
-        right={<span className="ml-auto font-mono text-meta" style={{ color: m.state === 'pending' ? st.col : 'rgb(var(--jz-muted))' }}>{m.state || ''}</span>} />
+    <NCard d={d}>
+      <CardHead type="approval" right={m.state ? <span className={m.state === 'pending' ? 'text-jz-ink' : undefined}>{m.state === 'pending' ? '待审批' : stateOf(m.state).label}</span> : null} />
       <CardTitle t={d.g.label} />
     </NCard>
   );
 };
 
+const REVIEW: Record<string, FindingVM['status']> = { confirmed: 'confirmed', excluded: 'excluded', pending: 'pending' };
 const FindCard = ({ data }: NodeProps) => {
   const d = data as unknown as CardData;
-  const sev = d.g.severity || 'info';
-  const accent = SEV[sev] || TYPE_STYLE.finding.col;
-  const state = d.g.state;
-  const corner = state === 'confirmed' ? '✓' : state === 'excluded' ? '✕' : state ? '…' : '';
-  const cornerCol = state === 'confirmed' ? 'rgb(var(--jz-teal))' : state === 'excluded' ? 'rgb(var(--jz-muted))' : 'rgb(var(--jz-amber))';
+  const p = priorityOf(d.g.severity);
   const isAgg = d.g.id.startsWith('agg:');
+  const tail = String(d.g.meta?.rule_id || d.g.meta?.masvs || (isAgg ? `聚合 ${d.g.meta?.count || '?'} 条` : ''));
   return (
-    <NCard d={d} accent={accent}
-      emphasis={sev === 'critical' || sev === 'high'}   // 红光气泡: critical/high 真值,无 CVSS 不编评分
-      style={{ opacity: d.dim ? 0.16 : state === 'excluded' ? 0.5 : 1 }}>
-      <CardHead label={<>🎯 {isAgg ? '规则族' : '发现'}</>} color={accent}
-        right={<span className="ml-auto font-mono text-meta px-1 rounded-control" title="severity(真值,后端无 CVSS 字段)"
-          style={{ border: `1px solid ${accent}`, color: accent }}>{sev}</span>} />
+    <NCard d={d} priority={p}>
+      <CardHead type="finding" word={isAgg ? '规则族' : undefined}
+        right={<span className={cx('whitespace-nowrap font-mono tnum text-jz-ink', isStrong(p) && 'font-semibold')} title={`等级 ${d.g.severity || 'info'}`}>{p} <span className="font-sans font-normal">{PRIORITY_WORD[p]}</span></span>} />
       <CardTitle t={d.g.label} />
       <CardRow>
-        <span className="font-mono truncate" title={d.g.meta?.rule_id || d.g.meta?.masvs || ''}>
-          {trunc(String(d.g.meta?.rule_id || d.g.meta?.masvs || (isAgg ? `聚合 ${d.g.meta?.count || '?'} 条` : '')), 14)}</span>
-        {corner && <span className="ml-auto" style={{ color: cornerCol }} title={state || ''}>{corner}</span>}
+        <span className="min-w-0 truncate font-mono" title={tail}>{trunc(tail, 14)}</span>
+        {d.g.state && REVIEW[d.g.state] && <StatusMark status={REVIEW[d.g.state]} className="ml-auto flex-none" />}
       </CardRow>
     </NCard>
   );
@@ -244,10 +204,8 @@ const FindCard = ({ data }: NodeProps) => {
 const MoreCard = ({ data }: NodeProps) => {
   const d = data as unknown as CardData;
   return (
-    <NCard d={d} accent={TYPE_STYLE.more.col} dash>
-      <div className="grid place-items-center text-meta font-semibold text-jz-ink-2" style={{ minHeight: CARD_H - 2 }}>
-        更多(点击展开)
-      </div>
+    <NCard d={d} dash>
+      <div className="grid min-h-12 place-items-center text-meta font-medium text-jz-ink-2">这一层还有更多，点击展开</div>
     </NCard>
   );
 };
@@ -255,10 +213,10 @@ const MoreCard = ({ data }: NodeProps) => {
 const HeaderCard = ({ data }: NodeProps) => {
   const d = data as unknown as { title: string; count: number };
   return (
-    <div data-layer-header={d.title} style={{ width: NW }} className="flex items-center gap-1.5 select-none">
-      <span className="text-meta font-semibold text-jz-ink-2">{d.title}</span>
-      <span className="text-meta font-mono text-jz-muted">{d.count}</span>
-      <span className="flex-1 h-px" style={{ background: 'rgb(var(--jz-border))' }} />
+    <div data-layer-header={d.title} style={{ width: 'var(--ac-nw)' }} className="flex select-none items-center gap-2">
+      <span className="text-meta font-medium text-jz-ink-2">{d.title}</span>
+      <span className="font-mono text-mono tnum text-jz-ink-2">{d.count}</span>
+      <span className="h-px flex-1 bg-jz-border" />
     </div>
   );
 };
@@ -268,35 +226,51 @@ const nodeTypes = {
   key: KeyCard, approval: ApprCard, finding: FindCard, more: MoreCard, header: HeaderCard,
 };
 
+/** Nodes per type: the counts the endpoint states, and the nodes of the graph itself for a type it does not state. */
+function countsOf(graph: GraphData | null): Record<string, number> {
+  const c: Record<string, number> = {};
+  for (const n of graph?.nodes || []) c[n.type] = (c[n.type] || 0) + 1;
+  return { ...c, ...(graph?.node_counts || {}) };
+}
+
+type FlowKind = 'confirmed' | 'excluded' | 'pending' | 'tried';
+const FLOW_DASH: Record<FlowKind, string | undefined> = { confirmed: undefined, excluded: '5 4', pending: '2 3', tried: '6 4' };
+const FLOW_WIDTH: Record<FlowKind, number> = { confirmed: 2, excluded: 1, pending: 1, tried: 1.5 };
+const LEGEND_LINES: Array<[string | undefined, number, string]> = [
+  [undefined, 2, '实线加粗：通向已确认的风险发现'], ['5 4', 1, '短划线：通向已排除的风险发现'], ['2 3', 1, '点线：通向待复核的风险发现'],
+  ['6 4', 1.5, '长划线：这个接口组已经探测过'], [undefined, 1, '细实线：其余关系'],
+];
+
 const Flow: React.FC<{ sid: number }> = ({ sid }) => {
   const setInspectorTarget = usePentest((s) => s.setInspectorTarget);
   const itTarget = usePentest((s) => s.inspectorTarget);
   const { theme } = useTheme();
   const [graph, setGraph] = useState<GraphData | null>(null);
+  const [fail, setFail] = useState<'' | 'error' | 'forbidden'>('');
+  const [attempt, setAttempt] = useState(0);
   const [expand, setExpand] = useState<Record<string, boolean>>({});
-  const [drill, setDrill] = useState<string | null>(null);   // R41: 下钻的规则族
+  const [drill, setDrill] = useState<string | null>(null);   // the rule family that is drilled into
   const [chainIdx, setChainIdx] = useState<number | null>(null);
   const [selId, setSelId] = useState<string | null>(null);
   const [modal, setModal] = useState<{ title: React.ReactNode; body: React.ReactNode } | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [groupFlow, setGroupFlow] = useState<Record<string, { tried: number; ok: number; fb: number }>>({});   // R314
-  const [focusOnly, setFocusOnly] = useState(true);   // R317: 默认聚焦战果(全图可切)
-  const [dense, setDense] = useState(false);   // R319: 密度模式(紧凑布局,同屏信息量+40%)
-  const [legendOpen, setLegendOpen] = useState(false);   // 像素打磨: 图例折叠 Popover(默认收起不遮画布)
-  const [apiTreeTotal, setApiTreeTotal] = useState(0);   // R624: /api_tree 接口总数(/graph 无 api 节点时 KPI 诚实回退)
+  const [groupFlow, setGroupFlow] = useState<Record<string, { tried: number; ok: number; fb: number }>>({});
+  const [focusOnly, setFocusOnly] = useState(true);   // confirmed findings and what leads to them, or everything
+  const [dense, setDense] = useState(false);
+  const [apiTreeTotal, setApiTreeTotal] = useState(0);
   const groupFlowRef = useRef(groupFlow);
   groupFlowRef.current = groupFlow;
   const rf = useReactFlow();
 
   useEffect(() => {
-    setGraph(null); setSelId(null); setChainIdx(null); setDrill(null); setExpand({});
-    api<GraphData>(`/api/pentest/sessions/${sid}/graph`)
-      .then((g) => setGraph(g.nodes ? g : { nodes: [], edges: [] })).catch(() => setGraph({ nodes: [], edges: [] }));
-    // R314: 虚/实线流程语义——api_tree 真值(module→apis[].tested/last_probe)构建
-    // groupFlow(尝试轨迹统计),边装配按此分虚/实(数据源零造假)
+    setGraph(null); setFail(''); setSelId(null); setChainIdx(null); setDrill(null); setExpand({});
+    api<GraphData>(`/api/pentest/sessions/${sid}/graph`, {}, true)
+      .then((g) => setGraph(g.nodes ? g : { nodes: [], edges: [] }))
+      .catch((e) => setFail(e?.status === 403 ? 'forbidden' : 'error'));
+    // Which interface groups were probed comes from api_tree (module → apis[].tested); it only styles relations.
     api<any>(`/api/pentest/sessions/${sid}/api_tree`, {}, true).then((d) => {
-      setApiTreeTotal((d?.groups || []).reduce((n: number, g: any) => n + (g?.apis || []).length, 0));   // R624: KPI 回退口径
+      setApiTreeTotal((d?.groups || []).reduce((n: number, g: any) => n + (g?.apis || []).length, 0));
       const gf: Record<string, { tried: number; ok: number; fb: number }> = {};
       for (const g of d?.groups || []) {
         let tried = 0, ok = 0, fb = 0;
@@ -309,10 +283,10 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
         }
         if (tried) gf[g.module] = { tried, ok, fb };
       }
-      groupFlowRef.current = gf;   // R316: 同步写 ref(渲染体赋值在批处理时序下滞后于 effect,实测 flow 恒未命中)
+      groupFlowRef.current = gf;
       setGroupFlow(gf);
-    }).catch((e) => { (window as any).__gfDbg = { err: String(e).slice(0, 100) }; });
-  }, [sid]);
+    }).catch(() => { /* without api_tree the relations keep their plain stroke */ });
+  }, [sid, attempt]);
 
   // ───────── 数据面(冻结): R41 聚合/下钻 + LAYERS 排序 + 折叠,与旧版逐字同源(仅输出容器由 SVG pos 换 RF nodes) ─────────
   const layout = useMemo(() => {
@@ -326,12 +300,12 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
     let x = 40;
     // R41 P0-4: 超 200 节点 → finding 按规则族聚合(下钻: 点击族节点展开实例)
     let nodesG = graph.nodes;
-    // R317: 聚焦战果——confirmed 发现子图(含归属父节点与边);全景开关还原
+    // R317: 只看已确认发现——confirmed 发现子图(含归属父节点与边);全景开关还原
     let edgeFilter: ((e: GEdge) => boolean) | null = null;
     if (focusOnly) {
       const conf = new Set(nodesG.filter((n) => n.type === 'finding' && n.state === 'confirmed').map((n) => n.id));
       if (!conf.size) {
-        // R321: 零战果会话聚焦=孤点——不强制过滤(保留全图)+图例提示
+        // R321: 没有已确认发现的会话聚焦=孤点——不强制过滤(保留全图)+图例提示
         edgeFilter = null;
       } else {
         const keep = new Set<string>(['app', ...conf]);
@@ -399,7 +373,7 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
   }, [graph, expand, drill, focusOnly, dense]);
   // ────────────────────────────────────────────────────────────────
 
-  // 上下游邻域(BFS 双向)—— 单击高亮的链路集合
+  // Direct neighbours of the selected node: they and their relations are drawn heavier; nothing else changes.
   const adj = useMemo(() => {
     const m = new Map<string, Set<string>>();
     graph?.edges.forEach((e) => {
@@ -409,12 +383,7 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
     });
     return m;
   }, [graph]);
-  const nbhd = useMemo(() => {
-    if (!selId) return null;
-    const seen = new Set([selId]); const q = [selId];
-    while (q.length) { const c = q.shift()!; for (const n of (adj.get(c) || [])) if (!seen.has(n)) { seen.add(n); q.push(n); } }
-    return seen;
-  }, [selId, adj]);
+  const near = useMemo(() => (selId ? adj.get(selId) || new Set<string>() : null), [selId, adj]);
 
   const chains: Array<{ path: string[]; severity?: string; title?: string }> = (graph as any)?.chains || [];
   // R624-P2: 画布内聚合 api 节点数(一节点=同族端点聚合;KPI 权威口径走 /api_tree 总数,此值入悬浮与回退)
@@ -423,62 +392,50 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
   const chainNodes = useMemo(() => new Set(chainOn ? chainOn.path : []), [chainOn]);
   const chainPairs = useMemo(() => new Set(chainOn ? chainOn.path.slice(0, -1).map((n, i) => n + '→' + chainOn.path[i + 1]) : []), [chainOn]);
 
-  // UI 层: 数据面输出(pos/visNodes)→ RF nodes/edges(位置/样式装配,零数据改写)
+  // Layout output (pos / visNodes) → React Flow nodes and edges. Positions and strokes only; no data is rewritten.
   const layoutRef = useRef(layout); layoutRef.current = layout;
   const applyLayout = useCallback(() => {
     const lay = layoutRef.current; if (!lay) return;
-    const nById = new Map((graph?.nodes || []).map((n) => [n.id, n]));   // R314 边分类用
+    const nById = new Map((graph?.nodes || []).map((n) => [n.id, n]));
+    const counts = countsOf(graph);
     const rfNodes: Node[] = [];
     lay.headers.forEach((h) => rfNodes.push({
       id: `__hdr_${h.title}`, type: 'header', position: { x: h.x, y: 24 },
-      data: { title: h.title, count: h.count }, draggable: false, selectable: false, deletable: false,
+      data: { title: h.title, count: h.count }, draggable: false, selectable: false, deletable: false, focusable: false,
     }));
     lay.visNodes.forEach((nd) => {
       const p = lay.pos[nd.id];
-      rfNodes.push({ id: nd.id, type: nd.type, position: { x: p.x, y: p.y }, data: { g: nd } });
+      rfNodes.push({ id: nd.id, type: nd.type, position: { x: p.x, y: p.y }, ariaLabel: `${typeLabel(nd.type)}：${nd.label}`,
+        data: { g: nd, ...(nd.type === 'app' ? { counts } : {}) } });
     });
     lay.moreNodes.forEach((mid) => {
       const p = lay.pos[mid];
-      rfNodes.push({ id: mid, type: 'more', position: { x: p.x, y: p.y }, data: { g: { id: mid, type: 'more', label: '更多(点击展开)' } } });
+      rfNodes.push({ id: mid, type: 'more', position: { x: p.x, y: p.y }, ariaLabel: '展开这一层的其余节点', data: { g: { id: mid, type: 'more', label: '展开这一层的其余节点' } } });
     });
     const rfEdges: Edge[] = [];
     lay.edges.forEach((e, i) => {
       const a = lay.pos[e.from], b = lay.pos[e.to];
       if (!a || !b) return;
       const chain = e.type === 'invocable';
-      // R314: 虚/实线流程语义(展示装配层)——按目标节点真实性分类:
-      //  发现 confirmed=实线粗(severity 色);excluded/pending=虚线(尝试未成立/待审);
-      //  接口组 groupFlow.tried>0=虚线青(尝试轨迹,统计入 title);未触达=基线实线。
+      // What a relation leads to decides its stroke: a confirmed finding, an excluded one, one waiting for review,
+      // or an interface group that was probed (counts from api_tree).
       const tn = nById.get(e.to);
-      let flow: string | undefined; let tip = '';
-      (window as any).__flowDbg = (window as any).__flowDbg || {};
-      (window as any).__flowDbg[flow || (tn ? tn.type : 'noTN')] = ((window as any).__flowDbg[flow || (tn ? tn.type : 'noTN')] || 0) + 1;
+      let flow: FlowKind | undefined; let tip = '';
       if (tn?.type === 'finding') {
         if (tn.state === 'confirmed') flow = 'confirmed';
-        else if (tn.state === 'excluded') { flow = 'excluded'; tip = '尝试未成立(excluded)'; }
-        else { flow = 'pending'; tip = '待审(pending)'; }
+        else if (tn.state === 'excluded') { flow = 'excluded'; tip = '通向已排除的风险发现'; }
+        else { flow = 'pending'; tip = '通向待复核的风险发现'; }
       } else if (tn?.type === 'api_group') {
         const mod = e.to.startsWith('api:') ? e.to.slice(4) : tn.label;
         const gf = groupFlow[mod] || groupFlowRef.current[mod];
-        if (gf?.tried) { flow = 'tried'; tip = `已探测 ${gf.tried} 处(可用 ${gf.ok}/兜底 ${gf.fb})`; }
+        if (gf?.tried) { flow = 'tried'; tip = `已探测 ${gf.tried} 个接口（有结果 ${gf.ok}，排除、不可达或出错 ${gf.fb}）`; }
       }
-      const flowStyle = flow === 'confirmed'
-        ? { stroke: cssVar('--jz-teal'), strokeWidth: 2.4, opacity: 0.95 }
-        : flow === 'excluded' ? { stroke: cssVar('--jz-muted'), strokeWidth: 1, opacity: 0.3, strokeDasharray: '5 4' }
-        : flow === 'pending' ? { stroke: cssVar('--jz-muted'), strokeWidth: 1, opacity: 0.5, strokeDasharray: '2 3' }
-        : flow === 'tried' ? { stroke: cssVar('--jz-brand'), strokeWidth: 1.3, opacity: 0.6, strokeDasharray: '6 4' }
-        : undefined;
       rfEdges.push({
-        id: `e${i}:${e.from}->${e.to}`, source: e.from, target: e.to, type: 'default',
-        // R117-3②: 初始连线色同走 token(挂载后 restyle 效应即时按主题归一)
-        style: flowStyle ? { stroke: (flowStyle as any).stroke, strokeWidth: (flowStyle as any).strokeWidth, opacity: (flowStyle as any).opacity, ...(flowStyle as any).strokeDasharray ? { strokeDasharray: (flowStyle as any).strokeDasharray } : {} }
-          : { stroke: chain ? (cssVar('--jz-brand')) : (cssVar('--jz-muted')), strokeWidth: chain ? 1.6 : 1, opacity: chain ? 0.85 : 0.45 },
-        ...(chain ? { data: { baseOp: 0.85, chain: true } } : { data: { baseOp: (flowStyle as any)?.opacity ?? 0.45, chain: false, flow, tip } }),
+        id: `e${i}:${e.from}->${e.to}`, source: e.from, target: e.to, type: 'default', focusable: false,
+        data: { chain, flow, tip },
         className: chain ? 'ac-edge-chain' : flow ? `ac-flow-${flow}` : undefined,
-        ...(tip ? { title: tip } : {}),
       });
     });
-    if ((window as any).__dbgCanvas) console.log('[dbg] rfNodes=' + rfNodes.length + ' rfEdges=' + rfEdges.length);
     setNodes(rfNodes); setEdges(rfEdges);
   }, [graph, setNodes, setEdges, groupFlow]);
   useEffect(() => { applyLayout(); }, [layout, applyLayout, graph, groupFlow]);
@@ -520,57 +477,47 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
     return () => window.clearTimeout(timer);
   }, [graph]);
 
-  // 选中/链态/下钻的透明度与链色装配(数据不变,只改展示;守卫防重渲染空转)
+  // Selection, the path in view and the theme decide outline and stroke. No opacity is involved.
   useEffect(() => {
     setNodes((nds) => {
       let changed = false;
       const next = nds.map((n) => {
         if (n.id.startsWith('__hdr_')) return n;
         const cd = (n.data as unknown as CardData) || { g: { id: n.id, type: '', label: '' } };
-        const dim = (chainOn ? !chainNodes.has(n.id) : false) || (nbhd ? !nbhd.has(n.id) : false) || false;
-        const sel = selId === n.id;
-        if (cd.dim === dim && cd.sel === sel) return n;
+        const rel: Rel | undefined = selId === n.id ? 'sel' : chainOn && chainNodes.has(n.id) ? 'path' : near?.has(n.id) ? 'near' : undefined;
+        if (cd.rel === rel) return n;
         changed = true;
-        return { ...n, data: { ...cd, dim, sel } };
+        return { ...n, data: { ...cd, rel } };
       });
       return changed ? next : nds;
     });
     setEdges((eds) => {
-      // R117-3②(方案3.2 功能等价落位): 连线色双模 token 化——基线=#94a3b8/链=#22d3ee 硬编码
-      // 在亮色模式下对比度退化(浅白网格底连线消失),改 cssVar 双模解析(亮=石墨/科技蓝暗亮自适应);
-      // deps 增 theme: 主题翻转即重算全部连线色。方案所述「dash-flow 假流动动画」经全文件 grep
-      // 不存在(图例既有「静态辉光不假造流动」口径),零动画可剔除,如实披露。
-      const edgeBase = cssVar('--jz-muted');
-      const edgeChain = cssVar('--jz-brand');
+      const plain = cssVar('--jz-border-strong');
+      const ink = cssVar('--jz-ink-2');
+      const active = cssVar('--jz-brand');
       let changed = false;
       const next = eds.map((e) => {
         const base = (e.data as any) || {};
-        const onChain = Boolean(chainOn && chainPairs.has(e.source + '→' + e.target));
-        const inNb = !nbhd || (nbhd.has(e.source) && nbhd.has(e.target));
-        const op = chainOn ? (onChain ? 1 : 0.08) : (!inNb ? 0.06 : (base.baseOp ?? 0.45));
-        const stroke = chainOn && onChain ? (SEV[chainOn?.severity || 'high'])
-          : base.chain ? edgeChain : edgeBase;
-        const cls = (base.chain || onChain) ? 'ac-edge-chain' : undefined;
-        const sw = chainOn && onChain ? 2.6 : base.chain ? 1.6 : 1;
-        // R314: flow 虚线语义在 restyle 中保持(dash 阵列/确认色不被归一刷平)
-        const flow = base.flow as string | undefined;
-        const dash = flow === 'excluded' ? '5 4' : flow === 'pending' ? '2 3' : flow === 'tried' ? '6 4' : undefined;
-        const strokeF = flow === 'confirmed' ? (cssVar('--jz-teal'))
-          : flow === 'tried' ? (cssVar('--jz-brand')) : stroke;
-        if (e.style?.opacity === op && e.style?.stroke === strokeF && e.style?.strokeWidth === sw && e.className === cls && e.style?.strokeDasharray === dash) return e;
+        const flow = base.flow as FlowKind | undefined;
+        const onPath = Boolean(chainOn && chainPairs.has(e.source + '→' + e.target));
+        const touches = Boolean(selId && (e.source === selId || e.target === selId));
+        const stroke = onPath || touches ? active : flow === 'confirmed' || base.chain ? ink : plain;
+        const sw = onPath ? 2.5 : touches ? 2 : flow ? FLOW_WIDTH[flow] : base.chain ? 1.5 : 1;
+        const dash = flow ? FLOW_DASH[flow] : undefined;
+        const z = onPath || touches ? 1 : 0;
+        if (e.style?.stroke === stroke && e.style?.strokeWidth === sw && e.style?.strokeDasharray === dash && e.zIndex === z) return e;
         changed = true;
-        return { ...e, style: { ...e.style, opacity: op, stroke: strokeF, strokeWidth: sw, ...(dash ? { strokeDasharray: dash } : { strokeDasharray: undefined }) }, className: cls };
+        return { ...e, zIndex: z, style: { stroke, strokeWidth: sw, strokeDasharray: dash } };
       });
       return changed ? next : eds;
     });
-  }, [nodes, selId, nbhd, chainOn, chainNodes, chainPairs, setNodes, setEdges, theme]);
+  }, [nodes, edges.length, selId, near, chainOn, chainNodes, chainPairs, setNodes, setEdges, theme]);
 
-  // ④ 单击: 更多/族下钻(既有语义)→ 平滑聚焦+上下游高亮+写 inspectorTarget(契约 4①)
-  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
-    const id = node.id;
+  // A node is picked by a click or by Enter / Space on it: a layer head scrolls to its column, "more" unfolds the
+  // layer, a rule family drills in, any other node becomes the inspect target (and is centred).
+  const pick = useCallback((id: string) => {
     if (id.startsWith('__hdr_')) {
-      // R317: 层头=锚点——平滑平移到该列(替代长拖拽)
-      const p = layoutRef.current?.pos?.[`__hdr_${id.slice(6)}`];
+      const p = layoutRef.current?.headers.find((h) => `__hdr_${h.title}` === id);
       if (p) rf.setCenter(p.x + 110, 200, { zoom: Math.max(rf.getZoom(), 0.6), duration: 400 });
       return;
     }
@@ -578,116 +525,179 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
     if (id.startsWith('agg:')) { const rule = id.slice(4); setDrill((d) => (d === rule ? null : rule)); return; }
     const cur = selId === id ? null : id;
     setSelId(cur);
-    const g = (node.data as unknown as CardData)?.g || null;
-    // R105-2 契约(红线 4①): {kind, nodeId, data} —— kind=GNode.type 真值, data=节点原始数据只读透传
+    const g = layoutRef.current?.visNodes.find((n) => n.id === id) || null;
+    // Contract of the inspector: { kind, nodeId, data }, where kind is the node type and data the node as read.
     setInspectorTarget(cur && g ? { kind: g.type, nodeId: id, data: g } : null);
-    if (cur) {
-      const p = node.position;
-      rf.setCenter(p.x + NW / 2, p.y + CARD_H / 2, { zoom: Math.max(rf.getZoom(), 1.05), duration: 480 });
-    }
+    const p = layoutRef.current?.pos[id];
+    if (cur && p) rf.setCenter(p.x + NW / 2, p.y + CARD_H / 2, { zoom: Math.max(rf.getZoom(), 1.05), duration: 480 });
   }, [selId, rf, setInspectorTarget]);
-  const onPaneClick = useCallback(() => { setSelId(null); setInspectorTarget(null); setLegendOpen(false); }, [setInspectorTarget]);
+  const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => pick(node.id), [pick]);
+  const onPaneClick = useCallback(() => { setSelId(null); setInspectorTarget(null); }, [setInspectorTarget]);
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const el = e.target as HTMLElement;
+    if (!el.classList?.contains('react-flow__node')) return;
+    const id = el.getAttribute('data-id');
+    if (id) { e.preventDefault(); e.stopPropagation(); pick(id); }
+  };
 
-  // ④ 双击: UnifiedModal —— 组件/深链=既有 /api/chat/source 反编译源码切片;其余类型=节点档案(真 meta)
-  const onNodeDoubleClick = useCallback(async (_: React.MouseEvent, node: Node) => {
-    const g = (node.data as unknown as CardData)?.g; if (!g) return;
+  // Opening a node (double click, or the toolbar button for the selected node): a component or a deep link shows
+  // its decompiled source through /api/chat/source; every other type shows the fields the graph carries for it.
+  const openNode = useCallback(async (g: GNode) => {
     const m = g.meta || {};
     if (g.type === 'component' || g.type === 'deeplink') {
       const cls = String(g.type === 'component' ? (m.full_name || '') : (m.component || ''));
       let path = sourcePathFor(cls);
-      setModal({ title: <span className="font-mono">{cls || g.label}</span>,
-        body: <div className="text-meta text-jz-muted">读取反编译源码切片…(既有数据链 GET /api/chat/source)</div> });
+      const title = <span className="font-mono">{cls || g.label}</span>;
+      setModal({ title, body: <p className="text-label text-jz-ink-2" aria-busy="true">正在读取反编译源码…</p> });
       try {
         const s = await api<any>(`/api/pentest/sessions/${sid}`);
         const tid = s?.task_id;
-        if (!tid) throw new Error('会话无关联任务');
+        if (!tid) throw new Error('这个会话没有关联的任务');
         path = sourcePathFor(cls, s?.package);
         const d = await api<any>(`/api/chat/source?task_id=${tid}&path=${encodeURIComponent(path)}`, {}, true);
         const text = String(d?.content ?? '');
-        setModal({ title: <span className="font-mono">{cls}</span>, body: (
+        setModal({ title, body: (
           <>
-            <div className="text-meta text-jz-muted mb-1.5 flex items-center gap-2">
-              <span className="font-mono">{d?.path || path}</span>
-              {d?.truncated ? <span className="px-1.5 rounded-pill border border-jz-border">已截断(500 行)</span> : null}
-              <span className="ml-auto">数据链: GET /api/chat/source(既有,只读)</span>
+            <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2 text-meta text-jz-ink-2">
+              <span className="min-w-0 break-all font-mono">{d?.path || path}</span>
+              {d?.truncated ? <Tag>只显示前 500 行</Tag> : null}
             </div>
-            <pre className="font-mono text-meta leading-relaxed text-jz-ink-2 bg-jz-canvas rounded-control border border-jz-border p-2.5 overflow-auto max-h-[62vh] whitespace-pre-wrap break-all">{text || '(空文件)'}</pre>
+            <pre tabIndex={0} className="max-h-[62vh] overflow-auto whitespace-pre-wrap break-all rounded-control border border-jz-border bg-jz-inset p-3 font-mono text-log text-jz-ink">{text || '（文件是空的）'}</pre>
           </>) });
       } catch (e: any) {
-        setModal({ title: <span className="font-mono">{cls || g.label}</span>, body: (
-          <div className="text-meta text-jz-sev-medium space-y-1.5">
-            <div>反编译源码切片读取失败: {e?.message || '未知错误'}</div>
-            <div className="text-jz-muted">诚实降级 —— 路径可能不在反编译产物内(如无 {path}),不假造内容。</div>
+        const denied = e?.status === 403;
+        setModal({ title, body: (
+          <div className="space-y-1 text-label" role="alert" data-state={denied ? 'forbidden' : 'error'}>
+            <p className="font-medium text-jz-ink">{denied ? '没有权限读取这份源码' : '源码没有读到'}</p>
+            <p className="text-jz-ink-2">{denied ? '当前账号不能读取这个任务的反编译产物。请切换账号或联系管理员。' : <>原因：{e?.message || '请求没有完成'}。路径 <span className="break-all font-mono">{path}</span> 可能不在反编译产物里。</>}</p>
           </div>) });
       }
       return;
     }
     const rows: Array<[string, React.ReactNode]> = [];
     if (g.type === 'app') {
-      const c = graph?.node_counts || {};
-      rows.push(['包名', <span className="font-mono">{g.label}</span>], ['版本', m.version || '(端点未返回)'], ['加固', PACKER_LABEL[m.packer] || m.packer || '—'],
-        ['组件(导出)', String(c.component || 0)], ['深链', String(c.deeplink || 0)], ['接口组', String(c.api_group || 0)], ['密钥', String(c.key || 0)], ['发现', String(c.finding || 0)]);
+      const c = countsOf(graph);
+      rows.push(['包名', <span className="font-mono">{g.label}</span>], ['版本', m.version || '没有返回'], ['加固', PACKER_LABEL[m.packer] || m.packer || '没有记录'],
+        ['导出组件', String(c.component || 0)], ['深链', String(c.deeplink || 0)], ['接口组', String(c.api_group || 0)], ['配置项', String(c.key || 0)], ['风险发现', String(c.finding || 0)]);
     } else if (g.type === 'api_group') {
-      rows.push(['模块', g.label], ['接口数', String(m.count ?? '—')]);
-      (m.sample || []).forEach((p: string, i: number) => rows.push([`采样${i + 1}`, <span className="font-mono">{p}</span>]));
+      rows.push(['模块', g.label], ['接口数', String(m.count ?? '没有记录')]);
+      (m.sample || []).forEach((p: string, i: number) => rows.push([`路径采样 ${i + 1}`, <span className="font-mono">{p}</span>]));
     } else if (g.type === 'key') {
-      rows.push(['密钥', g.label], ['算法', m.algo || '—'], ['已验证成立', String(m.verified ?? '—')], ['证据', <span className="font-mono">{String(m.evidence || '—')}</span>]);
+      rows.push(['名称', g.label], ['算法', m.algo || '没有记录'], ['是否已验证', m.verified == null ? '没有记录' : m.verified ? '已验证' : '未验证'], ['证据', <span className="font-mono">{String(m.evidence || '没有记录')}</span>]);
     } else if (g.type === 'approval') {
-      rows.push(['工具', g.label], ['状态', m.state || '—'], ['时间', m.ts ? new Date(m.ts).toLocaleString() : '—'], ['理由', String(m.reason || '—')], ['结果', m.result ? JSON.stringify(m.result) : '—']);
-    } else {   // finding
-      rows.push(['标题', g.label], ['严重度', g.severity || 'info'], ['状态', g.state || '—'],
-        ['MASVS/CWE', <span className="font-mono">{m.masvs || '—'}</span>], ['规则', <span className="font-mono">{m.rule_id || '—'}</span>],
-        ['修复建议', String(m.repro || '—')], ['证据', <pre className="font-mono text-meta whitespace-pre-wrap break-all max-h-[40vh] overflow-auto">{String(m.evidence || '—')}</pre>]);
+      rows.push(['工具', g.label], ['状态', m.state === 'pending' ? '待审批' : m.state ? stateOf(m.state).label : '没有记录'], ['时间', m.ts ? new Date(m.ts).toLocaleString() : '没有记录'], ['理由', String(m.reason || '没有记录')], ['结果', m.result ? JSON.stringify(m.result) : '没有记录']);
+    } else {
+      const p = priorityOf(g.severity);
+      rows.push(['标题', g.label], ['优先级', `${p} ${PRIORITY_WORD[p]}`], ['状态', g.state && REVIEW[g.state] ? <StatusMark status={REVIEW[g.state]} /> : '没有记录'],
+        ['MASVS / CWE', <span className="font-mono">{m.masvs || '没有记录'}</span>], ['规则', <span className="font-mono">{m.rule_id || '没有记录'}</span>],
+        ['修复建议', String(m.repro || '没有记录')], ['证据', <pre tabIndex={0} className="max-h-[40vh] overflow-auto whitespace-pre-wrap break-all font-mono text-log">{String(m.evidence || '没有记录')}</pre>]);
     }
     setModal({ title: <span className="font-mono">{g.label}</span>, body: (
-      <div className="space-y-1.5 text-meta">
-        <div className="text-meta text-jz-muted">节点档案(画布真值;{g.type === 'finding' ? '严重级徽章,后端无 CVSS 字段不编评分' : '该节点类型无反编译源码数据链,诚实降级为档案'})</div>
+      <dl data-canvas-node-info>
         {rows.map(([k, v], i) => (
-          <div key={i} className="grid grid-cols-[84px_1fr] gap-2 items-start">
-            <span className="text-jz-muted">{k}</span>
-            <span className="text-jz-ink-2 min-w-0 break-all">{v}</span>
+          <div key={i} className="flex min-w-0 items-baseline gap-3 py-1">
+            <dt className="w-24 flex-none text-meta text-jz-ink-2">{k}</dt>
+            <dd className="min-w-0 flex-1 break-all text-label text-jz-ink">{v}</dd>
           </div>))}
-      </div> ) });
+      </dl>) });
   }, [sid, graph]);
+  const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
+    const g = (node.data as unknown as CardData)?.g;
+    if (g && !node.id.startsWith('__')) void openNode(g);
+  }, [openNode]);
 
-  const arrange = useCallback(() => { applyLayout(); fit(); }, [applyLayout, fit]);   // R107-5③: 合并同一 fit() 规格
+  const arrange = useCallback(() => { applyLayout(); fit(); }, [applyLayout, fit]);
+  const exportPng = () => {
+    const vp = canvasBoxRef.current?.querySelector('.react-flow__viewport');
+    if (!vp) return;
+    import('html-to-image').then(({ toPng }) => toPng(vp as HTMLElement, { backgroundColor: cssVar('--jz-canvas'), pixelRatio: 2 }))
+      .then((url) => { const a = document.createElement('a'); a.href = url; a.download = `canvas_${sid}.png`; a.click(); });
+  };
+  const exportJson = () => {
+    const blob = new Blob([JSON.stringify({ sid, ...graph }, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `canvas_${sid}.json`; a.click();
+  };
 
-  if (!graph) return <div className="p-3"><SkeletonLoader variant="chart" /></div>;
+  if (fail === 'forbidden') return <div data-attack-canvas="v3" data-state="forbidden"><PermissionState title="没有权限读取应用结构" message="当前账号不能读取这个会话的结构图。请切换账号或联系管理员。" /></div>;
+  if (fail === 'error') return <div data-attack-canvas="v3"><ErrorState title="应用结构没有读到" message="结构图接口这次没有返回，所以没有可以画出的内容。" onRetry={() => setAttempt((n) => n + 1)} /></div>;
+  if (!graph) return <div className="p-3" aria-busy="true" data-attack-canvas="v3" data-state="loading"><SkeletonLoader variant="chart" /></div>;
   if (!graph.nodes.length)
-    return (
-      <div className="h-full grid place-items-center">
-        <EmptyStatePlaceholder icon={Shield} title="应用结构还没有数据" subtitle="任务运行后,这里显示组件、接口和它们之间的路径" />
-      </div>
-    );
+    return <div data-attack-canvas="v3" data-state="empty"><EmptyState title="应用结构还没有数据" cause="评估运行后，这里显示应用的组件、接口、配置项和它们之间的关系。" /></div>;
+
+  const hasConfirmed = graph.nodes.some((n) => n.type === 'finding' && n.state === 'confirmed');
+  const selected = selId ? layout?.visNodes.find((n) => n.id === selId) || null : null;
+  const interfaces = apiTreeTotal || graphApiN || 0;
+  const shownNodes = layout?.visNodes.length ?? graph.nodes.length;
 
   return (
-    <div data-attack-canvas="v3" data-canvas-sel={selId || ''} data-canvas-it={itTarget?.nodeId || ''} className="h-full flex flex-col">
+    <div data-attack-canvas="v3" data-canvas-sel={selId || ''} data-canvas-it={itTarget?.nodeId || ''} data-state="ok" className="flex h-full min-w-0 flex-col bg-jz-surface">
       <style>{`
-        .ac-edge-chain path { stroke-width: 2px; }
-        .ac-flow-confirmed path { stroke: rgb(var(--jz-teal)) !important; stroke-width: 2.4 !important; }
-        .ac-flow-excluded path { stroke-dasharray: 5 4 !important; opacity: .3 !important; }
-        .ac-flow-pending path { stroke-dasharray: 2 3 !important; }
-        .ac-flow-tried path { stroke-dasharray: 6 4 !important; stroke: rgb(var(--jz-brand)) !important; }
         .react-flow__attribution { display: none; }
-        /* A node is a tab stop (Enter selects it); the library removes its outline, so the kit's focus ring is restored. */
+        /* A node is a tab stop (Enter picks it); the library removes its outline, so the kit's focus ring is restored. */
         .react-flow__node.selectable:focus-visible, .react-flow__node:focus-visible { outline: var(--jz-focus-width) solid var(--jz-focus); outline-offset: var(--jz-focus-offset); }
       `}</style>
-      <div className="flex items-center gap-2 pb-1.5 text-meta">
-        <button data-canvas-chain onClick={() => setChainIdx(chainIdx == null ? 0 : (chainIdx + 1) % Math.max(chains.length, 1))}
-          title="逐条浏览关联路径(路径在画布中高亮)"
-          className="px-2.5 py-1 rounded-control bg-jz-surface-2 text-jz-ink-2 hover:text-jz-brand font-mono transition-colors">
-          路径{chains.length ? ` ${(chainIdx ?? -1) + 1}/${chains.length}` : ' 0'} 活跃
-        </button>
-        {chainOn && <span className="text-jz-muted truncate">{chainOn.title || ''}</span>}
-        {/* R624: /graph 无 api 节点而 /api_tree 已有资产时回退资产总数(双源口径在悬浮注明,不再显示矛盾的 0) */}
-        <span className="hidden md:inline px-2 py-1 rounded-control bg-jz-surface-2 text-jz-muted font-mono tnum"
-          title={`已探明端点数(口径: /api_tree 接口资产总数${graphApiN ? `;画布内为聚合 api 节点 ${graphApiN} 个(一节点=同族端点聚合)` : ''})`}>
-          已探明端点: {apiTreeTotal || graphApiN || 0}
+      <div className="flex min-w-0 flex-none flex-wrap items-center gap-x-3 gap-y-2 border-b border-jz-border px-3 py-2" role="toolbar" aria-label="应用结构的工具" data-canvas-dock>
+        <span className="whitespace-nowrap text-meta text-jz-ink-2" data-canvas-scope>
+          {shownNodes < graph.nodes.length
+            ? <>显示 <span className="font-mono tnum text-jz-ink">{shownNodes}</span> / <span className="font-mono tnum">{graph.nodes.length}</span> 个节点</>
+            : <>节点 <span className="font-mono tnum text-jz-ink">{graph.nodes.length}</span> · 关系 <span className="font-mono tnum text-jz-ink">{graph.edges.length}</span></>} ·{' '}
+          <span title={`接口总数来自接口清单${graphApiN ? `；图上另有 ${graphApiN} 个聚合后的接口节点` : ''}`}>已识别接口 <span className="font-mono tnum text-jz-ink">{interfaces}</span></span>
         </span>
-        <span className="flex-1" />
-        <span title="滚轮=缩放 · 拖拽=平移 · 单击=聚焦上下游 · 双击=源码切片 · 实线=确认链 · 虚线=尝试轨迹" className="w-6 h-6 grid place-items-center rounded-control bg-jz-surface-2 text-jz-muted cursor-help font-mono text-meta">?</span>
+        <Button size="sm" variant="secondary" disabled={!chains.length} data-canvas-chain title="逐条查看关联路径；路径上的节点和关系用活动线色画出"
+          onClick={() => setChainIdx(chainIdx == null ? 0 : chainIdx + 1 >= chains.length ? null : chainIdx + 1)} className="max-[760px]:min-h-jz-touch">
+          关联路径 <span className="font-mono tnum">{chains.length ? `${chainIdx == null ? 0 : chainIdx + 1}/${chains.length}` : '0'}</span>
+        </Button>
+        {chainOn && <span className="min-w-0 max-w-xs truncate text-meta text-jz-ink-2" title={chainOn.title || ''}>{chainOn.title || ''}</span>}
+        <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2 max-[760px]:ml-0">
+          <SegmentedControl<'confirmed' | 'all'> label="显示范围" value={focusOnly ? 'confirmed' : 'all'} onChange={(k) => setFocusOnly(k === 'confirmed')}
+            items={[{ key: 'confirmed', label: '已确认发现', dataAttrs: { 'data-canvas-btn': 'focus' } }, { key: 'all', label: '全部', dataAttrs: { 'data-canvas-btn': 'all' } }]} />
+          <SegmentedControl<'loose' | 'dense'> label="节点密度" value={dense ? 'dense' : 'loose'} onChange={(k) => setDense(k === 'dense')}
+            items={[{ key: 'loose', label: '宽松' }, { key: 'dense', label: '紧凑', dataAttrs: { 'data-canvas-btn': 'dense' } }]} />
+          <span className="flex flex-none items-center">
+            <IconButton size="sm" label="放大" data-canvas-btn="zin" onClick={() => rf.zoomIn({ duration: 220 })}><Plus size={16} aria-hidden /></IconButton>
+            <IconButton size="sm" label="缩小" data-canvas-btn="zout" onClick={() => rf.zoomOut({ duration: 220 })}><Minus size={16} aria-hidden /></IconButton>
+            <IconButton size="sm" label="适应视口" data-canvas-btn="fit" onClick={fit}><Scan size={16} aria-hidden /></IconButton>
+            <IconButton size="sm" label="回到应用节点" data-canvas-btn="home"
+              onClick={() => { const p = layoutRef.current?.pos?.['app']; if (p) rf.setCenter(p.x + 110, p.y + 40, { zoom: Math.max(rf.getZoom(), 0.8), duration: 400 }); }}><LocateFixed size={16} aria-hidden /></IconButton>
+            <IconButton size="sm" label="按层重新排布" data-canvas-btn="arrange" onClick={arrange}><LayoutGrid size={16} aria-hidden /></IconButton>
+            <IconButton size="sm" label="导出当前视图为 PNG" data-canvas-btn="png" onClick={exportPng}><ImageIcon size={16} aria-hidden /></IconButton>
+            <IconButton size="sm" label="导出结构图 JSON" data-canvas-btn="json" onClick={exportJson}><FileJson size={16} aria-hidden /></IconButton>
+          </span>
+          <Popover label="图例和操作" align="end"
+            trigger={(p) => <Button {...p} size="sm" variant="ghost" icon={<Info size={14} aria-hidden />} data-canvas-legend-toggle className="max-[760px]:min-h-jz-touch">图例</Button>}>
+            <div className="w-80 max-w-[80vw] space-y-3 p-1 text-meta text-jz-ink-2" data-canvas-legend>
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                {['app', 'component', 'deeplink', 'api_group', 'key', 'approval', 'finding'].map((t) => <NodeMark key={t} type={t} className="!text-jz-ink" />)}
+              </div>
+              <ul className="space-y-1 border-t border-jz-border pt-2" data-canvas-legend-flow>
+                {LEGEND_LINES.map(([dash, w, text]) => (
+                  <li key={text} className="flex items-center gap-2">
+                    <svg width="28" height="8" aria-hidden className="flex-none text-jz-ink-2"><path d="M0 4h28" stroke="currentColor" strokeWidth={w} strokeDasharray={dash} fill="none" /></svg>{text}
+                  </li>
+                ))}
+                <li>选中的节点、它的直接关系和正在查看的关联路径用活动线色加粗；其余内容保持原样。</li>
+              </ul>
+              <p className="border-t border-jz-border pt-2">滚轮缩放，拖动平移。点一个节点（或聚焦后按 Enter）设为检查对象；双击，或用“打开所选节点”，看组件和深链的源码或节点信息。</p>
+            </div>
+          </Popover>
+        </div>
+        {(selected || (focusOnly && !hasConfirmed)) && (
+          <div className="flex min-w-0 basis-full flex-wrap items-center gap-x-3 gap-y-1 text-meta text-jz-ink-2">
+            {selected && (
+              <>
+                <span className="inline-flex min-w-0 items-center gap-1.5" data-canvas-selected>已选 <NodeMark type={selected.type} /><span className="min-w-0 max-w-xs truncate text-jz-ink">{selected.label}</span></span>
+                <Button size="sm" variant="secondary" onClick={() => void openNode(selected)} data-canvas-open className="max-[760px]:min-h-jz-touch">
+                  {selected.type === 'component' || selected.type === 'deeplink' ? '打开所选节点的源码' : '打开所选节点的信息'}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={onPaneClick}>取消选择</Button>
+              </>
+            )}
+            {focusOnly && !hasConfirmed && <span data-canvas-nofocus>这个会话还没有已确认的风险发现，所以现在画的是全部节点。</span>}
+          </div>
+        )}
       </div>
-      <div ref={canvasBoxRef} className="flex-1 relative border border-jz-border rounded-control overflow-hidden bg-jz-canvas" style={{ minHeight: 480 }}>
+      <div ref={canvasBoxRef} className="relative min-h-[30rem] flex-1 overflow-hidden bg-jz-canvas" onKeyDownCapture={onKeyDown}>
         <ReactFlow
           style={{ '--ac-nw': (dense ? NW_D : NW) + 'px' } as React.CSSProperties}
           nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
@@ -696,101 +706,26 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
           minZoom={0.25} maxZoom={4} nodesConnectable={false} elevateNodesOnSelect={false} edgesFocusable={false}
           proOptions={{ hideAttribution: true }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={18} size={1} color={cssVar('--jz-border', 0.9)} />
-          {/* ① 左浮工具坞: +/−/适应/智能重排(简单分层=既有 LAYERS 布局,不引第三方布局库) */}
-          <Panel position="top-left">
-            <div data-canvas-dock className="flex items-center gap-1 rounded-card bg-jz-surface/85 backdrop-blur-md border border-jz-border/60 shadow-card p-1">
-              <button data-canvas-btn="zin" title="放大" onClick={() => rf.zoomIn({ duration: 220 })}
-                className="w-7 h-7 grid place-items-center rounded-control text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2/60"><Plus className="w-4 h-4" /></button>
-              <button data-canvas-btn="zout" title="缩小" onClick={() => rf.zoomOut({ duration: 220 })}
-                className="w-7 h-7 grid place-items-center rounded-control text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2/60"><Minus className="w-4 h-4" /></button>
-              <button data-canvas-btn="focus" title="切换: 聚焦战果(默认)/全景"
-                onClick={() => setFocusOnly((v) => !v)}
-                className={`w-auto px-1.5 h-7 grid place-items-center rounded-control text-meta ${focusOnly ? 'text-jz-teal bg-jz-teal/10' : 'text-jz-ink-2 hover:bg-jz-surface-2/60'}`}>
-                {focusOnly ? '🎯 战果' : '🌐 全景'}
-              </button>
-              <button data-canvas-btn="dense" title="密度模式: 紧凑布局(同屏信息量+40%)"
-                onClick={() => setDense((v) => !v)}
-                className={`w-auto px-1.5 h-7 grid place-items-center rounded-control text-meta ${dense ? 'text-jz-brand bg-jz-brand/10' : 'text-jz-ink-2 hover:bg-jz-surface-2/60'}`}>
-                {dense ? '▦ 紧凑' : '▤ 舒展'}
-              </button>
-              <button data-canvas-btn="home" title="回到目标节点"
-                onClick={() => { const p = layoutRef.current?.pos?.['app']; if (p) rf.setCenter(p.x + 110, p.y + 40, { zoom: Math.max(rf.getZoom(), 0.8), duration: 400 }); }}
-                className="w-7 h-7 grid place-items-center rounded-control text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2/60"><Scan className="w-4 h-4" /></button>
-              <button data-canvas-btn="png"
-                onClick={() => {
-                  const vp = document.querySelector('.react-flow__viewport');
-                  if (!vp) return;
-                  import('html-to-image').then(({ toPng }) => toPng(vp as HTMLElement, { backgroundColor: cssVar('--jz-canvas'), pixelRatio: 2 }))
-                    .then((url) => { const a = document.createElement('a'); a.href = url; a.download = `canvas_${sid}.png`; a.click(); });
-                }}
-                className="w-7 h-7 grid place-items-center rounded-control text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2/60" title="导出 PNG(当前视图)"><Download className="w-4 h-4" /></button>
-              <button data-canvas-btn="json"
-                onClick={() => {
-                  const blob = new Blob([JSON.stringify({ sid, ...graph }, null, 1)], { type: 'application/json' });
-                  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `canvas_${sid}.json`; a.click();
-                }}
-                className="w-7 h-7 grid place-items-center rounded-control text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2/60" title="导出图谱 JSON"><FileJson className="w-4 h-4" /></button>
-              <button data-canvas-btn="fit" title="适应视口(Fit View)" onClick={fit}
-                className="w-7 h-7 grid place-items-center rounded-control text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2/60"><Scan className="w-4 h-4" /></button>
-              <button data-canvas-btn="arrange" title="智能重排(简单分层: 既有 LAYERS 布局重排,不引第三方布局库)" onClick={arrange}
-                className="w-7 h-7 grid place-items-center rounded-control text-jz-ink-2 hover:text-jz-ink hover:bg-jz-surface-2/60"><LayoutGrid className="w-4 h-4" /></button>
-            </div>
-          </Panel>
-          {/* ① 右下半透明 Minimap */}
-          <Panel position="bottom-right">
-            <div data-canvas-minimap className="rounded-card overflow-hidden border border-jz-border/70"
-              style={{ background: 'rgb(var(--jz-surface))', border: '1px solid rgb(var(--jz-border))', boxShadow: 'var(--jz-shadow-card)' }} title="小地图(半透明,可点选导航)">
-              <MiniMap pannable zoomable
+          <Panel position="bottom-right" className="max-[760px]:hidden">
+            <div data-canvas-minimap className="overflow-hidden rounded-control border border-jz-border bg-jz-surface" title="小地图：点或拖动可以移动视口">
+              <MiniMap pannable zoomable ariaLabel="应用结构的小地图"
                 style={{ width: 150, height: 100, background: 'transparent' }}
                 maskColor={cssVar('--jz-canvas', 0.72)}
-                nodeColor={(n) => {
-                  if (n.type === 'header') return 'transparent';
-                  const t = (n.data as unknown as CardData)?.g?.type;
-                  const col = (t && TYPE_STYLE[t]?.col) || TYPE_STYLE.finding.col;
-                  return col.startsWith('rgb') ? col : col + 'B3';
-                }}
+                nodeColor={(n) => (n.type === 'header' ? 'transparent' : (n.type === 'finding' ? cssVar('--jz-orange') : cssVar('--jz-border-strong')) || 'transparent')}
                 nodeStrokeColor={() => 'transparent'} nodeBorderRadius={4} />
-            </div>
-          </Panel>
-          {/* 图例折叠 Popover: 默认细胶囊不遮画布,点开向上毛玻璃面板(外侧点击收起) */}
-          <Panel position="bottom-left">
-            <div data-canvas-legend className="relative">
-              {legendOpen && (
-                <div className="absolute bottom-9 left-0 z-20 w-[min(420px,80vw)] rounded-card bg-jz-surface/90 backdrop-blur-md border border-jz-border/60 shadow-card p-3 space-y-2 text-meta text-jz-muted">
-                  <div className="flex gap-2.5 flex-wrap">
-                    {Object.entries(TYPE_ICON).slice(0, 8).map(([t, ic]) => (
-                      <span key={t} className="inline-flex items-center gap-1">{ic} {TYPE_STYLE[t]?.kind || t}</span>
-                    ))}
-                  </div>
-                  <div className="pt-1.5 border-t border-jz-border/50 space-y-1">
-                    <div data-canvas-legend-flow className="text-jz-ink-2">── 实线 = 确认链路 · ⋯ 虚线 = 尝试轨迹 · ○ 未触达</div>
-                    <div>链边高亮 = 当前浏览的路径</div>
-                    {focusOnly && !graph?.nodes?.some?.((n: any) => n.type === 'finding' && n.state === 'confirmed') && (
-                      <div data-canvas-nofocus className="text-jz-amber">⚠ 本会话暂无 confirmed 战果——聚焦不可用,已显示全景</div>
-                    )}
-                  </div>
-                </div>
-              )}
-              <button data-canvas-legend-toggle onClick={(ev) => { ev.stopPropagation(); setLegendOpen((v) => !v); }}
-                title="图例对照(节点类型/连线语义)"
-                className="flex items-center gap-1.5 px-2 py-1 rounded-control bg-jz-surface/85 backdrop-blur-md border border-jz-border/60 shadow-card text-meta text-jz-ink-2 hover:text-jz-ink transition-colors">
-                📖 图例对照 <ChevronUp className={`w-3 h-3 transition-transform duration-200 ${legendOpen ? 'rotate-180' : ''}`} />
-              </button>
             </div>
           </Panel>
         </ReactFlow>
       </div>
-      <UnifiedModal open={!!modal} onClose={() => setModal(null)} widthClass="w-[min(1100px,92vw)]"
-        title={modal?.title} footer={<span className="text-meta text-jz-muted">双击节点=反编译源码切片(既有数据链)/节点档案 · ESC 或遮罩关闭</span>}>
+      <Dialog open={!!modal} onClose={() => setModal(null)} widthClass="w-[min(68rem,92vw)]" title={modal?.title}>
         <div data-canvas-src-modal>{modal?.body}</div>
-      </UnifiedModal>
+      </Dialog>
     </div>
   );
 };
 
 export const AttackCanvas: React.FC = () => {
   const sid = usePentest((s) => s.sid);
-  if (!sid) return <div className="p-3 text-meta text-jz-muted">会话未挂载</div>;
+  if (!sid) return <div className="p-3 text-label text-jz-ink-2">会话未挂载</div>;
   return <ReactFlowProvider><Flow sid={sid} /></ReactFlowProvider>;
 };

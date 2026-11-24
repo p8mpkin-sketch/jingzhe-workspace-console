@@ -7,6 +7,102 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 5 follow-up — Rule cards and application structure
+
+`docs/v3-plan.md` lists 规则卡 and 应用结构 as modified in Phase 5, and the Phase 5 commit left both as V2 components
+inside the V3 frame (see “Not rebuilt in this phase” below). This follow-up rebuilds them in the A+ design. Every
+function is kept, no endpoint was added and no read moved: the request set of every route is identical to the Phase 5
+log. Findings and evidence only; artifacts, reports and tasks are untouched.
+
+**规则卡: `RuleCardsSurface`** (`workbench/surfaces/findings/RuleCardsSurface.tsx`) replaces `pentest/VulnsPanel.tsx`,
+which is deleted. A list of rule cards under a toolbar that states the scope (“8 张规则卡 · 13 个实例 · 1 张已降噪”, or
+“显示 a / b 张规则卡” under a filter). A card uses the marks of 主发现: the orange finding line (3 px with the cap on
+P0 / P1, 2 px on P2 / P3), a shape per level, the P label with its word, and the status as a glyph and a word. The
+English severity pills, the coloured dots and the dimming of de-noised and info cards are gone; 提示级, 已降噪 and 本地
+are tags. Nothing on the surface is red and nothing is dimmed. One card is open at a time, as before; its header is
+a button with `aria-expanded`.
+
+**One triage pattern.** The status `<select>` per instance is replaced by the shared `TriageButton` in its secondary
+form: 确认 is the action, 排除 and 恢复待复核 are in its menu, and the state an instance already has is not offered.
+It sends the same `POST …/vulns/state` with the same body and reads the list again. The triage control here is
+secondary, so the primary triage action of 主发现 stays the only one (the one primary button of this surface is the
+submit of the 手动补录 form while that form is open). A local entry keeps its state in this
+browser and a notice says nothing was sent, as before.
+
+**A refused write is not kept.** The old panel kept every failed write as a local value, including a 403, so an
+account that may not change a finding saw it as changed. Now a 403 is stated as a permission matter, nothing is
+stored and no retry is offered. Any other failure is kept in this browser as before, the instance is marked 仅本地,
+and 重试写入 sends it again; a write that then succeeds removes the mark. If the list cannot be read again after a
+write, the cards stay under a strip that says they may be old.
+
+**Kept in 规则卡.** Search over title, CWE and MASVS; the split 全部 / APK 静态 / WEB 运行时 with counts and the reason
+when WEB is empty; the level filter (now one select with a count per level); 硬编码凭据; 显示已降噪 with its count; the
+deep-link filters `?severity=` and `?masvs=` with their clear controls; 手动补录 (local, same storage key); 导入;
+导出 as csv, json, md and sarif; per instance the evidence slice with line numbers, the model verdict with its
+rationale, copy, and the chain (发现, 触发, 复现报文, 证明, 修复建议, 复现步骤); the evidence dimensions (now a mark
+and the word 有 or 无); the last 8 hook events of the session. Read states: loading, empty, error with retry,
+forbidden without retry, stale, filtered-empty with its reason.
+
+**应用结构: `AttackCanvas`** keeps its file, its export and its data code (aggregation above 200 nodes, drill-down,
+layer order, folding at 12, cap at 60, layout) and gets a new presentation. Nodes are hairline cards whose type is an
+icon and a word (`NodeMark`, as in 关系图) in place of emoji. A finding node carries the orange finding line, the cap
+on P0 / P1, the P label with its word and the status glyph with its word. Selecting a node no longer dims the rest:
+the selected node sits on surface-2 with the active line, its direct neighbours take the strong border, and the
+relations that touch it are drawn at 2 px in the brand colour. Relation kinds are told apart by stroke pattern and
+width, not by colour, and the legend draws each of them. The dot-grid background is removed. The wording 战果 is
+replaced by 风险发现 and 已确认发现; the layers are 应用, 暴露面, 接口与配置, 审批 and 风险发现.
+
+**Canvas controls.** The floating dock is a toolbar above the canvas with a scope statement (how many of the nodes
+are shown), 关联路径 i / n (the chain walk; disabled when there is no path, and after the last path it returns to no
+path), 显示范围 (已确认发现 / 全部), 节点密度 (宽松 / 紧凑), zoom in, zoom out, fit, back to the app node, re-arrange,
+PNG, JSON and the legend. A node can be picked with Enter or Space, and 打开 in the toolbar opens what a double
+click opens (the source slice of a component or deep link, the properties of any other node), so neither needs a
+pointer. The source opens in a kit dialog; a 403 there says 没有权限读取这份源码.
+
+**A hidden 403, found while rebuilding.** The old canvas answered a failed or refused graph read with “应用结构还没有
+数据”. It now shows a permission state without retry for a 403 and an error state with 重试 otherwise. Three smaller
+defects of the old canvas are fixed in passing: the app node showed 0 for every count (the counts were never
+passed), the mark 本地 never appeared (it read a field that was never set), and a click on a layer title did nothing
+(it looked up a position that did not exist).
+
+**Also changed.** `scripts/check-findings-evidence.mjs` gets the groups R1–R9 (rule cards) and S1–S6 (structure
+canvas). Fixtures (`scripts/fixtures/evidence.mjs`): one instance has a model verdict and a full chain, another a
+verdict that asks for context. `docs/capability-matrix.md` (“Rule cards and application structure”) accounts for
+every capability of the two old components; `docs/request-map.md` has the request rows.
+
+**Checks (fixtures), on the build of this commit.**
+
+Every row was run on the final build of this commit (main chunk 71.85 kB, 23.87 kB gzip; 71.85 kB before. Workbench
+chunk 322.12 kB, 107.31 kB gzip; 322.92 kB before). All of it is on fixtures; nothing was deployed and the backend
+was not touched.
+
+| Check | Result |
+| --- | --- |
+| `tsc --noEmit`, production build | pass |
+| Token lint | 0 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| Rule cards (`check-findings-evidence.mjs`, groups R1–R9, new): structure, scope line and requests; the four severity encodings in light and dark, status as glyph and word, nothing red and nothing dimmed, open card on surface-2; one card open, chain, model verdict, dimensions, Enter, copy, hook events; the secondary split button per instance with its POST, the re-read and the menu; write 403 (no retry, not kept locally) and 500 (kept as 仅本地, 重试写入 writes, mark removed), stale after a failed re-read; read 403, 500 with retry, loading, empty; search, level, 硬编码凭据, the WEB-empty reason, 显示已降噪, `?severity=`, `?masvs=`; manual add without a request, local triage, export menu and download, import dialog; 1024 / 760 / 390 | 70 of 70 |
+| Structure canvas (same script, groups S1–S6, new): toolbar, no emoji, neutral wording, legend, scope line, requests, no grid background; finding line, cap and words on finding nodes in light and dark, nothing dimmed after a selection, selected node on surface-2, neighbours marked, 2 px active relations, nothing red; Enter picks a node, focus ring, 打开 opens the dialog, Escape, double click, a click on the canvas clears, relations are not tab stops; 已确认发现 / 全部, 紧凑, the path control (disabled without a path, marks a path, returns to none); read 403, 500 with retry, empty; 1024 / 760 / 390 with every tool reachable and 44 px targets | 47 of 47 |
+| Findings and evidence (same script, the groups of Phase 5) | 125 of 125 and 98 of 98 |
+| Source slice on a component node (`check-source-slice.mjs`) | pass |
+| Trace, composer, terminal, requests, permission (`check-trace.mjs`) | 218 of 218 |
+| Workbench shell (`check-workbench-shell.mjs`) | 99 of 99 |
+| Project domain (`check-projects.mjs`) | 43 of 43 |
+| Redirects (`check-redirects.mjs`) | 28 of 28 |
+| App shell (`capture-shell.mjs`) | pass |
+| Routes: 35 routes and sign-in × 390 / 760 / 1024 / 1440, light and dark (288 captures) | 0 overflow, 0 page errors |
+| Empty, error, forbidden, slow, stale on the 16 workbench views at 1440 and 390, light and dark (320 captures) | 0 overflow, 0 page errors |
+| Work surfaces (`check-workbench.mjs`), running session: 20 surfaces × 4 widths × 2 themes | 0 overflow, 0 errors, 1720 focus stops, 0 without an indicator, 0 covered |
+| Work surfaces, session not started: 20 surfaces × 4 widths × 2 themes | 0 overflow, 0 errors, 1152 focus stops, 0 without an indicator, 0 covered |
+| Requests per route vs the Phase 5 log (`check-requests.mjs --against`) | identical on all 35 routes |
+
+Screenshots: `docs/screenshots/v3/phase-5/followup/` (the two views at 4 widths in both themes), `…/followup/checks/`
+(the states the check script drives: selected node, refused write, read 403), `…/followup/states/` (empty, error,
+forbidden, slow and stale at 1440 and 390 in both themes) and the reports of this pass. The files
+`session-rulecards-*` and `session-structure-*` one level up show the two views as the Phase 5 commit left them.
+
+Still unchanged, in the shell: the 风险发现 tab shows the count “0” when the session cannot be read.
+
 ### V3 Phase 5 — Findings and evidence
 
 The findings surface and the evidence surface of the assessment workbench are rebuilt in the A+ design. New code is
@@ -106,6 +202,8 @@ to the split button of 主发现; a write that fails there is kept as a local va
 type marks and the wording “战果”; this phase only gave it the focus ring. Both pass the overflow and focus
 checks above. Also unchanged, in the shell: the 风险发现 tab shows the count “0” when the session cannot be
 read.
+
+Both were rebuilt afterwards: see “V3 Phase 5 follow-up” above.
 
 Screenshots: `docs/screenshots/v3/phase-5/` (the 9 views at 4 widths in both themes), `…/phase-5/surfaces/`
 (interaction states from the new script) and `…/phase-5/states/` (the five data states).

@@ -224,6 +224,19 @@ The coverage reasons use `autopilot/status` (already read by the workbench) and 
 poll; they issue no request. A 403 on `vulns/grouped`, `graph`, `fact-graph`, `credentials` or `vulns/clusters` is
 shown as a permission state without retry wording; a 403 on `POST …/vulns/state` likewise.
 
+#### Phase 5 follow-up: rule cards and application structure
+
+`RuleCardsSurface` (in place of `VulnsPanel`) and the rebuilt `AttackCanvas` issue the requests their predecessors
+did; the request set of every route is identical to the Phase 5 log (`docs/screenshots/v3/phase-5/requests.json`).
+
+| Request | Before | Now |
+| --- | --- | --- |
+| `GET …/vulns/grouped` by 规则卡 | Once when the view opens, again after a state change | Unchanged. A failed re-read keeps the cards and marks them as possibly old |
+| `GET …/events?source=hook&since_seq=0&limit=200` by 规则卡 | Once when the view opens | Unchanged |
+| `POST …/vulns/state` `{id, state}` by 规则卡 | From the per-instance select | Same request and body from the shared triage button. A local entry (`LOCAL-`, `IMP-`) is not sent, as before. A 403 is no longer kept as a local value; any other failure is kept in this browser, marked, and can be sent again with 重试写入 |
+| `GET …/graph`, `GET …/api_tree` by 应用结构 | Once each when the view opens; a failure of either was shown as “no data yet” | Same two reads. A 403 on the graph is a permission state, another failure an error state whose 重试 issues the two reads again |
+| `GET /api/pentest/sessions/{sid}`, `GET /api/chat/source?task_id=…&path=…` by 应用结构 | On double click of a component or deep-link node | Unchanged; also issued by 打开 for the selected node |
+
 ### `/pentest`
 
 | Method | Route | Query | Expected unique count on load | Polling interval |
@@ -424,7 +437,7 @@ The page audits only load pages. These writes were sent by the write audits with
 | POST | `/api/tasks` | `{kind:"audit", app_name, apk_path, authorized, device_serial?}` | New assessment, single submit | 200 (Phase 16, Phase 17) |
 | POST | `/api/pentest/sessions/{sid}/mission/start` | `{mode:"device"|"replay", max_screens:20, max_minutes:10, run_tests:true, max_tests:5, run_adjudicate:true, max_adjudications:3}` | Workbench header menu | 200, replay mode (Phase 17); device mode not sent |
 | GET | `/api/pentest/sessions/{sid}/mission/status` | — | Inspector brief, on open and after a start | 200, reached `done` (Phase 17) |
-| POST | `/api/pentest/sessions/{sid}/vulns/state` | unchanged (VulnsPanel) | Findings, rule cards | 200, read back and restored (Phase 17) |
+| POST | `/api/pentest/sessions/{sid}/vulns/state` | unchanged (`RuleCardsSurface`, was VulnsPanel) | Findings, rule cards | 200, read back and restored (Phase 17) |
 | POST | `/api/pentest/sessions/{sid}/clue` | `{text}` | Agent trace composer | 200 (Phase 16) |
 
 ## Requests that still bypass the shared client

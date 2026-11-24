@@ -18,12 +18,12 @@ the end of this file passed on the real backend; old links open the workbench.
 | Old panel | Capability | Current owner (tab › subtab › segment) | `?view=` | Status |
 | --- | --- | --- | --- | --- |
 | PackerPanel | Packer detection, unpack state, DEX list, unpack retry | Artifacts › Packaging information | `packer` | Owned |
-| VulnsPanel | Rule-card list with severity / credential / MASVS (`?masvs=`) filters | Findings › 规则卡 | `rulecards` | Moved in Phase 15 |
-| VulnsPanel | Manual add (local), import / export, local notes, copy | Findings › 规则卡 | `rulecards` | Moved in Phase 15 |
-| VulnsPanel | Code board, hook stack, agent verdict, chain per card | Findings › 规则卡 | `rulecards` | Moved in Phase 15 |
-| VulnsPanel | State change (`POST /vulns/state`) | Findings › 规则卡 | `rulecards` | Moved in Phase 15 |
-| AttackCanvas | Application structure canvas (React Flow), minimap, chain walk | Evidence › Relation graph › 应用结构 | `structure` | Moved in Phase 15 |
-| AttackCanvas | Source slice on double click (`/api/chat/source`) | Evidence › Relation graph › 应用结构 | `structure` | Moved in Phase 15 |
+| VulnsPanel | Rule-card list with severity / credential / MASVS (`?masvs=`) filters | Findings › 规则卡 | `rulecards` | Rebuilt as `RuleCardsSurface` (V3 Phase 5 follow-up) |
+| VulnsPanel | Manual add (local), import / export, local notes, copy | Findings › 规则卡 | `rulecards` | Rebuilt as `RuleCardsSurface` (V3 Phase 5 follow-up) |
+| VulnsPanel | Code board, hook stack, agent verdict, chain per card | Findings › 规则卡 | `rulecards` | Rebuilt as `RuleCardsSurface` (V3 Phase 5 follow-up) |
+| VulnsPanel | State change (`POST /vulns/state`) | Findings › 规则卡 | `rulecards` | Rebuilt: the shared triage button (V3 Phase 5 follow-up) |
+| AttackCanvas | Application structure canvas (React Flow), minimap, chain walk | Evidence › Relation graph › 应用结构 | `structure` | Presentation rebuilt (V3 Phase 5 follow-up) |
+| AttackCanvas | Source slice on double click (`/api/chat/source`) | Evidence › Relation graph › 应用结构 | `structure` | Presentation rebuilt; also on a toolbar button (V3 Phase 5 follow-up) |
 | AttackCanvas | Select a node as inspection target | Inspector › 复核队列 › 当前检查对象 | any | Moved in Phase 15 |
 | AiInspectorDrawer | Model routing chip | Inspector › 简报 | any | Moved in Phase 15 |
 | AiInspectorDrawer | Approve / reject pending actions | Runtime › Agent trace (inline approval cards); Inspector › 复核队列 links to them | `stream` | Owned |
@@ -268,12 +268,69 @@ Changes of behaviour, all intended:
 - `docs/v3-plan.md` lists `GraphView` as modified. It is retired instead: nothing of its canvas is reused, and its
   capabilities are the rows above.
 
+### Rule cards and application structure (V3 Phase 5 follow-up)
+
+`docs/v3-plan.md` lists both as modified in Phase 5; the phase commit left them as V2 components inside the V3 frame.
+This follow-up rebuilds them. `pentest/VulnsPanel.tsx` is replaced by `workbench/surfaces/findings/RuleCardsSurface.tsx`
+and deleted. `attack-canvas/AttackCanvas.tsx` keeps its file, its export and its data code (aggregation above 200
+nodes, drill-down, layer order, folding, layout) and gets a new presentation. Neither view reads or writes anything it
+did not before. Checked by groups R1–R9 and S1–S6 of `app/scripts/check-findings-evidence.mjs` (fixtures) and by
+`app/scripts/check-source-slice.mjs`.
+
+| Old component | Capability (request) | Owner now | Hooks |
+| --- | --- | --- | --- |
+| VulnsPanel | Rule cards from `vulns/grouped`, read when the view opens | `RuleCardsSurface`, same single read; the scope statement counts cards, instances and de-noised cards | `data-rulecards`, `data-rulecards-scope`, `data-rulecards-list`, `data-rule-card` |
+| VulnsPanel | Severity chip in colour, card dimmed when de-noised or info | The four finding encodings of the main list (orange line 3 px / 2 px, cap on P0 / P1, shape, P label with its word); 提示级 and 已降噪 are tags; nothing is dimmed and nothing is red | `data-rule-priority`, `data-severity`, `data-review` |
+| VulnsPanel | Search over title / CWE / MASVS | Kept | `data-rulecards-search` |
+| VulnsPanel | Surface split 全部 / APK 静态 / WEB 运行时 | Kept as a segmented control with counts; the WEB-empty reason is kept | `data-rulecards-toolbar` |
+| VulnsPanel | Severity chips | One select with a count per level | `data-rulecards-severity` |
+| VulnsPanel | 硬编码凭据 filter | Kept as a pressed toggle | `data-rulecards-credential` |
+| VulnsPanel | 显示已降噪 toggle with the count | Kept | `data-rulecards-noise` |
+| VulnsPanel | Deep-link filters `?severity=` and `?masvs=` (also `__none__`), each with a clear control | Kept | `data-rulecards-link-filters`, `data-clear-sev`, `data-clear-masvs` |
+| VulnsPanel | 手动补录: a local entry (title, level, MASVS, evidence) kept in `localStorage` per session, marked 本地, nothing sent | Kept, same storage key, same mark | `data-rulecards-add`, `data-rulecards-form`, `data-rulecards-form-submit` |
+| VulnsPanel | 导入 (`UniversalImportModal`, merged locally, marked) | Kept | `data-rulecards-import` |
+| VulnsPanel | 导出 csv / json / md / sarif | Kept as one menu, same file name | `data-rulecards-export`, `data-rulecards-export-item` |
+| VulnsPanel | One card open at a time, the first open on arrival | Kept; the header is a button with `aria-expanded` | `data-rule-toggle`, `data-rule-open` |
+| VulnsPanel | Evidence dimensions 源码行 / 组件声明 / 流量报文 as coloured dots | A mark and the word 有 or 无 per dimension | `data-rule-dims`, `data-rule-dim` |
+| VulnsPanel | Per instance: id, state, evidence slice with line numbers, HTTP line marked | Kept | `data-rule-instances`, `data-rule-instance`, `data-rule-slice` |
+| VulnsPanel | Per instance: model verdict with its rationale | Kept, worded 模型复核 | `data-rule-verdict` |
+| VulnsPanel | Per instance: copy the evidence | Kept | `data-rule-copy` |
+| VulnsPanel | Per instance: chain (发现, 触发, 复现报文, 证明, 修复建议, 复现步骤) | Kept; an instance without one says so | `data-rule-chain` |
+| VulnsPanel | Hook events of the session (`events?source=hook`), last 8 | Kept, same read | `data-rule-hooks` |
+| VulnsPanel | State per instance through a `<select>` (`POST …/vulns/state`, body `{ id, state }`) | The shared `TriageButton` (secondary): 确认 as the action, 排除 and 恢复待复核 in its menu; the state an instance already has is not offered. Same request, same body, the list is read again afterwards | `data-triage="secondary"`, `data-triage-primary`, `data-triage-more`, `data-triage-item` |
+| VulnsPanel | A local entry's state | Kept in this browser, said so in a notice, nothing sent | `data-rulecards-notice="info"` |
+| VulnsPanel | A failed write kept as a local value and marked | 403: stated as a permission matter, not kept locally, no retry. Other failures: kept in this browser, the instance marked 仅本地, with 重试写入; a write that then succeeds removes the mark | `data-rulecards-notice="forbidden"`, `data-rulecards-notice="error"`, `data-rulecards-retry` |
+| VulnsPanel | Loading skeleton, empty text | loading, empty, error with retry, forbidden without retry, stale (a failed re-read keeps the cards and says they may be old), filtered-empty with its reason and 清除筛选 | `data-state` on `[data-rulecards]`, `data-rulecards-stale`, `data-rulecards-clear` |
+| AttackCanvas | Layered structure canvas from `GET …/graph` and `GET …/api_tree`, both read when the view opens | Kept, same two reads; layer titles 应用 / 暴露面 / 接口与配置 / 审批 / 风险发现 | `data-attack-canvas="v3"`, `data-node-id` |
+| AttackCanvas | Node cards with emoji marks and coloured fills | Hairline cards; the type is an icon and a word (`NodeMark`); a finding node carries the orange finding line, the cap on P0 / P1, the P label with its word and the status glyph with its word | `data-node-rel` |
+| AttackCanvas | Selecting a node dims everything else | Nothing is dimmed: the selected node sits on surface-2 with the active line, its direct neighbours get the strong border, the relations that touch it are drawn in the brand colour at 2 px | `data-node-rel="sel"`, `data-node-rel="near"` |
+| AttackCanvas | Relation kinds by colour | By stroke pattern and width (solid 2 px confirmed, dashed excluded, dotted pending, long dash tried); the legend draws each one | `data-canvas-legend-toggle`, `data-canvas-legend`, `data-canvas-legend-flow` |
+| AttackCanvas | Floating dock: zoom in / out, fit, home, re-arrange, PNG, JSON | A toolbar above the canvas with the same seven actions, each with a name | `data-canvas-dock`, `data-canvas-btn` |
+| AttackCanvas | 聚焦 (confirmed findings and what leads to them) / 全部 | 显示范围: 已确认发现 / 全部; when there is no confirmed finding it says so | `data-canvas-btn="focus"`, `data-canvas-btn="all"`, `data-canvas-nofocus` |
+| AttackCanvas | Dense layout | 节点密度: 宽松 / 紧凑 | `data-canvas-btn="dense"` |
+| AttackCanvas | Chain walk (step through the confirmed paths) | 关联路径 i / n; disabled when there is none; after the last path it returns to no path. The path in view is drawn at 2.5 px | `data-canvas-chain`, `data-node-rel="path"` |
+| AttackCanvas | Aggregation above 200 nodes, drill-down into a group, folding at 12, cap at 60 | Unchanged code; the scope statement says how many of the nodes are shown | `data-canvas-scope` |
+| AttackCanvas | Minimap | Kept from 761 px up | (React Flow minimap) |
+| AttackCanvas | Double click a node: source slice for a component or deep link (`/api/chat/source`), properties otherwise | Kept in a kit dialog; also reachable through 打开 for the selected node, so it does not need a pointer. A 403 on the source says 没有权限读取这份源码 | `data-canvas-src-modal`, `data-canvas-node-info`, `data-canvas-open`, `data-canvas-selected` |
+| AttackCanvas | Select a node as inspection target | Kept (click, or Enter / Space on a focused node); a click on the empty canvas clears it | `data-canvas-selected` |
+| AttackCanvas | Any failed read shown as “no data yet” | 403: `PermissionState` 没有权限读取应用结构, no retry. Other failures: `ErrorState` with 重试. Empty and loading have their own states | `data-state` on `[data-attack-canvas]` |
+| AttackCanvas | Dot-grid background | Removed (design rule) | — |
+
+Changes of behaviour in the follow-up, all intended:
+
+- A refused state change (403) on a rule-card instance is no longer kept as a local value; it showed as changed in
+  this browser although the account may not change it.
+- The app node shows the real counts per type (they were never passed and read 0), the mark 本地 appears on local
+  entries (the field it read was never set), and a click on a layer title scrolls to that layer (it looked up a
+  position that did not exist).
+- The wording 战果 is replaced by 风险发现 / 已确认发现 everywhere in the canvas.
+
 ## Shared owners (kept on purpose)
 
 | Job | Renderings | Why both stay |
 | --- | --- | --- |
-| Findings list | Findings › 主发现 (`FindingsSurface`) and Findings › 规则卡 (VulnsPanel) | 规则卡 carries local notes, import / export, MASVS filter and per-card code board that the main list does not have. Merging them needs a product decision; 主发现 stays the default. |
-| Graph | Evidence › Relation graph › 关系图 (`EvidenceSurface`) and › 应用结构 (AttackCanvas) | Different data: session relation graph versus application structure with source slices. |
+| Findings list | Findings › 主发现 (`FindingsSurface`) and Findings › 规则卡 (`RuleCardsSurface`) | 规则卡 carries local entries, import / export, the MASVS filter and the per-instance evidence slice that the main list does not have. Both use the same marks and the same triage button, so the job has one action pattern. Merging the two lists needs a product decision; 主发现 stays the default. |
+| Graph | Evidence › Relation graph › 关系图 (`EvidenceSurface`) and › 应用结构 (`AttackCanvas`) | Different data: session relation graph versus application structure with source slices. Both use `NodeMark` and the finding marks. |
 
 ## Inspector ownership
 
@@ -288,8 +345,8 @@ Verified with fixtures (`app/scripts/fixtures/api.mjs`, production preview build
 table resolves and renders, including error, forbidden, slow and empty variants (`scripts/check-workbench.mjs`).
 The shell itself (one navigation layer, header readouts, tabs, surface bar, the three inspector layouts, keyboard
 and focus) is covered by `scripts/check-workbench-shell.mjs`. The findings and evidence surfaces (encodings, keyboard,
-triage requests, permission states, the progressive graph, coverage reasons) are covered by
-`scripts/check-findings-evidence.mjs`.
+triage requests, permission states, the progressive graph, coverage reasons, and since the Phase 5 follow-up the
+rule cards and the structure canvas) are covered by `scripts/check-findings-evidence.mjs`.
 
 Real backend (Phase 17, `docs/screenshots/phase-17/`): VulnsPanel state change, import and export, AttackCanvas
 source slice, mission start and status all verified. The clusters view was part of the 65 s read audit

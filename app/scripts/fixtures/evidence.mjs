@@ -25,11 +25,11 @@ export const liveCards = [
     inst('f32', 'pending', 'critical', 'com/example/wallet/util/Keys.java:18'),
   ] },
   { rule_id: 'R-001', title: '示例发现: 明文传输', severity: 'high', masvs: 'MASVS-NETWORK-1', instance_count: 2, phases: ['P2'], instances: [
-    inst('f11', 'confirmed', 'high', 'com/example/wallet/net/Api.java:42\nGET http://api.example.com/v1/profile\nHTTP/1.1 200 OK', { confidence: 'high', chain: { fix_advice: '改用 HTTPS 并校验证书。' } }),
+    inst('f11', 'confirmed', 'high', 'com/example/wallet/net/Api.java:42\nGET http://api.example.com/v1/profile\nHTTP/1.1 200 OK', { confidence: 'high', agent_verdict: 'confirmed', agent_rationale: '请求和响应都是明文，响应里带个人资料字段。', chain: { discovery: '静态规则在 Api.java 第 42 行找到 http:// 地址。', trigger: '打开“我的”页面时发出这个请求。', http_dump: 'GET http://api.example.com/v1/profile\nHost: api.example.com', proof: '抓到的响应是明文 JSON。', fix_advice: '改用 HTTPS 并校验证书。', repro_steps: ['在测试设备上打开应用并登录测试账号', '进入“我的”页面，观察这个请求'] } }),
     inst('f12', 'confirmed', 'high', 'GET http://api.example.com/v1/orders HTTP/1.1'),
   ] },
   { rule_id: 'R-007', title: '示例发现: 匿名可访问个人资料接口', severity: 'high', masvs: 'MASVS-AUTH-1', instance_count: 2, phases: ['P2'], instances: [
-    inst('f71', 'pending', 'high', 'GET /api/v1/profile HTTP/1.1\n→ 200，未带登录凭据', { confidence: 0.6 }),
+    inst('f71', 'pending', 'high', 'GET /api/v1/profile HTTP/1.1\n→ 200，未带登录凭据', { confidence: 0.6, agent_verdict: 'needs_context' }),
     inst('f72', 'pending', 'high', 'GET /api/v1/profile/avatar HTTP/1.1\n→ 200'),
   ] },
   { rule_id: 'R-004', title: '示例发现: 可导出组件未设权限', severity: 'medium', masvs: 'MASVS-PLATFORM-1', instance_count: 3, phases: ['P1'], instances: [
