@@ -1,0 +1,1260 @@
+{
+ "passed": 209,
+ "total": 209,
+ "results": [
+  {
+   "test": "C",
+   "ok": true,
+   "what": "running: the primary button is 停止",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "model route shows the active model of the catalog",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "running: the composer shows the elapsed time",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "the timer agrees with the session header (same source)",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "running: Enter does not send and the reason is stated",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "stop asks for confirmation first",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "paused: the primary button is 发送",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "send and stop occupy the same position and size",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "empty input: send is disabled; no timer while paused",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "the session chip sits above the input",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "\"@\" lists the findings that can be quoted",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "picking one adds a context chip",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "\"/\" lists the commands",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "while the request is out the composer says it is sending",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "the message carries the quoted finding, then the text with its line break",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "after sending: input and added chips are cleared",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "server error: stated in place, the text is kept",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "重试 sends it",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "403: says there is no permission, keeps the text, disables the input, offers no retry",
+   "detail": ""
+  },
+  {
+   "test": "C",
+   "ok": true,
+   "what": "no gradient border, no gradient fill, nothing animated in the composer",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "output is virtualised (51 lines in the DOM of 400+) and starts at its end",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "running: the status line says 运行中 and when it last read",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "scrolling up pauses follow",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "the follow switch returns to the end",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "find counts the matches (12, 120–129)",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "Enter goes to the next match and marks it",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "只列匹配行 keeps only the matching lines",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "wrap: long lines take more than one row",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "no horizontal overflow with wrap at 700",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "copy puts the listed lines on the clipboard",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "clear empties the view and says the records are kept",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "恢复显示 brings the lines back",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "fullscreen covers the window (native)",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "Escape leaves fullscreen and focus returns to its button",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "执行监控 lists the 18 steps and says CPU / memory are not collected",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "all sources failing: says the output was not read",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "retry reads the output",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "reads start failing: says 读取中断 and keeps the lines it has",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "reads recover: back to 运行中 with the new lines",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "waiting_login: the status line says 等待处理",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "failed: the status line says 失败",
+   "detail": ""
+  },
+  {
+   "test": "TERM",
+   "ok": true,
+   "what": "not started: no output, and it says why",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "inventory lists the 6 interfaces",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "method filter",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "filtered to nothing: says so",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "a row opens the request detail in a drawer",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "Escape closes the drawer and focus returns to the row",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "引用到引导输入框 puts the request above the composer as a chip",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "traffic lists the 6 captured requests; forwarding is on",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "status-code filter",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "detail drawer: replay is disabled and says why",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "no traffic: says forwarding is not started",
+   "detail": ""
+  },
+  {
+   "test": "REQ",
+   "ok": true,
+   "what": "no inventory: says where interfaces come from",
+   "detail": ""
+  },
+  {
+   "test": "PERM",
+   "ok": true,
+   "what": "trace: says there is no permission and offers no retry",
+   "detail": ""
+  },
+  {
+   "test": "PERM",
+   "ok": true,
+   "what": "overview: says there is no permission",
+   "detail": ""
+  },
+  {
+   "test": "PERM",
+   "ok": true,
+   "what": "terminal: status line and body say there is no permission",
+   "detail": ""
+  },
+  {
+   "test": "PERM",
+   "ok": true,
+   "what": "inventory: says there is no permission",
+   "detail": ""
+  },
+  {
+   "test": "PERM",
+   "ok": true,
+   "what": "traffic: forwarding state is unknown (no default port, not \"未启动\") and 启动转发 is disabled",
+   "detail": ""
+  },
+  {
+   "test": "PERM",
+   "ok": true,
+   "what": "traffic: the empty list says there is no permission; no \"earlier requests below\" line over an empty list",
+   "detail": ""
+  },
+  {
+   "test": "T1",
+   "ok": true,
+   "what": "the stage in progress (P2) is open",
+   "detail": ""
+  },
+  {
+   "test": "T1",
+   "ok": true,
+   "what": "a finished stage (P1) is a summary row",
+   "detail": ""
+  },
+  {
+   "test": "T1",
+   "ok": true,
+   "what": "P2 folded into its summary after the run moved on",
+   "detail": ""
+  },
+  {
+   "test": "T1",
+   "ok": true,
+   "what": "P2 summary counts match the data (9 events: 6 tool calls, 1 judgment, 1 guidance, 1 error; 2 findings)",
+   "detail": ""
+  },
+  {
+   "test": "T1",
+   "ok": true,
+   "what": "P2 summary text states events and findings",
+   "detail": ""
+  },
+  {
+   "test": "T1",
+   "ok": true,
+   "what": "P2 duration is the sum of its recorded steps (6 × 150 s)",
+   "detail": ""
+  },
+  {
+   "test": "T1",
+   "ok": true,
+   "what": "the next stage (P3) opened",
+   "detail": ""
+  },
+  {
+   "test": "T1",
+   "ok": true,
+   "what": "P3 row is at the top of the list or pinned there",
+   "detail": ""
+  },
+  {
+   "test": "T1",
+   "ok": true,
+   "what": "run strip marks P3 as the stage in progress",
+   "detail": ""
+  },
+  {
+   "test": "T2",
+   "ok": true,
+   "what": "P0 opened by hand",
+   "detail": ""
+  },
+  {
+   "test": "T2",
+   "ok": true,
+   "what": "P2 (in progress) closed by hand",
+   "detail": ""
+  },
+  {
+   "test": "T2",
+   "ok": true,
+   "what": "a stage closed by hand is not reopened by new data",
+   "detail": ""
+  },
+  {
+   "test": "T2",
+   "ok": true,
+   "what": "P0 is still open two stages later",
+   "detail": ""
+  },
+  {
+   "test": "T2",
+   "ok": true,
+   "what": "untouched finished stages are summaries",
+   "detail": ""
+  },
+  {
+   "test": "T2",
+   "ok": true,
+   "what": "P2 stays closed",
+   "detail": ""
+  },
+  {
+   "test": "T2",
+   "ok": true,
+   "what": "the stage now in progress (P5) is open",
+   "detail": ""
+  },
+  {
+   "test": "T3",
+   "ok": true,
+   "what": "pin takes the stage being read",
+   "detail": ""
+  },
+  {
+   "test": "T3",
+   "ok": true,
+   "what": "run strip shows a pin on that stage",
+   "detail": ""
+  },
+  {
+   "test": "T3",
+   "ok": true,
+   "what": "scroll position unchanged while pinned",
+   "detail": ""
+  },
+  {
+   "test": "T3",
+   "ok": true,
+   "what": "pinned stage is still open after the run moved on",
+   "detail": ""
+  },
+  {
+   "test": "T3",
+   "ok": true,
+   "what": "nothing folds while pinned",
+   "detail": ""
+  },
+  {
+   "test": "T3",
+   "ok": true,
+   "what": "follow resumes after unpinning",
+   "detail": ""
+  },
+  {
+   "test": "T3",
+   "ok": true,
+   "what": "after unpinning the stage in progress opens",
+   "detail": ""
+  },
+  {
+   "test": "T4",
+   "ok": true,
+   "what": "a following list starts at its end",
+   "detail": ""
+  },
+  {
+   "test": "T4",
+   "ok": true,
+   "what": "scrolling up pauses follow",
+   "detail": ""
+  },
+  {
+   "test": "T4",
+   "ok": true,
+   "what": "scroll position unchanged after 20 new events",
+   "detail": ""
+  },
+  {
+   "test": "T4",
+   "ok": true,
+   "what": "the bar says \"20 条新事件 ↓\"",
+   "detail": ""
+  },
+  {
+   "test": "T4",
+   "ok": true,
+   "what": "clicking it returns to the end and follows again",
+   "detail": ""
+  },
+  {
+   "test": "T4",
+   "ok": true,
+   "what": "the counter is gone after returning",
+   "detail": ""
+  },
+  {
+   "test": "T5",
+   "ok": true,
+   "what": "paused: 200 events arrived",
+   "detail": ""
+  },
+  {
+   "test": "T5",
+   "ok": true,
+   "what": "paused: first visible row did not move (0 px)",
+   "detail": ""
+  },
+  {
+   "test": "T5",
+   "ok": true,
+   "what": "paused: scrollTop unchanged",
+   "detail": ""
+  },
+  {
+   "test": "T5",
+   "ok": true,
+   "what": "paused: cumulative layout shift is 0",
+   "detail": ""
+  },
+  {
+   "test": "T5",
+   "ok": true,
+   "what": "rows in the DOM are bounded by virtualisation (19 in the DOM after 200 more)",
+   "detail": ""
+  },
+  {
+   "test": "T5",
+   "ok": true,
+   "what": "following: at the end after +100",
+   "detail": ""
+  },
+  {
+   "test": "T5",
+   "ok": true,
+   "what": "following: at the end after +100",
+   "detail": ""
+  },
+  {
+   "test": "T5",
+   "ok": true,
+   "what": "following: the row count went from 18 to 218",
+   "detail": ""
+  },
+  {
+   "test": "T5",
+   "ok": true,
+   "what": "following: rows in the DOM stay bounded",
+   "detail": ""
+  },
+  {
+   "test": "T6",
+   "ok": true,
+   "what": "Enter expands a tool row (input / output)",
+   "detail": ""
+  },
+  {
+   "test": "T6",
+   "ok": true,
+   "what": "the panel has input and output",
+   "detail": ""
+  },
+  {
+   "test": "T6",
+   "ok": true,
+   "what": "Escape collapses it and focus is back on the row toggle",
+   "detail": ""
+  },
+  {
+   "test": "T6",
+   "ok": true,
+   "what": "focus ring visible and not covered by the pinned stage row",
+   "detail": ""
+  },
+  {
+   "test": "T6",
+   "ok": true,
+   "what": "\"/\" opens the command menu",
+   "detail": ""
+  },
+  {
+   "test": "T6",
+   "ok": true,
+   "what": "Escape closes the menu, focus stays in the input",
+   "detail": ""
+  },
+  {
+   "test": "T6",
+   "ok": true,
+   "what": "Enter on 批准 sends the decision",
+   "detail": ""
+  },
+  {
+   "test": "T6",
+   "ok": true,
+   "what": "after the decision focus is on a trace row or the list, not lost",
+   "detail": ""
+  },
+  {
+   "test": "T6",
+   "ok": true,
+   "what": "Enter on 打开 goes to the finding",
+   "detail": ""
+  },
+  {
+   "test": "T6",
+   "ok": true,
+   "what": "inspector drawer: Escape closes it and focus returns to its toggle",
+   "detail": ""
+  },
+  {
+   "test": "T7",
+   "ok": true,
+   "what": "light: all trace text is at least 4.5:1",
+   "detail": ""
+  },
+  {
+   "test": "T7",
+   "ok": true,
+   "what": "light: finding, error and active lines are at least 3:1 (2 finding rows, 1 error row, the strip's progress line)",
+   "detail": ""
+  },
+  {
+   "test": "T7",
+   "ok": true,
+   "what": "light: no trace text is dimmed by opacity",
+   "detail": ""
+  },
+  {
+   "test": "T7",
+   "ok": true,
+   "what": "light: measured on every row type and the current row",
+   "detail": ""
+  },
+  {
+   "test": "T7",
+   "ok": true,
+   "what": "dark: all trace text is at least 4.5:1",
+   "detail": ""
+  },
+  {
+   "test": "T7",
+   "ok": true,
+   "what": "dark: finding, error and active lines are at least 3:1 (2 finding rows, 1 error row, the strip's progress line)",
+   "detail": ""
+  },
+  {
+   "test": "T7",
+   "ok": true,
+   "what": "dark: no trace text is dimmed by opacity",
+   "detail": ""
+  },
+  {
+   "test": "T7",
+   "ok": true,
+   "what": "dark: measured on every row type and the current row",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "reduced motion: no transition or animation longer than 0.01 ms",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "reduced motion: no looping animation is running",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "reduced motion: the dot is there and static",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "the stage in progress (P2) is open",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "a finished stage (P1) is a summary row",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "reduced motion: no rows fade out",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "P2 folded into its summary after the run moved on",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "P2 summary counts match the data (9 events: 6 tool calls, 1 judgment, 1 guidance, 1 error; 2 findings)",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "P2 summary text states events and findings",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "P2 duration is the sum of its recorded steps (6 × 150 s)",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "the next stage (P3) opened",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "P3 row is at the top of the list or pinned there",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "run strip marks P3 as the stage in progress",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "a following list starts at its end",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "scrolling up pauses follow",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "scroll position unchanged after 20 new events",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "the bar says \"20 条新事件 ↓\"",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "clicking it returns to the end and follows again",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "the counter is gone after returning",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "paused: 200 events arrived",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "paused: first visible row did not move (0 px)",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "paused: scrollTop unchanged",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "paused: cumulative layout shift is 0",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "rows in the DOM are bounded by virtualisation (19 in the DOM after 200 more)",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "following: at the end after +100",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "following: at the end after +100",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "following: the row count went from 18 to 218",
+   "detail": ""
+  },
+  {
+   "test": "T8",
+   "ok": true,
+   "what": "following: rows in the DOM stay bounded",
+   "detail": ""
+  },
+  {
+   "test": "T9",
+   "ok": true,
+   "what": "running: 1 looping animation (the run strip dot)",
+   "detail": ""
+  },
+  {
+   "test": "T9",
+   "ok": true,
+   "what": "running: no skeleton on screen while counting",
+   "detail": ""
+  },
+  {
+   "test": "T9",
+   "ok": true,
+   "what": "paused: 0 looping animations",
+   "detail": ""
+  },
+  {
+   "test": "T9",
+   "ok": true,
+   "what": "paused: no skeleton on screen while counting",
+   "detail": ""
+  },
+  {
+   "test": "T9",
+   "ok": true,
+   "what": "waiting_login: 0 looping animations",
+   "detail": ""
+  },
+  {
+   "test": "T9",
+   "ok": true,
+   "what": "waiting_login: no skeleton on screen while counting",
+   "detail": ""
+  },
+  {
+   "test": "T9",
+   "ok": true,
+   "what": "completed: 0 looping animations",
+   "detail": ""
+  },
+  {
+   "test": "T9",
+   "ok": true,
+   "what": "completed: no skeleton on screen while counting",
+   "detail": ""
+  },
+  {
+   "test": "T9",
+   "ok": true,
+   "what": "overview while running: exactly one loop, the run strip dot",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "data-row-kind has exactly the five values",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "every row has its glyph and its type word",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "finding rows: left line is the finding orange",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "the finding line colour is the orange token",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "ordinary finding: 2 px, \"P2 中\", no cap",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "high finding: 3 px, cap marker, \"P1 高\"",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "no red anywhere on a finding row",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "error row: red left line, \"错误\", full reason shown",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "pending approval rows: raised surface and a focusable primary action",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "operator guidance: judgment variant, hollow diamond, \"引导\", data-author=operator",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "AI judgments carry data-author=agent",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "the stage counts 1 judgment; guidance is counted apart",
+   "detail": ""
+  },
+  {
+   "test": "T10",
+   "ok": true,
+   "what": "filter \"操作者引导\" leaves only those rows",
+   "detail": ""
+  },
+  {
+   "test": "T11",
+   "ok": true,
+   "what": "stage in progress without events lists its real upcoming steps",
+   "detail": ""
+  },
+  {
+   "test": "T11",
+   "ok": true,
+   "what": "not started: explanation and 启动评估",
+   "detail": ""
+  },
+  {
+   "test": "T11",
+   "ok": true,
+   "what": "not started: no blank area taller than a third of the screen",
+   "detail": ""
+  },
+  {
+   "test": "T11",
+   "ok": true,
+   "what": "failed sources: names what failed and offers retry",
+   "detail": ""
+  },
+  {
+   "test": "T11",
+   "ok": true,
+   "what": "failed sources: no blank area taller than a third of the screen",
+   "detail": ""
+  },
+  {
+   "test": "T11",
+   "ok": true,
+   "what": "retry brings the trace back",
+   "detail": ""
+  },
+  {
+   "test": "T11",
+   "ok": true,
+   "what": "filtered to nothing: says so",
+   "detail": ""
+  },
+  {
+   "test": "T11",
+   "ok": true,
+   "what": "filtered empty: no blank area taller than a third of the screen",
+   "detail": ""
+  },
+  {
+   "test": "T11",
+   "ok": true,
+   "what": "清除筛选 brings the rows back",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1440: rail is 220 px by default",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1440: collapses to 56 px",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1440: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1280: rail is 220 px by default",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1280: collapses to 56 px",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1280: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1024: rail is 220 px by default",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1024: collapses to 56 px",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1024: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1000: rail starts collapsed",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @1000: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @760: no inline rail",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @760: navigation is a drawer",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @760: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @390: no inline rail",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @390: navigation is a drawer",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "workbench @390: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1440: rail is 220 px by default",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1440: collapses to 56 px",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1440: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1280: rail is 220 px by default",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1280: collapses to 56 px",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1280: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1024: rail is 220 px by default",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1024: collapses to 56 px",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1024: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1000: rail starts collapsed",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @1000: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @760: no inline rail",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @760: navigation is a drawer",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @760: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @390: no inline rail",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @390: navigation is a drawer",
+   "detail": ""
+  },
+  {
+   "test": "T12",
+   "ok": true,
+   "what": "tasks @390: no horizontal overflow",
+   "detail": ""
+  },
+  {
+   "test": "page",
+   "ok": true,
+   "what": "no page errors during the run",
+   "detail": ""
+  }
+ ]
+}

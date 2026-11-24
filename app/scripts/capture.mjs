@@ -36,6 +36,9 @@ export const VIEWS = [
   ['session-live', '/projects/1/sessions/41'], ['session-overview', '/projects/1/sessions/41?view=overview'],
   ['session-findings', '/projects/1/sessions/41?view=findings'], ['session-evidence', '/projects/1/sessions/41?view=graph'],
   ['session-artifacts', '/projects/1/sessions/41?view=artifacts'], ['session-report', '/projects/1/sessions/41?view=report'],
+  // Runtime surfaces (V3 Phase 4): terminal, interface inventory, proxy traffic.
+  ['session-terminal', '/projects/1/sessions/41?view=raw'], ['session-requests', '/projects/1/sessions/41?view=apitree'],
+  ['session-traffic', '/projects/1/sessions/41?view=burp'],
 ];
 const only = arg('routes', '');
 const pool = [...ROUTES, ...VIEWS];

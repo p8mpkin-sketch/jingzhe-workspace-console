@@ -46,7 +46,7 @@ the end of this file passed on the real backend; old links open the workbench.
 | V3 / V2 | Operator clue (`POST /clue`) | Runtime › Agent trace composer; consumed clues appear in the trace | Owned |
 | AutopilotLaunchBar | Start / pause / resume | Header primary action | Owned |
 | AutopilotLaunchBar | Stop | Header › 更多操作 › 停止任务 (asks for confirmation since V3 Phase 3) | Owned |
-| SessionOverview | Session summary, usage, coverage summary | Overview | Owned |
+| SessionOverview | Session summary, usage, coverage summary | Overview (`OverviewSurface` since V3 Phase 4, see below) | Owned |
 | AiThinkPanel | Reasoning trace | Runtime › Agent trace › 推理记录 (`ai`) | Owned |
 | V3 / V2 | Fact graph, credentials, coverage | Evidence | Owned |
 | V3 / V2 | Analysis output (task artifacts) | Artifacts › Analysis output | Owned |
@@ -113,7 +113,8 @@ The workbench has one navigation layer: the global rail. Below the top bar the p
 of six primary tabs, one surface bar, then the work surface with the inspector beside it
 (`app/src/features/pentest/workbench/shell/`). The 240 px workbench rail, the review-rounds strip and the stage
 rail in the header are gone; this table gives every capability they carried an owner. Work surfaces are mounted
-unchanged; `ConversationView` is the one adapter (its live controls render into the surface bar).
+unchanged; the trace is the one adapter (its follow switch renders into the surface bar; `ConversationView` in
+Phase 3, `TraceSurface` since Phase 4).
 
 | Old element | Capability | Owner now | Hooks |
 | --- | --- | --- | --- |
@@ -134,7 +135,7 @@ unchanged; `ConversationView` is the one adapter (its live controls render into 
 | ReviewRoundsBar | State of the five rounds; recompute | Inspector › 进度 › 五轮复核 (same endpoint, same read when the workbench opens, same poll) | `data-security-rounds`, `data-round`, `data-round-status`, `data-round-recompute` |
 | Surface bar | Secondary tabs, segment switch | `SurfaceBar` | `data-wb-surfacebar`, `data-wb-sub`, `data-wb-seg` |
 | Surface bar | Summary chips (P0–P3 counts, findings · instances, 待审批, 待复核, steps) | Removed: the findings tab count, the findings surface, and the header readouts 待处理 and 阶段 state each of them once | — |
-| Trace live bar | Follow switch, “N 条新进展” jump | Surface bar live-status position (rendered there by `ConversationView`) | `data-wb-follow`, `data-wb-new-entries` |
+| Trace live bar | Follow switch, “N 条新进展” jump | Follow switch: surface bar live-status position. Jump: a pill over the trace list since Phase 4 (in the bar it moved the live status when it appeared) | `data-wb-follow`, `data-wb-new-entries` |
 | Trace live bar | Status chip, 最后更新 | Header readout 状态; surface bar “实时 / 已同步 / 部分未更新” with the time data last arrived | `data-wb-live` |
 | Trace live bar | 进度 button, 发现 N button | Inspector › 进度; the 风险发现 tab | — |
 | ContextPanel | 复核队列: approvals waiting, current inspection target | Inspector › 复核队列 | `data-wb-inspector-target`, `data-wb-queue` |
@@ -147,6 +148,62 @@ unchanged; `ConversationView` is the one adapter (its live controls render into 
 
 Labels in `ia.ts`: the findings tab is 风险发现 (the V3 name of a session finding); the first secondary tab of 报告 is
 报告草稿, so no tab label appears twice in the workbench. `?view=` identifiers are unchanged.
+
+## Overview, runtime and composer (V3 Phase 4)
+
+`SessionOverview`, `ConversationView` (with `CaseEntry` and `agentAdapter`), `v3/RawView` (with `VirtualTerminal`
+and `TimelinePanel`), `ApiTreePanel` and `BurpBridgePanel` are replaced by `workbench/surfaces/overview/`,
+`workbench/surfaces/runtime/` and `features/composer/`. Every capability they carried has an owner below. The
+endpoints are the ones those components read; nothing was added. Checked by `app/scripts/check-trace.mjs` (fixtures).
+
+| Old component | Capability (request) | Owner now | Hooks |
+| --- | --- | --- | --- |
+| SessionOverview | Three equal cards (应用, 环境, 进展) | Removed. One run statement, the run strip, one fact row, then definition rows in two columns | `data-overview`, `data-overview-statement`, `data-overview-facts`, `data-overview-section` |
+| SessionOverview | Run state, current stage, step count | Run statement (status word, one sentence, elapsed time, the one action that fits the state) | `data-overview-status`, `data-overview-statusline`, `data-overview-elapsed`, `data-overview-start`, `data-overview-resume`, `data-overview-open-trace` |
+| SessionOverview | Stage timeline | Compact run strip; a stage opens it in the trace | `data-run-strip`, `data-strip-stage` |
+| SessionOverview | Severity ring and pills | 严重程度 rows (instances per level, share as an orange bar); counts once in the fact row | `data-overview-severity`, `data-overview-fact` |
+| SessionOverview | Application facts (package, version, hardening, components) | 应用 definition rows; a missing value says 未采集 and why | `data-overview-section="app"`, `data-overview-def` |
+| SessionOverview | Device, proxy (`GET /burp/status`), model route | 环境 definition rows | `data-overview-section="env"` |
+| SessionOverview | Step durations (`GET /events?source=progress&since_seq=…&limit=200`, up to five pages) | 阶段耗时 rows: share per stage, the three longest steps, the number of steps still open | `data-overview-section="durations"`, `data-overview-duration` |
+| SessionOverview | Model usage (`GET /llm-usage`) | 模型用量 rows by stage; calls and tokens once in the fact row | `data-overview-section="llm"` |
+| SessionOverview | JS bridge focus (`GET /report/summary`) | One line under 严重程度 | `data-overview-jsbridge` |
+| SessionOverview | Task instruction | 任务指令 row | `data-overview-section="brief"` |
+| (new) | Items that need the operator | 待处理 list: approvals waiting, findings to review, device offline, the engine's own note, sources that failed. One line when there is nothing | `data-overview-attention`, `data-overview-attention-item` |
+| (new) | Latest events | 最近活动: the last trace rows, same glyphs and words as the trace | `data-overview-activity` |
+| SessionOverview | Own reads of the session, run status, timeline, findings and devices | Removed: the overview takes them from the workbench, which already reads them. Devices come from the shell's poll; read once here only when that list is empty | — |
+| ConversationView | Stage sections with entries | `StageStack` of `StageSection`s: the active stage open, completed stages one summary row, stages not started one placeholder row | `data-stage-stack`, `data-stage-head`, `data-stage-mode`, `data-stage-summary`, `data-stage-future`, `data-stage-upcoming` |
+| ConversationView / CaseEntry | Entries: decision, tool call, finding, approval, clue, error | `TraceRow`, five types (判断, 工具, 风险发现, 审批, 结果 / 错误); operator guidance is a 判断 variant with a hollow diamond and the word 引导 | `data-trace-row`, `data-row-type`, `data-row-variant`, `data-author`, `data-row-toggle`, `data-row-panel` |
+| CaseEntry | Open a finding, approve / deny | Finding row 打开; approval row 批准 / 拒绝 (same `POST /approvals/:id/decide`) | `data-row-open`, `data-row-approve`, `data-row-deny` |
+| ConversationView | Follow, “N 条新进展” | Follow in the surface bar, pin on the run strip, the new-entries pill over the list | `data-wb-follow`, `data-strip-pin`, `data-wb-new-entries` |
+| ConversationView | Jump to a stage from the inspector | Same (`#wb-conv-<stage>` anchors kept); also from the run strip and the overview | `data-strip-stage`, `data-wb-stage-jump` |
+| (new) | Filter the trace | Row type and stage selects, 清除筛选 | `data-trace-filter`, `data-trace-stage-filter`, `data-trace-clear` |
+| ConversationView | Composer: operator clue (`POST /clue`) | `features/composer/Composer`: context chips, “/” commands, “@” to quote a finding, model route, elapsed timer, send and stop in one position | `data-composer`, `data-composer-input`, `data-composer-primary`, `data-composer-chip`, `data-composer-menu`, `data-composer-route`, `data-composer-timer` |
+| RawView | 终端输出 / 执行监控 switch | Segments of `TerminalSurface` | `data-v3-raw-tab` |
+| VirtualTerminal | Recorded output of four sources (`GET /events?source=hook|progress|evidence|bridge`, pages of 200) | `TerminalSurface`, virtualised | `data-terminal`, `data-terminal-line`, `data-terminal-source`, `data-terminal-level` |
+| VirtualTerminal | Keyword filter | Find with a hit count and next / previous; 只列匹配行 gives the old filter | `data-terminal-find`, `data-terminal-hits`, `data-terminal-only-hits` |
+| VirtualTerminal | Follow, copy | Follow / pause, copy (selection or the listed lines), clear the view, wrap, fullscreen, reload | `data-terminal-follow-toggle`, `data-terminal-copy`, `data-terminal-clear`, `data-terminal-wrap`, `data-terminal-fullscreen`, `data-terminal-reload` |
+| TimelinePanel | Steps by stage, state per step | 执行监控 segment, from the workbench's timeline (no second read) | `data-monitor`, `data-monitor-state`, `data-monitor-step` |
+| ApiTreePanel | Interface inventory (`GET /api_tree`), OpenAPI import (local), export | `RequestsSurface` › 接口资产: one list, filters (module, method, state, text), pages of 50 / 100 / 200 | `data-api-dual`, `data-api-row`, `data-api-method-filter`, `data-api-search`, `data-api-pager`, `data-api-openapi-input`, `data-api-openapi-btn`, `data-api-export-csv`, `data-api-export-json`, `data-api-status`, `data-api-verified`, `data-api-traffic-total` |
+| ApiTreePanel | Interface detail beside the list | Drawer | `data-api-detail` |
+| ApiTreePanel / BurpBridgePanel | “+ 线索” (dispatched an event nothing listened to) | 引用到引导输入框: the request becomes a context chip of the composer | `data-api-clue-btn`, `data-burp-clue-btn` |
+| BurpBridgePanel | Proxy state (`GET /burp/status`), plugin probe, start / stop forwarding, script download | `RequestsSurface` › 代理流量 status bar | `data-burp-dock`, `data-burp-bridge`, `data-burp-port` |
+| BurpBridgePanel | Captured requests (`GET /events?source=bridge&limit=200`, every 8 s), pause, filters, export | Same reads; list with filters, request detail in a drawer | `data-burp-flow`, `data-burp-live`, `data-burp-kw`, `data-burp-code-filter`, `data-burp-export-csv`, `data-burp-export-json`, `data-burp-detail`, `data-burp-empty`, `data-burp-filter-empty` |
+
+Hooks that went with their element: `data-soc-*` (the overview cards), `data-api-group`, `data-api-pf`,
+`data-api-variant`, `data-api-dock-head`, `data-api-dock-chips`, `data-api-traffic-group`, `data-api-traffic-head`
+(module tree and its chips; the module is a filter and a column now), `data-burp-detail-body`,
+`data-burp-detail-clue`, `data-burp-detail-empty` (the side pane; the detail is a drawer).
+
+Changes of behaviour, all deliberate:
+
+- Stopping from the composer goes through the same confirmation as 更多操作 › 停止任务.
+- A send failure is stated in the composer with the text kept (it was a toast); a 403 disables the input and says so.
+- Guidance still cannot be sent while the run is active (as before); the composer states the reason instead of
+  hiding the input.
+- A finding or approval row stays in the stage where it first appeared instead of moving to the current stage.
+- The terminal reads new output every 8 s while the run is active (it read once on open).
+- The inventory lists every module at once with a module filter (it showed one module at a time).
+- Request and interface details open in a drawer, not in a side pane.
 
 ## Shared owners (kept on purpose)
 

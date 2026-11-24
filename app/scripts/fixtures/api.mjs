@@ -57,15 +57,15 @@ const matrixOf = (sid) => {
 
 // Workbench of a running session (sid 41): phases, steps, progress events, two approvals waiting, review rounds.
 // Other sessions keep the empty answers, so the "not started" workbench stays covered.
-const LIVE_SID = 41;
+export const LIVE_SID = 41;
 const sidOf = (u) => Number(u.pathname.split('/')[4]);
-const stamp = (secAgo) => new Date(Date.now() - secAgo * 1000).toISOString().slice(0, 19).replace('T', ' ');
-const livePhases = [
+export const stamp = (secAgo) => new Date(Date.now() - secAgo * 1000).toISOString().slice(0, 19).replace('T', ' ');
+export const livePhases = [
   { phase: 'P0', name: '范围确认', done: 2, total: 2 }, { phase: 'P1', name: '静态检查', done: 4, total: 4 },
   { phase: 'P2', name: '权限矩阵', done: 3, total: 6 }, { phase: 'P3', name: '会话状态检查', done: 0, total: 4 },
   { phase: 'P5', name: '报告汇总', done: 0, total: 2 },
 ];
-const liveSteps = [
+export const liveSteps = [
   ['P0', '读取应用清单', 'manifest_read', 'ok', 0], ['P0', '确认评估范围', 'scope_check', 'ok', 0],
   ['P1', '反编译与索引', 'decompile', 'ok', 0], ['P1', '配置项检查', 'config_scan', 'ok', 1], ['P1', '网络配置检查', 'network_scan', 'ok', 1], ['P1', '存储项检查', 'storage_scan', 'ok', 0],
   ['P2', '接口清单梳理', 'api_inventory', 'ok', 0], ['P2', '匿名访问核对', 'anon_check', 'ok', 1], ['P2', '登录态访问核对', 'authed_check', 'ok', 0],
@@ -73,7 +73,7 @@ const liveSteps = [
   ['P3', '会话有效期核对', 'session_ttl', 'pending', 0], ['P3', '令牌刷新核对', 'token_refresh', 'pending', 0], ['P3', '登出核对', 'logout_check', 'pending', 0], ['P3', '多端登录核对', 'multi_login', 'pending', 0],
   ['P5', '汇总发现', 'collect', 'pending', 0], ['P5', '生成报告', 'report_build', 'pending', 0],
 ].map(([phase, name, tool, state, findings]) => ({ phase, name, tool, state, findings }));
-const liveEvents = () => {
+export const liveEvents = () => {
   const out = [{ type: 'autopilot_start', ts: stamp(2467), title: '分析引擎启动' }];
   let t = 2400;
   for (const st of liveSteps.filter((x) => x.state !== 'pending')) {
@@ -82,17 +82,36 @@ const liveEvents = () => {
     if (st.state === 'ok') out.push({ type: 'step_done', ts: stamp(t), phase: st.phase, tool: st.tool, name: st.name });
     t -= 40;
   }
+  // One operator guidance (a judgment written by a person) and one failed call with its full reason.
+  out.push({ type: 'clue_consumed', ts: stamp(150), phase: 'P2', title: '引导已读取', detail: '订单接口优先核对 /api/v1/orders/{id}，先不要动支付接口。', user: 'demo' });
+  out.push({ type: 'tool_error', ts: stamp(120), phase: 'P2', title: '重放请求没有完成', detail: 'replay_request 在 30 秒内没有收到响应：测试设备 emulator-5554 的代理端口 18081 拒绝连接（ECONNREFUSED）。已跳过这一次重放，矩阵里对应的格子保持未测。' });
   out.push({ type: 'react_decision', ts: stamp(95), phase: 'P2', title: '先核对订单接口的越权访问', detail: '匿名与登录态结果一致，下一步换用第二个账号重放。' });
   out.push({ type: 'approval_required', ts: stamp(60), phase: 'P2', title: '待人工确认：在测试设备上重放请求' });
   return out.map((e, i) => ({ id: `ev-${i}`, seq: i + 1, ...e }));
 };
-const liveApprovals = () => [
+export const liveApprovals = () => [
   { id: 'ap-1', tool: 'replay_request', name: '在测试设备上重放请求', reason: '用第二个测试账号重放 3 个订单接口，只读，不修改数据。', state: 'pending', ts: stamp(60) },
   { id: 'ap-2', tool: 'export_component', name: '启动导出组件', reason: '需要在测试设备上启动 1 个导出页面以核对访问控制。', state: 'pending', ts: stamp(20) },
 ];
 const liveRounds = { status: 'ok', running: false, can_recompute: true, rounds: [
   { round: 1, status: 'ok', added: 3 }, { round: 2, status: 'ok', added: 1 }, { round: 3, status: 'ok', reviewed: 4 }, { round: 4, status: 'degraded', targets: 2 }, { round: 5, status: 'ok' },
 ] };
+
+// Requests of the running session: a small inventory (two modules, one of them captured traffic) and six flows.
+const liveApiTree = { status: 'ok', base_url: 'https://api.example.com', tiers: { traffic: 2, host: 3, guess: 1 }, groups: [
+  { module: 'api.example.com', source: 'traffic', apis: [
+    { method: 'GET', path: '/api/v1/orders', host: 'api.example.com', verified: 'traffic', hits: 6, auth_hits: 6, codes: { 200: 6 }, tested: 'probe_ok', params: ['page', 'size'], param_spec: { page: 'query', size: 'query' } },
+    { method: 'GET', path: '/api/v1/orders/{id}', host: 'api.example.com', verified: 'traffic', hits: 3, auth_hits: 2, codes: { 200: 2, 401: 1 }, tested: 'unauth', params: ['id'], param_spec: { id: 'path' }, probed: true, last_probe: { code: '200', size: 812, ctype: 'application/json', url: 'https://api.example.com/api/v1/orders/1002', body_snip: '{"id":1002,"owner":"…"}' }, evidence: 'com/example/wallet/net/OrderApi.java:31' },
+  ] },
+  { module: '账户', apis: [
+    { method: 'POST', path: '/api/v1/login', domain: 'api.example.com', tier: 'host', tested: 'sign_required', biz_cn: '登录', params: ['phone', 'code'], evidence: 'com/example/wallet/net/AuthApi.java:18' },
+    { method: 'GET', path: '/api/v1/profile', domain: 'api.example.com', tier: 'host', tested: 'probe_ok', biz_cn: '个人资料' },
+    { method: 'PUT', path: '/api/v1/profile/avatar', domain: 'api.example.com', tier: 'host', biz_cn: '更新头像' },
+    { method: 'GET', path: '/internal/debug/config', tier: 'guess', biz_cn: '调试配置' },
+  ] },
+] };
+const liveFlows = () => [['GET', '/api/v1/orders', '200', 1840, true], ['GET', '/api/v1/orders/1001', '200', 790, true], ['GET', '/api/v1/orders/1002', '401', 64, false], ['POST', '/api/v1/login', '200', 310, false], ['GET', '/api/v1/profile', '200', 420, true], ['GET', '/static/app.js', '304', 0, false]]
+  .map(([method, path, code, size, auth], i) => ({ seq: i + 1, ts: stamp(600 - i * 45), type: 'pkt', host: 'api.example.com', path, method, code, size, auth, url: `https://api.example.com${path}` }));
 
 /** [method, RegExp on pathname, body | (url) => body] — first match wins. */
 export const routes = [
@@ -117,13 +136,13 @@ export const routes = [
   ['GET', /^\/api\/pentest\/sessions\/\d+\/autopilot\/status$/, (u) => (sidOf(u) === LIVE_SID ? { state: 'running', status: 'running', current: 'P2', current_name: '权限矩阵', phases: livePhases } : {})],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/timeline$/, (u) => (sidOf(u) === LIVE_SID ? { steps: liveSteps } : {})],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/security-rounds$/, (u) => (sidOf(u) === LIVE_SID ? liveRounds : {})],
-  ['GET', /^\/api\/pentest\/sessions\/\d+\/events/, (u) => (sidOf(u) === LIVE_SID && u.searchParams.get('source') === 'progress' ? { events: liveEvents(), cursor: 0, total: 0 } : { events: [], cursor: 0, total: 0 })],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/events/, (u) => (sidOf(u) !== LIVE_SID ? { events: [], cursor: 0, total: 0 } : u.searchParams.get('source') === 'progress' ? { events: liveEvents(), cursor: 0, total: 0 } : u.searchParams.get('source') === 'bridge' ? { events: liveFlows(), cursor: 0, total: 0 } : { events: [], cursor: 0, total: 0 })],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/graph$/, { status: 'ok', nodes: [], edges: [] }],
-  ['GET', /^\/api\/pentest\/sessions\/\d+\/api_tree$/, { status: 'ok', groups: [] }],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/api_tree$/, (u) => (sidOf(u) === LIVE_SID ? liveApiTree : { status: 'ok', groups: [] })],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/packer$/, { status: 'ok', family: 'example-shell', family_confidence: 82, family_evidence: ['lib/arm64-v8a/libshell.so'], kb_status: { verified: 1 }, vectors: { frida: [{ evidence: 'strstr(maps, "frida")', match: 'frida', file: 'lib/arm64-v8a/libshell.so' }], root: [{ evidence: 'access("/system/xbin/su")', match: 'su', file: 'classes2.dex' }], emulator: [], ptrace: [{ evidence: 'ptrace(PTRACE_TRACEME)', match: 'ptrace', file: 'lib/arm64-v8a/libshell.so' }], proxy: [], debug: [] }, libs: [{ so: 'libshell.so', size: 1843200, sigs: [{ family: 'example-shell', sig: 'JNI_OnLoad stub' }] }] }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/llm-usage$/, { by_phase: [{ phase: 'P1', count: 14, prompt_tokens: 41200, completion_tokens: 6800, avg_latency_ms: 2100 }, { phase: 'P3', count: 9, prompt_tokens: 22050, completion_tokens: 4100, avg_latency_ms: 1850 }], by_skill: [], total: { count: 23, prompt_tokens: 63250, completion_tokens: 10900, avg_latency_ms: 2002, synthetic_count: 0, real_count: 23 } }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/credentials$/, { source: 'report csv', items: [{ category: 'API Key', name: 'MAP_SDK_KEY', value: 'AIza…example', location: 'res/values/strings.xml', purpose: '地图 SDK', risk: '中', fix: '改为服务端下发' }, { category: 'Endpoint', name: 'STAGING_HOST', value: 'https://staging.example.com', location: 'com/example/net/Env.java:18', purpose: '预发环境', risk: '低', fix: '发布包移除预发地址' }] }],
-  ['GET', /^\/api\/pentest\/sessions\/\d+\/burp\/status$/, { status: 'ok', device_online: true, device_serial: 'emulator-5554', oracle: false, bridge: false, o_port: 18080, b_port: 18081, burp: false, phone_proxy: '' }],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/burp\/status$/, (u) => ({ status: 'ok', device_online: true, device_serial: 'emulator-5554', oracle: false, bridge: sidOf(u) === LIVE_SID, o_port: 18080, b_port: 18081, burp: false, phone_proxy: sidOf(u) === LIVE_SID ? '10.0.2.2:18081' : '' })],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/burp\/plugin$/, { status: 'ok', generated: false, file_name: null, mtime: null, samples: { ok: false, runs: 1, unique_pairs: 3, usable_cipher: 2, usable_mac: 0, custom: 0, reason: '样本不足：至少需要 8 组明密文样本' } }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/vulns\/clusters$/, { real: 3, clusters: 2, noise: 0, reduction: 0.33, items: [{ cluster_id: 'c1', count: 2, family: 'cleartext-transport', host: 'api.example.com', path_template: '/v1/user/{id}', title: '示例发现: 明文传输', confirmed: 2 }, { cluster_id: 'c2', count: 1, family: 'debug-flag', host: '', path_template: '', title: '示例发现: 调试标志开启', confirmed: 0 }] }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/mission\/status$/, { state: 'idle' }],

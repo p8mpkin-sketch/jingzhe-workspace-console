@@ -153,6 +153,9 @@ for (const w of WIDTHS) {
     const seen = new Set();
     for (let i = 0; i < 70; i++) {
       await page.keyboard.press('Tab');
+      // Measured after the frame that follows the key press: moving focus can scroll a list, and what is pinned
+      // over that list (the trace's stage row) is placed when the scroll event is handled, one frame later.
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 0)))));
       const f = await page.evaluate(() => {
         const e = document.activeElement; if (!e || e === document.body || !e.closest('[data-wb-root]')) return null;
         const cs = getComputedStyle(e); const r = e.getBoundingClientRect();

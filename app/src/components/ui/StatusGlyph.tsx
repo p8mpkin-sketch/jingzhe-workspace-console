@@ -45,9 +45,9 @@ export const StatusGlyph: React.FC<{ kind: GlyphKind; label?: string; className?
 );
 
 /** Glyph + word. The word carries the meaning; the glyph and its color repeat it. */
-export const StatusText: React.FC<{ kind: GlyphKind; children: React.ReactNode; strong?: boolean; className?: string; title?: string }> =
-  ({ kind, children, strong, className, title }) => (
-    <span title={title} data-status-text={kind}
+export const StatusText: React.FC<{ kind: GlyphKind; children: React.ReactNode; strong?: boolean; className?: string; title?: string } & Omit<React.HTMLAttributes<HTMLSpanElement>, 'children' | 'className' | 'title'>> =
+  ({ kind, children, strong, className, title, ...rest }) => (
+    <span {...rest} title={title} data-status-text={kind}
       className={cx('inline-flex items-center gap-1.5 whitespace-nowrap text-label', strong ? 'font-medium' : '',
         kind === 'failed' ? 'text-jz-red' : kind === 'queued' || kind === 'neutral' ? 'text-jz-ink-2' : 'text-jz-ink', className)}>
       <StatusGlyph kind={kind} />{children}

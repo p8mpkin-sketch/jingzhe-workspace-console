@@ -170,6 +170,27 @@ as pages; their paths redirect. Their tables stay as the recorded pre-V3 baselin
 The elapsed-time readout in the header is computed from the progress events the page already loads; it issues no
 request. `node scripts/check-requests.mjs <log> --against <earlier log>` compares two capture logs route by route.
 
+### V3 Phase 4: overview, runtime and composer
+
+The workbench issues the requests it issued in Phase 3. The overview, trace, terminal, inventory and traffic
+surfaces were rewritten; their reads were kept. What changed:
+
+| Request | Before | Now |
+| --- | --- | --- |
+| `GET …/events?source=hook|progress|evidence|bridge&since_seq=0&limit=200` (`?view=raw`) | Terminal: one page per source when the view opens | Same first read. If a source answers a full page, the next page is asked for (`since_seq=<last seq>`), up to 40 pages. While the run is active, each source is asked for what is new every 8 s (`since_seq=<last seq>`); nothing is polled for a run that is not active |
+| `GET …/events?source=progress&since_seq=…&limit=200` (`?view=overview`) | Overview step durations, up to five pages | Unchanged (`surfaces/overview/useOverviewData`) |
+| `GET …/burp/status`, `GET …/llm-usage`, `GET …/report/summary` (`?view=overview`) | Overview | Unchanged, once each on open and on 重试 |
+| `GET /api/pentest/devices?refresh=…` (`?view=overview`) | Overview, when the shell's device list was empty | Unchanged |
+| `GET …/api_tree` (`?view=apitree`) | Inventory, on open | Unchanged |
+| `GET …/burp/status`, `GET …/burp/plugin?probe=1`, `GET …/events?source=bridge&limit=200` every 8 s (`?view=burp`) | Traffic | Unchanged, including the pause switch |
+| `POST …/clue` | Trace composer | `features/composer`, same body (`{text}`). Context chips are prepended to the text as quoted lines; no new field |
+| `POST …/approvals/{id}/decide` | Trace entry | Approval row, same body |
+| `POST …/autopilot/stop` | Header menu, after confirmation | Also the composer's 停止, through the same confirmation |
+
+The run strip, stage stack, execution monitor and the overview's statement, attention list and recent activity are
+computed from data the workbench already loads (`autopilot/status`, `timeline`, `events?source=progress&limit=300`,
+`vulns/grouped`, `approvals`); they issue no request.
+
 ### `/pentest`
 
 | Method | Route | Query | Expected unique count on load | Polling interval |

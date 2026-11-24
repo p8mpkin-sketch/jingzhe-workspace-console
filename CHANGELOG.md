@@ -7,6 +7,145 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 4 — Overview, runtime and composer
+
+The overview, the Agent trace, the terminal, the interface and traffic views and the guidance input of the
+assessment workbench are rebuilt in the A+ design. New code is in
+`app/src/features/pentest/workbench/surfaces/overview/`, `…/surfaces/runtime/` and `app/src/features/composer/`.
+The shell (one global navigation, six primary tabs, one surface bar, the inspector, `?view=` links) is as Phase 3
+left it; findings, evidence, artifacts and report surfaces are untouched. Every surface reads the endpoints the
+component it replaces read: the request set per view is identical to the Phase 3 build.
+
+**`OverviewSurface`** replaces `SessionOverview` and its three equal cards. Top to bottom: one statement of where
+the run stands (status word, one sentence such as “正在执行 P2 权限矩阵”, stage and step counts, elapsed time, and
+the one action that fits the state), with the list of items that need the operator beside it; the run strip with
+real stage progress; one quiet fact row (findings, instances, de-noised, steps, model calls, tokens); then
+definition rows divided by hairlines for the application, the environment, recent activity, stage durations, model
+usage and severity. The attention list holds only real items (approvals waiting, findings to review, device
+offline, the engine's note, sources that failed) and is one line when there are none. A value the backend does not
+return says 未采集 and why; nothing is estimated. The overview no longer reads the session, run status, timeline
+and findings a second time: it takes them from the workbench.
+
+**`RunStrip`.** Completed, active and future stages in one row: a check and the stage duration, the active stage
+with its step count, elapsed time and a progress line, dashed placeholders for stages not started. A stage is a
+button: it opens that stage in the trace (from the overview it switches to the trace first). The active stage
+carries the one pulse allowed on screen (`.jz-live-dot`); under `prefers-reduced-motion` it is static. A pin button
+freezes the stack.
+
+**`StageStack`.** The active stage is open with its row pinned under the strip; a completed stage collapses to one
+summary row (events, judgments, findings, duration) 240 ms after the run moves on; stages not started share one
+placeholder row. A stage the operator opened or closed is never changed automatically. Follow keeps the list at its
+end; scrolling up pauses it and a “n 条新事件 ↓” pill appears over the list; pin freezes expansion and scroll
+position until released. The stack is one virtualised list; rows are appended without moving what is on screen:
+with 200 events appended while paused, the first visible row moves 0 px and the cumulative layout shift is 0.
+
+**`TraceRow`.** Five types, each with its own glyph and word: 判断, 工具, 风险发现, 审批, 结果 / 错误. Operator
+guidance is a 判断 variant (hollow diamond, the word 引导, `data-author="operator"`) and is not counted with the
+engine's judgments. Finding rows have an orange left line, 3 px with a cap marker for 严重 and 高; error rows a red
+left line and the word 错误; the current row is one surface level up, never dimmed. Tool rows expand to input and
+output (and say so when the events recorded neither); approval rows are raised surfaces with 批准 and 拒绝. A
+finding or approval stays in the stage where it first appeared.
+
+**Empty states.** An active stage without events lists its real upcoming steps; a session not started explains
+what will appear and offers 启动评估; a failed source names what failed and offers retry; a filter with no match
+offers 清除筛选; a 403 says the account has no permission and offers no retry.
+
+**`TerminalSurface`** replaces `RawView`, `VirtualTerminal` and `TimelinePanel`. Virtualised output of the four
+event sources; follow, paused by scrolling up; find with a hit count and next / previous, 只列匹配行; copy
+(selection or the listed lines); clear the view (the records stay, with 恢复显示); wrap; fullscreen (Escape leaves
+it and returns focus). The status line states what is true: 正在读取, 运行中 with the time of the last read, 等待处理,
+失败, 未开始, 读取中断 when a read fails (the lines already read stay), 读取失败, 没有权限. It is a log reader:
+nothing can be typed into it, as before. 执行监控 lists the steps by stage from the workbench's timeline.
+
+**`RequestsSurface`** replaces `ApiTreePanel` and `BurpBridgePanel`. 接口资产: one list with module, method, state
+and text filters, pages of 50 / 100 / 200, OpenAPI import and CSV / JSON export as before. 代理流量: forwarding
+state, port, device and sample counts in one status bar, start / stop forwarding, the list read every 8 s with a
+pause switch, filters, export. A row opens the request detail in a drawer; Escape closes it and focus returns to
+the row. Unavailable states are stated: no device bound, device offline, forwarding not started, nothing captured
+yet, replay not connected (button disabled with the reason), plugin generation without samples (disabled with the
+reason), and when the proxy state cannot be read the bar says 转发状态未知 instead of a default port and “未启动”.
+
+**`Composer`** (`features/composer/`). Context chips above the input (the session, quoted findings, requests
+quoted from the two request views); a “/” command menu (启动, 暂停, 继续, 停止, 设备探索, 回放盘点, 引用; a command
+that cannot run now is listed with the reason); “@” quotes a finding; the model route read from the catalogue; the
+elapsed timer from the same source as the session header; 发送 and 停止 in the same primary position. States:
+sending, failed (the text is kept, with 重试), no permission (input disabled, no retry), disabled with the reason
+(run in progress, run status still being read, another operation pending). No typing imitation, no particles, no gradient.
+
+**Retired** (after `docs/capability-matrix.md` gained a row for each capability and hook): `SessionOverview.tsx`,
+`workbench/ConversationView.tsx`, `workbench/CaseEntry.tsx`, `workbench/agentAdapter.ts`, `v3/RawView.tsx`,
+`VirtualTerminal.tsx`, `TimelinePanel.tsx`, `ApiTreePanel.tsx`, `BurpBridgePanel.tsx` (2,011 lines), and about 230
+lines of `workbench.css` whose classes no file uses any more.
+
+**Changes of behaviour, all deliberate.** 停止 in the composer goes through the same confirmation as the header
+menu. A failed send is stated in the composer with the text kept (it was a toast). A finding or approval row stays
+in its first stage. The terminal reads new output every 8 s while the run is active (it read once on open); its
+keyword filter is find plus 只列匹配行. The inventory lists every module with a module filter (it showed one
+module at a time). Request and interface details open in a drawer. “+ 线索” dispatched an event nothing listened
+to; it is 引用到引导输入框 now and puts the request above the composer as a chip. The “n 条新事件” jump is a pill
+over the list (in the surface bar it moved the live status when it appeared).
+
+**Shared code touched.** `components/ui/StatusGlyph.tsx`: `StatusText` passes extra attributes to its element.
+`workbench/useWorkbenchData.ts`: `sendClue` returns its result instead of raising a toast; `forbidden` is true when
+every failed source answered 403. `shell/SessionHeader.tsx` and `shell/useElapsed.ts`: the elapsed time is one hook
+used by the header, the composer and the overview. `workbench/model.ts`: an event carries its author.
+
+**Fixtures.** Session 41 gains an operator guidance event, a tool error, six interfaces in two modules and six
+captured requests; session 40 keeps the empty answers. `scripts/check-trace.mjs` is new.
+
+**Open question for cz.** Guidance cannot be sent while a run is active (unchanged from before; the composer
+states the reason). Whether it should be sendable during a run is a product decision.
+
+**Checks (fixtures).**
+
+Every row was run on the final build of this commit.
+
+| Check | Result |
+| --- | --- |
+| `tsc --noEmit`, production build | pass |
+| Token lint | 0 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| T1–T12 of `docs/v3-plan.md` (`check-trace.mjs`, new): stage folding, operator-opened stages kept, pin, follow pause, 200 appended events, focus return, contrast measured on the rows, reduced motion, one pulse, row types, empty states, navigation widths | 149 of 149 |
+| T5 in numbers: 200 events appended while paused | first visible row moved 0 px, scroll position unchanged, cumulative layout shift 0; while following the list stays at its end; 19 rows in the DOM |
+| T8: T1, T4 and T5 again under `prefers-reduced-motion` | no transition or animation over 0.01 ms, the dot static, same results |
+| T9: looping animations | 1 while running (the run-strip dot); 0 while paused, waiting, completed |
+| Composer (same script): position of send and stop, timer, commands, quoting, sending, 500, retry, 403, no decoration | 20 of 20 |
+| Terminal: virtualisation, follow, find, only-hits, wrap, copy, clear, fullscreen and focus return, monitor, failed, interrupted and recovered reads, waiting, failed, not started | 22 of 22 |
+| Requests: inventory, filters, filtered-empty, drawer and focus return, quoting into the composer, traffic, status filter, replay disabled with reason, empty reasons | 11 of 11 |
+| No permission (every read of the session answers 403): trace, overview, terminal, inventory, traffic | 6 of 6 |
+| Workbench shell (`check-workbench-shell.mjs`) | 87 of 87, unchanged |
+| Work surfaces (`check-workbench.mjs`), running session: 20 surfaces × 1440 / 1024 / 760 / 390 × light and dark, keyboard focus on every tab stop, five data states | 0 overflow, 0 errors, 1531 focus stops, 0 without an indicator, 0 covered |
+| Work surfaces, session not started, same matrix | 0 overflow, 0 errors, 1233 focus stops, 0 without an indicator, 0 covered |
+| Routes: 13 pages and 15 sub-views (9 of them workbench) × widths 390 / 760 / 1024 / 1280 / 1440 / 1680, light and dark | 0 overflow, 0 page errors |
+| Data states empty / error / forbidden / slow / stale on the 9 workbench views at 1440 and 390 | 0 overflow, 0 page errors, no blank surface |
+| Requests per route vs the Phase 3 log (`check-requests.mjs --against`) | identical on all 25 routes of the Phase 3 log |
+| Requests of `?view=raw`, `apitree`, `burp` (not in the Phase 3 log) vs a build of the Phase 3 commit, same fixtures | identical (17, 14 and 16 requests) |
+| Redirects (`check-redirects.mjs`) | 28 of 28 |
+| Project domain (`check-projects.mjs`) | 43 of 43 |
+| App shell (`capture-shell.mjs`) | pass, unchanged |
+
+One change to a check: `check-workbench.mjs` measures a focus stop after the frame that follows the key press. On
+the first run it reported one stop of the trace as covered at all four widths (the summary row of the first
+stage). Tabbing to that row scrolls the list to its start, and the pinned copy of the stage row is withdrawn when
+the scroll event is handled, one frame later; measured after that frame the stop is not covered. Nothing else in
+the check changed.
+
+Found by reading the state screenshots of the first run and fixed before the final run: a 403 and a failed read
+said the same sentence on five surfaces; the traffic bar showed a default port and “未启动” when the proxy state
+had not been read; a running session without records was explained as “never run”; the terminal's status line
+reported the state of the live event stream, which it does not read from.
+
+Not changed, and seen while testing: when every read of a session answers 403, the shell's banner (Phase 3) still
+says the data will be retried automatically, and the header still offers 启动.
+
+Main chunk: 71.77 kB (23.83 kB gzip), 71.81 kB after Phase 3; the workbench chunk is 284.22 kB (92.84 kB gzip),
+245.88 kB after Phase 3. Screenshots: `docs/screenshots/v3/phase-4/` (`session*` for the not-started session, the
+running trace, overview, terminal, interface inventory and proxy traffic at 1440 / 1024 / 760 / 390, light and
+dark; `states/` for the five data states of those surfaces at 1440 and 390; `trace/` for the screenshots taken by
+`check-trace.mjs`: folded stages, pin, paused with new entries, expanded tool row, command menu, row types in both
+themes, the four empty states, composer sending / failed / no permission, terminal fullscreen, request drawer, no
+permission).
+
 ### V3 Phase 3 — Workbench shell and inspector
 
 The assessment workbench (`/projects/:pid/sessions/:sid`) has one navigation layer now: the global rail. Under the
