@@ -20,7 +20,7 @@ const results = [];
 const ok = (name, pass, detail = '') => { results.push({ name, pass: !!pass, detail }); console.log(`${pass ? 'ok  ' : 'FAIL'} ${name}${detail ? ' — ' + detail : ''}`); };
 
 const browser = await chromium.launch();
-async function open(route, { width = 1440, theme = 'light', storage = null, fail = null, delay = 0 } = {}) {
+async function open(route, { width = 1440, theme = 'light', storage = null, fail = null, deny = null, delay = 0 } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: out ? 1 : 1, colorScheme: theme });
   await ctx.addInitScript(([t, key, value]) => {
     try {
@@ -36,6 +36,7 @@ async function open(route, { width = 1440, theme = 'light', storage = null, fail
     if (/\/stream$|send_stream$/.test(url.pathname)) return r.fulfill({ status: 200, contentType: 'text/event-stream', body: '' });
     (req.method() === 'GET' ? gets : posts).push(`${req.method()} ${url.pathname}`);
     if (fail && fail.test(url.pathname)) return r.fulfill({ status: 500, contentType: 'application/json', body: '{"detail":"fixture failure"}' });
+    if (deny && deny.test(url.pathname)) return r.fulfill({ status: 403, contentType: 'application/json', body: '{"detail":"fixture: forbidden"}' });
     const body = fixture(req.method(), url);
     if (delay && /\/api\/pentest\/sessions\/\d+/.test(url.pathname)) await new Promise((res) => setTimeout(res, delay));
     return r.fulfill(typeof body === 'string' ? { status: 200, contentType: 'text/plain; charset=utf-8', body } : { status: 200, contentType: 'application/json', body: JSON.stringify(body) });
@@ -243,6 +244,44 @@ for (const width of [1440, 1024, 760, 390]) {
   await bad.page.click('[data-wb-inspector-tab="inspector"]'); await bad.page.waitForTimeout(200);
   await shot(bad.page, 'shell-state-stale-1440-light.png');
   await bad.ctx.close();
+}
+
+// 6c. No permission: every read of the session answers 403. A permission state, never a retry state.
+{
+  const SESSION_READS = /\/api\/pentest\/sessions\/41(\/|$)/;
+  const no = await open(LIVE, { deny: SESSION_READS, storage: JSON.stringify({ open: true, width: 320, tab: 'inspector' }) });
+  const p = no.page;
+  ok('403 on every read: the header status says 无权限', (await text(p, '[data-wb-readout="status"]')).replace(/\s+/g, ' ').includes('无权限') && (await count(p, '[data-wb-readout="status"] [data-status-text="blocked"]')) === 1, await text(p, '[data-wb-readout="status"]'));
+  ok('403 on every read: the run action (start / pause / resume) is disabled and says why', (await p.locator('[data-wb-primary]').isDisabled()) && /无权读取/.test((await p.getAttribute('[data-wb-primary]', 'title')) || ''));
+  const banner = await text(p, '[data-wb-forbidden].wb-degraded');
+  ok('403 on every read: the banner says 当前账号无权读取该会话，请切换账号或联系管理员', banner.includes('当前账号无权读取该会话，请切换账号或联系管理员') && (await count(p, '.wb-degraded button')) === 0, banner);
+  const copy = await p.evaluate(() => { const r = document.querySelector('[data-wb-root]'); return r.innerText + ' ' + [...r.querySelectorAll('[title]')].map((e) => e.getAttribute('title')).join(' '); });
+  ok('403 on every read: no retry wording anywhere in the workbench (text and tooltips)', !/重试|稍后|未加载|读取失败/.test(copy), (copy.match(/.{0,12}(重试|稍后|未加载|读取失败).{0,12}/) || [''])[0]);
+  ok('403 on every read: the live position says 无权限, not 部分未更新', /无权限/.test(await text(p, '[data-wb-live]')) && !/部分未更新|实时|已同步/.test(await text(p, '[data-wb-live]')), await text(p, '[data-wb-live]'));
+  ok('403 on every read: the inspector names the permission and offers no retry', /无权读取/.test(await text(p, '[data-wb-inspector-stale]')) && (await count(p, '[data-wb-inspector-stale] button')) === 0, await text(p, '[data-wb-inspector-stale]'));
+  await p.click('[data-wb-more]'); await p.waitForTimeout(150);
+  const items = await p.locator('[data-v3-mission-start], [data-wb-stop]').evaluateAll((els) => els.map((e) => e.disabled || e.getAttribute('aria-disabled') === 'true'));
+  ok('403 on every read: device exploration, replay inventory and stop are disabled in the menu', items.length === 3 && items.every(Boolean), JSON.stringify(items));
+  await p.keyboard.press('Escape');
+  await p.locator('[data-wb-primary]').click({ force: true }).catch(() => {}); await p.waitForTimeout(200);
+  ok('403 on every read: nothing was posted', no.posts.length === 0 && no.errors.length === 0, no.posts.concat(no.errors).join(', '));
+  await shot(p, 'shell-state-forbidden-1440-light.png');
+  await no.ctx.close();
+  const narrow = await open(LIVE, { deny: SESSION_READS, width: 390 });
+  ok('403 on every read at 390: same statement, no overflow', /无权限/.test(await text(narrow.page, '[data-wb-readout="status"]')) && (await count(narrow.page, '[data-wb-forbidden].wb-degraded')) === 1
+    && (await narrow.page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 1);
+  await shot(narrow.page, 'shell-state-forbidden-390-light.png');
+  await narrow.ctx.close();
+  // One source denied, the rest readable: that source is named as a permission matter; the run stays operable.
+  const part = await open(LIVE, { deny: /\/approvals$/ });
+  const pb = await text(part.page, '[data-wb-degraded]');
+  ok('403 on one source: the banner names it as a permission matter, without retry wording or a retry button', /当前账号无权读取：审批/.test(pb) && !/重试|未加载/.test(pb) && (await count(part.page, '.wb-degraded button')) === 0, pb);
+  ok('403 on one source: the header still states the run and the action is available', /运行中/.test(await text(part.page, '[data-wb-readout="status"]')) && !(await part.page.locator('[data-wb-primary]').isDisabled()));
+  await part.ctx.close();
+  const mixed = await open(LIVE, { deny: /\/approvals$/, fail: /\/timeline$/ });
+  const mb = await text(mixed.page, '[data-wb-degraded]');
+  ok('403 on one source and a failed read of another: each is said for what it is; retry is offered for the failed one only', /无权读取：审批/.test(mb) && /未加载：阶段时间线/.test(mb) && (await count(mixed.page, '.wb-degraded button')) === 1, mb);
+  await mixed.ctx.close();
 }
 
 // 7. Drawer below 1280, bottom sheet at 760 and below: modal, focus trapped, Escape closes and returns focus.

@@ -1,8 +1,10 @@
 // Composer: the control strip of a run, not a chat box. A raised surface under a 2 px rule that takes the brand
 // colour while the input has focus. Context chips sit above the input; the control row below it states the model
 // route (read-only here), the mode and the real elapsed time, and holds the one solid button: send, or stop while
-// the run is running, in the same position and size. Nothing is animated: no typing indicator, no streaming effect.
-import React, { useEffect, useId, useLayoutEffect, useRef } from 'react';
+// the run is running, in the same position and size. Guidance can be sent while the run is running: it is added to
+// the run and stops nothing, so it is a secondary action beside stop (and Ctrl/⌘ + Enter), never the solid button.
+// Nothing is animated: no typing indicator, no streaming effect.
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { Send, Square } from 'lucide-react';
 import { Button, Popover, StatusText, cx, type GlyphKind } from '@/components/ui';
 import { CommandMenu, type MenuRow } from './CommandMenu';
@@ -19,13 +21,16 @@ export interface ComposerProps {
   mode: string;
   /** Run state word, its glyph, and the elapsed time while the run is live. */
   run: { word: string; glyph: GlyphKind; live: boolean; elapsed: string; elapsedSource: string };
-  /** The run is running: the primary button is "stop" and a message cannot be sent. */
+  /** The run is running: the primary button is "stop"; guidance is sent by the secondary action or Ctrl/⌘ + Enter. */
   running: boolean;
   /** Why nothing can be sent right now (first read pending, another action in flight). */
   blocked?: string;
   onSend: (message: string) => Promise<SendResult>;
   onStop: () => void;
 }
+
+/** The modifier of this platform's send shortcut, as it is printed on the key. */
+const MOD = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || '') ? '⌘' : 'Ctrl';
 
 const Cell: React.FC<{ label: string; children: React.ReactNode; className?: string; hook: string }> = ({ label, children, className, hook }) => (
   <div data-composer-cell={hook} className={cx('flex min-w-0 items-center gap-1.5 border-r border-jz-border pr-3 text-meta', className)}>
@@ -35,10 +40,12 @@ const Cell: React.FC<{ label: string; children: React.ReactNode; className?: str
 
 export const Composer: React.FC<ComposerProps> = ({ scope, fixedChips, commands, contextOptions, placeholder, mode, run, running, blocked: blockedProp, onSend, onStop }) => {
   const route = useModelRoute();
-  const c = useComposer({ scope, fixed: fixedChips, commands, contextOptions, canSend: !running && !blockedProp, onSend });
+  const c = useComposer({ scope, fixed: fixedChips, commands, contextOptions, canSend: !blockedProp, onSend });
   // The composer's own send is "an action in flight" for its owner; the button already says so.
   const blocked = c.sending ? undefined : blockedProp;
   const ta = useRef<HTMLTextAreaElement>(null);
+  // Plain Enter was pressed while the run is running: the note spells out how to send until the text changes.
+  const [nudge, setNudge] = useState(false);
   const menuId = useId();
   const noteId = useId();
 
@@ -65,14 +72,18 @@ export const Composer: React.FC<ComposerProps> = ({ scope, fixedChips, commands,
       if (e.key === 'Tab' && c.count) { e.preventDefault(); c.pick(c.index); return; }
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); c.closeMenu(); return; }
     }
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void c.send(); return; }
+    // Ctrl/⌘ + Enter always sends. Plain Enter sends too, except while the run is running: there it would be one
+    // key press between a half-written thought and a live run, so it only points at the two ways to send.
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.nativeEvent.isComposing) { e.preventDefault(); void c.send(); return; }
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (running) setNudge(true); else void c.send(); return; }
     if (e.key === 'ArrowUp' && !c.text) { if (c.recall()) e.preventDefault(); return; }
     if (e.key === 'Escape') { e.preventDefault(); ta.current?.blur(); }
   };
 
   const reason = c.denied ? '当前账号没有向这个会话发送引导的权限。'
     : blocked ? blocked
-    : running && c.text.trim() ? '运行中不能发送引导；暂停后可以发送。'
+    : running && nudge ? `运行中按 ${MOD} + Enter 或点“发送引导”发送。引导会追加到当前运行，不会停止任务。`
+    : running ? `引导会追加到当前运行，不会停止任务 · ${MOD} + Enter 发送`
     : '';
   const state = c.denied ? 'forbidden' : c.error ? 'error' : c.sending ? 'sending' : blocked ? 'disabled' : running ? 'running' : 'idle';
 
@@ -85,7 +96,7 @@ export const Composer: React.FC<ComposerProps> = ({ scope, fixedChips, commands,
           <span className="min-w-0 flex-1 basis-56">
             {c.denied ? '没有权限：服务器拒绝了这次发送（403）。文本保留在输入框里，没有任何内容被发送。' : <>发送失败：{c.error.message}。文本保留在输入框里。</>}
           </span>
-          {!c.denied && <Button size="sm" variant="secondary" onClick={() => void c.send()} disabled={running || !!blocked} data-composer-retry>重试</Button>}
+          {!c.denied && <Button size="sm" variant="secondary" onClick={() => void c.send()} disabled={!!blocked} data-composer-retry>重试</Button>}
         </div>
       )}
       <div className="relative">
@@ -93,7 +104,7 @@ export const Composer: React.FC<ComposerProps> = ({ scope, fixedChips, commands,
           <CommandMenu id={menuId} title={c.menu.type === 'command' ? '命令' : '引用上下文'} rows={rows} index={c.index} onHover={c.setIndex} onPick={c.pick}
             empty={c.menu.type === 'command' ? '没有这个命令。' : contextOptions.length ? '没有匹配的风险发现，或已全部引用。' : '这个会话还没有可引用的风险发现。'} />
         )}
-        <textarea ref={ta} rows={1} value={c.text} onChange={(e) => c.setText(e.target.value)} onKeyDown={onKeyDown} disabled={c.denied}
+        <textarea ref={ta} rows={1} value={c.text} onChange={(e) => { c.setText(e.target.value); setNudge(false); }} onKeyDown={onKeyDown} disabled={c.denied}
           placeholder={placeholder} aria-label="引导输入" data-composer-input data-focus-inset
           role="combobox" aria-expanded={!!c.menu} aria-controls={c.menu ? menuId : undefined} aria-autocomplete="list"
           aria-activedescendant={c.menu && c.count ? `${menuId}-${c.index}` : undefined} aria-describedby={reason ? noteId : undefined}
@@ -129,10 +140,16 @@ export const Composer: React.FC<ComposerProps> = ({ scope, fixedChips, commands,
           {run.live && <span className="font-mono text-mono tnum text-jz-ink" data-composer-timer>{run.elapsed}</span>}
         </div>
         <span id={noteId} data-composer-reason className={cx('min-w-0 flex-1 truncate text-right text-meta', reason ? 'text-jz-ink-2' : 'text-jz-muted max-[760px]:hidden')}>
-          {reason || 'Enter 发送 · Shift+Enter 换行 · / 命令 · @ 引用'}
+          {reason || `Enter 发送 · Shift+Enter 换行 · / 命令 · @ 引用`}
         </span>
         {running ? (
-          <Button className="ml-auto w-[5.5rem] flex-none" icon={<Square size={14} aria-hidden />} onClick={onStop} data-composer-primary="stop" title="停止这次运行（会先确认）">停止</Button>
+          <>
+            <Button variant="secondary" className="ml-auto flex-none" icon={<Send size={14} aria-hidden />} loading={c.sending} disabled={!c.text.trim() || !!blocked || c.denied}
+              onClick={() => void c.send()} data-composer-send-guidance title={`发送引导（${MOD} + Enter）。引导会追加到当前运行，不会停止任务。`}>
+              <span className="max-[480px]:sr-only">发送引导</span>
+            </Button>
+            <Button className="w-[5.5rem] flex-none" icon={<Square size={14} aria-hidden />} onClick={onStop} data-composer-primary="stop" title="停止这次运行（会先确认）">停止</Button>
+          </>
         ) : (
           <Button className="ml-auto w-[5.5rem] flex-none" icon={<Send size={14} aria-hidden />} loading={c.sending} disabled={!c.text.trim() || !!blocked || c.denied}
             onClick={() => void c.send()} data-composer-primary="send">发送</Button>

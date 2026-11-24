@@ -183,13 +183,30 @@ surfaces were rewritten; their reads were kept. What changed:
 | `GET /api/pentest/devices?refresh=…` (`?view=overview`) | Overview, when the shell's device list was empty | Unchanged |
 | `GET …/api_tree` (`?view=apitree`) | Inventory, on open | Unchanged |
 | `GET …/burp/status`, `GET …/burp/plugin?probe=1`, `GET …/events?source=bridge&limit=200` every 8 s (`?view=burp`) | Traffic | Unchanged, including the pause switch |
-| `POST …/clue` | Trace composer | `features/composer`, same body (`{text}`). Context chips are prepended to the text as quoted lines; no new field |
+| `POST …/clue` | Trace composer, not while the run was running | `features/composer`, same body (`{text}`), in every run state. Context chips are prepended to the text as quoted lines; no new field |
 | `POST …/approvals/{id}/decide` | Trace entry | Approval row, same body |
 | `POST …/autopilot/stop` | Header menu, after confirmation | Also the composer's 停止, through the same confirmation |
 
 The run strip, stage stack, execution monitor and the overview's statement, attention list and recent activity are
 computed from data the workbench already loads (`autopilot/status`, `timeline`, `events?source=progress&limit=300`,
 `vulns/grouped`, `approvals`); they issue no request.
+
+Read intervals of the runtime surfaces:
+
+| Surface | What is read | When |
+| --- | --- | --- |
+| Workbench (every view) | session, `autopilot/status`, `timeline`, `events?source=progress&limit=300`, `vulns/grouped`, `approvals` | on open, then every 8 s, whatever the run state (unchanged since Phase 3) |
+| 终端 › 终端输出 | `events?source=hook|progress|evidence|bridge&since_seq=<last seq>&limit=200` | on open from `since_seq=0`; then every 8 s **while the run is running or waiting**; not at all for a run that is not started, paused, completed, failed or stopped (the 重新读取全部输出 button reads once) |
+| 终端 › 执行监控 | no request of its own: the steps come from the workbench's `timeline` read | follows the workbench's 8 s read, so a running step changes state within 8 s |
+| 接口与请求 › 代理流量 | `events?source=bridge&limit=200` | on open, then every 8 s until 暂停读取 is pressed |
+| 接口与请求 › 接口资产 | `api_tree` | on open and on 重试 only |
+| 概览 | `burp/status`, `llm-usage`, `report/summary`, progress pages | on open and on 重试 only |
+
+A 403 on a read is shown as a permission state and is not announced as something that will be retried; the 8 s
+workbench read still runs, so a permission that is granted later shows up without a reload.
+
+`POST …/clue` is accepted while a run is active (the engine reads guidance at its next decision step). Since the
+Phase 4 follow-up the composer sends it in every run state; it issues that one request and no pause, stop or start.
 
 ### `/pentest`
 

@@ -74,7 +74,7 @@ async function open(S, { width = 1440, height = 900, theme = 'light', reduced = 
     if (get && S.bare && /\/vulns\/grouped$/.test(p)) return json({ status: 'ok', cards: [] });
     if (get && /\/approvals$/.test(p)) return json({ status: 'ok', approvals: S.bare ? [] : liveApprovals().map((a) => (S.decided.has(a.id) ? { ...a, state: 'approved' } : a)) });
     if (!get && /\/clue$/.test(p)) { S.clues = [...(S.clues || []), JSON.parse(req.postData() || '{}').text]; if (S.clueDelay) await sleep(S.clueDelay);
-      return S.clue === 403 ? json({ detail: 'fixture: forbidden' }, 403) : S.clue === 500 ? json({ detail: 'fixture: internal error' }, 500) : json({ status: 'ok' }); }
+      return S.clue === 403 ? json({ detail: 'fixture: forbidden' }, 403) : S.clue === 400 ? json({ detail: 'fixture: bad request' }, 400) : S.clue === 500 ? json({ detail: 'fixture: internal error' }, 500) : json({ status: 'ok' }); }
     if (!get && /\/approvals\/([^/]+)\/decide$/.test(p)) { S.decided.add(p.split('/').slice(-2)[0]); return json({ status: 'ok' }); }
     const b = fixture(req.method(), url);
     return typeof b === 'string' ? route.fulfill({ status: 200, contentType: 'text/plain; charset=utf-8', body: b }) : json(b);
@@ -432,8 +432,29 @@ async function composer() {
     const timer = await page.locator('[data-composer-timer]').textContent(); const header = await page.locator('[data-wb-readout="elapsed"], [data-wb-elapsed]').first().textContent().catch(() => '');
     expect(/^\d\d:\d\d:\d\d$/.test(timer || ''), 'running: the composer shows the elapsed time', timer);
     expect(!header || header.includes((timer || '').slice(0, 5)), 'the timer agrees with the session header (same source)', `${timer} / ${header}`);
+    // Guidance while running: added to the run, stop stays the primary button, nothing is paused or restarted.
+    const posts = []; page.on('request', (r) => { if (r.method() !== 'GET' && /\/api\//.test(r.url())) posts.push(new URL(r.url()).pathname.replace(/^.*\/sessions\/41\//, '')); });
+    const note = () => page.locator('[data-composer-reason]').textContent();
+    expect(/引导会追加到当前运行，不会停止任务/.test(await note()) && await page.locator('[data-composer-send-guidance]').isDisabled() && !(await page.locator('[data-composer-input]').isDisabled()),
+      'running: the input is editable, the note says guidance is added to the run, the secondary send waits for text');
     await page.fill('[data-composer-input]', '核对订单接口'); await page.keyboard.press('Enter'); await page.waitForTimeout(300);
-    expect(!(S.clues || []).length && /运行中不能发送/.test(await page.locator('[data-composer-reason]').textContent()), 'running: Enter does not send and the reason is stated');
+    expect(!(S.clues || []).length && /Enter 或点“发送引导”发送/.test(await note()) && await page.inputValue('[data-composer-input]') === '核对订单接口', 'running: plain Enter does not send; the note names the two ways to send');
+    await page.keyboard.press('Control+Enter'); await page.waitForTimeout(500);
+    expect((S.clues || [])[0] === '核对订单接口' && await page.inputValue('[data-composer-input]') === '', 'running: Ctrl+Enter sends the guidance and clears the input', JSON.stringify(S.clues));
+    await page.fill('[data-composer-input]', '第二条：不要动支付接口'); await page.click('[data-composer-send-guidance]'); await page.waitForTimeout(500);
+    expect((S.clues || []).length === 2 && await page.inputValue('[data-composer-input]') === '', 'running: the secondary 发送引导 button sends');
+    expect(posts.every((x) => x === 'clue') && posts.length === 2, 'running: only POST /clue was issued (no pause, stop or start)', posts.join(', '));
+    expect(await page.getAttribute('[data-composer-primary]', 'data-composer-primary') === 'stop' && JSON.stringify(await box(page)) === JSON.stringify(stopBox) && await page.getAttribute('[data-wb-readout="status"] [data-status-text]', 'data-status-text') === 'running',
+      'running: after sending, stop is still the primary button in the same place and the run is still running');
+    S.clue = 400; await page.fill('[data-composer-input]', '第三条引导'); await page.keyboard.press('Control+Enter'); await page.waitForTimeout(500);
+    expect(await state(page) === 'error' && /fixture: bad request/.test(await page.locator('[data-composer-error]').textContent()) && await page.inputValue('[data-composer-input]') === '第三条引导', 'running, 400: the reason from the server is shown, the text is kept');
+    S.clue = 500; await page.click('[data-composer-retry]'); await page.waitForTimeout(500);
+    expect(await state(page) === 'error' && await page.inputValue('[data-composer-input]') === '第三条引导' && await page.locator('[data-composer-retry]').isEnabled(), 'running, 500: failure keeps the text and retry stays available');
+    await shot(page, 'c-running-error');
+    S.clue = 403; await page.click('[data-composer-retry]'); await page.waitForTimeout(500);
+    expect(await state(page) === 'forbidden' && /没有权限/.test(await page.locator('[data-composer-error]').textContent()) && await page.inputValue('[data-composer-input]') === '第三条引导' && await page.locator('[data-composer-retry]').count() === 0,
+      'running, 403: says there is no permission, keeps the text, offers no retry');
+    expect(await page.getAttribute('[data-composer-primary]', 'data-composer-primary') === 'stop' && await page.locator('[data-composer-primary]').isEnabled(), 'running, 403: stop is still available');
     await page.click('[data-composer-primary="stop"]'); await page.waitForTimeout(300);
     expect(await page.getByRole('alertdialog').filter({ hasText: '停止这次运行' }).count() === 1, 'stop asks for confirmation first');
     await page.keyboard.press('Escape'); await ctx.close(); }

@@ -7,6 +7,56 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 4 follow-up — Permission state and guidance while running
+
+Two fixes cz required before Phase 5 (2026-11-24). They replace two statements of the Phase 4 entry below: “Open
+question for cz” and “Not changed, and seen while testing”.
+
+**A 403 on every read is a permission state, not a retry state.** `useWorkbenchData` reports `denied` (the sources
+whose last read answered 403) and `forbidden` (all six of them). With `forbidden`, the session header states
+无权限 (the blocked glyph and the word), the run action (启动 / 暂停 / 继续) is disabled with the reason, device
+exploration, replay inventory and stop are disabled in the menu, the live position says 无权限, and the banner
+reads 当前账号无权读取该会话，请切换账号或联系管理员 with no retry button. Nothing in the workbench says 重试 or
+稍后自动重试 in that state. When only some sources answer 403, the banner, the inspector and the overview name them
+as a permission matter (“当前账号无权读取：审批”) and keep retry for the reads that failed for another reason; the
+header still states the run and its action stays available. The 8 s read continues, so a permission granted later
+appears without a reload.
+
+**Guidance can be sent while the run is running.** `POST /clue` already accepts it. 停止 stays the primary button
+in the same position; 发送引导 is a secondary button beside it (icon only at phone width) and Ctrl/⌘ + Enter
+sends in every state. Plain Enter sends when the run is not running and, during a run, only points at the two ways
+to send. The input stays editable and the note reads 引导会追加到当前运行，不会停止任务. Sending issues `POST /clue`
+and nothing else: the run is not paused, restarted or replaced. A 400 shows the server's reason, a failure keeps
+the text with 重试, a 403 says there is no permission and offers no retry; 停止 stays available in all three.
+
+**The four surfaces that answer an all-403 read show the permission state of the kit** (`PermissionState`: the lock
+and “没有权限读取…”) in the trace, the terminal, the inventory and the overview. They used the error state before,
+which drew the red error mark for something that is not an error.
+
+**Documented.** `docs/request-map.md` lists the read intervals of the runtime surfaces: the terminal output reads
+every 8 s while the run is running or waiting and not otherwise; 执行监控 follows the workbench's 8 s read.
+
+**Checks (fixtures), on the build of this commit.**
+
+Every row was run on the final build of this commit (main chunk 71.77 kB, 23.82 kB gzip). All of it is on
+fixtures; nothing was deployed and the backend was not touched.
+
+| Check | Result |
+| --- | --- |
+| `tsc --noEmit`, production build | pass |
+| Token lint | 0 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| Workbench shell (`check-workbench-shell.mjs`), with the new section “every read of the session answers 403”: header 无权限, the run action disabled, the banner text, no 重试 / 稍后自动重试 anywhere, menu items disabled, at 1440 and 390; a partial 403 keeps the run action and names the sources | 99 of 99 (87 before) |
+| Trace, composer, terminal, requests, permission (`check-trace.mjs`) | 218 of 218 (209 before: the composer group grew from 20 to 29) |
+| Composer in that script: send while running (one `POST /clue`, no pause / stop / start request), Ctrl/⌘ + Enter, plain Enter does not send during a run, 403, 400 with the server's reason, failure keeps the text, 停止 stays primary and available | 29 of 29 |
+| Routes: the 10 session routes and their sub-views × 390 / 760 / 1024 / 1440, light and dark (88 captures) | 0 overflow, 0 page errors |
+| Forbidden state on overview, trace, terminal, requests, traffic at 1440 and 390, light and dark | 0 overflow, 0 page errors; each reads as a permission state |
+| Work surfaces (`check-workbench.mjs`), running session: overview, trace, terminal, requests, findings × 4 widths × 2 themes | 0 overflow, 0 errors, 478 focus stops, 0 without an indicator, 0 covered |
+| Work surfaces, session not started: overview, trace | 0 overflow, 0 errors, 90 focus stops, 0 without an indicator, 0 covered |
+| Requests per route vs the Phase 4 log (`check-requests.mjs --against`) | identical on the 10 session routes |
+
+Screenshots: `docs/screenshots/v3/phase-4/followup/`.
+
 ### V3 Phase 4 — Overview, runtime and composer
 
 The overview, the Agent trace, the terminal, the interface and traffic views and the guidance input of the

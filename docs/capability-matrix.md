@@ -177,7 +177,7 @@ endpoints are the ones those components read; nothing was added. Checked by `app
 | ConversationView | Follow, “N 条新进展” | Follow in the surface bar, pin on the run strip, the new-entries pill over the list | `data-wb-follow`, `data-strip-pin`, `data-wb-new-entries` |
 | ConversationView | Jump to a stage from the inspector | Same (`#wb-conv-<stage>` anchors kept); also from the run strip and the overview | `data-strip-stage`, `data-wb-stage-jump` |
 | (new) | Filter the trace | Row type and stage selects, 清除筛选 | `data-trace-filter`, `data-trace-stage-filter`, `data-trace-clear` |
-| ConversationView | Composer: operator clue (`POST /clue`) | `features/composer/Composer`: context chips, “/” commands, “@” to quote a finding, model route, elapsed timer, send and stop in one position | `data-composer`, `data-composer-input`, `data-composer-primary`, `data-composer-chip`, `data-composer-menu`, `data-composer-route`, `data-composer-timer` |
+| ConversationView | Composer: operator clue (`POST /clue`) | `features/composer/Composer`: context chips, “/” commands, “@” to quote a finding, model route, elapsed timer, send and stop in one position; while running, 发送引导 beside 停止 | `data-composer`, `data-composer-input`, `data-composer-primary`, `data-composer-send-guidance`, `data-composer-chip`, `data-composer-menu`, `data-composer-route`, `data-composer-timer` |
 | RawView | 终端输出 / 执行监控 switch | Segments of `TerminalSurface` | `data-v3-raw-tab` |
 | VirtualTerminal | Recorded output of four sources (`GET /events?source=hook|progress|evidence|bridge`, pages of 200) | `TerminalSurface`, virtualised | `data-terminal`, `data-terminal-line`, `data-terminal-source`, `data-terminal-level` |
 | VirtualTerminal | Keyword filter | Find with a hit count and next / previous; 只列匹配行 gives the old filter | `data-terminal-find`, `data-terminal-hits`, `data-terminal-only-hits` |
@@ -198,8 +198,13 @@ Changes of behaviour, all deliberate:
 
 - Stopping from the composer goes through the same confirmation as 更多操作 › 停止任务.
 - A send failure is stated in the composer with the text kept (it was a toast); a 403 disables the input and says so.
-- Guidance still cannot be sent while the run is active (as before); the composer states the reason instead of
-  hiding the input.
+- Guidance can be sent while the run is active (Phase 4 follow-up; it could not before). 停止 stays the primary
+  button; 发送引导 is a secondary button beside it, and Ctrl/⌘ + Enter sends. Plain Enter does not send during a
+  run. The composer says 引导会追加到当前运行，不会停止任务; sending issues `POST /clue` and nothing else.
+- When every read of a session answers 403 the shell shows a permission state (Phase 4 follow-up): header status
+  无权限, the run action and the menu's run actions disabled, the banner 当前账号无权读取该会话，请切换账号或联系管理员,
+  the live position 无权限, and no retry wording. A single source that answers 403 is named as a permission matter
+  in the banner, the inspector and the overview; retry is offered only for reads that failed otherwise.
 - A finding or approval row stays in the stage where it first appeared instead of moving to the current stage.
 - The terminal reads new output every 8 s while the run is active (it read once on open).
 - The inventory lists every module at once with a module filter (it showed one module at a time).
