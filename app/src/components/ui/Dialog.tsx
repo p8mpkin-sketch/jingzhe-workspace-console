@@ -19,7 +19,11 @@ export function useOverlay(open: boolean, onClose: () => void, opts: { closeOnEs
       (first || panel).focus();
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && esc) { e.stopPropagation(); closeRef.current(); return; }
+      if (e.key === 'Escape' && esc) {
+        // A menu or popover open inside the overlay takes this Escape; the next one closes the overlay.
+        if (panel?.querySelector('[aria-haspopup][aria-expanded="true"]')) return;
+        e.stopPropagation(); closeRef.current(); return;
+      }
       if (e.key !== 'Tab' || !panel) return;
       const els = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((el) => el.offsetParent !== null);
       if (els.length === 0) { e.preventDefault(); return; }

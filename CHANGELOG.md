@@ -7,6 +7,109 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 5 — Findings and evidence
+
+The findings surface and the evidence surface of the assessment workbench are rebuilt in the A+ design. New code is
+in `app/src/features/pentest/workbench/surfaces/findings/` and `…/surfaces/evidence/`. The shell, the overview, the
+runtime surfaces and the composer are as the Phase 4 follow-up left them; artifacts, reports and tasks are
+untouched. Findings and evidence remain two primary tabs. No endpoint was added and no read moved: the request set
+of every route is identical to the Phase 4 log.
+
+**`FindingsSurface`** replaces `FindingsView`. A virtualised table (priority, title, status, confidence, evidence,
+instances) with the detail beside it from 1280 px and in a drawer below. The toolbar states the scope (“7 条 · 12
+个实例 · 1 条已降噪”, or “显示 a / b 条” under a filter) and holds search, three filters (priority, status, evidence
+type) and sorting. A finding is identified by the orange finding line; its severity is said four ways: line width
+(3 px for P0 / P1, 2 px for P2 / P3), the cap marker on P0 / P1, a shape per level, and the P label with its word.
+Status is a glyph and a word. Nothing on the surface is red and nothing is dimmed: an excluded finding reads as
+excluded by its glyph and word. The current row sits on surface-2. Keys: ↑ ↓ Home End move, Enter opens the detail
+and moves focus into it, Escape closes it and returns focus to the row, Space ticks the row.
+
+**One primary triage action.** `TriageButton` is a split button: 确认 is the action, 排除 and 恢复待复核 are in its
+menu, and the outcome a finding already has is not offered. It is in the detail and is the only primary control of
+the surface. The three separate buttons and “批量确认（预览）”, which wrote nothing, are gone. Ticking rows shows a
+secondary split button for those rows; it asks in a dialog that lists the rows and the instance count and says how
+to undo, then writes each instance through the existing `POST …/vulns/state`. A refused write (403) is stated as a
+permission matter, stops the remaining writes and offers no retry; another failure names what was not written and
+offers retry for exactly those rows.
+
+**`FindingDetail`** carries everything the old detail carried, in five tabs: 概览 (verdict summary, code position,
+value, purpose and call chain, linked interfaces, credential group, the instance switch), 证据 (every instance with
+proof, review steps and raw evidence), 代码, 轨迹 (with the way to the Agent trace) and 修复. Shadow 对照 is the same
+surface on `vulns/grouped?source=shadow`: read-only, without tick boxes or a triage control, and it says so.
+
+**`EvidenceSurface`** replaces `GraphView` and `EvidenceMatrix`. The relation graph is progressive: it opens as
+groups by type (folded when there are more than 40 nodes, each with its count and first names), a picked node is
+shown with its direct neighbours only, 展开邻居 adds one more hop of one neighbour, and 设为检查对象 rebuilds the
+picture around another node. The whole graph is drawn only on 完整布局. 列表 is one click away, is the default at
+1024 px and below, and is the only view at 480 px and below; at 760 px the graph and the side panel are stacked. The
+side panel shows a node's attributes, its relations and the findings linked to it, with 打开风险发现. A finding node
+keeps the orange line; the edges of the selected node are 2 px in the active line colour and nothing is dimmed. The
+inspect target is shared by the evidence tabs: chosen in the graph or in the coverage matrix, it is shown above 事实
+图谱, 应用结构, 凭据 and 覆盖矩阵, and the graph opens on it.
+
+**`CoverageMatrix`** keeps the table of evidence type by priority (counted in findings) and the stage distribution,
+and adds a reason to every row: the stage is still running (with steps done), has not run, is out of scope, the test
+device is offline, the run waits for a login, the stage failed, the evidence was collected but is not in the text,
+or the reason cannot be judged because the run status could not be read (a 403 says so). The reasons come from the
+run state the workbench already reads. A row opens the findings with and without that kind of evidence.
+
+**Data states.** Both surfaces have loading, empty, error (with retry), forbidden (a permission state without retry
+wording), stale (the earlier content stays under a strip that says it may be old) and filtered-empty. A list or
+graph that was not read states no count and offers no filter: “0 条” appears only when the read answered with none.
+
+**Kept.** 主发现, Shadow 对照, 规则卡 and 聚类 under 风险发现; 关系图, 事实图谱 and 应用结构 under 证据关系; 凭据; 覆盖
+矩阵. Every `?view=` id resolves as before, so no redirect was added. `CredentialsView`, `ClustersView` and
+`FactGraphView` keep their content and requests; a 403 on their read now says 没有权限读取… without retry.
+
+**Also changed.** `useOverlay`: inside a drawer or dialog, Escape closes an open menu first and the overlay on the
+next press (it closed both). `model.ts`: `confidenceOf`, and `normalizeGraph` now reads the severity of a finding
+node (every folded node was P3). `workbench.css` lost the 43 classes of the retired views. `docs/v3-plan.md` lists
+`GraphView` as modified; it is retired instead, with every capability accounted for in
+`docs/capability-matrix.md` (“Findings and evidence (V3 Phase 5)”). Fixtures: session 41 now has 8 grouped findings,
+3 Shadow findings and a relation graph of 50 raw nodes (`scripts/fixtures/evidence.mjs`); the trace checks pin the
+two findings they were written against. With nodes in the fixture, the focus check found that the legacy canvas of
+应用结构 (`AttackCanvas`) showed no focus ring on a node (the library removes the outline) and that its edges were
+tab stops lying under the nodes: a node now takes the token focus ring and edges are no longer tab stops. The retry
+buttons of `ClustersView`, `FactGraphView` and `CredentialsView` are secondary, so a failed read does not put a
+second primary control on the surface. New: `scripts/check-findings-evidence.mjs`; `capture.mjs --views` also
+captures the seven findings and evidence sub-views.
+
+**Checks (fixtures), on the build of this commit.**
+
+Every row was run on the final build of this commit (main chunk 71.85 kB, 23.85 kB gzip; 71.77 kB before. Workbench
+chunk 322.92 kB, 107.16 kB gzip; 308.30 kB before). All of it is on fixtures; nothing was deployed and the backend
+was not touched.
+
+| Check | Result |
+| --- | --- |
+| `tsc --noEmit`, production build | pass |
+| Token lint | 0 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| Findings (`check-findings-evidence.mjs`, new): structure and scope line, the four severity encodings in light and dark, status as glyph and word, nothing red and nothing dimmed, current row on surface-2, one primary triage control, keyboard, single and bulk writes with confirmation, write 403 (no retry, stops after the first) and 500 (retry for the rows not written), read 403 and 500, Shadow read-only, 1024 / 760 / 390 with the drawer, 400 rows virtualised, loading / empty / de-noised / stale / filtered-empty, `?finding=` deep link | 125 of 125 |
+| Evidence (same script): grouped overview, neighbourhood, one-hop expansion, 设为检查对象, nothing dimmed and nothing red in light and dark, full layout only on request, list / search / type filter, list by default at 1024 and below, stacked at 760, list only at 390, open the finding, shared inspect target, coverage reasons (running, device offline, waiting for login, static only, not started, 403, no stage data, idle session), the five adapter views keep their `?view=` and state a 403 without retry | 98 of 98 |
+| Trace, composer, terminal, requests, permission (`check-trace.mjs`) | 218 of 218 |
+| Workbench shell (`check-workbench-shell.mjs`) | 99 of 99 |
+| Project domain (`check-projects.mjs`) | 43 of 43 |
+| Redirects (`check-redirects.mjs`) | 28 of 28 |
+| App shell (`capture-shell.mjs`) | pass |
+| Routes: 35 routes and sign-in × 390 / 760 / 1024 / 1440, light and dark (288 captures), including the 9 findings and evidence views | 0 overflow, 0 page errors |
+| Empty, error, forbidden, slow, stale on the 16 workbench views at 1440 and 390, light and dark (320 captures) | 0 overflow, 0 page errors |
+| Work surfaces (`check-workbench.mjs`), running session: 20 surfaces × 4 widths × 2 themes | 0 overflow, 0 errors, 1744 focus stops, 0 without an indicator, 0 covered |
+| Work surfaces, session not started: 20 surfaces × 4 widths × 2 themes | 0 overflow, 0 errors, 1180 focus stops, 0 without an indicator, 0 covered |
+| Requests per route vs the Phase 4 log (`check-requests.mjs --against`) | identical on the 28 routes of that log |
+| Requests of the 7 sub-views that log does not have (Shadow, rule cards, clusters, facts, structure, credentials, coverage) vs a build of the previous commit | identical |
+
+**Not rebuilt in this phase.** 规则卡 (`VulnsPanel`) and 应用结构 (`AttackCanvas`) are still the V2 components
+inside the V3 frame, although `docs/v3-plan.md` lists both as modified in Phase 5. 规则卡 keeps its own layout, its
+English severity pills and a status select per instance, which is a second way to set the state of a finding next
+to the split button of 主发现; a write that fails there is kept as a local value with a note. 应用结构 keeps its emoji
+type marks and the wording “战果”; this phase only gave it the focus ring. Both pass the overflow and focus
+checks above. Also unchanged, in the shell: the 风险发现 tab shows the count “0” when the session cannot be
+read.
+
+Screenshots: `docs/screenshots/v3/phase-5/` (the 9 views at 4 widths in both themes), `…/phase-5/surfaces/`
+(interaction states from the new script) and `…/phase-5/states/` (the five data states).
+
 ### V3 Phase 4 follow-up — Permission state and guidance while running
 
 Two fixes cz required before Phase 5 (2026-11-24). They replace two statements of the Phase 4 entry below: “Open

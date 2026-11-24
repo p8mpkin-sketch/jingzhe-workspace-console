@@ -669,6 +669,8 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
         .ac-flow-pending path { stroke-dasharray: 2 3 !important; }
         .ac-flow-tried path { stroke-dasharray: 6 4 !important; stroke: rgb(var(--jz-brand)) !important; }
         .react-flow__attribution { display: none; }
+        /* A node is a tab stop (Enter selects it); the library removes its outline, so the kit's focus ring is restored. */
+        .react-flow__node.selectable:focus-visible, .react-flow__node:focus-visible { outline: var(--jz-focus-width) solid var(--jz-focus); outline-offset: var(--jz-focus-offset); }
       `}</style>
       <div className="flex items-center gap-2 pb-1.5 text-meta">
         <button data-canvas-chain onClick={() => setChainIdx(chainIdx == null ? 0 : (chainIdx + 1) % Math.max(chains.length, 1))}
@@ -691,7 +693,7 @@ const Flow: React.FC<{ sid: number }> = ({ sid }) => {
           nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes} colorMode={theme}
           onNodeClick={onNodeClick} onNodeDoubleClick={onNodeDoubleClick} onPaneClick={onPaneClick}
-          minZoom={0.25} maxZoom={4} nodesConnectable={false} elevateNodesOnSelect={false}
+          minZoom={0.25} maxZoom={4} nodesConnectable={false} elevateNodesOnSelect={false} edgesFocusable={false}
           proOptions={{ hideAttribution: true }}
         >
           <Background variant={BackgroundVariant.Dots} gap={18} size={1} color={cssVar('--jz-border', 0.9)} />

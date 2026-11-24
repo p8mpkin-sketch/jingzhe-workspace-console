@@ -1,6 +1,7 @@
 // Dev-only API fixtures for screenshot capture. NOT imported by src, NOT bundled.
 // Shapes are inferred from src/types/api.ts and the fields each page reads; they are
 // not an authoritative API contract. Unknown endpoints fall back to `{}`.
+import { liveCards, shadowCards, baseCards, liveGraph, liveFacts, liveCredentials } from './evidence.mjs';
 const now = Math.floor(Date.now() / 1000);
 const pkgs = ['com.example.compass', 'com.example.wallet', 'com.example.launcher', 'com.example.gallery',
   'com.example.notes', 'com.example.music', 'com.example.weather', 'com.example.reader'];
@@ -127,7 +128,8 @@ export const routes = [
   ['GET', /^\/api\/pentest\/projects\/\d+\/runs$/, { runs }],
   ['GET', /^\/api\/pentest\/sessions$/, sessions],
   ['GET', /^\/api\/pentest\/sessions\/\d+$/, (u) => sessions.find((s) => String(s.id) === u.pathname.split('/')[4]) || sessions[0]],
-  ['GET', /^\/api\/pentest\/sessions\/\d+\/vulns\/grouped$/, { status: 'ok', cards: [{ rule_id: 'R-001', title: '示例发现: 明文传输', severity: 'high', masvs: 'MASVS-NETWORK-1', instance_count: 2, states: { confirmed: 2 }, instances: [{ id: 'f1', state: 'confirmed', severity: 'high', evidence: 'GET http://…' }, { id: 'f2', state: 'confirmed', severity: 'high' }] }, { rule_id: 'R-002', title: '示例发现: 调试标志开启', severity: 'medium', instance_count: 1, states: { candidate: 1 }, instances: [{ id: 'f3', state: 'candidate', severity: 'medium' }] }] }],
+  // The running session carries the larger set (findings and evidence surfaces); every other session keeps the two base cards.
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/vulns\/grouped$/, (u) => ({ status: 'ok', cards: sidOf(u) !== LIVE_SID ? baseCards : u.searchParams.get('source') === 'shadow' ? shadowCards : liveCards })],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/vulns$/, (u) => findingsOf(Number(u.pathname.split('/')[4]))],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/report\/summary$/, (u) => { const i = Number(u.pathname.split('/')[4]) - 40; return { risk_score: [72, 35, 0, 12, 48, 5][i] ?? 20, risk_level: ['高', '中', '低', '低', '中', '低'][i] ?? '低', confirmed_high: [3, 1, 0, 0, 2, 0][i] ?? 0, counts: { confirmed: 4 + i, pending: 2, excluded: 1 } }; }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/auth_matrix$/, (u) => { const sid = Number(u.pathname.split('/')[4]); return sid === 43 ? { status: 'error', rows: [] } : matrixOf(sid); }],
@@ -137,11 +139,12 @@ export const routes = [
   ['GET', /^\/api\/pentest\/sessions\/\d+\/timeline$/, (u) => (sidOf(u) === LIVE_SID ? { steps: liveSteps } : {})],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/security-rounds$/, (u) => (sidOf(u) === LIVE_SID ? liveRounds : {})],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/events/, (u) => (sidOf(u) !== LIVE_SID ? { events: [], cursor: 0, total: 0 } : u.searchParams.get('source') === 'progress' ? { events: liveEvents(), cursor: 0, total: 0 } : u.searchParams.get('source') === 'bridge' ? { events: liveFlows(), cursor: 0, total: 0 } : { events: [], cursor: 0, total: 0 })],
-  ['GET', /^\/api\/pentest\/sessions\/\d+\/graph$/, { status: 'ok', nodes: [], edges: [] }],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/graph$/, (u) => (sidOf(u) === LIVE_SID ? liveGraph() : { status: 'ok', nodes: [], edges: [] })],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/fact-graph$/, (u) => (sidOf(u) === LIVE_SID ? liveFacts : {})],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/api_tree$/, (u) => (sidOf(u) === LIVE_SID ? liveApiTree : { status: 'ok', groups: [] })],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/packer$/, { status: 'ok', family: 'example-shell', family_confidence: 82, family_evidence: ['lib/arm64-v8a/libshell.so'], kb_status: { verified: 1 }, vectors: { frida: [{ evidence: 'strstr(maps, "frida")', match: 'frida', file: 'lib/arm64-v8a/libshell.so' }], root: [{ evidence: 'access("/system/xbin/su")', match: 'su', file: 'classes2.dex' }], emulator: [], ptrace: [{ evidence: 'ptrace(PTRACE_TRACEME)', match: 'ptrace', file: 'lib/arm64-v8a/libshell.so' }], proxy: [], debug: [] }, libs: [{ so: 'libshell.so', size: 1843200, sigs: [{ family: 'example-shell', sig: 'JNI_OnLoad stub' }] }] }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/llm-usage$/, { by_phase: [{ phase: 'P1', count: 14, prompt_tokens: 41200, completion_tokens: 6800, avg_latency_ms: 2100 }, { phase: 'P3', count: 9, prompt_tokens: 22050, completion_tokens: 4100, avg_latency_ms: 1850 }], by_skill: [], total: { count: 23, prompt_tokens: 63250, completion_tokens: 10900, avg_latency_ms: 2002, synthetic_count: 0, real_count: 23 } }],
-  ['GET', /^\/api\/pentest\/sessions\/\d+\/credentials$/, { source: 'report csv', items: [{ category: 'API Key', name: 'MAP_SDK_KEY', value: 'AIza…example', location: 'res/values/strings.xml', purpose: '地图 SDK', risk: '中', fix: '改为服务端下发' }, { category: 'Endpoint', name: 'STAGING_HOST', value: 'https://staging.example.com', location: 'com/example/net/Env.java:18', purpose: '预发环境', risk: '低', fix: '发布包移除预发地址' }] }],
+  ['GET', /^\/api\/pentest\/sessions\/\d+\/credentials$/, (u) => (sidOf(u) === LIVE_SID ? liveCredentials : { source: 'report csv', items: [{ category: 'API Key', name: 'MAP_SDK_KEY', value: 'AIza…example', location: 'res/values/strings.xml', purpose: '地图 SDK', risk: '中', fix: '改为服务端下发' }, { category: 'Endpoint', name: 'STAGING_HOST', value: 'https://staging.example.com', location: 'com/example/net/Env.java:18', purpose: '预发环境', risk: '低', fix: '发布包移除预发地址' }] })],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/burp\/status$/, (u) => ({ status: 'ok', device_online: true, device_serial: 'emulator-5554', oracle: false, bridge: sidOf(u) === LIVE_SID, o_port: 18080, b_port: 18081, burp: false, phone_proxy: sidOf(u) === LIVE_SID ? '10.0.2.2:18081' : '' })],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/burp\/plugin$/, { status: 'ok', generated: false, file_name: null, mtime: null, samples: { ok: false, runs: 1, unique_pairs: 3, usable_cipher: 2, usable_mac: 0, custom: 0, reason: '样本不足：至少需要 8 组明密文样本' } }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/vulns\/clusters$/, { real: 3, clusters: 2, noise: 0, reduction: 0.33, items: [{ cluster_id: 'c1', count: 2, family: 'cleartext-transport', host: 'api.example.com', path_template: '/v1/user/{id}', title: '示例发现: 明文传输', confirmed: 2 }, { cluster_id: 'c2', count: 1, family: 'debug-flag', host: '', path_template: '', title: '示例发现: 调试标志开启', confirmed: 0 }] }],

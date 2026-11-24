@@ -9,6 +9,7 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolve as fixture, liveSteps, liveApprovals, stamp } from './fixtures/api.mjs';
+import { baseCards } from './fixtures/evidence.mjs';
 
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const base = arg('base', 'http://localhost:4173/v2/');
@@ -71,7 +72,8 @@ async function open(S, { width = 1440, height = 900, theme = 'light', reduced = 
       const all = events(S).filter((e) => e.seq > since).sort((x, y) => x.seq - y.seq); const pg = all.slice(0, limit);
       return json({ events: pg, cursor: pg.length ? pg[pg.length - 1].seq : since, truncated: all.length > pg.length, total: all.length });
     }
-    if (get && S.bare && /\/vulns\/grouped$/.test(p)) return json({ status: 'ok', cards: [] });
+    // The trace checks count the two base findings; the larger set of the findings surface is not their subject.
+    if (get && /\/vulns\/grouped$/.test(p)) return json({ status: 'ok', cards: S.bare ? [] : baseCards });
     if (get && /\/approvals$/.test(p)) return json({ status: 'ok', approvals: S.bare ? [] : liveApprovals().map((a) => (S.decided.has(a.id) ? { ...a, state: 'approved' } : a)) });
     if (!get && /\/clue$/.test(p)) { S.clues = [...(S.clues || []), JSON.parse(req.postData() || '{}').text]; if (S.clueDelay) await sleep(S.clueDelay);
       return S.clue === 403 ? json({ detail: 'fixture: forbidden' }, 403) : S.clue === 400 ? json({ detail: 'fixture: bad request' }, 400) : S.clue === 500 ? json({ detail: 'fixture: internal error' }, 500) : json({ status: 'ok' }); }

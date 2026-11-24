@@ -208,6 +208,22 @@ workbench read still runs, so a permission that is granted later shows up withou
 `POST …/clue` is accepted while a run is active (the engine reads guidance at its next decision step). Since the
 Phase 4 follow-up the composer sends it in every run state; it issues that one request and no pause, stop or start.
 
+### V3 Phase 5: findings and evidence
+
+No endpoint was added and no read moved. The request set of every route is identical to the Phase 4 log
+(`docs/screenshots/v3/phase-4/requests.json`, `check-requests.mjs --against`).
+
+| Request | Before | Now |
+| --- | --- | --- |
+| `GET …/vulns/grouped` (`?source=shadow` on Shadow 对照) | Workbench read, every 8 s | Unchanged. `FindingsSurface` and `CoverageMatrix` take the findings from the workbench; they issue no read |
+| `POST …/vulns/state` `{id, state}` | One request per instance when 确认发现 / 排除 / 标记待复核 was pressed on one finding | Same request and body from the split button. For several ticked rows the same request is sent per instance after the confirmation dialog, in sequence; the first 403 stops the rest. Instances that exist only locally (`LOCAL-`, `IMP-`) are not sent and are named |
+| `GET …/graph` | Once when 关系图 opens, again on 刷新 | Unchanged. Folding into groups, the neighbourhood, the list and the full layout are computed from that one answer |
+| `GET …/fact-graph`, `GET …/credentials`, `GET …/vulns/clusters?limit=50`, `GET …/api_tree` | On opening their view | Unchanged |
+
+The coverage reasons use `autopilot/status` (already read by the workbench) and the device list of the shell's
+poll; they issue no request. A 403 on `vulns/grouped`, `graph`, `fact-graph`, `credentials` or `vulns/clusters` is
+shown as a permission state without retry wording; a 403 on `POST …/vulns/state` likewise.
+
 ### `/pentest`
 
 | Method | Route | Query | Expected unique count on load | Polling interval |

@@ -210,12 +210,70 @@ Changes of behaviour, all deliberate:
 - The inventory lists every module at once with a module filter (it showed one module at a time).
 - Request and interface details open in a drawer, not in a side pane.
 
+## Findings and evidence (V3 Phase 5)
+
+`workbench/FindingsView.tsx`, `workbench/GraphView.tsx` and `workbench/EvidenceMatrix.tsx` are replaced by
+`workbench/surfaces/findings/` (`FindingsSurface`, `FindingDetail`, `TriageButton`, `marks`) and
+`workbench/surfaces/evidence/` (`EvidenceSurface`, `GraphOverview`, `EvidenceList`, `CoverageMatrix`, `graph`). The
+three old files are deleted; every capability they carried has an owner below. Findings and evidence stay two
+primary tabs. The endpoints are the ones those components read; nothing was added. Checked by
+`app/scripts/check-findings-evidence.mjs` (fixtures).
+
+| Old component | Capability (request) | Owner now | Hooks |
+| --- | --- | --- | --- |
+| FindingsView | List of findings from `vulns/grouped`, de-noised ones left out | `FindingsSurface`: a virtualised grid (priority, title, status, confidence, evidence, instances); the scope statement counts findings, instances and de-noised | `data-findings`, `data-findings-grid`, `data-findings-scope`, `data-finding-row` |
+| FindingsView | Priority chip in colour | Four encodings on every row: the orange finding line (3 px for P0 / P1, 2 px for P2 / P3), the cap marker on P0 / P1, a shape per level, the P label with its word. Status is a glyph and a word. No red, no dimming | `data-row-priority-level`, `data-row-cap`, `data-severity`, `data-review` |
+| FindingsView | Search, priority filter, status filter, 清除 | Kept, plus a filter by evidence type and sorting by priority, title or instances; a filtered-empty statement with 清除筛选 | `data-findings-toolbar`, `data-sort`, `data-findings-clear` |
+| FindingsView | Master / detail: the list stays, the detail does not push it away; “← 列表” below the breakpoint | Pane beside the table from 1280 px; a drawer below. The current row sits on surface-2 | `data-findings-pane`, `data-current` |
+| FindingsView | Previous / next finding | Kept in the detail head, with the position (n / total) | `data-finding-prev`, `data-finding-next` |
+| FindingsView | 确认发现, 排除, 标记待复核 as three buttons (`POST …/vulns/state` per instance) | One split button: 确认 is the primary action, 排除 and 恢复待复核 are in its menu; the outcome a finding already has is not offered. Same request, same body | `data-triage="primary"`, `data-triage-primary`, `data-triage-more`, `data-triage-item` |
+| FindingsView | 批量确认（预览）: a control that wrote nothing | Removed. Ticking rows shows a secondary split button for those rows; it asks in a dialog that lists the rows and the instance count, then writes each instance through the same `POST …/vulns/state` | `data-finding-check`, `data-findings-all`, `data-findings-picked`, `data-triage="secondary"`, `data-findings-confirm` |
+| FindingsView | 取消选中 | 取消选择 beside the count of ticked rows; Escape closes the detail | `data-findings-bulk` |
+| FindingsView | Detail: 判定摘要, 代码位置, 变量, 提取值, 熵值 | Detail › 概览 | `data-credential-summary`, `data-credential-value` |
+| FindingsView | Detail: 用途与调用链, 类型, 作用域, 置信度, 调用链, 关联接口, 同文件凭据组 | Detail › 概览 | `data-credential-context`, `data-credential-group` |
+| FindingsView | Detail: 触发实例 (实例 ID, 状态, 静态证明), one instance at a time | Detail › 概览, with the instance switch; Detail › 证据 lists every instance with 证明, 复核步骤 and 原始证据 | `data-finding-instances`, `data-finding-tab` |
+| FindingsView | Detail: 代码发现信息 (文件, 行号, 语言, 作用域, context) | Detail › 代码 | `data-finding-tab="code"` |
+| FindingsView | Detail: 决策轨迹, with a way to the trace | Detail › 轨迹, 打开 Agent 轨迹 | `data-finding-open-trace` |
+| FindingsView | Detail: 修复建议 | Detail › 修复 | `data-finding-tab="fix"` |
+| FindingsView | Shadow 对照 (`vulns/grouped?source=shadow`), read-only | The same surface with `source="shadow"`: no tick boxes, no triage control, and a line that says it is read-only | `data-findings="shadow"`, `data-findings-readonly`, `data-finding-readonly` |
+| FindingsView | Empty and filtered-empty text | loading, empty (with the de-noised count when that is the reason), error with retry, forbidden without retry, stale, filtered-empty | `data-state` on `[data-findings]`, `data-findings-stale`, `data-findings-notice` |
+| (new) | Keyboard | ↑ ↓ Home End move the row, Enter opens the detail and moves focus into it, Escape closes it and returns focus to the row, Space ticks the row | `data-row-index` |
+| (new) | A write that is refused or fails | 403: stated as a permission matter, the remaining writes are not sent, no retry. Other failures: what was not written, with 重试 for exactly those rows | `data-findings-notice`, `data-findings-retry` |
+| GraphView | Relation graph from `GET …/graph`, read when the view opens | `EvidenceSurface`, same single read; a failed re-read keeps the graph and says it may be old | `data-evidence="graph"`, `data-ev-stale` |
+| GraphView | Layered canvas of every node at once | Progressive: groups by type first (folded when there are more than 40 nodes, each with its count and first names), then one node with its direct neighbours, then one more hop on request. The whole graph is drawn only on 完整布局 | `data-ev-lanes`, `data-ev-lane`, `data-ev-neighbourhood`, `data-ev-expand`, `data-ev-full`, `data-ev-view` |
+| GraphView | Semantic zoom 0.5x 聚合 / 0.9x 节点 / 1.3x 详情 | Replaced by the three views 总览 / 列表 / 完整布局: aggregation is the grouped overview, node level is the neighbourhood, detail is the side panel | `data-ev-mode` |
+| GraphView | Search (节点 / 规则 / 域名), 清空搜索 | Kept; the scope statement says how many of the nodes are shown | `data-ev-toolbar`, `data-ev-scope` |
+| GraphView | 图层筛选 by type | 类型 menu with a count per type | `data-ev-types`, `data-ev-types-menu` |
+| GraphView | Node inspector over the canvas: 类型, 归属, 版本, 状态, 优先级, 规则, 实例 | Side panel beside the graph (under it at 760 px): 属性, 关联的风险发现, 关系 | `data-ev-side`, `data-ev-panel`, `data-ev-linked`, `data-ev-relations` |
+| GraphView | 点击下钻: open the finding of a finding node | 打开风险发现 in the panel and on every linked finding; opens Findings with `?finding=` | `data-ev-open-finding` |
+| GraphView | 复制 ID | 复制标识 | `data-ev-copy` |
+| GraphView | 定位同类 | 筛选同名 (puts the node's name in the search) and 设为检查对象 (rebuilds the picture around the node) | `data-ev-same`, `data-ev-focus` |
+| GraphView | 刷新 / 重新加载 | 刷新 in the toolbar; 重新读取 in the empty state; 重试 in the error state | `data-ev-reload` |
+| GraphView | Empty text | loading, empty, error with retry, forbidden without retry, stale, filtered-empty, truncated note | `data-state` on `[data-evidence="graph"]` |
+| (new) | List view of the graph | 列表: type, name, id, relations, linked findings; the default at 1024 px and below, the only view at 480 px and below | `data-ev-list`, `data-ev-row`, `data-ev-listonly` |
+| (new) | One selection for the evidence tabs | The inspect target chosen in the graph or in the coverage matrix is shown above 事实图谱, 应用结构, 凭据 and 覆盖矩阵, and the graph opens on it | `data-ev-target`, `data-ev-crumb` |
+| EvidenceMatrix | Evidence type × priority, counted in findings; 合计; 未标注 | `CoverageMatrix`, same counting rule and the same sentence about it | `data-coverage-table`, `data-coverage-row`, `data-coverage-scope` |
+| EvidenceMatrix | 阶段分布 | Kept under the table | `data-coverage-stages` |
+| (new) | Why a kind of evidence is missing | A reason per row from the run state the workbench already reads: stage still running (with steps done), not run, out of scope, device offline, waiting for login, failed, collected but not in the text, or unknown because the run status could not be read (a 403 says so) | `data-coverage-reason`, `data-reason` |
+| (new) | The findings behind a number | A row opens two lists (with and without that evidence); a finding there can be made the inspect target or opened | `data-coverage-detail`, `data-cov-list`, `data-cov-finding`, `data-coverage-target` |
+| CredentialsView, ClustersView, FactGraphView | Error text for any failed read | A 403 says 没有权限读取… without retry; other failures keep 重试. Content and requests unchanged | `data-state="forbidden"`, `data-state="error"` |
+
+Changes of behaviour, all intended:
+
+- A finding is opened on arrival only where the detail has its own pane (from 1280 px). Below that the table is
+  shown first and a row opens the drawer.
+- Triage of one finding is immediate, as before. Triage of several rows is new and always asks first.
+- A read-only source shows no triage control at all (it showed disabled buttons).
+- Inside a drawer or dialog, Escape closes an open menu first and the overlay on the next press (`useOverlay`).
+- `docs/v3-plan.md` lists `GraphView` as modified. It is retired instead: nothing of its canvas is reused, and its
+  capabilities are the rows above.
+
 ## Shared owners (kept on purpose)
 
 | Job | Renderings | Why both stay |
 | --- | --- | --- |
-| Findings list | Findings › 主发现 (workbench list) and Findings › 规则卡 (VulnsPanel) | 规则卡 carries local notes, import / export, MASVS filter and per-card code board that the main list does not have. Merging them needs a product decision; 主发现 stays the default. |
-| Graph | Evidence › Relation graph › 关系图 and › 应用结构 (AttackCanvas) | Different data: session relation graph versus application structure with source slices. |
+| Findings list | Findings › 主发现 (`FindingsSurface`) and Findings › 规则卡 (VulnsPanel) | 规则卡 carries local notes, import / export, MASVS filter and per-card code board that the main list does not have. Merging them needs a product decision; 主发现 stays the default. |
+| Graph | Evidence › Relation graph › 关系图 (`EvidenceSurface`) and › 应用结构 (AttackCanvas) | Different data: session relation graph versus application structure with source slices. |
 
 ## Inspector ownership
 
@@ -229,7 +287,9 @@ surfaces) nor the run status, current stage, elapsed time or pending count (thos
 Verified with fixtures (`app/scripts/fixtures/api.mjs`, production preview build): every `?view=` id in the
 table resolves and renders, including error, forbidden, slow and empty variants (`scripts/check-workbench.mjs`).
 The shell itself (one navigation layer, header readouts, tabs, surface bar, the three inspector layouts, keyboard
-and focus) is covered by `scripts/check-workbench-shell.mjs`.
+and focus) is covered by `scripts/check-workbench-shell.mjs`. The findings and evidence surfaces (encodings, keyboard,
+triage requests, permission states, the progressive graph, coverage reasons) are covered by
+`scripts/check-findings-evidence.mjs`.
 
 Real backend (Phase 17, `docs/screenshots/phase-17/`): VulnsPanel state change, import and export, AttackCanvas
 source slice, mission start and status all verified. The clusters view was part of the 65 s read audit
