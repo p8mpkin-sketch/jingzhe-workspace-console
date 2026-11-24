@@ -7,6 +7,37 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 5 acceptance fix — No count on the 风险发现 tab without permission
+
+Acceptance of `0f63183` was blocked by one defect: when every read of the session answered 403, the 风险发现 tab of
+the workbench still showed “0” while the banner said 当前账号无权读取该会话. A “0” there reads as “there are no
+findings”, which the account was never told. This commit fixes that and nothing else.
+
+`WorkbenchPage` passes no count to `WorkbenchTabs` when the session is forbidden (`data.forbidden`) or the findings
+read was refused (`data.denied` includes 发现). The same holds when the permission is withdrawn after findings were
+read: the earlier number is no longer shown. A readable session without findings still shows 0, a readable session
+shows its count, and no number is shown while the first read is pending. No fixture data stands in for a refused
+read and no permission is loosened; no request, endpoint or contract changed.
+
+New: `app/scripts/check-findings-tab-count.mjs` (fixtures), 33 checks in six groups: every read 403 (light, dark,
+390), only the findings read 403 with the other surfaces still usable, a readable session, a readable session
+without findings, the pending first read, and a permission withdrawn after a good read. On the build of `0f63183`
+11 of the 33 fail (the tab reads “风险发现 0”, and “风险发现 7” after the permission is withdrawn); on this build all pass.
+
+| Check (fixtures, build of this commit) | Result |
+| --- | --- |
+| `npm run build` (`tsc --noEmit` and production build); main chunk 71.85 kB, 23.86 kB gzip; workbench chunk 322.16 kB, 107.32 kB gzip | pass |
+| Token lint (`npm run lint:tokens`) | 0 |
+| Tab count (`check-findings-tab-count.mjs`, new) | 33 of 33 |
+| Findings and evidence (`check-findings-evidence.mjs`): rule cards R1–R9 70, structure canvas S1–S6 47 (117 of 117), findings 125, evidence 98 | 340 of 340 |
+| Workbench shell (`check-workbench-shell.mjs`) | 99 of 99 |
+| No-permission group of `check-trace.mjs` (`--only PERM`) | pass |
+
+Not changed, because it is not a permission matter and was not part of the blocker: when the findings read fails
+for another reason (for example a 500) before anything was read, the tab also shows “0”, next to the banner that
+says 发现 was not loaded. Screenshots and the report: `docs/screenshots/v3/phase-5/followup/tab-count/`. All of it on
+fixtures; nothing was deployed.
+
 ### V3 Phase 5 follow-up — Rule cards and application structure
 
 `docs/v3-plan.md` lists 规则卡 and 应用结构 as modified in Phase 5, and the Phase 5 commit left both as V2 components
@@ -101,7 +132,8 @@ Screenshots: `docs/screenshots/v3/phase-5/followup/` (the two views at 4 widths 
 forbidden, slow and stale at 1440 and 390 in both themes) and the reports of this pass. The files
 `session-rulecards-*` and `session-structure-*` one level up show the two views as the Phase 5 commit left them.
 
-Still unchanged, in the shell: the 风险发现 tab shows the count “0” when the session cannot be read.
+Still unchanged, in the shell: the 风险发现 tab shows the count “0” when the session cannot be read. (Fixed in the
+acceptance fix above.)
 
 ### V3 Phase 5 — Findings and evidence
 

@@ -1,0 +1,172 @@
+{
+ "base": "fixtures",
+ "total": 33,
+ "failed": 0,
+ "results": [
+  {
+   "name": "A @1440 light 403 on every read: the tab text is exactly 风险发现",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "A @1440 light 403 on every read: no digit and no count element on the tab",
+   "pass": true,
+   "detail": "digits \"\", count elements 0"
+  },
+  {
+   "name": "A 403 on every read: the banner states the permission (the tab does not contradict it)",
+   "pass": true,
+   "detail": "当前账号无权读取该会话，请切换账号或联系管理员。"
+  },
+  {
+   "name": "A 403 on every read: no tab carries a number",
+   "pass": true,
+   "detail": "概览 | 运行 | 风险发现 | 证据 | 产物 | 报告"
+  },
+  {
+   "name": "A 403 on every read: still no number with the tab selected",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "A 403 on every read: the findings surface states the permission and no count",
+   "pass": true,
+   "detail": "没有权限读取风险发现 当前账号不能读取这个会话的风险发现，所以这里没有内容。请切换账号或联系管理员。"
+  },
+  {
+   "name": "A 403 on every read: nothing was posted, no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A @1440 dark 403 on every read: the tab text is exactly 风险发现",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "A @1440 dark 403 on every read: no digit and no count element on the tab",
+   "pass": true,
+   "detail": "digits \"\", count elements 0"
+  },
+  {
+   "name": "A @390 light 403 on every read: the tab text is exactly 风险发现",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "A @390 light 403 on every read: no digit and no count element on the tab",
+   "pass": true,
+   "detail": "digits \"\", count elements 0"
+  },
+  {
+   "name": "A @390 no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "B 403 on the findings read only: the tab text is exactly 风险发现, no 0",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "B the banner names 发现 as a permission matter, without retry wording",
+   "pass": true,
+   "detail": "当前账号无权读取：发现。"
+  },
+  {
+   "name": "B the header still states the run and the run action is available",
+   "pass": true,
+   "detail": "状态\n运行中"
+  },
+  {
+   "name": "B the overview is drawn",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "B the runtime surface shows the trace",
+   "pass": true,
+   "detail": "9 trace rows"
+  },
+  {
+   "name": "B the composer is usable",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "B the evidence surface opens",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "B the findings surface is a permission state: no retry, no “0 条”",
+   "pass": true,
+   "detail": "没有权限读取风险发现 当前账号不能读取这个会话的风险发现，所以这里没有内容。请切换账号或联系管理员。"
+  },
+  {
+   "name": "B still no number with the tab selected",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "B no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "C readable session: the tab shows a count",
+   "pass": true,
+   "detail": "\"风险发现 7\""
+  },
+  {
+   "name": "C the count is the number of findings the surface lists",
+   "pass": true,
+   "detail": "tab 7, scope \"7 条 · 12 个实例 · 1 条已降噪\", rows 7"
+  },
+  {
+   "name": "C no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D readable session without findings: the tab shows 0",
+   "pass": true,
+   "detail": "\"风险发现 0\""
+  },
+  {
+   "name": "D the surface is the empty state, not a permission state",
+   "pass": true,
+   "detail": "empty"
+  },
+  {
+   "name": "D no banner about permission",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E while the first read is pending: no number",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "E after the read answers: the count",
+   "pass": true,
+   "detail": "\"风险发现 7\""
+  },
+  {
+   "name": "F before the permission is withdrawn: the count",
+   "pass": true,
+   "detail": "\"风险发现 7\""
+  },
+  {
+   "name": "F after the findings read answers 403: no number, although findings were read earlier",
+   "pass": true,
+   "detail": "\"风险发现\""
+  }
+ ]
+}

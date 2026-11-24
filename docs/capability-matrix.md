@@ -344,7 +344,9 @@ surfaces) nor the run status, current stage, elapsed time or pending count (thos
 Verified with fixtures (`app/scripts/fixtures/api.mjs`, production preview build): every `?view=` id in the
 table resolves and renders, including error, forbidden, slow and empty variants (`scripts/check-workbench.mjs`).
 The shell itself (one navigation layer, header readouts, tabs, surface bar, the three inspector layouts, keyboard
-and focus) is covered by `scripts/check-workbench-shell.mjs`. The findings and evidence surfaces (encodings, keyboard,
+and focus) is covered by `scripts/check-workbench-shell.mjs`. The count on the 风险发现 tab (none without
+permission to read the findings, 0 only for a readable session without findings) is covered by
+`scripts/check-findings-tab-count.mjs`. The findings and evidence surfaces (encodings, keyboard,
 triage requests, permission states, the progressive graph, coverage reasons, and since the Phase 5 follow-up the
 rule cards and the structure canvas) are covered by `scripts/check-findings-evidence.mjs`.
 
