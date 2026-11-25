@@ -8,6 +8,9 @@
 //   D  a readable session without findings          → 0
 //   E  while the first read is pending              → no number, then the count
 //   F  the findings read answers 403 after a good read (permission withdrawn) → the number goes away
+//   G  the first findings read fails (500)         → no number; it appears when the read recovers
+//   H  the findings read fails after a good read   → the earlier number goes away; it returns on recovery
+//   I  the findings read is refused, then allowed  → no number, then the count
 // Needs `npx vite preview --port 4173`. Usage: node scripts/check-findings-tab-count.mjs [--out dir] [--base url]
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -29,17 +32,18 @@ const FINDINGS_READ = /\/api\/pentest\/sessions\/41\/vulns\/grouped$/;
 const browser = await chromium.launch();
 // `deny` answers 403, `over` may answer a request itself, `delay` holds the session reads back. Nothing here loosens
 // a permission or invents data for a refused read: a 403 stays a 403 for the page.
-async function open(route, { width = 1440, theme = 'light', deny = null, over = null, delay = 0, wait = 1400 } = {}) {
+async function open(route, { width = 1440, theme = 'light', deny = null, fail = null, over = null, delay = 0, wait = 1400 } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: theme });
   await ctx.addInitScript((t) => { try { localStorage.setItem('token', 'fixture-token'); localStorage.setItem('apksec-theme', t); } catch {} }, theme);
   const page = await ctx.newPage();
-  const state = { deny, errors: [], posts: [] };
+  const state = { deny, fail, errors: [], posts: [] };
   page.on('pageerror', (e) => state.errors.push(e.message));
   await page.route('**/api/**', async (r) => {
     const req = r.request(); const url = new URL(req.url());
     if (/\/stream$|send_stream$/.test(url.pathname)) return r.fulfill({ status: 200, contentType: 'text/event-stream', body: '' });
     if (req.method() !== 'GET') state.posts.push(`${req.method()} ${url.pathname}`);
     if (state.deny && state.deny.test(url.pathname)) return r.fulfill({ status: 403, contentType: 'application/json', body: '{"detail":"fixture: forbidden"}' });
+    if (state.fail && state.fail.test(url.pathname)) return r.fulfill({ status: 500, contentType: 'application/json', body: '{"detail":"fixture failure"}' });
     const own = over ? over(req.method(), url) : undefined;
     const body = own !== undefined ? own : fixture(req.method(), url);
     if (delay && SESSION_READS.test(url.pathname)) await new Promise((res) => setTimeout(res, delay));
@@ -153,6 +157,61 @@ for (const [width, theme] of [[1440, 'light'], [1440, 'dark'], [390, 'light']]) 
   await page.waitForFunction(() => /无权读取：发现/.test(document.querySelector('[data-wb-degraded]')?.textContent || ''), null, { timeout: 15000 }).catch(() => {});
   const after = await tab(page);
   ok('F after the findings read answers 403: no number, although findings were read earlier', after.text === '风险发现' && after.count === 0, JSON.stringify(after.text));
+  await ctx.close();
+}
+
+// The tab text once it matches (the workbench reads again every 8 s), or what it says when the wait runs out.
+const tabWhen = async (page, re) => {
+  await page.waitForFunction((src) => new RegExp(src).test((document.querySelector('[data-wb-tab="findings"]')?.innerText || '').replace(/\s+/g, ' ').trim()), re.source, { timeout: 15000 }).catch(() => {});
+  return tab(page);
+};
+
+// G. The first findings read fails for another reason than permission.
+{
+  const { ctx, page, state } = await open(LIVE, { fail: FINDINGS_READ });
+  const t = await tab(page);
+  ok('G first findings read fails (500): the tab text is exactly 风险发现, no 0', t.text === '风险发现' && t.count === 0, JSON.stringify(t.text));
+  const banner = await text(page, '[data-wb-degraded]');
+  ok('G the banner says 发现 was not loaded and offers retry (a failure, not a permission matter)', /未加载：发现/.test(banner) && !/无权/.test(banner) && (await count(page, '.wb-degraded button')) === 1, banner.replace(/\s+/g, ' '));
+  ok('G the other surfaces keep working: the run is stated and the action is available', /运行中/.test(await text(page, '[data-wb-readout="status"]')) && !(await page.locator('[data-wb-primary]').isDisabled()));
+  await shot(page, 'tab-count-first-read-failed-1440-light.png');
+  state.fail = null;
+  const back = await tabWhen(page, /^风险发现 \d+$/);
+  ok('G when the read recovers: the count appears', /^风险发现 \d+$/.test(back.text) && Number(back.digits) > 0, JSON.stringify(back.text));
+  ok('G no page error', state.errors.length === 0, state.errors.join('; '));
+  await ctx.close();
+}
+
+// H. The findings read fails after a good read: the earlier number is not kept as if it still held.
+{
+  const { ctx, page, state } = await open(LIVE);
+  const before = await tab(page);
+  ok('H before the failure: the count', /^风险发现 \d+$/.test(before.text), JSON.stringify(before.text));
+  state.fail = FINDINGS_READ;
+  const during = await tabWhen(page, /^风险发现$/);
+  ok('H after the findings read fails: no number', during.text === '风险发现' && during.count === 0, JSON.stringify(during.text));
+  state.fail = null;
+  const back = await tabWhen(page, /^风险发现 \d+$/);
+  ok('H when the read recovers: the same count returns', back.text === before.text, `${JSON.stringify(before.text)} → ${JSON.stringify(back.text)}`);
+  await ctx.close();
+}
+
+// I. The findings read is refused first and allowed later (permission granted).
+{
+  const { ctx, page, state } = await open(LIVE, { deny: FINDINGS_READ });
+  const before = await tab(page);
+  ok('I while the findings read is refused: no number', before.text === '风险发现' && before.count === 0, JSON.stringify(before.text));
+  state.deny = null;
+  const back = await tabWhen(page, /^风险发现 \d+$/);
+  ok('I after the permission is granted: the count appears without a reload', /^风险发现 \d+$/.test(back.text) && Number(back.digits) > 0, JSON.stringify(back.text));
+  ok('I the permission banner is gone', (await count(page, '[data-wb-degraded], [data-wb-forbidden]')) === 0);
+  // All reads refused, then allowed.
+  state.deny = SESSION_READS;
+  const gone = await tabWhen(page, /^风险发现$/);
+  ok('I every read refused later: no number', gone.text === '风险发现', JSON.stringify(gone.text));
+  state.deny = null;
+  const again = await tabWhen(page, /^风险发现 \d+$/);
+  ok('I allowed again: the count returns', again.text === back.text, JSON.stringify(again.text));
   await ctx.close();
 }
 

@@ -7,6 +7,28 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 6 pre-fix — The 风险发现 tab count only after a read that answered
+
+The count on the 风险发现 tab of the workbench is shown only when the last read of the findings answered. Refused
+(403), failed for any other reason (for example a 500) or still pending for the first time, the tab carries no
+number: “0” would say there are none, and an earlier number would say it still holds. The number returns with the
+next read that answers (the workbench reads every 8 s), also when a permission is granted later. An answered read
+with no findings says 0. No permission, request or contract changed, and no fixture data stands in for a failed
+read. This closes the case the acceptance fix below left open.
+
+`app/scripts/check-findings-tab-count.mjs` now has 46 checks in nine groups: every read refused; only the findings
+read refused; readable session; readable session without findings; first read pending; permission withdrawn after
+a good read; first read failed, then recovered; read failed after a good read, then recovered; refused then allowed
+(the findings read alone, and every read).
+
+| Check (fixtures, build of this commit) | Result |
+| --- | --- |
+| `npm run build`; main chunk 71.85 kB, 23.87 kB gzip; workbench chunk 322.16 kB, 107.32 kB gzip | pass |
+| Token lint | 0 |
+| Tab count (`check-findings-tab-count.mjs`) | 46 of 46 |
+| Findings and evidence (`check-findings-evidence.mjs`), of which rule cards and structure canvas 117 of 117 | 340 of 340 |
+| Workbench shell (`check-workbench-shell.mjs`) | 99 of 99 |
+
 ### V3 Phase 5 acceptance fix — No count on the 风险发现 tab without permission
 
 Acceptance of `0f63183` was blocked by one defect: when every read of the session answered 403, the 风险发现 tab of

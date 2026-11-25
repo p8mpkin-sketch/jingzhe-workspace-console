@@ -1,6 +1,6 @@
 {
  "base": "fixtures",
- "total": 33,
+ "total": 46,
  "failed": 0,
  "results": [
   {
@@ -167,6 +167,71 @@
    "name": "F after the findings read answers 403: no number, although findings were read earlier",
    "pass": true,
    "detail": "\"风险发现\""
+  },
+  {
+   "name": "G first findings read fails (500): the tab text is exactly 风险发现, no 0",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "G the banner says 发现 was not loaded and offers retry (a failure, not a permission matter)",
+   "pass": true,
+   "detail": "部分数据源未加载：发现。已展示可用数据，稍后自动重试。 立即重试"
+  },
+  {
+   "name": "G the other surfaces keep working: the run is stated and the action is available",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "G when the read recovers: the count appears",
+   "pass": true,
+   "detail": "\"风险发现 7\""
+  },
+  {
+   "name": "G no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "H before the failure: the count",
+   "pass": true,
+   "detail": "\"风险发现 7\""
+  },
+  {
+   "name": "H after the findings read fails: no number",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "H when the read recovers: the same count returns",
+   "pass": true,
+   "detail": "\"风险发现 7\" → \"风险发现 7\""
+  },
+  {
+   "name": "I while the findings read is refused: no number",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "I after the permission is granted: the count appears without a reload",
+   "pass": true,
+   "detail": "\"风险发现 7\""
+  },
+  {
+   "name": "I the permission banner is gone",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "I every read refused later: no number",
+   "pass": true,
+   "detail": "\"风险发现\""
+  },
+  {
+   "name": "I allowed again: the count returns",
+   "pass": true,
+   "detail": "\"风险发现 7\""
   }
  ]
 }
