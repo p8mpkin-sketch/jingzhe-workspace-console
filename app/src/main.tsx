@@ -5,6 +5,7 @@ import App from './app/App';
 import { ThemeProvider } from './theme/ThemeContext';
 import { Toaster, ToastProvider, ToastContainer } from './components/ui';
 import './styles/index.css';
+import './styles/print.css';
 
 // R118-2 补丁: 旧标签页跨重建后懒加载旧 hash 分包 404(vite:preloadError)——自动整页重载一次
 // 拉取新 index.html 即愈;sessionStorage 一次性守卫防重载循环。

@@ -1,0 +1,2047 @@
+{
+  "total": 340,
+  "failed": 0,
+  "pageErrors": [],
+  "results": [
+    {
+      "group": "F1",
+      "name": "the findings tab mounts the findings surface, once",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F1",
+      "name": "the scope statement counts findings, instances and de-noised",
+      "pass": true,
+      "detail": "7 条 · 12 个实例 · 1 条已降噪"
+    },
+    {
+      "group": "F1",
+      "name": "7 rows, the de-noised finding is not listed",
+      "pass": true,
+      "detail": "示例发现: 硬编码密钥 | 示例发现: 明文传输 | 示例发现: 匿名可访问个人资料接口 | 示例发现: 调试标志开启 | 示例发现: 可导出组件未设权限 | 示例发现: 备份未关闭 | 示例发现: 日志输出敏感字段，标题特意写得很长，用来检查表格和详情在窄宽度下的截断与换行"
+    },
+    {
+      "group": "F1",
+      "name": "rows are ordered by priority",
+      "pass": true,
+      "detail": "P0,P1,P1,P2,P2,P3,P3"
+    },
+    {
+      "group": "F1",
+      "name": "table and detail side by side at 1440: the table stays, the detail is a pane beside it",
+      "pass": true,
+      "detail": "{\"grid\":[220,903.203125,683.203125],\"pane\":[903.203125,1440,536.796875],\"heads\":[\"优先级\",\"标题\",\"状态\",\"置信\",\"证据\",\"实例\"]}"
+    },
+    {
+      "group": "F1",
+      "name": "columns: priority, title, status, confidence, evidence, instances",
+      "pass": true,
+      "detail": "优先级,标题,状态,置信,证据,实例"
+    },
+    {
+      "group": "F1",
+      "name": "the first finding is open in the pane",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F1",
+      "name": "no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F2",
+      "name": "light: every row carries the orange finding line",
+      "pass": true,
+      "detail": "rgb(158, 50, 8) vs rgb(158, 50, 8)"
+    },
+    {
+      "group": "F2",
+      "name": "light: severity by line width: 3 px for P0 and P1, 2 px for P2 and P3",
+      "pass": true,
+      "detail": "P0:3px P1:3px P1:3px P2:2px P2:2px P3:2px P3:2px"
+    },
+    {
+      "group": "F2",
+      "name": "light: severity by cap marker: P0 and P1 only",
+      "pass": true,
+      "detail": "P0:true P1:true P1:true P2:false P2:false P3:false P3:false"
+    },
+    {
+      "group": "F2",
+      "name": "light: severity by marker shape and P-label: four shapes, each row says its P level",
+      "pass": true,
+      "detail": "P0严重 | P1高 | P1高 | P2中 | P2中 | P3低 | P3低"
+    },
+    {
+      "group": "F2",
+      "name": "light: status is a glyph and a word",
+      "pass": true,
+      "detail": "待复核,已确认,待复核,待复核,部分确认,待复核,已排除"
+    },
+    {
+      "group": "F2",
+      "name": "light: nothing in a row is dimmed by opacity, the excluded finding included",
+      "pass": true,
+      "detail": "0,0,0,0,0,0,0"
+    },
+    {
+      "group": "F2",
+      "name": "light: no red anywhere on the surface: a finding is never red",
+      "pass": true,
+      "detail": "0 elements"
+    },
+    {
+      "group": "F2",
+      "name": "dark: every row carries the orange finding line",
+      "pass": true,
+      "detail": "rgb(250, 156, 108) vs rgb(250, 156, 108)"
+    },
+    {
+      "group": "F2",
+      "name": "dark: severity by line width: 3 px for P0 and P1, 2 px for P2 and P3",
+      "pass": true,
+      "detail": "P0:3px P1:3px P1:3px P2:2px P2:2px P3:2px P3:2px"
+    },
+    {
+      "group": "F2",
+      "name": "dark: severity by cap marker: P0 and P1 only",
+      "pass": true,
+      "detail": "P0:true P1:true P1:true P2:false P2:false P3:false P3:false"
+    },
+    {
+      "group": "F2",
+      "name": "dark: severity by marker shape and P-label: four shapes, each row says its P level",
+      "pass": true,
+      "detail": "P0严重 | P1高 | P1高 | P2中 | P2中 | P3低 | P3低"
+    },
+    {
+      "group": "F2",
+      "name": "dark: status is a glyph and a word",
+      "pass": true,
+      "detail": "待复核,已确认,待复核,待复核,部分确认,待复核,已排除"
+    },
+    {
+      "group": "F2",
+      "name": "dark: nothing in a row is dimmed by opacity, the excluded finding included",
+      "pass": true,
+      "detail": "0,0,0,0,0,0,0"
+    },
+    {
+      "group": "F2",
+      "name": "dark: no red anywhere on the surface: a finding is never red",
+      "pass": true,
+      "detail": "0 elements"
+    },
+    {
+      "group": "F3",
+      "name": "light: the current row is on surface-2 and is the only one",
+      "pass": true,
+      "detail": "[[true,\"rgb(238, 237, 232)\"],[false,\"rgba(0, 0, 0, 0)\"],[false,\"rgba(0, 0, 0, 0)\"],[false,\"rgba(0, 0, 0, 0)\"],[false,\"rgba(0, 0, 0, 0)\"],[false,\"rgba(0, 0, 0, 0)\"],[false,\"rgba(0, 0, 0, 0)\"]]"
+    },
+    {
+      "group": "F3",
+      "name": "light: clicking another row moves the current row and the pane",
+      "pass": true,
+      "detail": "current 3"
+    },
+    {
+      "group": "F3",
+      "name": "dark: the current row is on surface-2 and is the only one",
+      "pass": true,
+      "detail": "[[true,\"rgb(33, 36, 42)\"],[false,\"rgba(0, 0, 0, 0)\"],[false,\"rgba(0, 0, 0, 0)\"],[false,\"rgba(0, 0, 0, 0)\"],[false,\"rgba(0, 0, 0, 0)\"],[false,\"rgba(0, 0, 0, 0)\"],[false,\"rgba(0, 0, 0, 0)\"]]"
+    },
+    {
+      "group": "F3",
+      "name": "dark: clicking another row moves the current row and the pane",
+      "pass": true,
+      "detail": "current 3"
+    },
+    {
+      "group": "F4",
+      "name": "one primary triage control on the surface: 确认, in the detail",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F4",
+      "name": "no second triage pattern: no “批量确认（预览）”, no per-row buttons",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F4",
+      "name": "the other outcomes are in the menu of the same button: 排除, 恢复待复核",
+      "pass": true,
+      "detail": "排除,恢复待复核"
+    },
+    {
+      "group": "F4",
+      "name": "the outcome the finding already has is not offered",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F4",
+      "name": "Escape closes the menu and leaves the detail open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F4",
+      "name": "ticking rows adds a secondary control for those rows; still one primary",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F5",
+      "name": "one tab stop in the table: the focused row",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F5",
+      "name": "↓ ↓ moves focus to the third row",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F5",
+      "name": "moving focus does not change the finding in the pane",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F5",
+      "name": "↑ moves back",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F5",
+      "name": "End and Home go to the last and first row",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F5",
+      "name": "Enter opens the detail of that row and moves focus into it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F5",
+      "name": "Escape closes the detail and returns focus to the row",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F5",
+      "name": "Space ticks the row",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F5",
+      "name": "Space again unticks it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F5",
+      "name": "the focused row shows a focus indicator",
+      "pass": true,
+      "detail": "solid 2px none"
+    },
+    {
+      "group": "F6",
+      "name": "确认 on one finding writes each of its instances through POST /vulns/state",
+      "pass": true,
+      "detail": "f31:confirmed,f32:confirmed"
+    },
+    {
+      "group": "F6",
+      "name": "and issues nothing else",
+      "pass": true,
+      "detail": "/api/pentest/sessions/41/vulns/state /api/pentest/sessions/41/vulns/state"
+    },
+    {
+      "group": "F6",
+      "name": "no confirmation dialog for one finding",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F6",
+      "name": "排除 from the menu writes the same instances as excluded",
+      "pass": true,
+      "detail": "f31:excluded,f32:excluded"
+    },
+    {
+      "group": "F7",
+      "name": "triage of several rows asks first, in a dialog that lists the rows",
+      "pass": true,
+      "detail": "确认 2 条风险发现 下面 2 条的 4 个实例会被标记为“已确认”： P0 严重 示例发现: 硬编码密钥 待复核 · 2 个实例 P1 高 示例发现: 匿名可访问个人资料接口 待复核 · 2 个实例 可以撤回：之后用同一个按钮把这些行改成别的结论，或恢复为待复核。 取消 确认 2 条"
+    },
+    {
+      "group": "F7",
+      "name": "the dialog states the instance count and that it can be undone",
+      "pass": true,
+      "detail": "确认 2 条风险发现 下面 2 条的 4 个实例会被标记为“已确认”： P0 严重 示例发现: 硬编码密钥 待复核 · 2 个实例 P1 高 示例发现: 匿名可访问个人资料接口 待复核 · 2 个实例 可以撤回：之后用同一个按钮把这些行改成别的结论，或恢复为待复核。 取消 确认 2 条"
+    },
+    {
+      "group": "F7",
+      "name": "nothing is written before the answer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F7",
+      "name": "取消 writes nothing and keeps the ticks",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F7",
+      "name": "排除 for several rows asks in the same dialog",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F7",
+      "name": "confirming writes every instance of the listed rows",
+      "pass": true,
+      "detail": "f31:excluded,f32:excluded,f71:excluded,f72:excluded"
+    },
+    {
+      "group": "F7",
+      "name": "afterwards the dialog is closed and the ticks are cleared",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F8",
+      "name": "a refused write (403) is stated as a permission matter",
+      "pass": true,
+      "detail": "当前账号无权处置风险发现 服务拒绝了“确认”这个操作（403），这些行没有改动：示例发现: 硬编码密钥。请切换账号或联系管理员。 知道了"
+    },
+    {
+      "group": "F8",
+      "name": "and offers no retry",
+      "pass": true,
+      "detail": "当前账号无权处置风险发现 服务拒绝了“确认”这个操作（403），这些行没有改动：示例发现: 硬编码密钥。请切换账号或联系管理员。 知道了"
+    },
+    {
+      "group": "F8",
+      "name": "the first refusal stops the remaining writes",
+      "pass": true,
+      "detail": "1 requests"
+    },
+    {
+      "group": "F8",
+      "name": "a failed write (500) says what was not written and offers retry",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F8",
+      "name": "retry writes the same instances and clears the notice",
+      "pass": true,
+      "detail": "f31:confirmed,f32:confirmed"
+    },
+    {
+      "group": "F8",
+      "name": "a refused read (403) is a permission state",
+      "pass": true,
+      "detail": "没有权限读取风险发现 当前账号不能读取这个会话的风险发现，所以这里没有内容。请切换账号或联系管理员。"
+    },
+    {
+      "group": "F8",
+      "name": "with no retry wording and no triage control",
+      "pass": true,
+      "detail": "没有权限读取风险发现 当前账号不能读取这个会话的风险发现，所以这里没有内容。请切换账号或联系管理员。"
+    },
+    {
+      "group": "F8",
+      "name": "and no count or filter for a list that was not read",
+      "pass": true,
+      "detail": "没有权限读取风险发现 当前账号不能读取这个会话的风险发现，所以这里没有内容。请切换账号或联系管理员。"
+    },
+    {
+      "group": "F8",
+      "name": "a failed read (500) is an error state with retry",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F8",
+      "name": "retry reads again and lists the findings",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F9",
+      "name": "Shadow 对照 reads vulns/grouped?source=shadow",
+      "pass": true,
+      "detail": "/api/pentest/sessions/41/vulns/grouped?source=shadow"
+    },
+    {
+      "group": "F9",
+      "name": "and lists its 3 findings in the same table",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F9",
+      "name": "Shadow is read-only: no tick boxes, no triage control, and it says so",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F9",
+      "name": "its detail opens and still has no triage control",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F9",
+      "name": "the four segments are kept: 主发现, Shadow 对照, 规则卡, 聚类",
+      "pass": true,
+      "detail": "findings:主发现,shadow:Shadow 对照,rulecards:规则卡,clusters:聚类"
+    },
+    {
+      "group": "F9",
+      "name": "segment 规则卡 keeps its ?view= and renders",
+      "pass": true,
+      "detail": "#/projects/1/sessions/41?view=rulecards"
+    },
+    {
+      "group": "F9",
+      "name": "segment 聚类 keeps its ?view= and renders",
+      "pass": true,
+      "detail": "#/projects/1/sessions/41?view=clusters"
+    },
+    {
+      "group": "F9",
+      "name": "segment 主发现 keeps its ?view= and renders",
+      "pass": true,
+      "detail": "#/projects/1/sessions/41?view=findings"
+    },
+    {
+      "group": "F9",
+      "name": "back on 主发现 the main set is read without ?source",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@1024 no pane beside the table and no finding opened on arrival",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@1024 columns fit the width",
+      "pass": true,
+      "detail": "优先级,标题,状态,置信,证据,实例"
+    },
+    {
+      "group": "F10",
+      "name": "@1024 no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@1024 Enter opens the detail as a drawer, focus inside",
+      "pass": true,
+      "detail": "{\"w\":560,\"right\":1024,\"vw\":1024,\"txt\":\"示例发现: 明文传输\\nP1\\n高\\n已确认\\nMASVS-NETWORK-1\\n2/7\\n确认\\n2 个实例 · 应用包面\\n置信\\n高\\n概览\\n证据\\n2\\n代码\\n轨迹\\n修复\\n判定\",\"focus\":true}"
+    },
+    {
+      "group": "F10",
+      "name": "@1024 the drawer holds the one primary triage control",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@1024 no horizontal overflow with the drawer open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@1024 next in the drawer steps to the following finding",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@1024 Escape closes the drawer and focus returns to the table",
+      "pass": true,
+      "detail": "<div role=\"row\" aria-rowindex=\"3\" aria-selected=\"false\" tabindex=\"0\" data-finding-row=\"R-0"
+    },
+    {
+      "group": "F10",
+      "name": "@760 no pane beside the table and no finding opened on arrival",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@760 columns fit the width",
+      "pass": true,
+      "detail": "优先级,标题"
+    },
+    {
+      "group": "F10",
+      "name": "@760 a row is two lines: title, then status and instance count",
+      "pass": true,
+      "detail": "{\"h\":60,\"status\":54,\"txt\":\"P0 严重 示例发现: 硬编码密钥 待复核 2 个实例\"}"
+    },
+    {
+      "group": "F10",
+      "name": "@760 the tick box has a 44 px target",
+      "pass": true,
+      "detail": "44×44"
+    },
+    {
+      "group": "F10",
+      "name": "@760 no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@760 Enter opens the detail as a drawer, focus inside",
+      "pass": true,
+      "detail": "{\"w\":760,\"right\":760,\"vw\":760,\"txt\":\"示例发现: 明文传输\\nP1\\n高\\n已确认\\nMASVS-NETWORK-1\\n2/7\\n确认\\n2 个实例 · 应用包面\\n置信\\n高\\n概览\\n证据\\n2\\n代码\\n轨迹\\n修复\\n判定\",\"focus\":true}"
+    },
+    {
+      "group": "F10",
+      "name": "@760 the drawer holds the one primary triage control",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@760 no horizontal overflow with the drawer open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@760 next in the drawer steps to the following finding",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@760 Escape closes the drawer and focus returns to the table",
+      "pass": true,
+      "detail": "<div role=\"row\" aria-rowindex=\"3\" aria-selected=\"false\" tabindex=\"0\" data-finding-row=\"R-0"
+    },
+    {
+      "group": "F10",
+      "name": "@390 no pane beside the table and no finding opened on arrival",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@390 columns fit the width",
+      "pass": true,
+      "detail": "优先级,标题"
+    },
+    {
+      "group": "F10",
+      "name": "@390 a row is two lines: title, then status and instance count",
+      "pass": true,
+      "detail": "{\"h\":60,\"status\":54,\"txt\":\"P0 严重 示例发现: 硬编码密钥 待复核 2 个实例\"}"
+    },
+    {
+      "group": "F10",
+      "name": "@390 the tick box has a 44 px target",
+      "pass": true,
+      "detail": "44×44"
+    },
+    {
+      "group": "F10",
+      "name": "@390 no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@390 Enter opens the detail as a drawer, focus inside",
+      "pass": true,
+      "detail": "{\"w\":390,\"right\":390,\"vw\":390,\"txt\":\"示例发现: 明文传输\\nP1\\n高\\n已确认\\nMASVS-NETWORK-1\\n2/7\\n确认\\n2 个实例 · 应用包面\\n置信\\n高\\n概览\\n证据\\n2\\n代码\\n轨迹\\n修复\\n判定\",\"focus\":true}"
+    },
+    {
+      "group": "F10",
+      "name": "@390 the drawer holds the one primary triage control",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@390 no horizontal overflow with the drawer open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@390 next in the drawer steps to the following finding",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F10",
+      "name": "@390 Escape closes the drawer and focus returns to the table",
+      "pass": true,
+      "detail": "<div role=\"row\" aria-rowindex=\"3\" aria-selected=\"false\" tabindex=\"0\" data-finding-row=\"R-0"
+    },
+    {
+      "group": "F11",
+      "name": "400 findings: the table is virtualised",
+      "pass": true,
+      "detail": "28 rows in the DOM"
+    },
+    {
+      "group": "F11",
+      "name": "End reaches the last row and it holds focus",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F11",
+      "name": "the focused row stays rendered while moving through the list",
+      "pass": true,
+      "detail": "369"
+    },
+    {
+      "group": "F12",
+      "name": "loading: a skeleton, not an empty statement and not a count of 0",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F12",
+      "name": "empty: says there are none yet and offers the trace",
+      "pass": true,
+      "detail": "0 条 · 0 个实例 · 0 条已降噪 全部优先级 P0 严重 P1 高 P2 中 P3 低 全部状态 待复核 已确认 已排除 部分确认 全部证据类型 代码 配置 流量 运行时 未标注 还没有风险发现 评估产出风险发现后会列在这里；可以在"
+    },
+    {
+      "group": "F12",
+      "name": "everything de-noised: the empty state says so",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F12",
+      "name": "stale after a 500: the earlier rows stay and a strip says they may be old",
+      "pass": true,
+      "detail": "最近一次读取风险发现失败，下面是之前读到的内容，可能不是最新的。"
+    },
+    {
+      "group": "F12",
+      "name": "stale after a 403: the earlier rows stay and a strip says they may be old",
+      "pass": true,
+      "detail": "当前账号无权读取风险发现；下面是之前读到的内容。"
+    },
+    {
+      "group": "F12",
+      "name": "stale after a 403 is worded as a permission matter, without retry, and triage is blocked",
+      "pass": true,
+      "detail": "当前账号无权读取风险发现；下面是之前读到的内容。"
+    },
+    {
+      "group": "F12",
+      "name": "a filter changes the scope statement",
+      "pass": true,
+      "detail": "显示 1 / 7 条 · 2 个实例"
+    },
+    {
+      "group": "F12",
+      "name": "filtered to nothing: says so and offers to clear the filters",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F12",
+      "name": "clearing brings the 7 rows back",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F12",
+      "name": "search matches the rule id",
+      "pass": true,
+      "detail": "示例发现: 可导出组件未设权限"
+    },
+    {
+      "group": "F12",
+      "name": "sorting by instances, descending, puts the 3-instance finding first",
+      "pass": true,
+      "detail": "示例发现: 可导出组件未设权限"
+    },
+    {
+      "group": "F13",
+      "name": "?finding= opens that finding in the pane",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F13",
+      "name": "detail tabs: 概览, 证据, 代码, 轨迹, 修复",
+      "pass": true,
+      "detail": "概览,证据\n3,代码,轨迹,修复"
+    },
+    {
+      "group": "F13",
+      "name": "the overview shows one instance at a time, with a switch for the 3",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F13",
+      "name": "choosing the third instance shows its evidence and status",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F13",
+      "name": "the evidence tab lists every instance with its own evidence",
+      "pass": true,
+      "detail": "实例 #1 · f41 已确认 原始证据 AndroidManifest.xml:88 exported=true 实例 #2 · f42 已确认 原始证据 AndroidManifest.xml:102 exported=true 实例 #3 · f43 已排除 原始证据 AndroidManifest.xml:120 exported=true"
+    },
+    {
+      "group": "F13",
+      "name": "selecting another finding updates ?finding=",
+      "pass": true,
+      "detail": "#/projects/1/sessions/41?view=findings&finding=R-001"
+    },
+    {
+      "group": "F13",
+      "name": "?finding= below 1280 opens the drawer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F13",
+      "name": "credential detail is kept: summary, value, context, group",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F13",
+      "name": "the triage menu opens inside the drawer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F13",
+      "name": "Escape with the menu open closes the menu and leaves the drawer open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "F13",
+      "name": "a second Escape closes the drawer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E1",
+      "name": "a graph of more than 40 nodes opens as a grouped overview",
+      "pass": true,
+      "detail": "{\"mode\":\"overview\",\"lanes\":8,\"open\":0,\"nodes\":0,\"edges\":0,\"sum\":45,\"previews\":8}"
+    },
+    {
+      "group": "E1",
+      "name": "no node and no edge is drawn until a group is opened",
+      "pass": true,
+      "detail": "{\"mode\":\"overview\",\"lanes\":8,\"open\":0,\"nodes\":0,\"edges\":0,\"sum\":45,\"previews\":8}"
+    },
+    {
+      "group": "E1",
+      "name": "the groups account for every node, and each says what it holds",
+      "pass": true,
+      "detail": "45 / 节点 45 · 关系 53"
+    },
+    {
+      "group": "E1",
+      "name": "the relation data is read once",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E1",
+      "name": "no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E2",
+      "name": "opening a group lists its nodes, still without edges",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E2",
+      "name": "picking a node shows it with its direct neighbours only",
+      "pass": true,
+      "detail": "focus,hop1 comp:PayActivity app:wallet deeplink:0 api:POST /v1/charges api:POST /v1/refunds"
+    },
+    {
+      "group": "E2",
+      "name": "the neighbours are the 4 nodes linked to it",
+      "pass": true,
+      "detail": "comp:PayActivity app:wallet deeplink:0 api:POST /v1/charges api:POST /v1/refunds"
+    },
+    {
+      "group": "E2",
+      "name": "its edges are drawn",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E2",
+      "name": "the side panel inspects the picked node",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E2",
+      "name": "the crumb names the inspect target and offers the way back",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E2",
+      "name": "返回总览 returns to the groups, the opened group still open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E3",
+      "name": "clicking a neighbour inspects it without changing the picture",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E3",
+      "name": "the edges of the selected node are 2 px in the active line colour",
+      "pass": true,
+      "detail": "[[\"2px\",\"rgb(48, 76, 204)\"]]"
+    },
+    {
+      "group": "E3",
+      "name": "展开邻居 adds one more hop, of that neighbour only",
+      "pass": true,
+      "detail": "focus,hop1,hop2 comp:PayActivity app:wallet deeplink:0 api:POST /v1/charges api:POST /v1/refunds group:支付 key:PAY_HOST key:PAY_KEY"
+    },
+    {
+      "group": "E3",
+      "name": "a node lists the findings linked to it",
+      "pass": true,
+      "detail": "R-003"
+    },
+    {
+      "group": "E3",
+      "name": "设为检查对象 rebuilds the picture around that node",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E5",
+      "name": "light: finding nodes carry the orange line, 3 px or 2 px by severity",
+      "pass": true,
+      "detail": "[[\"rgb(158, 50, 8)\",\"3px\"],[\"rgb(158, 50, 8)\",\"3px\"],[\"rgb(158, 50, 8)\",\"3px\"],[\"rgb(158, 50, 8)\",\"2px\"],[\"rgb(158, 50, 8)\",\"2px\"],[\"rgb(158, 50, 8)\",\"2px\"],[\"rgb(158, 50, 8)\",\"2px\"]]"
+    },
+    {
+      "group": "E5",
+      "name": "light: nothing in the graph is dimmed by opacity",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E5",
+      "name": "light: nothing in the graph is red",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "group": "E5",
+      "name": "dark: finding nodes carry the orange line, 3 px or 2 px by severity",
+      "pass": true,
+      "detail": "[[\"rgb(250, 156, 108)\",\"3px\"],[\"rgb(250, 156, 108)\",\"3px\"],[\"rgb(250, 156, 108)\",\"3px\"],[\"rgb(250, 156, 108)\",\"2px\"],[\"rgb(250, 156, 108)\",\"2px\"],[\"rgb(250, 156, 108)\",\"2px\"],[\"rgb(250, 156, 108)\",\"2px\"]]"
+    },
+    {
+      "group": "E5",
+      "name": "dark: nothing in the graph is dimmed by opacity",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E5",
+      "name": "dark: nothing in the graph is red",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "group": "E6",
+      "name": "the full layout is not drawn on arrival",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E6",
+      "name": "完整布局 draws it on request, with a note that it is dense",
+      "pass": true,
+      "detail": "45 nodes"
+    },
+    {
+      "group": "E6",
+      "name": "the page still does not overflow: the canvas scrolls inside its pane",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E6",
+      "name": "a node of the full layout is inspected in the same side panel",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E6",
+      "name": "the list is one click away and keeps the selection",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E6",
+      "name": "search narrows the list and the scope statement says so",
+      "pass": true,
+      "detail": "显示 5 / 节点 45 · 关系 53"
+    },
+    {
+      "group": "E6",
+      "name": "the type filter hides a type",
+      "pass": true,
+      "detail": "42 rows"
+    },
+    {
+      "group": "E8",
+      "name": "@1024 the list is the default view",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@1024 the overview and the full layout stay one click away",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@1024 no side panel until something is selected",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@1024 no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@1024 the selection opens beside the list",
+      "pass": true,
+      "detail": "{\"l\":[220,229,704,900],\"s\":[704,229,1024,900],\"vw\":1024}"
+    },
+    {
+      "group": "E8",
+      "name": "@1024 the panel lists its linked finding and relations",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@1024 no horizontal overflow with the panel open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@760 the list is the default view",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@760 the overview and the full layout stay one click away",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@760 no side panel until something is selected",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@760 no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@760 stacked: the selection opens under the list, full width",
+      "pass": true,
+      "detail": "{\"l\":[0,380,760,661],\"s\":[0,661,760,900],\"vw\":760}"
+    },
+    {
+      "group": "E8",
+      "name": "@760 the panel lists its linked finding and relations",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@760 no horizontal overflow with the panel open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@760 the graph and the panel are stacked too",
+      "pass": true,
+      "detail": "[661,661,760,760]"
+    },
+    {
+      "group": "E8",
+      "name": "@390 the list is the default view",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@390 only the list is offered, and the page says so",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@390 no side panel until something is selected",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@390 no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@390 stacked: the selection opens under the list, full width",
+      "pass": true,
+      "detail": "{\"l\":[0,416,390,677],\"s\":[0,677,390,900],\"vw\":390}"
+    },
+    {
+      "group": "E8",
+      "name": "@390 the panel lists its linked finding and relations",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E8",
+      "name": "@390 no horizontal overflow with the panel open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E9",
+      "name": "a finding node keeps its P level and status in the panel",
+      "pass": true,
+      "detail": "风险发现 示例发现: 匿名可访问个人资料接口 finding:R-007 当前的检查对象 属性 类型 风险发现 优先级 P1 高 状态 待复核 规则 R-007 实例 2 个 关联的风险发现 1 P1 高 示例发现: 匿名可访问个人资料接口"
+    },
+    {
+      "group": "E9",
+      "name": "打开风险发现 goes to the findings surface with that finding open",
+      "pass": true,
+      "detail": "#/projects/1/sessions/41?view=findings&finding=R-007"
+    },
+    {
+      "group": "E9",
+      "name": "findings and evidence stay separate surfaces: no graph in the findings tab",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E10",
+      "name": "the coverage matrix is a table of evidence types by priority",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E10",
+      "name": "a row opens the findings behind its number, and the ones that lack this evidence",
+      "pass": true,
+      "detail": "R-001,R-007"
+    },
+    {
+      "group": "E10",
+      "name": "picking one makes it the inspect target, shown above the matrix with its evidence",
+      "pass": true,
+      "detail": "检查对象 风险发现 示例发现: 明文传输 在证据关系里查看 清除"
+    },
+    {
+      "group": "E10",
+      "name": "the selection is shared: 证据关系 opens on that finding and its neighbours",
+      "pass": true,
+      "detail": "#/projects/1/sessions/41?view=graph 返回总览 检查对象 风险发现 示例发现: 明文传输 点一个邻居在右侧检查；需要时用“展开邻居”再走一跳。"
+    },
+    {
+      "group": "E10",
+      "name": "its neighbours are the two interfaces it was observed on",
+      "pass": true,
+      "detail": "finding:R-001 api:GET /api/v1/orders api:GET /api/v1/profile"
+    },
+    {
+      "group": "E10",
+      "name": "and back: the node inspected in the graph is the target above the matrix",
+      "pass": true,
+      "detail": "检查对象 接口 GET /api/v1/profile 在证据关系里查看 清除"
+    },
+    {
+      "group": "E10",
+      "name": "事实图谱 shows the same target",
+      "pass": true,
+      "detail": "#/projects/1/sessions/41?view=facts"
+    },
+    {
+      "group": "E10",
+      "name": "应用结构 shows the same target",
+      "pass": true,
+      "detail": "#/projects/1/sessions/41?view=structure"
+    },
+    {
+      "group": "E10",
+      "name": "清除 removes the target",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E11",
+      "name": "running: dynamic evidence says the dynamic stages are still running, with the step count",
+      "pass": true,
+      "detail": "[\"running\",\"5 条没有这类证据：动态阶段还在进行（3/10 步），结果会继续增加。\"]"
+    },
+    {
+      "group": "E11",
+      "name": "running: static evidence says the static check is done and what the text lacks",
+      "pass": true,
+      "detail": "3 条没有这类证据：静态检查已完成；这些风险发现的证据文本里没有代码位置。"
+    },
+    {
+      "group": "E11",
+      "name": "every reason starts from a count of findings",
+      "pass": true,
+      "detail": "[\"3 条没有这类证据：静态\",\"4 条没有这类证据：静态\",\"5 条没有这类证据：动态\",\"5 条没有这类证据：运行\",\"1 条的证据文本里识别不\"]"
+    },
+    {
+      "group": "E11",
+      "name": "the scope statement says what is counted",
+      "pass": true,
+      "detail": "有证据类型的风险发现 6 / 7 条"
+    },
+    {
+      "group": "E11",
+      "name": "device offline: dynamic evidence names the device and says it is offline",
+      "pass": true,
+      "detail": "5 条没有这类证据：测试设备 emulator-5554 离线，需要设备的动态步骤现在无法采集。"
+    },
+    {
+      "group": "E11",
+      "name": "waiting for login: says the run waits for a manual login",
+      "pass": true,
+      "detail": "[\"waiting-login\",\"5 条没有这类证据：运行在等待人工登录，登录之后的内容还没有采集。\"]"
+    },
+    {
+      "group": "E11",
+      "name": "static-only run: dynamic evidence is out of scope",
+      "pass": true,
+      "detail": "[\"out-of-scope\",\"5 条没有这类证据：这次评估的阶段里没有动态阶段，不在范围内。\"]"
+    },
+    {
+      "group": "E11",
+      "name": "dynamic stages not started: says there has been no dynamic run",
+      "pass": true,
+      "detail": "[\"not-run\",\"5 条没有这类证据：还没有动态运行：动态阶段还没有开始。\"]"
+    },
+    {
+      "group": "E11",
+      "name": "run status refused (403): the reason says it cannot be judged, as a permission matter, without retry",
+      "pass": true,
+      "detail": "[\"unknown\",\"5 条没有这类证据：当前账号无权读取运行状态，无法判断原因。\"]"
+    },
+    {
+      "group": "E11",
+      "name": "a run that reports no stages: the reason says it cannot be judged, not that nothing ran",
+      "pass": true,
+      "detail": "[\"unknown\",\"5 条没有这类证据：运行状态里没有阶段信息，无法判断原因。\"]"
+    },
+    {
+      "group": "E11",
+      "name": "session not started: the matrix says no assessment has run",
+      "pass": true,
+      "detail": "有证据类型的风险发现 1 / 2 条 在风险发现里查看全部 2 条 格子里是风险发现的条数，不是实例数；同一条可以有多类证据，所以合计可以大于总数。证据类型是从证据文本里识别的，识别不出的记为未标注。 证据 P0 P1 P2 P3 合计 缺少与原因 代码 — 0 — 0 — 0 — 0 0 2 条没有这类证据：还没有运行过评估，静态检查没有执行。 配置 — 0 — 0 — 0 — 0 0 2 条没"
+    },
+    {
+      "group": "E11",
+      "name": "@1024 every row still shows its reason, and nothing overflows",
+      "pass": true,
+      "detail": "5 reasons"
+    },
+    {
+      "group": "E11",
+      "name": "@760 every row still shows its reason, and nothing overflows",
+      "pass": true,
+      "detail": "5 reasons"
+    },
+    {
+      "group": "E11",
+      "name": "@390 every row still shows its reason, and nothing overflows",
+      "pass": true,
+      "detail": "5 reasons"
+    },
+    {
+      "group": "E12",
+      "name": "事实图谱 keeps ?view=facts and shows its content",
+      "pass": true,
+      "detail": "事实-意图图谱 facts 3 intents 3 ready 2 运行图调度 从接口清单播种 重建图 刷新 事实（confirmed observations"
+    },
+    {
+      "group": "E12",
+      "name": "事实图谱: a 403 is a permission state without retry",
+      "pass": true,
+      "detail": "事实-意图图谱 facts 0 intents 0 ready 0 运行图调度 从接口清单播种 重建图 刷新 没有权限读取事实图谱 当前账号不能读取这个会话的事实和意图。请切换账号或联系管理员。"
+    },
+    {
+      "group": "E12",
+      "name": "事实图谱: a 500 is an error with retry",
+      "pass": true,
+      "detail": "事实-意图图谱 facts 0 intents 0 ready 0 运行图调度 从接口清单播种 重建图 刷新 事实图谱没有读到 fixture failure 重试"
+    },
+    {
+      "group": "E12",
+      "name": "凭据 keeps ?view=credentials and shows its content",
+      "pass": true,
+      "detail": "硬编码敏感信息总清单 · 5 项 来源：报告 CSV 本地重新扫描 全部 5 A.真实凭据 1 B.SDK标识/许可证 1 D.内网/环境配置 2 F.已排除误"
+    },
+    {
+      "group": "E12",
+      "name": "凭据: a 403 is a permission state without retry",
+      "pass": true,
+      "detail": "硬编码敏感信息总清单 · 0 项 本地重新扫描 全部 0 没有权限读取凭据清单 当前账号不能读取这个会话的凭据清单。请切换账号或联系管理员。"
+    },
+    {
+      "group": "E12",
+      "name": "凭据: a 500 is an error with retry",
+      "pass": true,
+      "detail": "硬编码敏感信息总清单 · 0 项 本地重新扫描 全部 0 凭据清单没有读到 fixture failure 重试"
+    },
+    {
+      "group": "E12",
+      "name": "聚类 keeps ?view=clusters and shows its content",
+      "pass": true,
+      "detail": "2 个聚类 按规则族、主机和路径模板合并的发现 重新读取 发现数 规则族 主机与路径 已确认 2 cleartext-transport api.example"
+    },
+    {
+      "group": "E12",
+      "name": "聚类: a 403 is a permission state without retry",
+      "pass": true,
+      "detail": "聚类 按规则族、主机和路径模板合并的发现 重新读取 没有权限读取聚类 当前账号不能读取这个会话的聚类结果。请切换账号或联系管理员。"
+    },
+    {
+      "group": "E12",
+      "name": "聚类: a 500 is an error with retry",
+      "pass": true,
+      "detail": "聚类 按规则族、主机和路径模板合并的发现 重新读取 聚类未能加载 fixture failure 重试"
+    },
+    {
+      "group": "E12",
+      "name": "应用结构 keeps ?view=structure and renders its canvas",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E12",
+      "name": "规则卡 keeps ?view=rulecards",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E12",
+      "name": "evidence keeps its three secondary tabs and the three segments of 证据关系",
+      "pass": true,
+      "detail": "证据关系,凭据,覆盖矩阵"
+    },
+    {
+      "group": "E12",
+      "name": "segments of 证据关系: 关系图, 事实图谱, 应用结构",
+      "pass": true,
+      "detail": "关系图,事实图谱,应用结构"
+    },
+    {
+      "group": "E13",
+      "name": "loading: a skeleton",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E13",
+      "name": "403: a permission state, no retry wording, no node count",
+      "pass": true,
+      "detail": "没有权限读取关系数据 当前账号不能读取这个会话的关系图，所以这里没有内容。请切换账号或联系管理员。"
+    },
+    {
+      "group": "E13",
+      "name": "500: an error state with retry",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E13",
+      "name": "retry reads the graph",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E13",
+      "name": "a failed re-read keeps the graph and says it may be old",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "E13",
+      "name": "empty: says the graph is empty and why",
+      "pass": true,
+      "detail": "节点 0 · 关系 0 类型 总览 列表 完整布局 刷新 关系图还是空的 评估产出资产与风险发现之后，这里会出现节点和它们之间的关系。 重新读取"
+    },
+    {
+      "group": "E14",
+      "name": "a graph of 40 nodes or fewer opens with its groups unfolded",
+      "pass": true,
+      "detail": "{\"open\":4,\"lanes\":4,\"nodes\":19}"
+    },
+    {
+      "group": "R1",
+      "name": "?view=rulecards mounts the rule-card surface, once",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R1",
+      "name": "the scope statement counts rule cards, instances and de-noised",
+      "pass": true,
+      "detail": "8 张规则卡 · 13 个实例 · 1 张已降噪"
+    },
+    {
+      "group": "R1",
+      "name": "7 rule cards are listed, the de-noised one is not",
+      "pass": true,
+      "detail": "示例发现: 硬编码密钥 | 示例发现: 明文传输 | 示例发现: 匿名可访问个人资料接口 | 示例发现: 可导出组件未设权限 | 示例发现: 调试标志开启 | 示例发现: 备份未关闭 | 示例发现: 日志输出敏感字段，标题特意写得很长，用来检查表格和详情在窄宽度下的截断与换行"
+    },
+    {
+      "group": "R1",
+      "name": "the first rule card is open, the others are closed",
+      "pass": true,
+      "detail": "1 open"
+    },
+    {
+      "group": "R1",
+      "name": "the old panel is gone: no status select, no English severity pill",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R1",
+      "name": "no emoji and no pictograph characters in the copy",
+      "pass": true,
+      "detail": "8 张规则卡 · 13 个实例 · 1 张已降噪 全部 8 APK 静态 8 WEB 运行时 0 全部等级（8） P0 严重（1） P1 高（2） P2 中（2"
+    },
+    {
+      "group": "R1",
+      "name": "it reads what the earlier panel read: grouped findings and the hook events",
+      "pass": true,
+      "detail": "/api/pentest/sessions/41/vulns/grouped /api/pentest/sessions/41/events?source=hook&since_seq=0&limit=200 /api/pentest/sessions/41/events?source=progress&limit=300"
+    },
+    {
+      "group": "R1",
+      "name": "no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R2",
+      "name": "light: every rule card carries the orange finding line",
+      "pass": true,
+      "detail": "[\"rgb(158, 50, 8)\",\"rgb(158, 50, 8)\",\"rgb(158, 50, 8)\",\"rgb(158, 50, 8)\",\"rgb(158, 50, 8)\",\"rgb(158, 50, 8)\",\"rgb(158, 50, 8)\",\"rgb(158, 50, 8)\"]"
+    },
+    {
+      "group": "R2",
+      "name": "light: 3 px with a cap for P0 / P1, 2 px without for P2 / P3",
+      "pass": true,
+      "detail": "[\"P0:3px:true\",\"P1:3px:true\",\"P1:3px:true\",\"P2:2px:false\",\"P2:2px:false\",\"P3:2px:false\",\"P3:2px:false\",\"P3:2px:false\"]"
+    },
+    {
+      "group": "R2",
+      "name": "light: severity is a shape with its P label and word",
+      "pass": true,
+      "detail": "P0严重,P1高,P1高,P2中,P2中,P3低,P3低,P3低"
+    },
+    {
+      "group": "R2",
+      "name": "light: the status of a card is a glyph and a word",
+      "pass": true,
+      "detail": "待复核,已确认,待复核,部分确认,待复核,待复核,已排除,待复核"
+    },
+    {
+      "group": "R2",
+      "name": "light: a de-noised card says so in words and nothing is dimmed",
+      "pass": true,
+      "detail": "0 dimmed"
+    },
+    {
+      "group": "R2",
+      "name": "light: nothing on the surface is red",
+      "pass": true,
+      "detail": "0 red"
+    },
+    {
+      "group": "R2",
+      "name": "light: the open card's row sits on surface-2",
+      "pass": true,
+      "detail": "rgb(238, 237, 232) vs rgb(238, 237, 232)"
+    },
+    {
+      "group": "R2",
+      "name": "dark: every rule card carries the orange finding line",
+      "pass": true,
+      "detail": "[\"rgb(250, 156, 108)\",\"rgb(250, 156, 108)\",\"rgb(250, 156, 108)\",\"rgb(250, 156, 108)\",\"rgb(250, 156, 108)\",\"rgb(250, 156, 108)\",\"rgb(250, 156, 108)\",\"rgb(250, 156, 108)\"]"
+    },
+    {
+      "group": "R2",
+      "name": "dark: 3 px with a cap for P0 / P1, 2 px without for P2 / P3",
+      "pass": true,
+      "detail": "[\"P0:3px:true\",\"P1:3px:true\",\"P1:3px:true\",\"P2:2px:false\",\"P2:2px:false\",\"P3:2px:false\",\"P3:2px:false\",\"P3:2px:false\"]"
+    },
+    {
+      "group": "R2",
+      "name": "dark: severity is a shape with its P label and word",
+      "pass": true,
+      "detail": "P0严重,P1高,P1高,P2中,P2中,P3低,P3低,P3低"
+    },
+    {
+      "group": "R2",
+      "name": "dark: the status of a card is a glyph and a word",
+      "pass": true,
+      "detail": "待复核,已确认,待复核,部分确认,待复核,待复核,已排除,待复核"
+    },
+    {
+      "group": "R2",
+      "name": "dark: a de-noised card says so in words and nothing is dimmed",
+      "pass": true,
+      "detail": "0 dimmed"
+    },
+    {
+      "group": "R2",
+      "name": "dark: nothing on the surface is red",
+      "pass": true,
+      "detail": "0 red"
+    },
+    {
+      "group": "R2",
+      "name": "dark: the open card's row sits on surface-2",
+      "pass": true,
+      "detail": "rgb(33, 36, 42) vs rgb(33, 36, 42)"
+    },
+    {
+      "group": "R3",
+      "name": "opening another card closes the first: one card is open at a time",
+      "pass": true,
+      "detail": "R-001"
+    },
+    {
+      "group": "R3",
+      "name": "an open card lists its instances with their evidence slices",
+      "pass": true,
+      "detail": "证据维度 源码行 有 组件声明 无 流量报文 有 实例与证据切片 f11 已确认 模型复核：确认 复制 确认 1 com/example/wallet/net/"
+    },
+    {
+      "group": "R3",
+      "name": "the five-part chain and the review steps of an instance are shown",
+      "pass": true,
+      "detail": "证据维度 源码行 有 组件声明 无 流量报文 有 实例与证据切片 f11 已确认 模型复核：确认 复制 确认 1 com/example/wallet/net/Api.java:42 2 GET http://api.example.com/v1/profile 3 HTTP/1.1 200 OK 发现 静态规则在 Api.java 第 42 行找到 http:// 地址。 触发 打开“我的”页面"
+    },
+    {
+      "group": "R3",
+      "name": "an instance without a chain says the chain was not collected",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R3",
+      "name": "the model verdict of an instance is words",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R3",
+      "name": "evidence dimensions are stated with an icon and 有 / 无",
+      "pass": true,
+      "detail": "源码行有:yes,组件声明无:no,流量报文有:yes"
+    },
+    {
+      "group": "R3",
+      "name": "Enter on the row closes it again",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R3",
+      "name": "复制 states its result on the button",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R3",
+      "name": "the hook events of the session are listed, newest first",
+      "pass": true,
+      "detail": "Hook 事件（这个会话最近 8 条） #2 10:02:14 hook cls=okhttp3.Request method=header #1 10:02:11 hook cls=javax.crypto.Cipher method=init"
+    },
+    {
+      "group": "R4",
+      "name": "each instance of the open card has the split button, as a secondary control; there is no status select",
+      "pass": true,
+      "detail": "{\"secondary\":2,\"primary\":0,\"selects\":0}"
+    },
+    {
+      "group": "R4",
+      "name": "确认 writes that instance through POST vulns/state",
+      "pass": true,
+      "detail": "f31:confirmed"
+    },
+    {
+      "group": "R4",
+      "name": "the list is read again after the write, and nothing is kept as a local value",
+      "pass": true,
+      "detail": "1 re-reads"
+    },
+    {
+      "group": "R4",
+      "name": "the menu offers 排除 and 恢复待复核; the state an instance has is not offered",
+      "pass": true,
+      "detail": "排除,恢复待复核"
+    },
+    {
+      "group": "R4",
+      "name": "排除 from the menu writes that instance",
+      "pass": true,
+      "detail": "f31:confirmed,f32:excluded"
+    },
+    {
+      "group": "R4",
+      "name": "an instance that is already confirmed has 确认 disabled",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R5",
+      "name": "a refused write (403) is stated as a permission matter, without retry wording",
+      "pass": true,
+      "detail": "当前账号无权处置规则卡的实例 服务拒绝了“确认”这个操作（403），实例 f31 没有改动。请切换账号或联系管理员。 知道了"
+    },
+    {
+      "group": "R5",
+      "name": "a refused write is not kept as a local value: the instance stays as the server has it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R5",
+      "name": "another failure says the state was not written and offers a retry",
+      "pass": true,
+      "detail": "实例 f31 的状态没有写入服务端 “已确认”只保存在这个浏览器里，实例上标着“仅本地”。原因：fixture failure 重试写入 知道了"
+    },
+    {
+      "group": "R5",
+      "name": "the choice is kept in this browser and the instance is marked 仅本地",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R5",
+      "name": "the retry writes it; the mark and the notice go away",
+      "pass": true,
+      "detail": "f31:confirmed,f31:confirmed"
+    },
+    {
+      "group": "R5",
+      "name": "when the re-read after a write fails, the earlier cards stay under a strip that says so",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R6",
+      "name": "read 403: a permission state without retry wording",
+      "pass": true,
+      "detail": "没有权限读取规则卡 当前账号不能读取这个会话的风险发现，所以这里没有规则卡。请切换账号或联系管理员。"
+    },
+    {
+      "group": "R6",
+      "name": "read 403: no toolbar and no count for a list that was not read",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R6",
+      "name": "read 500: an error state with retry, no toolbar",
+      "pass": true,
+      "detail": "规则卡没有读到 风险发现接口这次没有返回，所以没有可以列出的规则卡。 重试"
+    },
+    {
+      "group": "R6",
+      "name": "重试 reads again and lists the cards",
+      "pass": true,
+      "detail": "7 cards"
+    },
+    {
+      "group": "R6",
+      "name": "loading: a skeleton, no toolbar",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R6",
+      "name": "empty: says why and offers 手动补录",
+      "pass": true,
+      "detail": "0 张规则卡 · 0 个实例 · 0 张已降噪 全部 0 APK 静态 0 WEB 运行时 0 全部等级（0） P0 严重（0） P1 高（0） P2 中（0） P3 低（0） 提示（0） 硬编码凭据 显示已降噪 0 张 手动补录 导入 导出 还没有规则卡 评估产出风险发现后，会按规则归到这里；也可以手动补录或导入，只"
+    },
+    {
+      "group": "R7",
+      "name": "search matches title, CWE, MASVS and rule id; the scope says a / b",
+      "pass": true,
+      "detail": "显示 1 / 8 张规则卡"
+    },
+    {
+      "group": "R7",
+      "name": "nothing matches: says so and offers 清除筛选",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R7",
+      "name": "the level filter lists its counts and filters",
+      "pass": true,
+      "detail": "示例发现: 明文传输|示例发现: 匿名可访问个人资料接口"
+    },
+    {
+      "group": "R7",
+      "name": "硬编码凭据 is a pressed toggle that keeps the credential cards",
+      "pass": true,
+      "detail": "示例发现: 硬编码密钥"
+    },
+    {
+      "group": "R7",
+      "name": "WEB 运行时 with no card says why it is empty",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R7",
+      "name": "显示已降噪 lists the de-noised card too, marked 已降噪 and 提示级",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R7",
+      "name": "?severity= from a link filters and is shown as a removable filter",
+      "pass": true,
+      "detail": "来自链接的筛选： 等级 high"
+    },
+    {
+      "group": "R7",
+      "name": "removing it drops the parameter and keeps the view",
+      "pass": true,
+      "detail": "#/projects/1/sessions/41?view=rulecards"
+    },
+    {
+      "group": "R7",
+      "name": "?masvs= from a link filters by rule family",
+      "pass": true,
+      "detail": "示例发现: 硬编码密钥"
+    },
+    {
+      "group": "R8",
+      "name": "手动补录 opens a form that says where the entry is kept; 补录 needs a title",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R8",
+      "name": "the entry is listed with a 本地 mark and nothing is sent",
+      "pass": true,
+      "detail": "示例发现: 硬编码密钥|示例发现: 明文传输|示例发现: 匿名可访问个人资料接口|示例发现: 可导出组件未设权限|示例发现: 调试标志开启|示例发现: 备份未关闭|示例发现: 日志输出敏感字段，标题特意写得很长，用来检查表格和详情在窄宽度下的截断与换行|示例补录: 手动记录的一条"
+    },
+    {
+      "group": "R8",
+      "name": "it is kept in this browser for the session",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R8",
+      "name": "the state of a local entry changes in this browser only, and the notice says so",
+      "pass": true,
+      "detail": "实例 LOCAL-mww18947-i 是本地条目，状态“已排除”只保存在这个浏览器里，没有发送。 知道了"
+    },
+    {
+      "group": "R8",
+      "name": "导出 offers CSV, JSON, Markdown and SARIF",
+      "pass": true,
+      "detail": "csv,json,md,sarif"
+    },
+    {
+      "group": "R8",
+      "name": "an export downloads a file named after the session",
+      "pass": true,
+      "detail": "session41_vulns_2026-11-25112028.json"
+    },
+    {
+      "group": "R8",
+      "name": "导入 opens the import dialog",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "R9",
+      "name": "@1024 no horizontal overflow, the cards and the open instance are there",
+      "pass": true,
+      "detail": "{\"h\":28,\"row\":40,\"cards\":7}"
+    },
+    {
+      "group": "R9",
+      "name": "@760 no horizontal overflow, the cards and the open instance are there",
+      "pass": true,
+      "detail": "{\"h\":44,\"row\":56,\"cards\":7}"
+    },
+    {
+      "group": "R9",
+      "name": "@760 the triage control and the row are at least 44 px high",
+      "pass": true,
+      "detail": "{\"h\":44,\"row\":56,\"cards\":7}"
+    },
+    {
+      "group": "R9",
+      "name": "@390 no horizontal overflow, the cards and the open instance are there",
+      "pass": true,
+      "detail": "{\"h\":44,\"row\":56,\"cards\":7}"
+    },
+    {
+      "group": "R9",
+      "name": "@390 the triage control and the row are at least 44 px high",
+      "pass": true,
+      "detail": "{\"h\":44,\"row\":56,\"cards\":7}"
+    },
+    {
+      "group": "S1",
+      "name": "应用结构 mounts the canvas with a toolbar above it (no floating tool card)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S1",
+      "name": "no emoji in the copy",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S1",
+      "name": "neutral wording: none of the earlier terms",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S1",
+      "name": "the legend explains every stroke in words",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S1",
+      "name": "the toolbar states how much of the graph is drawn",
+      "pass": true,
+      "detail": "显示 6 / 50 个节点 · 已识别接口 6"
+    },
+    {
+      "group": "S1",
+      "name": "it reads what the earlier canvas read: graph and api_tree",
+      "pass": true,
+      "detail": "/api/pentest/sessions/41/graph /api/pentest/sessions/41/api_tree"
+    },
+    {
+      "group": "S1",
+      "name": "no dotted grid behind the canvas",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S1",
+      "name": "no horizontal overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S2",
+      "name": "light: a finding node carries the orange finding line, 3 px with a cap for P0 / P1",
+      "pass": true,
+      "detail": "[{\"id\":\"vuln:f11\",\"color\":\"rgb(158, 50, 8)\",\"w\":\"3px\",\"cap\":true,\"text\":\"风险发现P1 高示例发现: 明文传输R-001已确认\"},{\"id\":\"vuln:f12\",\"color\":\"rgb(158, 50, 8)\",\"w\":\"3px\",\"cap\":true,\"text\":\"风险发现P1 高示例发现: 明文传输R-001已确认\"},{\"id\":\"vuln:f41\",\"color\":\"rgb(158, 50, 8)\",\"w\":\"2px\",\"cap\":false,\"text\":\"风险发现P2 中示例发现: 可导出组件未设权限R-004已确认\"}]"
+    },
+    {
+      "group": "S2",
+      "name": "light: a finding node says its priority and its status in words",
+      "pass": true,
+      "detail": "风险发现P1 高示例发现: 明文传输R-001已确认 / 风险发现P1 高示例发现: 明文传输R-001已确认"
+    },
+    {
+      "group": "S2",
+      "name": "light: other node types have no coloured rule: the type is an icon and a word",
+      "pass": true,
+      "detail": "{\"l\":\"rgb(222, 220, 213)\",\"t\":\"rgb(222, 220, 213)\"}"
+    },
+    {
+      "group": "S2",
+      "name": "light: selecting a node dims nothing: every node and relation stays at full opacity",
+      "pass": true,
+      "detail": "0 nodes, 0 relations"
+    },
+    {
+      "group": "S2",
+      "name": "light: the selected node sits on surface-2 and its direct neighbours are marked",
+      "pass": true,
+      "detail": "{\"rel\":\"sel\",\"onS2\":true,\"near\":2}"
+    },
+    {
+      "group": "S2",
+      "name": "light: its relations are 2 px in the active line colour; the others keep their own stroke",
+      "pass": true,
+      "detail": "2 of 23"
+    },
+    {
+      "group": "S2",
+      "name": "light: nothing on the canvas is red",
+      "pass": true,
+      "detail": "0 red"
+    },
+    {
+      "group": "S2",
+      "name": "light: the toolbar names the selected node and offers to open it",
+      "pass": true,
+      "detail": "已选 组件 PayActivity"
+    },
+    {
+      "group": "S2",
+      "name": "dark: a finding node carries the orange finding line, 3 px with a cap for P0 / P1",
+      "pass": true,
+      "detail": "[{\"id\":\"vuln:f11\",\"color\":\"rgb(250, 156, 108)\",\"w\":\"3px\",\"cap\":true,\"text\":\"风险发现P1 高示例发现: 明文传输R-001已确认\"},{\"id\":\"vuln:f12\",\"color\":\"rgb(250, 156, 108)\",\"w\":\"3px\",\"cap\":true,\"text\":\"风险发现P1 高示例发现: 明文传输R-001已确认\"},{\"id\":\"vuln:f41\",\"color\":\"rgb(250, 156, 108)\",\"w\":\"2px\",\"cap\":false,\"text\":\"风险发现P2 中示例发现: 可导出组件未设权限R-004已确认\"}]"
+    },
+    {
+      "group": "S2",
+      "name": "dark: a finding node says its priority and its status in words",
+      "pass": true,
+      "detail": "风险发现P1 高示例发现: 明文传输R-001已确认 / 风险发现P1 高示例发现: 明文传输R-001已确认"
+    },
+    {
+      "group": "S2",
+      "name": "dark: other node types have no coloured rule: the type is an icon and a word",
+      "pass": true,
+      "detail": "{\"l\":\"rgb(38, 41, 48)\",\"t\":\"rgb(38, 41, 48)\"}"
+    },
+    {
+      "group": "S2",
+      "name": "dark: selecting a node dims nothing: every node and relation stays at full opacity",
+      "pass": true,
+      "detail": "0 nodes, 0 relations"
+    },
+    {
+      "group": "S2",
+      "name": "dark: the selected node sits on surface-2 and its direct neighbours are marked",
+      "pass": true,
+      "detail": "{\"rel\":\"sel\",\"onS2\":true,\"near\":2}"
+    },
+    {
+      "group": "S2",
+      "name": "dark: its relations are 2 px in the active line colour; the others keep their own stroke",
+      "pass": true,
+      "detail": "2 of 23"
+    },
+    {
+      "group": "S2",
+      "name": "dark: nothing on the canvas is red",
+      "pass": true,
+      "detail": "0 red"
+    },
+    {
+      "group": "S2",
+      "name": "dark: the toolbar names the selected node and offers to open it",
+      "pass": true,
+      "detail": "已选 组件 PayActivity"
+    },
+    {
+      "group": "S3",
+      "name": "Enter on a focused node picks it as the inspect target",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S3",
+      "name": "a focused node shows the focus ring",
+      "pass": true,
+      "detail": "solid 2px"
+    },
+    {
+      "group": "S3",
+      "name": "打开所选节点 shows the fields of the node in a dialog (the same as a double click)",
+      "pass": true,
+      "detail": "PAY_KEY 名称 PAY_KEY 算法 没有记录 是否已验证 没有记录 证据 没有记录"
+    },
+    {
+      "group": "S3",
+      "name": "Escape closes the dialog",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S3",
+      "name": "a double click on a finding node shows priority and status in words",
+      "pass": true,
+      "detail": "示例发现: 明文传输 标题 示例发现: 明文传输 优先级 P1 高 状态 已确认 MASVS / CWE 没有记录 规则 R-001 修复建议 没有记录 证据 没有记录"
+    },
+    {
+      "group": "S3",
+      "name": "a click on the empty canvas clears the selection",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S3",
+      "name": "relations are not tab stops",
+      "pass": true,
+      "detail": "0"
+    },
+    {
+      "group": "S4",
+      "name": "it opens on the confirmed findings and what leads to them",
+      "pass": true,
+      "detail": "6 nodes"
+    },
+    {
+      "group": "S4",
+      "name": "全部 draws the whole structure",
+      "pass": true,
+      "detail": "6 → 36"
+    },
+    {
+      "group": "S4",
+      "name": "紧凑 narrows the nodes",
+      "pass": true,
+      "detail": "220 → 150"
+    },
+    {
+      "group": "S4",
+      "name": "with no path in the graph the path control is disabled",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S4",
+      "name": "关联路径 marks the nodes of the path and dims nothing",
+      "pass": true,
+      "detail": "{\"path\":\"comp:WebHostActivity,vuln:f41\",\"dim\":0}"
+    },
+    {
+      "group": "S4",
+      "name": "after the last path the control returns to no path",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S4",
+      "name": "with no confirmed finding it draws everything and says so",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S5",
+      "name": "read 403: a permission state without retry wording, not an empty canvas",
+      "pass": true,
+      "detail": "没有权限读取应用结构 当前账号不能读取这个会话的结构图。请切换账号或联系管理员。"
+    },
+    {
+      "group": "S5",
+      "name": "read 500: an error state with retry, not an empty canvas",
+      "pass": true,
+      "detail": "应用结构没有读到 结构图接口这次没有返回，所以没有可以画出的内容。 重试"
+    },
+    {
+      "group": "S5",
+      "name": "重试 reads again and draws the canvas",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "S5",
+      "name": "empty: says there is no structure yet and why",
+      "pass": true,
+      "detail": "应用结构还没有数据 评估运行后，这里显示应用的组件、接口、配置项和它们之间的关系。"
+    },
+    {
+      "group": "S6",
+      "name": "@1024 no horizontal overflow and every tool is reachable",
+      "pass": true,
+      "detail": "{\"tools\":13,\"small\":0}"
+    },
+    {
+      "group": "S6",
+      "name": "@760 no horizontal overflow and every tool is reachable",
+      "pass": true,
+      "detail": "{\"tools\":13,\"small\":0}"
+    },
+    {
+      "group": "S6",
+      "name": "@760 the tool buttons are at least 44 px high",
+      "pass": true,
+      "detail": "0 small"
+    },
+    {
+      "group": "S6",
+      "name": "@390 no horizontal overflow and every tool is reachable",
+      "pass": true,
+      "detail": "{\"tools\":13,\"small\":0}"
+    },
+    {
+      "group": "S6",
+      "name": "@390 the tool buttons are at least 44 px high",
+      "pass": true,
+      "detail": "0 small"
+    }
+  ]
+}

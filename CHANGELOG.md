@@ -7,6 +7,79 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 6 — Artifacts and reports
+
+Artifacts are browsed in one place and reports are read in one frame. No route, endpoint, API contract, permission,
+task or report behaviour changed; no local-storage key changed; nothing was deployed.
+
+- **Artifact browser.** New `features/artifacts/ArtifactBrowser.tsx` and `ArtifactPreview.tsx`. The workbench
+  (`?view=artifacts`) shows the browser beside its preview; the task dialog (`tasks/ArtifactsModal.tsx`) keeps only
+  the dialog shell and renders the same browser. Directory tree with counts, search, category and extension
+  filters, and a preview of text, JSON (formatted / 原文), Markdown (rendered / 原文) and images; a binary file or
+  one over 512 kB is not requested and the preview states its size, type and the reason. Each file states type,
+  size, source and state. One download control, on the selected file. 打包下载 is the only primary action of the
+  header; 上传到样本库 stays a visible secondary button; the manifest export and the source-APK and DEX bundle
+  downloads are under 更多. 403 on the list, a file, a download or the upload is said as a permission matter,
+  without retry wording.
+- **Shared report reader.** New `features/reports/reader/{ReaderLayout,ChapterNav,ReportFindingsTable,ExportMenu}`
+  and `styles/print.css`. The workbench draft (`workbench/surfaces/report/ReportSurface.tsx`, in place of
+  `ReportView`) has a chapter list that marks the chapter in view, a 草稿 / 可发布 status, every valid finding in
+  the table with the finding marks (25 per page on screen, 展开全部 for all), and one export menu: JSON, print /
+  PDF and, for a session with a task, the report workspace. `/reports?taskId=` changed only its outer frame;
+  sections, import, manual entry, matrix and the ten export items are what they were.
+- **Print.** Everything is inside `@media print` and applies only to a page marked `data-reader-print` (the
+  workbench draft): A4, the application frame hidden, every row printed whatever page was on screen, the table
+  header repeated on each page, rows and headings not split.
+- **Every record.** The report table and the exported `workbench-report.json` hold every valid finding; both
+  stopped at six without saying so. The JSON keeps its file name, field names and structure.
+- **加固信息 and 版本对比 in A+.** `PackerPanel` and `ReportDiffPanel` read what they read before; their
+  presentation is hairline rows, glyph and word for status, finding marks on the differences, and loading, empty,
+  error, forbidden and stale states of their own.
+- **Retired.** The inline mode of `ArtifactsModal`, `ReportView` and `REPORT_SECTIONS` in `WorkbenchPage.tsx`, and
+  22 `wb-report*` / `wb-section-title` rules in `workbench.css`. Every capability is listed with its new owner in
+  `docs/capability-matrix.md` (“Artifacts and reports”).
+- **Kit.** A `Popover` menu item that opens a dialog returns focus to the menu trigger first, so the dialog gives
+  focus back to it on close (it fell to the document before).
+- **Checks.** New `app/scripts/check-artifacts-reports.mjs`, seven groups: A artifact browser, P preview, K 加固信息,
+  D 版本对比, R reader, X export and print (60-finding fixture, a printed PDF read back with `pdftotext`), T task
+  dialog; each group runs empty, error, forbidden (no retry wording), slow and stale, and four widths in both themes.
+  `capture.mjs` opens `?view=packer` and `?view=diff` as well. The artifact file fixture answers by extension.
+
+Rollback: `git revert` of this commit. The pre-fix commit `554621d` stands on its own.
+
+| Check (fixtures, build of this commit) | Result |
+| --- | --- |
+| `tsc --noEmit`; `npm run build`; main chunk 71.97 kB, 23.90 kB gzip (budget 350 kB); workbench chunk `SessionShell` 309.82 kB, 102.03 kB gzip; `MarkdownView` 2.01 kB (lazy) | pass |
+| Token lint | 0 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| Artifacts and reports (`check-artifacts-reports.mjs`): A 56, P 25, K 30, D 30, R 53, X 27, T 26 | 247 of 247 |
+| Findings and evidence (`check-findings-evidence.mjs`), of which rule cards and structure canvas 117 of 117 | 340 of 340 |
+| Tab count (`check-findings-tab-count.mjs`) | 46 of 46 |
+| Trace (`check-trace.mjs`) | 218 of 218 |
+| Workbench shell (`check-workbench-shell.mjs`) | 99 of 99 |
+| Projects (`check-projects.mjs`) | 43 of 43 |
+| Redirects (`check-redirects.mjs`) | 28 of 28 |
+| Source slice (`check-source-slice.mjs`) | pass |
+| 20 surfaces × 4 widths × 2 themes (`check-workbench.mjs`), sessions 41 and 40 | overflow 0, page errors 0; focus 1726 and 1132 stops, 0 without indicator, 0 covered |
+| Capture of every route and view, 4 widths × 2 themes; empty, error, forbidden, slow and stale on the workbench views, `/tasks` and `/reports?taskId=100` | overflow 0, page errors 0 |
+| Request set vs `docs/screenshots/v3/phase-5/requests.json` | identical, 35 routes |
+| Request set of all 37 routes (with `?view=packer`, `?view=diff`) vs a build of `554621d` | identical |
+
+Screenshots, the printed PDF (`report-draft-print.pdf`, A4, 3 pages, 60 findings) and the check reports are in
+`docs/screenshots/v3/phase-6/` (`checks/` from the new check, `states/` the five states).
+
+Remaining debt:
+
+- `tasks/TaskCenterPage.tsx` itself is still the V2 page around the new dialog (Phase 7 rewrites the task list).
+- The kit export menu of 版本对比 (`UniversalImportExportModal`'s `ExportMenu`) keeps its V2 look; it is shared with
+  other pages and changes with them.
+- The other `wb-*` views (fact graph, credentials, clusters, trajectory) still use `workbench.css`.
+- Images in the preview are shown from the bytes of `/artifact`; there is no thumbnail endpoint, so a large image
+  over 512 kB is offered for download only.
+- The report draft prints from the browser (`window.print()`); there is no server-side PDF of the draft.
+- `/reports` has no reload control of its own, so its stale state cannot be reached by the generic stale capture;
+  the page body is unchanged in this phase and is rewritten in Phase 8.
+
 ### V3 Phase 6 pre-fix — The 风险发现 tab count only after a read that answered
 
 The count on the 风险发现 tab of the workbench is shown only when the last read of the findings answered. Refused

@@ -17,7 +17,7 @@ the end of this file passed on the real backend; old links open the workbench.
 
 | Old panel | Capability | Current owner (tab › subtab › segment) | `?view=` | Status |
 | --- | --- | --- | --- | --- |
-| PackerPanel | Packer detection, unpack state, DEX list, unpack retry | Artifacts › Packaging information | `packer` | Owned |
+| PackerPanel | Packer family and confidence, six detection vectors with their evidence, knowledge-base state, rescan | Artifacts › Packaging information | `packer` | Presentation rebuilt (V3 Phase 6) |
 | VulnsPanel | Rule-card list with severity / credential / MASVS (`?masvs=`) filters | Findings › 规则卡 | `rulecards` | Rebuilt as `RuleCardsSurface` (V3 Phase 5 follow-up) |
 | VulnsPanel | Manual add (local), import / export, local notes, copy | Findings › 规则卡 | `rulecards` | Rebuilt as `RuleCardsSurface` (V3 Phase 5 follow-up) |
 | VulnsPanel | Code board, hook stack, agent verdict, chain per card | Findings › 规则卡 | `rulecards` | Rebuilt as `RuleCardsSurface` (V3 Phase 5 follow-up) |
@@ -33,7 +33,7 @@ the end of this file passed on the real backend; old links open the workbench.
 | Execution monitor | Step timeline, running command, exit state | Runtime › Terminal (same surface as the raw terminal) | `raw` | Owned |
 | Proxy traffic | Captured requests, bridge status, plugin health | Runtime › API / Requests › 代理流量 | `burp` | Owned |
 | API inventory | Endpoint tree, per-endpoint detail | Runtime › API / Requests › 接口资产 | `apitree` | Owned |
-| Version compare | Report diff between two versions | Report › Version compare | `diff` | Owned |
+| Version compare | Report diff between two versions | Report › Version compare | `diff` | Presentation rebuilt (V3 Phase 6) |
 
 ## Other legacy capabilities found during the audit
 
@@ -325,12 +325,123 @@ Changes of behaviour in the follow-up, all intended:
   position that did not exist).
 - The wording 战果 is replaced by 风险发现 / 已确认发现 everywhere in the canvas.
 
+## Artifacts and reports (V3 Phase 6)
+
+Phase 6 retires two renderings and rebuilds the presentation of two more. Every capability of the retired code
+was written down here first and has an owner below; nothing was removed before its replacement existed.
+
+- **Retired:** the inline mode of `tasks/ArtifactsModal.tsx` (`inline` prop, `data-art-inline`) and the `ReportView`
+  component inside `workbench/WorkbenchPage.tsx` with its `wb-report*` styles.
+- **New owners:** `features/artifacts/{ArtifactBrowser,ArtifactPreview,MarkdownView,artifactModel}` (one browser,
+  used by the workbench and by the task dialog), `workbench/surfaces/report/ReportSurface.tsx` and the shared reader
+  `features/reports/reader/{ReaderLayout,ChapterNav,ReportFindingsTable,ExportMenu}` with `styles/print.css`.
+- **Presentation only:** `pentest/PackerPanel.tsx`, `pentest/ReportDiffPanel.tsx`, and the outer frame of
+  `reports/DetailView.tsx` (`/reports?taskId=`).
+
+No request was added, removed or moved (`docs/request-map.md`). Checked by `app/scripts/check-artifacts-reports.mjs`
+(groups A, P, K, D, R, X, T; fixtures).
+
+### Artifact browser (workbench `?view=artifacts` and the task dialog)
+
+| Old capability (`ArtifactsModal`) | Request | Owner now (`ArtifactBrowser` / `ArtifactPreview`) | Hooks |
+| --- | --- | --- | --- |
+| Dialog shell opened from a task row or the task detail (`data-artifacts-btn`) | — | `ArtifactsModal` keeps the kit `Dialog` and nothing else; its content is `ArtifactBrowser` | `data-art-dialog`, `data-art-browser` |
+| Inline mode inside the workbench | — | Retired. The workbench renders `ArtifactBrowser` directly | `data-art-browser` |
+| Task name and id in the header | — | Kept, with the number of files the walk found | `data-art-header`, `data-art-scope` |
+| Directory listing, one directory at a time (打开 a directory, 上一级, the path line) | `GET /api/tasks/{tid}/artifacts?prefix=` | A tree: directories expand and collapse in place with their file counts, so 上一级 and the path line are not needed. A directory below the walk is read when it is opened (same request) | `data-art-tree`, `data-art-mode="tree"`, `data-art-dir`, `data-art-dir-state` |
+| Walk of the tree for search and filters (at most 60 requests, 3 levels) | same request per directory | Kept, same caps. A directory that could not be read is named and left out of the counts | `data-art-unread` |
+| Search by file name or path | — | Kept; the result is a flat list with paths and says how many of how many | `data-art-search`, `data-art-mode="list"` |
+| Category chips 全部 / 脱壳 DEX / Manifest / 报告 / 日志 with counts (first match wins) | — | Kept, same rules | `data-art-cat-filter`, `data-art-cat-chip` |
+| Extension chips (.md, .json, .xml, .log / .txt, 代码文件, .db, 其他) shown for the extensions present | — | Kept, same groups | `data-art-ext-filter`, `data-art-ext-chip` |
+| Filtered-empty and empty texts | — | Kept; 清除筛选 returns to the tree; the empty state gives the reason the endpoint gave | `data-art-empty`, `data-art-clear` |
+| File row: name, size | — | Kept, plus the type in words (文本, JSON, Markdown, 图片, 二进制 …) | `data-art-file`, `data-art-file-kind`, `data-art-size` |
+| Per-row 预览 button (disabled for binary files and files over 512 kB) | `GET /api/tasks/{tid}/report-file?name=` for the four whitelisted report names, `GET /api/tasks/{tid}/artifact?path=` for other text | Selecting the row opens the preview (click, or Enter on the focused row). Same two endpoints and the same whitelist. A binary or oversized file is not requested; the preview states size, type and the reason, and offers the download | `data-art-preview`, `data-art-preview-kind`, `data-art-previewable` |
+| Per-row 下载 button and a second 下载 in the preview head | `GET /api/tasks/{tid}/artifact?path=` | One download control, on the selected file | `data-art-download` |
+| Preview as plain text | as above | Text as text; JSON formatted and Markdown rendered, each with 原文 one switch away; images shown from the bytes of `/artifact`; a text over 300 000 characters is cut and says how much is missing | `data-art-text`, `data-art-view`, `data-art-markdown`, `data-art-image`, `data-art-cut` |
+| 复制全文 | — | Kept | `data-art-copy` |
+| 关闭预览 | — | Kept | `data-art-preview-close` |
+| — | — | New: a facts line per file (类型, 大小, 来源, 状态) | `data-art-facts`, `data-art-fact` |
+| 报告包 (session report package, disabled with its reason when the task has no session) | `GET /api/pentest/sessions/{sid}/report/package` | 打包下载, the one primary action of the header; same request, same disabled reason | `data-art-zip="ready"`, `data-art-zip="disabled"` |
+| 上传补充 (to the sample library; says the file is not written into the task directory) | `POST /api/upload` | 上传到样本库, a visible secondary button in the header; same request and the same statement | `data-art-upload-btn`, `data-art-upload-input` |
+| 导出清单 (manifest JSON, built locally) | — | 更多 › 导出文件清单 JSON; same file name and fields (`kind`, `task_id`, `task`, `run_dir`, `exported_at`, `count`, `files`) | `data-art-more`, `data-art-more-menu`, `data-art-export-list` |
+| 原始安装包 | `GET /api/tasks/{tid}/source-apk` | 更多 › 下载原始安装包 | `data-art-source-apk` |
+| 脱壳 DEX | `GET /api/tasks/{tid}/dex-package` | 更多 › 下载脱壳 DEX 压缩包 | `data-art-dex-package` |
+| Result line for downloads, uploads and exports, with 知道了 | — | Kept. A 403 is worded as a permission matter (当前账号无权下载… / 无权上传…), never as something to try again | `data-art-note="info"`, `data-art-note="danger"` |
+| `run_dir` line under the list | — | Kept | `data-art-rundir` |
+| A failed list shown as an error with 重试 (also for 403) | — | 403: `PermissionState`, no retry wording. Other failures: `ErrorState` with 重试. Loading, empty, stale (a failed refresh keeps the list and says it may be old) have their own states | `data-state` on `[data-art-browser]`, `data-art-stale` |
+| — | same list requests | New: 重新读取文件列表, so the list can be read again without closing the view | `data-art-refresh` |
+
+The retired hooks `data-art-inline`, `data-art-footer`, `data-art-up`, `data-art-file-name`, `data-art-preview-btn`,
+`data-art-dl-btn` and `data-art-preview-dl` have no reader left in `app/scripts`.
+
+### Report draft (workbench `?view=report`)
+
+| Old capability (`ReportView`) | Owner now (`ReportSurface` in the shared reader) | Hooks |
+| --- | --- | --- |
+| Four chapters with a chapter column; a click jumps to the chapter | `ChapterNav` inside `ReaderLayout`; the chapter in view is marked while the text scrolls; the findings chapter carries its count; the column stays in place | `data-reader="own"`, `data-chapter-nav`, `data-chapter`, `data-report-toc`, `data-report-section` |
+| Header: 内部报告 · 草稿, title, session, time, package | Kept | `data-report-title` |
+| — | New: a status line. 草稿 while a finding waits for review or there is none, 可发布 when every finding has a review result; glyph and word | `data-reader-status`, `data-report-status` |
+| Four figures: findings, instances, de-noised, stage | Kept | `data-report-kpi`, `data-report-stat` |
+| 执行摘要 | Kept as chapter 1 | `data-report-section="summary"` |
+| 关键发现: a table of the first six valid findings (priority, title, instances) | Chapter 2 风险发现: `ReportFindingsTable` with every valid finding, the review status as a fourth column, and the finding marks (orange line by width, cap on P0 / P1, shape with the P label, status glyph with its word). 25 rows per page on screen with the range stated, 展开全部 for all; a title opens the finding in 风险发现 | `data-report-findings`, `data-report-finding`, `data-report-findings-pager`, `data-report-findings-range`, `data-report-findings-all`, `data-report-finding-open` |
+| 覆盖与限制 | Kept as chapter 3 | `data-report-section="limits"` |
+| 复核状态 with the counts per state and a button to the findings | Kept as chapter 4 | `data-report-review`, `data-report-open-findings` |
+| 导出 JSON 报告 (`workbench-report.json`; `findings` held the first six) | 导出 › JSON; same file name, same fields in the same order (`title`, `package`, `generatedAt`, `counts`, `stage`, `findings`); `findings` holds every valid finding | `data-report-export-menu`, `data-report-export="json"` |
+| 打印 / PDF (`window.print()`) | 导出 › 打印或另存为 PDF; the sheet is styled by `styles/print.css` (A4, the application frame hidden, every row printed, the table header on each page) | `data-report-export="print"`, `data-reader-print` |
+| The two export buttons twice (chapter column, and again in the header on narrow screens) | One export menu at every width | `data-reader-export` |
+| — | New: 导出 › 在报告工作区打开, for a session with a task; opens `/reports?taskId=` (navigation only) | `data-report-export="workspace"` |
+| Loading text; error with 重试 when nothing was read | Loading skeleton; `ErrorState` with 重试; `PermissionState` (no retry wording, no number, no export) when the findings read is refused; empty report said in words; stale notice naming the source that stopped answering | `data-state` on `[data-report-draft]`, `data-report-stale`, `data-report-nofindings` |
+
+### `/reports?taskId=` (report workspace detail)
+
+Only the outer frame changed: `DetailView` renders inside `ReaderLayout` (`scroll="page"`). The five sections
+(MASVS matrix, 合规映射, 风险发现, 会话, 流水线报告), the task switcher, import, manual entry, the matrix and all
+ten export items with their logic are what they were; so are the hooks (`data-toc-nav`, `data-detail-tabs`,
+`data-toc-item`, `data-toc-count`, `data-menu-btn`, `data-menu-panel`, `data-detail-export`, `data-export-btn`,
+`data-matrix-export-csv`, `data-matrix-export-json`). The page keeps its own print view (`.report-print-container`);
+it is not marked `data-reader-print`.
+
+### 加固信息 (`?view=packer`)
+
+| Capability (`PackerPanel`, `GET …/packer`, `?refresh=1` on rescan) | Now | Hooks |
+| --- | --- | --- |
+| Packer family, confidence, first three pieces of evidence | Kept in the head of the pane; family as a glyph and a word | `data-packer-head`, `data-packer-family`, `data-packer-evidence` |
+| Knowledge-base state per status, 缓存 mark | Kept as tags | — |
+| Six detection vectors, each with a hit count; one opens at a time; first eight pieces of evidence, the rest counted | Kept as hairline rows; a hit is a glyph and the words 检出 N 处, none is 未检出特征; a row is a button with `aria-expanded`; the evidence wraps and shows its file | `data-packer-vectors`, `data-packer-row`, `data-packer-vector`, `data-packer-detail` |
+| — | New: a scope line, 六个检测面，检出 N 个 | `data-packer-scope` |
+| 重扫 | 重扫检测面, same request | `data-packer-refresh` |
+| Matching analysis-environment rows (four) | Kept verbatim | `data-packer-environment` |
+| Any failure shown as one alert above empty vectors | 403: `PermissionState`, no retry wording. Another failure, or a 200 answer with `status: "error"`: `ErrorState` with 重试 that does not read as “not packed”. A failed rescan keeps what was read and says it may be old. No family and no hit is said in words | `data-state` on `[data-packer-panel]`, `data-packer-stale` |
+
+### 版本对比 (`?view=diff`, also inside `/reports`)
+
+| Capability (`ReportDiffPanel`; `GET /api/pentest/sessions`, `GET …/{sid}/vulns` twice) | Now | Hooks |
+| --- | --- | --- |
+| Two session pickers (searchable), defaulting to sessions of the project | Kept | `data-diff-toolbar`, `data-testid="diff-side-A"`, `data-testid="diff-side-B"` |
+| Counts 新增 / 消除 / 变更 as coloured chips | A sign and a word each, no colour coding; “—” until a comparison exists | `data-diff-stats`, `data-testid="diff-stat-*"` |
+| 导出差异 (kit export menu) | Kept, same file name and rows | `data-export-menu="diff"` |
+| Two columns: only in A or changed, new in B; each folds | Kept as two panes divided by a hairline, stacked below 761 px | `data-diff-columns`, `data-diff-col`, `data-diff-colhead`, `data-testid="diff-fold-*"` |
+| A row per difference, coloured by kind; one opens to show state, severity and evidence of each side | Each row is a finding: orange line by width, cap on P0 / P1, shape with the P label; the kind is a sign and a word (+ 新增, − 消除, ~ 变更); a button with `aria-expanded` | `data-diff-row`, `data-diff-kind`, `data-testid="diff-row-*"`, `data-testid="diff-detail"` |
+| Two sessions with the same findings | Said in words, with 0 in every count | `data-diff-same` |
+| Any failure shown as one alert | 403: `PermissionState`, no retry wording, no count. Other failures: `ErrorState` with 重试, separately for the session list and for the findings. Loading has its own state. When a new pair cannot be read, the earlier result is not kept on screen as if it were this pair | `data-state` on `[data-diff-panel]` |
+
+Changes of behaviour in Phase 6, all intended:
+
+- The report table and the exported JSON hold every valid finding. Both stopped at six without saying so.
+- A refused read (403) of the artifact list, a file, the packer information or the findings of a comparison is a
+  permission state. Each was shown as a failure with a retry.
+- The artifact browser has one download control (on the selected file) instead of one per row plus one in the
+  preview; 上一级 is replaced by the tree.
+- A menu item that opens a dialog returns focus to the menu's trigger when the dialog closes (kit `Popover`); it
+  used to fall to the document.
+
 ## Shared owners (kept on purpose)
 
 | Job | Renderings | Why both stay |
 | --- | --- | --- |
 | Findings list | Findings › 主发现 (`FindingsSurface`) and Findings › 规则卡 (`RuleCardsSurface`) | 规则卡 carries local entries, import / export, the MASVS filter and the per-instance evidence slice that the main list does not have. Both use the same marks and the same triage button, so the job has one action pattern. Merging the two lists needs a product decision; 主发现 stays the default. |
 | Graph | Evidence › Relation graph › 关系图 (`EvidenceSurface`) and › 应用结构 (`AttackCanvas`) | Different data: session relation graph versus application structure with source slices. Both use `NodeMark` and the finding marks. |
+| Report | Workbench › 报告草稿 (`ReportSurface`) and `/reports?taskId=` (`DetailView`) | Different jobs: the draft is a read-only projection of the session the workbench already holds (no request, no import, no manual entry); the report workspace is where a report is worked on. Both sit in the same `ReaderLayout`, and the draft links to the workspace. There is one report workspace. |
 
 ## Inspector ownership
 
@@ -348,7 +459,9 @@ and focus) is covered by `scripts/check-workbench-shell.mjs`. The count on the �
 permission to read the findings, 0 only for a readable session without findings) is covered by
 `scripts/check-findings-tab-count.mjs`. The findings and evidence surfaces (encodings, keyboard,
 triage requests, permission states, the progressive graph, coverage reasons, and since the Phase 5 follow-up the
-rule cards and the structure canvas) are covered by `scripts/check-findings-evidence.mjs`.
+rule cards and the structure canvas) are covered by `scripts/check-findings-evidence.mjs`. The artifact browser and
+preview, 加固信息, 版本对比, the report reader, export and print (with a 60-finding fixture and a printed PDF) and
+the task dialog are covered by `scripts/check-artifacts-reports.mjs`.
 
 Real backend (Phase 17, `docs/screenshots/phase-17/`): VulnsPanel state change, import and export, AttackCanvas
 source slice, mission start and status all verified. The clusters view was part of the 65 s read audit

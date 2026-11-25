@@ -1,0 +1,60 @@
+/* Print of the shared report reader (features/reports/reader). Everything here is inside @media print and acts
+   only on a page that shows a printable reader ([data-reader-print]); a page without one prints as before.
+   Paper is A4. The application frame is left out, the reader's paper flows over as many pages as it needs,
+   the table header repeats on every page, a heading is not left alone at the foot of a page, and colours are
+   the paper tokens of design/tokens.css. */
+@media print {
+  @page { size: A4; margin: 16mm 14mm; }
+
+  /* The chain from the document down to the paper: no fixed heights, no clipping, no frame. */
+  html:has([data-reader-print]),
+  html:has([data-reader-print]) body,
+  html:has([data-reader-print]) body *:has([data-reader-print]) {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    transform: none !important;
+    background: rgb(var(--jz-paper)) !important;
+    box-shadow: var(--jz-shadow-none) !important;
+  }
+  /* Everything beside that chain is the application frame, the reader's own bar and navigation, or an overlay. */
+  html:has([data-reader-print]) body > :not(:has([data-reader-print])),
+  html:has([data-reader-print]) body *:has([data-reader-print]) > :not(:has([data-reader-print])):not([data-reader-print]) {
+    display: none !important;
+  }
+
+  [data-reader-print] {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: rgb(var(--jz-paper)) !important;
+  }
+  [data-reader-print], [data-reader-print] * {
+    color: rgb(var(--jz-print-ink)) !important;
+    background-color: transparent !important;
+    border-color: rgb(var(--jz-print-rule)) !important;
+    box-shadow: var(--jz-shadow-none) !important;
+    print-color-adjust: exact;
+  }
+  [data-reader-print] svg { color: rgb(var(--jz-print-ink)) !important; }
+
+  [data-reader-print] table { width: 100% !important; border-collapse: collapse; }
+  [data-reader-print] thead { display: table-header-group; }
+  [data-reader-print] tr { break-inside: avoid; }
+  [data-reader-print] .jz-reader-h, [data-reader-print] h2, [data-reader-print] h3 { break-after: avoid; break-inside: avoid; }
+  [data-reader-print] p { orphans: 3; widows: 3; }
+  [data-reader-print] [data-reader-chapter] { break-before: auto; }
+}

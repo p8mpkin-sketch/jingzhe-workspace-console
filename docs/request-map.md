@@ -237,6 +237,29 @@ did; the request set of every route is identical to the Phase 5 log (`docs/scree
 | `GET …/graph`, `GET …/api_tree` by 应用结构 | Once each when the view opens; a failure of either was shown as “no data yet” | Same two reads. A 403 on the graph is a permission state, another failure an error state whose 重试 issues the two reads again |
 | `GET /api/pentest/sessions/{sid}`, `GET /api/chat/source?task_id=…&path=…` by 应用结构 | On double click of a component or deep-link node | Unchanged; also issued by 打开 for the selected node |
 
+### V3 Phase 6: artifacts and reports
+
+No endpoint was added and no read moved. The request set of the 35 routes of the Phase 5 log
+(`docs/screenshots/v3/phase-5/requests.json`) is identical; the two views the capture now also opens
+(`?view=packer`, `?view=diff`) were compared with a build of the commit before Phase 6 (`554621d`) and are identical
+too (`docs/screenshots/v3/phase-6/requests.json`, `check-requests.mjs --against`).
+
+| Request | Before | Now |
+| --- | --- | --- |
+| `GET /api/tasks/{tid}/artifacts?prefix=` | One per directory of the walk (at most 60, three levels) when the artifacts open; again when a directory was entered | Same walk on opening. A directory below the walk is read once when it is expanded; 重新读取文件列表 repeats the walk. Same endpoint and query |
+| `GET /api/tasks/{tid}/report-file?name=` | Preview of the four whitelisted report names | Unchanged |
+| `GET /api/tasks/{tid}/artifact?path=` | Preview of other text files up to 512 kB; every download | Unchanged, also for images. Binary and oversized files are still not requested for preview |
+| `GET /api/tasks/{tid}/source-apk`, `GET /api/tasks/{tid}/dex-package` | From the footer buttons | Unchanged, from 更多 |
+| `GET /api/pentest/sessions/{sid}/report/package` | 报告包 | Unchanged, from 打包下载 |
+| `POST /api/upload` | 上传补充 | Unchanged, from 上传到样本库 |
+| `GET /api/pentest/sessions/{sid}/packer` (`?refresh=1`) | On opening 加固信息; on 重扫 | Unchanged |
+| `GET /api/pentest/sessions`, `GET …/{sid}/vulns` (A and B) | On opening 版本对比; on picking a session | Unchanged |
+| Report draft | No request of its own (the workbench projection) | Unchanged; the JSON export and print issue no request |
+| `/reports?taskId=` | Its reads | Unchanged (only the outer frame changed) |
+
+A 403 on any of these is shown as a permission state without retry wording; a refused download or upload is said
+as a permission matter in the result line.
+
 ### `/pentest`
 
 | Method | Route | Query | Expected unique count on load | Polling interval |
@@ -374,7 +397,7 @@ Route `/pentest/project/1/session/{sid}?view=<id>`. The default view (`stream`) 
 | `coverage` | none beyond the session route | 0 |
 | `artifacts` | `GET /api/tasks/{task_id}/artifacts?prefix=`<br>`GET /api/tasks/{task_id}/artifacts?prefix=report`<br>`GET /api/tasks/{task_id}/artifacts?prefix=unpacked` | 0 |
 | `packer` | `GET /api/pentest/sessions/{sid}/packer` | 0 |
-| `report` | none beyond the session route | 0 |
+| `report` | none beyond the session route (the draft is the workbench projection; export and print issue no request) | 0 |
 | `diff` | `GET /api/pentest/sessions`<br>`GET /api/pentest/sessions/{sid}/vulns`<br>`GET /api/pentest/sessions/{sid}/vulns` | 0 |
 
 ## Real-backend audit (Phase 17)
@@ -454,5 +477,5 @@ duplicated in the fixture runs.
 | `features/pentest/AiThinkPanel.tsx` | orchestrator and progress events |
 | `features/agent/useAgentSession.ts` | agent events poll, trajectory download |
 | `features/ai-assistant/AiAssistantPage.tsx` | chat send stream |
-| `features/tasks/ArtifactsModal.tsx`, `features/projects/ProjectDetailPage.tsx`, `features/new-audit/NewAuditPage.tsx`, `features/pentest/BurpBridgePanel.tsx` | downloads and uploads |
+| `features/artifacts/ArtifactBrowser.tsx`, `features/artifacts/ArtifactPreview.tsx`, `features/projects/ProjectDetailPage.tsx`, `features/new-audit/NewAuditPage.tsx`, `features/pentest/BurpBridgePanel.tsx` | downloads and uploads |
 | `stores/auth.ts` | login |

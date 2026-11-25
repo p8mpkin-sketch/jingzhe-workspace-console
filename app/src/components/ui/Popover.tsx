@@ -38,7 +38,11 @@ export const Popover: React.FC<{
     document.addEventListener('keydown', onKey);
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
   }, [open, role]);
-  const close = () => setOpen(false);
+  // Closing from an item puts focus back on the trigger first, so whatever the item opens can return focus there.
+  const close = () => {
+    if (wrap.current?.contains(document.activeElement)) wrap.current.querySelector<HTMLElement>('button')?.focus();
+    setOpen(false);
+  };
   return (
     <span ref={wrap} className="relative inline-flex">
       {trigger({ onClick: () => setOpen((v) => !v), 'aria-expanded': open, 'aria-controls': id, 'aria-haspopup': role })}

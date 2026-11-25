@@ -1,0 +1,501 @@
+{
+  "passed": 99,
+  "total": 99,
+  "results": [
+    {
+      "name": "@1440 header, tabs, surface bar, surface in this order",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@1440 no second navigation rail: the surface starts at the left edge of the workbench",
+      "pass": true,
+      "detail": "rails 0, nav landmarks in workbench 0, on the page: 主导航"
+    },
+    {
+      "name": "@1440 six primary tabs in one row",
+      "pass": true,
+      "detail": "overview,runtime,findings,evidence,artifacts,report"
+    },
+    {
+      "name": "@1440 no horizontal overflow",
+      "pass": true,
+      "detail": "doc 0"
+    },
+    {
+      "name": "@1024 header, tabs, surface bar, surface in this order",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@1024 no second navigation rail: the surface starts at the left edge of the workbench",
+      "pass": true,
+      "detail": "rails 0, nav landmarks in workbench 0, on the page: 主导航"
+    },
+    {
+      "name": "@1024 six primary tabs in one row",
+      "pass": true,
+      "detail": "overview,runtime,findings,evidence,artifacts,report"
+    },
+    {
+      "name": "@1024 no horizontal overflow",
+      "pass": true,
+      "detail": "doc 0"
+    },
+    {
+      "name": "@760 header, tabs, surface bar, surface in this order",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@760 no second navigation rail: the surface starts at the left edge of the workbench",
+      "pass": true,
+      "detail": "rails 0, nav landmarks in workbench 0, on the page: none in view"
+    },
+    {
+      "name": "@760 six primary tabs in one row",
+      "pass": true,
+      "detail": "overview,runtime,findings,evidence,artifacts,report"
+    },
+    {
+      "name": "@760 no horizontal overflow",
+      "pass": true,
+      "detail": "doc 0"
+    },
+    {
+      "name": "@390 header, tabs, surface bar, surface in this order",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@390 no second navigation rail: the surface starts at the left edge of the workbench",
+      "pass": true,
+      "detail": "rails 0, nav landmarks in workbench 0, on the page: none in view"
+    },
+    {
+      "name": "@390 six primary tabs in one row",
+      "pass": true,
+      "detail": "overview,runtime,findings,evidence,artifacts,report"
+    },
+    {
+      "name": "@390 no horizontal overflow",
+      "pass": true,
+      "detail": "doc 0"
+    },
+    {
+      "name": "header shows title, package and device",
+      "pass": true,
+      "detail": "com.example.wallet · emulator-5554"
+    },
+    {
+      "name": "readouts: status, stage, elapsed, pending",
+      "pass": true,
+      "detail": "{\"status\":\"状态 运行中\",\"stage\":\"阶段 3/5 权限矩阵 3/6 步\",\"elapsed\":\"已用时 00:41:08\",\"pending\":\"待处理 2\"}"
+    },
+    {
+      "name": "elapsed time runs while the session is live",
+      "pass": true,
+      "detail": "已用时 00:41:08 → 已用时 00:41:10"
+    },
+    {
+      "name": "one primary run action",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "overflow menu keeps the secondary actions and their hooks",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "stop asks for confirmation; cancel sends nothing",
+      "pass": true,
+      "detail": "no POST"
+    },
+    {
+      "name": "confirming sends one stop request",
+      "pass": true,
+      "detail": "POST /api/pentest/sessions/41/autopilot/stop"
+    },
+    {
+      "name": "top bar repeats neither package, device nor run status",
+      "pass": true,
+      "detail": "项目 #1 会话 #41 搜索或跳转 Ctrl K 2 D"
+    },
+    {
+      "name": "a session that has not started shows no invented stage or time",
+      "pass": true,
+      "detail": "{\"status\":\"状态 未开始\",\"stage\":\"阶段 未就绪\",\"elapsed\":\"已用时 —\",\"pending\":\"待处理 0\"}"
+    },
+    {
+      "name": "six primary labels",
+      "pass": true,
+      "detail": "概览 运行 风险发现 证据 产物 报告"
+    },
+    {
+      "name": "no tab label appears twice in the workbench",
+      "pass": true,
+      "detail": "概览 运行 风险发现 证据 产物 报告 Agent 轨迹 终端 接口与请求 证据关系 凭据 覆盖矩阵 分析输出 加固信息 报告草稿 版本对比 复核队列 简报 进度 日志"
+    },
+    {
+      "name": "the surface bar has no heading that repeats the tab",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "secondary tabs and segments of the trace",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "one live-status position",
+      "pass": true,
+      "detail": "跟随\n实时\n11:28:22"
+    },
+    {
+      "name": "no summary chips in the bar",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the trace renders its follow switch into that position",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "secondary tabs move with the arrow keys",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "inspector is closed by default and the review rounds are not on the page",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "1440: docked column that pushes the surface, no scrim",
+      "pass": true,
+      "detail": "main 1220 → 899, panel 320"
+    },
+    {
+      "name": "toggle states the open column",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "four tabs: review queue, brief, progress, log",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "separator: arrow keys resize, limits 280 and 480",
+      "pass": true,
+      "detail": "336 / 480 / 280"
+    },
+    {
+      "name": "separator: drag resizes",
+      "pass": true,
+      "detail": "401"
+    },
+    {
+      "name": "state is stored under the signed-in user",
+      "pass": true,
+      "detail": "{\"open\":true,\"width\":401,\"tab\":\"progress\"}"
+    },
+    {
+      "name": "open state, width and tab survive a reload",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "double click resets the width to 320",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "docked: Escape returns focus to the toggle",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Ctrl + . and ⌘ + . toggle the inspector",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "inspector tabs move with the arrow keys",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "docked column stays open when the surface changes",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "review rounds are in inspector › progress, the strip is gone",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a round state is a glyph and a word, not opacity",
+      "pass": true,
+      "detail": "R4\nLLM 对抗\n对抗 2\n降级"
+    },
+    {
+      "name": "stages with their steps, the current one open",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "any stage opens to its steps",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a stage jumps to its entry in the trace",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the rounds request is the one the strip made, issued once on load",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "review queue lists the approvals waiting",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "brief: session, task, authorisation, model route, exploration run",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "log lists recent events",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "queue and brief repeat neither package, device nor run status",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "the pending count is stated once, in the header",
+      "pass": true,
+      "detail": "复核队列 简报 进度 日志"
+    },
+    {
+      "name": "no findings, reports or metrics in the inspector",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "inspector says it is reading while the first response is pending",
+      "pass": true,
+      "detail": "正在读取…"
+    },
+    {
+      "name": "before the first response the header states no status or count, and the run action waits",
+      "pass": true,
+      "detail": "{\"status\":\"状态 正在读取…\",\"stage\":\"阶段 未就绪\",\"elapsed\":\"已用时 —\",\"pending\":\"待处理 —\"}"
+    },
+    {
+      "name": "once it arrives the header states it and the action is available",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a failed source is named in its inspector tab, with retry; the queue is not reported as empty",
+      "pass": true,
+      "detail": "审批上次读取失败，下面的内容可能不是最新的。 重试 审批列表未知 读取成功后，需要人工确认的动作会排在这里。"
+    },
+    {
+      "name": "the live position says part of the data is not updated; the header does not claim zero approvals",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a failed status read shows \"unknown\", not \"not started\"; the run action stays available",
+      "pass": true,
+      "detail": "状态\n未知"
+    },
+    {
+      "name": "tabs whose sources arrived show no notice",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "403 on every read: the header status says 无权限",
+      "pass": true,
+      "detail": "状态\n无权限"
+    },
+    {
+      "name": "403 on every read: the run action (start / pause / resume) is disabled and says why",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "403 on every read: the banner says 当前账号无权读取该会话，请切换账号或联系管理员",
+      "pass": true,
+      "detail": "当前账号无权读取该会话，请切换账号或联系管理员。"
+    },
+    {
+      "name": "403 on every read: no retry wording anywhere in the workbench (text and tooltips)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "403 on every read: the live position says 无权限, not 部分未更新",
+      "pass": true,
+      "detail": "跟随\n无权限"
+    },
+    {
+      "name": "403 on every read: the inspector names the permission and offers no retry",
+      "pass": true,
+      "detail": "当前账号无权读取审批。"
+    },
+    {
+      "name": "403 on every read: device exploration, replay inventory and stop are disabled in the menu",
+      "pass": true,
+      "detail": "[true,true,true]"
+    },
+    {
+      "name": "403 on every read: nothing was posted",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "403 on every read at 390: same statement, no overflow",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "403 on one source: the banner names it as a permission matter, without retry wording or a retry button",
+      "pass": true,
+      "detail": "当前账号无权读取：审批。"
+    },
+    {
+      "name": "403 on one source: the header still states the run and the action is available",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "403 on one source and a failed read of another: each is said for what it is; retry is offered for the failed one only",
+      "pass": true,
+      "detail": "当前账号无权读取：审批。部分数据源未加载：阶段时间线。已展示可用数据，稍后自动重试。\n立即重试"
+    },
+    {
+      "name": "@1024 an overlay never opens by itself on load",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@1024 drawer: placed on the right at the stored width",
+      "pass": true,
+      "detail": "{\"x\":624,\"y\":0,\"w\":400,\"h\":900,\"r\":1024,\"b\":900}"
+    },
+    {
+      "name": "@1024 focus moves into the drawer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@1024 focus stays inside the drawer",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@1024 Escape closes the drawer and returns focus to the toggle",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@1024 shortcut opens it; going to the trace closes it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@760 an overlay never opens by itself on load",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@760 sheet: placed at the bottom, full width",
+      "pass": true,
+      "detail": "{\"x\":0,\"y\":198,\"w\":760,\"h\":702,\"r\":760,\"b\":900}"
+    },
+    {
+      "name": "@760 focus moves into the sheet",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@760 focus stays inside the sheet",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@760 Escape closes the sheet and returns focus to the toggle",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@760 shortcut opens it; going to the trace closes it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@390 an overlay never opens by itself on load",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@390 sheet: placed at the bottom, full width",
+      "pass": true,
+      "detail": "{\"x\":0,\"y\":198,\"w\":390,\"h\":702,\"r\":390,\"b\":900}"
+    },
+    {
+      "name": "@390 focus moves into the sheet",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@390 focus stays inside the sheet",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@390 Escape closes the sheet and returns focus to the toggle",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "@390 shortcut opens it; going to the trace closes it",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "?view= selects its primary and secondary tab",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "segments keep ?view= and ?tab=",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "a primary tab reopens on the surface it was left on",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "back goes to the project runs tab",
+      "pass": true,
+      "detail": "#/projects/1?tab=runs"
+    }
+  ]
+}

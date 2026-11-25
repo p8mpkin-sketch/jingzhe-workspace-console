@@ -140,3 +140,14 @@ svg.lucide { stroke-width: var(--jz-icon-stroke); }
   }
   .report-print-container { position: static !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
 }
+
+/* Report findings table (features/reports/reader): below 761 px on screen a row is stacked (marks first, title under
+   them) instead of scrolling sideways. Paper always gets the table, whatever the page width. */
+@media screen and (max-width: 760px) {
+  .jz-report-findings thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .jz-report-findings tr[data-on-page="yes"] { display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: var(--jz-space-2); }
+  .jz-report-findings td { padding-top: var(--jz-space-1-5); padding-bottom: var(--jz-space-1-5); min-width: 0; }
+  .jz-report-findings td:nth-child(3) { justify-self: end; }
+  .jz-report-findings td:nth-child(4)::after { content: " 个实例"; }
+  .jz-report-findings td:nth-child(2) { grid-column: 1 / -1; order: 4; padding-top: 0; padding-left: var(--jz-space-3); }
+}

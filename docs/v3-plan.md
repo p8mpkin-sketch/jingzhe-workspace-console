@@ -427,7 +427,7 @@ Agent     /agent
 └──────────────────────────────┴─────────────────────────────────────────────────────┘
 ```
 
-- `surfaces/artifacts/ArtifactBrowser`（与任务详情共用；替换 `ArtifactsModal` 的内嵌模式）。
+- `features/artifacts/ArtifactBrowser`（与任务详情共用；替换 `ArtifactsModal` 的内嵌模式）。Phase 6 放在 `features/artifacts/` 而不是工作台的 `surfaces/` 下，因为任务弹窗也用它。
 - 每个文件显示类型、大小、来源和状态。只有一个下载控件：在选中的文件上。“打包下载”是浏览器页头里唯一的批量操作。
 - 加固信息（`PackerPanel`）仍是一个独立的二级界面。
 

@@ -44,6 +44,8 @@ export const VIEWS = [
   ['session-clusters', '/projects/1/sessions/41?view=clusters'], ['session-facts', '/projects/1/sessions/41?view=facts'],
   ['session-structure', '/projects/1/sessions/41?view=structure'], ['session-credentials', '/projects/1/sessions/41?view=credentials'],
   ['session-coverage', '/projects/1/sessions/41?view=coverage'],
+  // Artifacts and reports (V3 Phase 6): the two second-level views beside 分析输出 and 报告草稿.
+  ['session-packer', '/projects/1/sessions/41?view=packer'], ['session-diff', '/projects/1/sessions/41?view=diff'],
 ];
 const only = arg('routes', '');
 const pool = [...ROUTES, ...VIEWS];
