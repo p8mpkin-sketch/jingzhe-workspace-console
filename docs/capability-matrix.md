@@ -345,7 +345,7 @@ No request was added, removed or moved (`docs/request-map.md`). Checked by `app/
 
 | Old capability (`ArtifactsModal`) | Request | Owner now (`ArtifactBrowser` / `ArtifactPreview`) | Hooks |
 | --- | --- | --- | --- |
-| Dialog shell opened from a task row or the task detail (`data-artifacts-btn`) | — | `ArtifactsModal` keeps the kit `Dialog` and nothing else; its content is `ArtifactBrowser` | `data-art-dialog`, `data-art-browser` |
+| Dialog shell opened from a task row or the task detail | — | `ArtifactsModal` keeps the kit `Dialog` and nothing else; its content is `ArtifactBrowser`. The way in is described under “The artifacts entry of a task” below | `data-art-dialog`, `data-art-browser` |
 | Inline mode inside the workbench | — | Retired. The workbench renders `ArtifactBrowser` directly | `data-art-browser` |
 | Task name and id in the header | — | Kept, with the number of files the walk found | `data-art-header`, `data-art-scope` |
 | Directory listing, one directory at a time (打开 a directory, 上一级, the path line) | `GET /api/tasks/{tid}/artifacts?prefix=` | A tree: directories expand and collapse in place with their file counts, so 上一级 and the path line are not needed. A directory below the walk is read when it is opened (same request) | `data-art-tree`, `data-art-mode="tree"`, `data-art-dir`, `data-art-dir-state` |
@@ -373,6 +373,26 @@ No request was added, removed or moved (`docs/request-map.md`). Checked by `app/
 
 The retired hooks `data-art-inline`, `data-art-footer`, `data-art-up`, `data-art-file-name`, `data-art-preview-btn`,
 `data-art-dl-btn` and `data-art-preview-dl` have no reader left in `app/scripts`.
+
+### The artifacts entry of a task (`/tasks`, Phase 6 acceptance fix)
+
+The entry is decided from what the task list already holds; the artifacts endpoint is not asked before the dialog
+opens, so the entry is the same whether that endpoint answers, is empty, refuses or fails.
+
+| Question | Answer | Hooks |
+| --- | --- | --- |
+| Which tasks have the entry | A finished audit or unpack (`kind`, `status` of the task itself), or any task with a linked session (the session list the page reads anyway). Other tasks have none, and their row opens nothing | `data-artifacts-btn="{task id}"` inside `data-task-row="{task id}"` |
+| Where it is | A button 产物 in the row itself at every width, beside the row's first action. Before the fix it was the first action only when nothing else was, otherwise an item of the row's overflow menu, where it is no longer repeated | `data-artifacts-btn`, `data-more-btn`, `data-more-menu` |
+| Other ways in | 浏览产物 in the task detail (same rule); a click on a row without a session (unchanged) | `data-detail-artifacts` |
+| Session list not read | Finished tasks keep the entry; the tasks that qualify only through a session have none until that read answers | — |
+| Artifacts list answers | The dialog shows the tree | `data-state="ok"` on `[data-art-browser]` |
+| Artifacts list is empty | The dialog says the task has no files, with the reason the endpoint gave | `data-state="empty"` |
+| Artifacts list refused (403) | The entry stays. The dialog shows 没有权限读取产物文件: no retry, no “no data yet”, no empty list, no file count | `data-state="forbidden"` |
+| Artifacts list failed (for example 500) | The entry stays. The dialog shows 产物列表没有读到 with 重试, and does not read as an empty task | `data-state="error"` |
+| Artifacts list slow | The dialog shows its loading state and can be closed | `data-state="loading"` |
+| Refresh failed after a good read | The list stays and a notice says it may be old | `data-art-stale` |
+| Focus | Escape or the close button returns focus to the entry that opened the dialog | — |
+| Task list itself refused or failed | No rows, so no entry; the list shows its own state | — |
 
 ### Report draft (workbench `?view=report`)
 
@@ -434,6 +454,8 @@ Changes of behaviour in Phase 6, all intended:
   preview; 上一级 is replaced by the tree.
 - A menu item that opens a dialog returns focus to the menu's trigger when the dialog closes (kit `Popover`); it
   used to fall to the document.
+- Acceptance fix: the artifacts entry of a task is a button in the row, no longer an item of the overflow menu,
+  and a task with a linked session has it as well as a finished one.
 
 ## Shared owners (kept on purpose)
 

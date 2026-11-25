@@ -1,0 +1,1447 @@
+{
+ "base": "fixtures",
+ "total": 282,
+ "failed": 0,
+ "groups": {
+  "A": [
+   56,
+   56
+  ],
+  "P": [
+   25,
+   25
+  ],
+  "K": [
+   30,
+   30
+  ],
+  "D": [
+   30,
+   30
+  ],
+  "R": [
+   53,
+   53
+  ],
+  "X": [
+   27,
+   27
+  ],
+  "T": [
+   61,
+   61
+  ]
+ },
+ "results": [
+  {
+   "name": "A1 the workbench shows the artifact browser, not the old inline dialog",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A1 the scope line counts the files the walk found",
+   "pass": true,
+   "detail": "10 个文件"
+  },
+  {
+   "name": "A1 one list request per directory within three levels, on the existing endpoint",
+   "pass": true,
+   "detail": "GET /api/tasks/101/artifacts?prefix= | GET /api/tasks/101/artifacts?prefix=report | GET /api/tasks/101/artifacts?prefix=unpacked | GET /api/tasks/101/artifacts?prefix=screens | GET /api/tasks/101/artifacts?prefix=logs | GET /api/tasks/101/artifacts?prefix=unpacked%2Fres"
+  },
+  {
+   "name": "A1 the tree shows directories with their file counts",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A1 every file states its type and size",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A2 a directory collapses and says so",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A2 and expands again",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A2 a directory below the first walk is read when it is opened (one request)",
+   "pass": true,
+   "detail": "GET /api/tasks/101/artifacts?prefix=unpacked%2Fres%2Fdrawable"
+  },
+  {
+   "name": "A2 the count includes the file found there",
+   "pass": true,
+   "detail": "11 个文件"
+  },
+  {
+   "name": "A3 search lists matching files by path and states how many of how many",
+   "pass": true,
+   "detail": "显示 3 / 11 个文件"
+  },
+  {
+   "name": "A3 a search with no match says so and offers to clear",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A3 清除筛选 returns to the tree",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A4 category chips with counts: 全部, 脱壳 DEX, Manifest, 报告, 日志",
+   "pass": true,
+   "detail": "全部 11 | 脱壳 DEX 3 | Manifest 0 | 报告 3 | 日志 3"
+  },
+  {
+   "name": "A4 a category filters the list and is marked pressed",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A4 the extension filter works the same way",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A5 no download control before a file is selected; none on any row",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A5 selecting a file marks its row and shows the one download control, on the selected file",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A5 the selected row sits on surface-2",
+   "pass": true,
+   "detail": "rgb(238, 237, 232) vs rgb(238, 237, 232)"
+  },
+  {
+   "name": "A5 下载 fetches the selected file from /artifact and saves it under its name",
+   "pass": true,
+   "detail": "run.log"
+  },
+  {
+   "name": "A5 a note says what was downloaded",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A6 打包下载 is the only primary action of the header",
+   "pass": true,
+   "detail": "打包下载"
+  },
+  {
+   "name": "A6 打包下载 fetches the report package of the session",
+   "pass": true,
+   "detail": "report_41.zip"
+  },
+  {
+   "name": "A7 上传到样本库 is visible in the header and says where the file goes",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A7 an upload posts to /api/upload and the note says it did not go into this task",
+   "pass": true,
+   "detail": "已上传到样本库：/data/in/sample.apk。文件没有写入这个任务的产物目录。 知道了"
+  },
+  {
+   "name": "A7 a refused upload is stated as a permission matter, without retry wording",
+   "pass": true,
+   "detail": "当前账号无权上传到样本库。请切换账号或联系管理员。 知道了"
+  },
+  {
+   "name": "A8 更多 holds the manifest export and the two bundle downloads",
+   "pass": true,
+   "detail": "导出文件清单 JSON|下载原始安装包|下载脱壳 DEX 压缩包"
+  },
+  {
+   "name": "A8 the manifest keeps its fields and lists every file",
+   "pass": true,
+   "detail": "[\"kind\",\"task_id\",\"task\",\"run_dir\",\"exported_at\",\"count\",\"files\"]"
+  },
+  {
+   "name": "A8 下载原始安装包 uses /source-apk",
+   "pass": true,
+   "detail": "Wallet.apk"
+  },
+  {
+   "name": "A8 下载脱壳 DEX 压缩包 uses /dex-package",
+   "pass": true,
+   "detail": "task101_dex.zip"
+  },
+  {
+   "name": "A9 Escape closes the menu and returns focus to 更多",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A9 every control is reachable with Tab and shows a focus indicator",
+   "pass": true,
+   "detail": "missing: none; without indicator: 0; stops: 38"
+  },
+  {
+   "name": "A9 Enter on a file row selects it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A10 light: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "A10 no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A10 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "A11 a refused download is a permission matter, without retry wording",
+   "pass": true,
+   "detail": "当前账号无权下载文件 run.log 。请切换账号或联系管理员。 知道了"
+  },
+  {
+   "name": "A11 a refused bundle download likewise",
+   "pass": true,
+   "detail": "当前账号无权下载报告包。请切换账号或联系管理员。 知道了"
+  },
+  {
+   "name": "A11 a failed bundle download says it did not succeed",
+   "pass": true,
+   "detail": "报告包没有下载成功：HTTP 500。 知道了"
+  },
+  {
+   "name": "A12 empty: says there are no files and gives the reason the endpoint gave",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A12 error: an error state with retry, not an empty list",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A12 重试 reads the list again",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A12 forbidden: a permission state without retry wording and without a file count",
+   "pass": true,
+   "detail": "任务 #101 Wallet 上传到样本库 更多 打包下载 没有权限读取产物文件 当前账号不能读取这个任务的产物目录，所以这里没有文件列表。请切换账号或联系管理员。"
+  },
+  {
+   "name": "A12 slow: a loading state, no count, no empty statement",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A12 stale: a failed refresh keeps the list and says it may be old",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A12 stale after a refused refresh: said as a permission matter, no retry offered",
+   "pass": true,
+   "detail": "刷新被拒绝：当前账号无权读取这个任务的产物目录。下面是之前读到的列表，可能不是最新的。"
+  },
+  {
+   "name": "A12 a refresh that answers clears the notice",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A12 one directory unread: the others are listed and the unread one is named",
+   "pass": true,
+   "detail": "有 1 个目录没有读到（logs），文件数不包含它们。展开目录可以再读一次。"
+  },
+  {
+   "name": "A13 a session without a task says so (empty state)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A13 an unreadable session: permission state, no retry wording",
+   "pass": true,
+   "detail": "没有权限读取产物文件 产物按会话关联的任务列出，当前账号不能读取这个会话，所以这里没有文件列表。请切换账号或联系管理员。"
+  },
+  {
+   "name": "A14 @1440 dark no horizontal overflow; bundle, upload, more and the download control are in reach",
+   "pass": true,
+   "detail": "[true,true,true,true]"
+  },
+  {
+   "name": "A14 @1024 light no horizontal overflow; bundle, upload, more and the download control are in reach",
+   "pass": true,
+   "detail": "[true,true,true,true]"
+  },
+  {
+   "name": "A14 @1024 dark no horizontal overflow; bundle, upload, more and the download control are in reach",
+   "pass": true,
+   "detail": "[true,true,true,true]"
+  },
+  {
+   "name": "A14 @760 light no horizontal overflow; bundle, upload, more and the download control are in reach",
+   "pass": true,
+   "detail": "[true,true,true,true]"
+  },
+  {
+   "name": "A14 @760 dark no horizontal overflow; bundle, upload, more and the download control are in reach",
+   "pass": true,
+   "detail": "[true,true,true,true]"
+  },
+  {
+   "name": "A14 @390 light no horizontal overflow; bundle, upload, more and the download control are in reach",
+   "pass": true,
+   "detail": "[true,true,true,true]"
+  },
+  {
+   "name": "A14 @390 dark no horizontal overflow; bundle, upload, more and the download control are in reach",
+   "pass": true,
+   "detail": "[true,true,true,true]"
+  },
+  {
+   "name": "P1 nothing selected: the preview says what can be shown",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P2 text: read from /artifact, shown as text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P2 the facts line states type, size, source and state",
+   "pass": true,
+   "detail": "类型 文本 大小 48 kB 来源 任务 #101 状态 已就绪"
+  },
+  {
+   "name": "P2 复制全文 copies the text and says so",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P3 JSON: formatted, with the original one switch away",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P3 原文 shows what the server sent",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P4 Markdown report: read through /report-file and rendered",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P4 原文 shows the Markdown source",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P5 image (SVG): shown as an image with a text alternative",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P5 image (PNG): decoded from the bytes of /artifact",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P6 over 512 kB: no request; size, type, the reason and the download control",
+   "pass": true,
+   "detail": "logs/full.log 下载 类型 文本 大小 2.0 MB 来源 任务 #101 状态 不能预览 这个文件不能在线预览 文件有 2.0 MB，超过了在线预览的上限 512 kB。可以下载后查看。"
+  },
+  {
+   "name": "P7 binary: no request; says it cannot be shown, with size, type and download",
+   "pass": true,
+   "detail": "unpacked/classes.dex 下载 类型 二进制 大小 8.2 MB 来源 任务 #101 状态 不能预览 这个文件不能在线预览 这是二进制文件或不支持预览的类型（8.2 MB）。可以下载后查看。"
+  },
+  {
+   "name": "P8 关闭预览 clears the selection",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P9 light: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "P9 no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P10 empty: an empty file says it is empty",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P10 error: says the content was not read, offers retry and the download stays",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P10 重试 reads the file",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P10 forbidden: a permission state without retry wording",
+   "pass": true,
+   "detail": "logs/crash.txt 下载 类型 文本 大小 6 kB 来源 任务 #101 状态 无权限 没有权限读取这个文件 当前账号不能读取这个任务的产物文件。请切换账号或联系管理员。"
+  },
+  {
+   "name": "P10 slow: a loading state that says 读取中, no content",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P10 stale: a failed refresh of the list keeps the open preview and says the list may be old",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P11 a long text is cut and the preview says how much is missing",
+   "pass": true,
+   "detail": "预览只显示前 307,200 个字符，还有 500 个字符没有显示。完整内容在下载的文件里。"
+  },
+  {
+   "name": "P12 @390 light the preview is in the page without horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P12 @1440 dark the preview is in the page without horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P12 @1440 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "K1 the panel reads /packer once and shows the family, confidence and evidence",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K1 the scope line counts the vectors with a hit",
+   "pass": true,
+   "detail": "六个检测面，检出 3 个"
+  },
+  {
+   "name": "K1 six vectors, each a glyph and a word",
+   "pass": true,
+   "detail": "Frida 检测 检出 1 处 | Root 检测 检出 1 处 | 模拟器检测 未检出特征 | Ptrace 反调试 检出 1 处 | 代理检测 未检出特征 | 调试暴露 未检出特征"
+  },
+  {
+   "name": "K1 the analysis-environment rows are kept",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K2 a vector opens its evidence and says it is open",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K2 one vector open at a time; one without a hit says so",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K2 Enter opens a vector from the keyboard",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K3 重扫检测面 reads /packer?refresh=1",
+   "pass": true,
+   "detail": "GET /api/pentest/sessions/41/packer?refresh=1"
+  },
+  {
+   "name": "K4 light: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "K4 the refresh control and the six vectors are tab stops with a focus indicator",
+   "pass": true,
+   "detail": "7 stops, 0 without indicator"
+  },
+  {
+   "name": "K4 no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K5 stale: a failed rescan keeps what was read and says it may be old",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K5 stale after a refused rescan: a permission matter, no retry offered",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K5 empty: no family and no hit is said in words, not as an error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K5 error: an error state with retry that does not read as “not packed”",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K5 重试 reads again",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K5 a 200 answer with status \"error\" is a failed read, not an empty result",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K5 forbidden: a permission state without retry wording",
+   "pass": true,
+   "detail": "没有权限读取加固信息 当前账号不能读取这个会话的加固信息，所以这里没有内容。请切换账号或联系管理员。"
+  },
+  {
+   "name": "K5 slow: a loading state that says the first computation can take minutes",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K6 @1440 dark no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K6 @1440 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "K6 @1024 light no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K6 @1024 dark no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K6 @1024 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "K6 @760 light no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K6 @760 dark no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K6 @760 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "K6 @390 light no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K6 @390 dark no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K6 @390 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "D1 reads the session list and the findings of the two sessions, nothing else new",
+   "pass": true,
+   "detail": "GET /api/pentest/sessions | GET /api/pentest/sessions/40/vulns | GET /api/pentest/sessions/41/vulns"
+  },
+  {
+   "name": "D1 both pickers are set to sessions of this project",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D1 the counts are a sign and a word each",
+   "pass": true,
+   "detail": "+ 新增 2 − 消除 1 ~ 变更 1"
+  },
+  {
+   "name": "D2 two columns: what is only in A or changed, and what is new in B",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D2 a row says what changed with a sign and a word",
+   "pass": true,
+   "detail": "+ 新增|+ 新增|~ 变更|− 消除"
+  },
+  {
+   "name": "D2 every row is a finding: orange line, 3 px with the cap on P0 / P1, 2 px otherwise, shape and P label",
+   "pass": true,
+   "detail": "[{\"line\":true,\"w\":\"3px\",\"p\":\"P1\",\"cap\":true},{\"line\":true,\"w\":\"2px\",\"p\":\"P2\",\"cap\":false},{\"line\":true,\"w\":\"3px\",\"p\":\"P0\",\"cap\":true},{\"line\":true,\"w\":\"2px\",\"p\":\"P3\",\"cap\":false}]"
+  },
+  {
+   "name": "D3 a row opens its evidence and says it is open",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D3 Enter opens a row; one row open at a time",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D3 a column folds and says so",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D4 导出差异 is kept (the export menu of the comparison)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D5 light: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "D5 no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D6 empty: two sessions with the same findings say so, with 0 in every count",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D6 error: an error state with retry; no count is stated and it does not read as “identical”",
+   "pass": true,
+   "detail": "+ 新增 — − 消除 — ~ 变更 —"
+  },
+  {
+   "name": "D6 重试 reads again",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D6 error on the session list: said as that, with retry",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D6 forbidden: a permission state without retry wording, no count",
+   "pass": true,
+   "detail": "A 会话（基线） #40 com.example.compass ready com.example.compass B 会话（目标） #41 com.example.wallet 运行中 com.example.wallet + 新增 —"
+  },
+  {
+   "name": "D6 slow: a loading state, no count, no “identical”",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "D6 stale: when a new pair cannot be read, the earlier result is not shown as if it were this pair",
+   "pass": true,
+   "detail": "state error"
+  },
+  {
+   "name": "D7 @1440 dark no horizontal overflow; columns side by side",
+   "pass": true,
+   "detail": "side"
+  },
+  {
+   "name": "D7 @1440 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "D7 @1024 light no horizontal overflow; columns side by side",
+   "pass": true,
+   "detail": "side"
+  },
+  {
+   "name": "D7 @1024 dark no horizontal overflow; columns side by side",
+   "pass": true,
+   "detail": "side"
+  },
+  {
+   "name": "D7 @1024 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "D7 @760 light no horizontal overflow; columns stacked",
+   "pass": true,
+   "detail": "stacked"
+  },
+  {
+   "name": "D7 @760 dark no horizontal overflow; columns stacked",
+   "pass": true,
+   "detail": "stacked"
+  },
+  {
+   "name": "D7 @760 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "D7 @390 light no horizontal overflow; columns stacked",
+   "pass": true,
+   "detail": "stacked"
+  },
+  {
+   "name": "D7 @390 dark no horizontal overflow; columns stacked",
+   "pass": true,
+   "detail": "stacked"
+  },
+  {
+   "name": "D7 @390 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "R1 the draft is in the shared reader; the old report view is gone",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R1 it issues no request of its own",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R1 four chapters, the findings chapter with its count",
+   "pass": true,
+   "detail": "1 执行结论与口径 | 2 风险发现 7 | 3 覆盖与限制 | 4 复核状态"
+  },
+  {
+   "name": "R1 the first chapter is marked current",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R2 status line: 草稿 while a finding waits for review, with the number",
+   "pass": true,
+   "detail": "状态 草稿 4 条待复核"
+  },
+  {
+   "name": "R2 the status is a glyph and a word",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R3 the table lists all 7 valid findings (the old view stopped at 6)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R3 each row carries the finding marks: orange line by width, cap on P0 / P1, shape with P label, status glyph with word",
+   "pass": true,
+   "detail": "[{\"p\":\"P0\",\"line\":true,\"w\":\"3px\",\"cap\":true,\"sev\":true,\"st\":true},{\"p\":\"P1\",\"line\":true,\"w\":\"3px\",\"cap\":true,\"sev\":true,\"st\":true},{\"p\":\"P1\",\"line\":true,\"w\":\"3px\",\"cap\":true,\"sev\":true,\"st\":true}]"
+  },
+  {
+   "name": "R3 a table of 7 has no pager",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R4 scrolling marks the chapter in view",
+   "pass": true,
+   "detail": "findings"
+  },
+  {
+   "name": "R4 the chapter navigation stays in place while the report scrolls",
+   "pass": true,
+   "detail": "237.390625 → 237.390625"
+  },
+  {
+   "name": "R4 picking a chapter scrolls it to the top and marks it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R5 Enter on a chapter jumps to it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R5 export, chapters, the scrolling text, the finding links and 在风险发现里复核 are tab stops with a focus indicator",
+   "pass": true,
+   "detail": "missing none; without indicator 0"
+  },
+  {
+   "name": "R5 a finding in the table opens it in 风险发现",
+   "pass": true,
+   "detail": "/projects/1/sessions/41?view=findings&finding=R-003"
+  },
+  {
+   "name": "R5 在风险发现里复核 goes to the findings",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R5 no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R6 light: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "R6 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "R7 可发布 when no finding waits for review",
+   "pass": true,
+   "detail": "状态 可发布 7 条发现都有复核结论"
+  },
+  {
+   "name": "R8 60 findings: all 60 are in the table, 25 in view, and the range is stated",
+   "pass": true,
+   "detail": "第 1–25 条，共 60 条"
+  },
+  {
+   "name": "R8 the chapter count and the summary say 60",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R8 下一页 shows the next 25",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R8 the last page has the remaining 10 and 下一页 is disabled",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R8 展开全部 shows all 60 on screen",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R9 empty: a report without findings says so, is a draft, and has no table",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R9 error: an error state with retry and no empty report",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R9 forbidden: a permission state without retry wording, no number, no export",
+   "pass": true,
+   "detail": "没有权限读取报告数据 报告草稿由这个会话的风险发现汇总而成，当前账号不能读取它们，所以这里没有内容。请切换账号或联系管理员。"
+  },
+  {
+   "name": "R9 forbidden on the findings read alone: still a permission state, not a report with 0 findings",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R9 slow: a loading state, no number",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R9 stale: a source that stops answering is named above the report, which stays",
+   "pass": true,
+   "detail": "最近一次没有读到：阶段时间线。下面的报告用的是之前读到的内容，可能不是最新的。 重新读取"
+  },
+  {
+   "name": "R10 @1440 dark no horizontal overflow; chapters beside the paper; no table cell outside it",
+   "pass": true,
+   "detail": "beside, 0 cells outside"
+  },
+  {
+   "name": "R10 @1024 light no horizontal overflow; chapters beside the paper; no table cell outside it",
+   "pass": true,
+   "detail": "beside, 0 cells outside"
+  },
+  {
+   "name": "R10 @1024 dark no horizontal overflow; chapters beside the paper; no table cell outside it",
+   "pass": true,
+   "detail": "beside, 0 cells outside"
+  },
+  {
+   "name": "R10 @760 light no horizontal overflow; chapters above the paper; no table cell outside it",
+   "pass": true,
+   "detail": "above, 0 cells outside"
+  },
+  {
+   "name": "R10 @760 dark no horizontal overflow; chapters above the paper; no table cell outside it",
+   "pass": true,
+   "detail": "above, 0 cells outside"
+  },
+  {
+   "name": "R10 @390 light no horizontal overflow; chapters above the paper; no table cell outside it",
+   "pass": true,
+   "detail": "above, 0 cells outside"
+  },
+  {
+   "name": "R10 @390 dark no horizontal overflow; chapters above the paper; no table cell outside it",
+   "pass": true,
+   "detail": "above, 0 cells outside"
+  },
+  {
+   "name": "R11 /reports?taskId= sits in the same reader frame",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 its five sections, import, task switcher and manual entry are what they were",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 its one export menu keeps all ten items and their hooks",
+   "pass": true,
+   "detail": "vulns-csv,matrix-csv,matrix-json,full-json,full-md,evidence,print,pdf,exec,zip"
+  },
+  {
+   "name": "R11 Escape closes the menu and returns focus to 导出",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 a chapter is marked when picked",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 and when scrolled to: the last chapter at the end of the page",
+   "pass": true,
+   "detail": "pipe"
+  },
+  {
+   "name": "R11 this page is not marked for the reader print sheet (its own print view is unchanged)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 @1440 dark /reports?taskId= no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 @1024 light /reports?taskId= no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 @1024 dark /reports?taskId= no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 @760 light /reports?taskId= no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 @760 dark /reports?taskId= no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 @390 light /reports?taskId= no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 @390 dark /reports?taskId= no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X1 one export control on the draft (the two pairs of buttons are gone)",
+   "pass": true,
+   "detail": "导出"
+  },
+  {
+   "name": "X1 the menu: JSON, print / PDF, and the report workspace when the session has a task",
+   "pass": true,
+   "detail": "JSON（全部 60 条发现） | 打印或另存为 PDF | 在报告工作区打开"
+  },
+  {
+   "name": "X2 the JSON keeps its file name, field names and structure",
+   "pass": true,
+   "detail": "title,package,generatedAt,counts,stage,findings"
+  },
+  {
+   "name": "X2 the JSON holds all 60 findings, not the first six",
+   "pass": true,
+   "detail": "60 findings"
+  },
+  {
+   "name": "X2 exporting issues no request",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X3 打印或另存为 PDF calls the browser print",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X4 print: the application frame, the reader bar, the chapter list and the pager are not printed",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X4 print: all 60 rows are printed, whatever page was in view",
+   "pass": true,
+   "detail": "60 rows"
+  },
+  {
+   "name": "X4 print: the table header repeats (table-header-group) and a row is not split",
+   "pass": true,
+   "detail": "table-header-group, tr avoid"
+  },
+  {
+   "name": "X4 print: a chapter heading is not left at the foot of a page",
+   "pass": true,
+   "detail": "avoid"
+  },
+  {
+   "name": "X4 print: paper tokens for ink and sheet, no frame around the paper, nothing clips it",
+   "pass": true,
+   "detail": "{\"ink\":true,\"sheet\":true,\"border\":\"0px\",\"chain\":[]}"
+  },
+  {
+   "name": "X5 PDF: A4 pages",
+   "pass": true,
+   "detail": "Page size:       594.96 x 841.92 pts (A4)"
+  },
+  {
+   "name": "X5 PDF: the report runs over several pages",
+   "pass": true,
+   "detail": "3 pages"
+  },
+  {
+   "name": "X5 PDF: every page that has findings starts them under the table header",
+   "pass": true,
+   "detail": "3 of 3 pages with rows have the header"
+  },
+  {
+   "name": "X5 PDF: all 60 findings are in it",
+   "pass": true,
+   "detail": "60 distinct findings"
+  },
+  {
+   "name": "X5 PDF: no application frame text in it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X6 back on screen the frame is there again",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X7 在报告工作区打开 goes to the report centre (task 101 has no finished audit, so the centre shows its list)",
+   "pass": true,
+   "detail": "/reports"
+  },
+  {
+   "name": "X7 for a task with a finished audit it opens /reports?taskId= on that task, in the same reader frame",
+   "pass": true,
+   "detail": "/reports?taskId=100"
+  },
+  {
+   "name": "X7 no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X8 without a task the workspace item is not offered",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X8 Escape closes the menu and returns focus to 导出",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X9 empty: the export of a report without findings has an empty list and the same fields",
+   "pass": true,
+   "detail": "title,package,generatedAt,counts,stage,findings"
+  },
+  {
+   "name": "X9 error: nothing is offered for export and no report is marked for print",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X9 forbidden: nothing is offered for export and no report is marked for print",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X9 slow: nothing is offered for export and no report is marked for print",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X9 stale: export still works on what was read, and the screen says it may be old",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T1 entry: every task with a finished audit / unpack or a linked session has one artifacts entry in its row",
+   "pass": true,
+   "detail": "rows with an entry: 100, 101, 102, 103, 104, 105, 107"
+  },
+  {
+   "name": "T1 entry: the queued task without a session has none, and pressing its row opens no dialog",
+   "pass": true,
+   "detail": "row 1, entries 0"
+  },
+  {
+   "name": "T1 entry: it is in the row itself, visible, with its name; not behind the overflow menu",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T1 entry: shown without asking the artifacts endpoint",
+   "pass": true,
+   "detail": "0 list reads before a dialog was opened"
+  },
+  {
+   "name": "T1 the task centre opens a dialog whose content is the shared browser",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T1 opening it reads the list of that task, and only then",
+   "pass": true,
+   "detail": "GET /api/tasks/100/artifacts?prefix= | GET /api/tasks/100/artifacts?prefix=report"
+  },
+  {
+   "name": "T1 same tree, same counts",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T1 same header actions: bundle (primary), upload, more, refresh",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T2 preview and the one download control work inside the dialog",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T2 下载 saves the selected file",
+   "pass": true,
+   "detail": "executive_summary.md"
+  },
+  {
+   "name": "T2 the bundle control states whether the task has a session",
+   "pass": true,
+   "detail": "ready"
+  },
+  {
+   "name": "T2 打包下载 fetches the report package of the linked session",
+   "pass": true,
+   "detail": "report_40.zip"
+  },
+  {
+   "name": "T2 导出文件清单 JSON still exports from the dialog",
+   "pass": true,
+   "detail": "task100_artifacts_manifest.json"
+  },
+  {
+   "name": "T2 上传到样本库 still opens the file picker",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T3 Escape closes the open menu first and keeps the dialog",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T4 light: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "T3 the next Escape closes the dialog and focus returns to the entry that opened it",
+   "pass": true,
+   "detail": "BUTTON data-artifacts-btn=100"
+  },
+  {
+   "name": "T3 Enter on the focused entry opens the dialog again",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T3 the close button closes it and focus returns to the entry",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T3 the task list still works afterwards: the row menu opens, and it holds no second artifacts item",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T3 the entry is a tab stop with a focus indicator",
+   "pass": true,
+   "detail": "data-sel-row=100 | data-goto-session=true | data-artifacts-btn=100 | data-more-btn; without indicator 0"
+  },
+  {
+   "name": "T4 no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T5 empty: the entry is there",
+   "pass": true,
+   "detail": "100, 101, 102, 103, 104, 105, 107"
+  },
+  {
+   "name": "T5 empty: the dialog says the task has no files",
+   "pass": true,
+   "detail": "任务 #100 Compass 0 个文件 上传到样本库 更多 打包下载 这个任务没有产物文件 任务的产物目录是空的。评估运行后，报告、脱壳文件和日志会出现在这"
+  },
+  {
+   "name": "T5 error (500): the entry is there",
+   "pass": true,
+   "detail": "100, 101, 102, 103, 104, 105, 107"
+  },
+  {
+   "name": "T5 error (500): the dialog says the list was not read, offers 重试, and does not read as an empty task",
+   "pass": true,
+   "detail": "任务 #100 Compass 上传到样本库 更多 打包下载 产物列表没有读到 fixture failure。没有读到列表，不代表这个任务没有产物。 重试"
+  },
+  {
+   "name": "T5 error (500): 重试 reads the list again and shows it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T5 forbidden (403): the entry is there, the same rows as in the normal case",
+   "pass": true,
+   "detail": "rows with an entry: 100, 101, 102, 103, 104, 105, 107"
+  },
+  {
+   "name": "T5 forbidden (403): the dialog opens on a permission state",
+   "pass": true,
+   "detail": "任务 #100 Compass 上传到样本库 更多 打包下载 没有权限读取产物文件 当前账号不能读取这个任务的产物目录，所以这里没有文件列表。请切换账号或联系管理员。"
+  },
+  {
+   "name": "T5 forbidden (403): no retry wording and no retry control",
+   "pass": true,
+   "detail": "任务 #100 Compass 上传到样本库 更多 打包下载 没有权限读取产物文件 当前账号不能读取这个任务的产物目录，所以这里没有文件列表。请切换账号或联系管理员。"
+  },
+  {
+   "name": "T5 forbidden (403): not shown as “no data yet”, no empty list, no file count",
+   "pass": true,
+   "detail": "任务 #100 Compass 上传到样本库 更多 打包下载 没有权限读取产物文件 当前账号不能读取这个任务的产物目录，所以这里没有文件列表。请切换账号或联系管理员。"
+  },
+  {
+   "name": "T5 forbidden (403): Escape closes it and focus returns to the entry",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T5 forbidden (403): no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T5 slow: the entry is there",
+   "pass": true,
+   "detail": "100, 101, 102, 103, 104, 105, 107"
+  },
+  {
+   "name": "T5 slow: a loading state in the dialog, with no error and no empty statement",
+   "pass": true,
+   "detail": "任务 #100 Compass 上传到样本库 更多 打包下载"
+  },
+  {
+   "name": "T5 slow: Escape closes it while it loads, and focus returns to the entry",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T5 stale: a failed refresh keeps the list and says it may be old",
+   "pass": true,
+   "detail": "刷新没有成功。下面是之前读到的列表，可能不是最新的。 再读一次"
+  },
+  {
+   "name": "T6 @1440 dark the dialog fits the viewport, no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T6 @1440 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "T6 @1440 dark the entries are in the rows: all seven inside the page, none covered, no horizontal overflow, focus back on the entry",
+   "pass": true,
+   "detail": "[] 7 entries; errors 0"
+  },
+  {
+   "name": "T6 @1024 light the dialog fits the viewport, no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T6 @1024 light the entries are in the rows: all seven inside the page, none covered, no horizontal overflow, focus back on the entry",
+   "pass": true,
+   "detail": "[] 7 entries; errors 0"
+  },
+  {
+   "name": "T6 @1024 dark the dialog fits the viewport, no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T6 @1024 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "T6 @1024 dark the entries are in the rows: all seven inside the page, none covered, no horizontal overflow, focus back on the entry",
+   "pass": true,
+   "detail": "[] 7 entries; errors 0"
+  },
+  {
+   "name": "T6 @760 light the dialog fits the viewport, no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T6 @760 light the entries are in the rows: all seven inside the page, none covered, no horizontal overflow, focus back on the entry",
+   "pass": true,
+   "detail": "[] 7 entries; errors 0"
+  },
+  {
+   "name": "T6 @760 dark the dialog fits the viewport, no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T6 @760 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "T6 @760 dark the entries are in the rows: all seven inside the page, none covered, no horizontal overflow, focus back on the entry",
+   "pass": true,
+   "detail": "[] 7 entries; errors 0"
+  },
+  {
+   "name": "T6 @390 light the dialog fits the viewport, no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T6 @390 light the entries are in the rows: all seven inside the page, none covered, no horizontal overflow, focus back on the entry",
+   "pass": true,
+   "detail": "[] 7 entries; errors 0"
+  },
+  {
+   "name": "T6 @390 dark the dialog fits the viewport, no horizontal overflow",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T6 @390 dark: nothing dimmed, nothing red, no emoji",
+   "pass": true,
+   "detail": "{\"dim\":[],\"red\":[],\"emoji\":\"\"}"
+  },
+  {
+   "name": "T6 @390 dark the entries are in the rows: all seven inside the page, none covered, no horizontal overflow, focus back on the entry",
+   "pass": true,
+   "detail": "[] 7 entries; errors 0"
+  },
+  {
+   "name": "T7 session list refused: finished tasks keep their entry (it needs only the task itself); the others have none",
+   "pass": true,
+   "detail": "rows with an entry: 100, 104, 105, 107"
+  },
+  {
+   "name": "T7 a finished task without a session opens the same browser; the bundle says why it is disabled",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T7 a running task with a session opens the browser on its own files",
+   "pass": true,
+   "detail": "任务 #101 Wallet 10 个文件 上传到样本库 更多 打包下载"
+  },
+  {
+   "name": "T7 the task detail keeps its 浏览产物 button under a refused list read and opens the same permission state",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T7 Escape closes it and focus is back on a control of the row, not lost",
+   "pass": true,
+   "detail": "BUTTON 任务 #100 的更多操作"
+  },
+  {
+   "name": "T7 task list refused: no row, so no entry and no dialog; the list shows its own state",
+   "pass": true,
+   "detail": "rows 0, entries 0"
+  }
+ ]
+}

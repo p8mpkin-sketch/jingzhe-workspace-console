@@ -8,6 +8,8 @@
 //   X  export and print   the one export menu, JSON with every record, print media, a PDF
 //   T  task dialog        the dialog shell around the same browser
 // Every group also runs empty, error, forbidden (no retry wording), slow and stale.
+// Every wait has a limit (LIMIT, GROUP_MS, RUN_MS): something that is missing fails its check with the reason
+// (“entry missing …”, “state rendering …”); nothing waits without end.
 // Needs `npx vite preview --port 4173`.
 // Usage: node scripts/check-artifacts-reports.mjs [--out dir] [--only A,P,K,D,R,X,T] [--base url]
 import { createRequire } from 'node:module';
@@ -32,6 +34,10 @@ const ART = `${WB}?view=artifacts`, PACK = `${WB}?view=packer`, REPORT = `${WB}?
 const TASK_LIST = /\/api\/tasks\/\d+\/artifacts$/;
 const TASK_FILE = /\/api\/tasks\/\d+\/(artifact|report-file)$/;
 const RETRY = /重试|再读一次|稍后|重新读取/;
+// No wait in this script is open-ended. Every page gets these as its defaults (so a locator action on something
+// that is not there fails after LIMIT.act), a group has GROUP_MS, the whole run RUN_MS.
+const LIMIT = { nav: 20000, act: 8000, list: 10000, state: 6000, read: 3000 };
+const GROUP_MS = 12 * 60 * 1000, RUN_MS = 45 * 60 * 1000;
 // Every width in both themes, except 1440 light, which the main pass of each group covers.
 const REST = [[1440, 'dark'], [1024, 'light'], [1024, 'dark'], [760, 'light'], [760, 'dark'], [390, 'light'], [390, 'dark']];
 
@@ -88,10 +94,30 @@ const manyCards = (n) => {
 };
 
 const browser = await chromium.launch();
+const live = new Set(); // contexts opened by the group in progress
+const summary = () => {
+  const failed = results.filter((r) => !r.pass);
+  const groups = {}; for (const r of results) { const g = r.name[0]; groups[g] = groups[g] || [0, 0]; groups[g][1]++; if (r.pass) groups[g][0]++; }
+  if (out) fs.writeFileSync(path.join(out, 'report.artifacts-reports.json'), JSON.stringify({ base: 'fixtures', total: results.length, failed: failed.length, groups, results }, null, 1));
+  console.log('\n' + Object.entries(groups).map(([g, [p, t]]) => `${g} ${p}/${t}`).join('   '));
+  console.log(`${results.length - failed.length}/${results.length} artifacts and reports checks passed (fixtures)`);
+  return failed.length;
+};
+// A group that throws or runs out of time is one failed check with the reason; the next group still runs.
+async function group(g, body) {
+  if (!want(g)) return;
+  let timer;
+  const limit = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(`group ${g} did not finish within ${GROUP_MS / 60000} min`)), GROUP_MS); });
+  try { await Promise.race([body(), limit]); }
+  catch (e) { ok(`${g} aborted: the group stopped before its end`, false, String(e?.message || e).split('\n').slice(0, 3).join(' | ')); }
+  finally { clearTimeout(timer); for (const c of live) await c.close().catch(() => {}); live.clear(); }
+}
+setTimeout(() => { ok('Z watchdog: the run did not finish', false, `stopped after ${RUN_MS / 60000} min`); summary(); process.exit(2); }, RUN_MS).unref();
 async function open(route, { width = 1440, height = 900, theme = 'light', deny = null, fail = null, hang = null, over = null, wait = 1500, downloads = false } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height }, colorScheme: theme, acceptDownloads: downloads });
   await ctx.addInitScript((t) => { try { localStorage.setItem('token', 'fixture-token'); localStorage.setItem('apksec-theme', t); } catch {} }, theme);
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => {});
+  live.add(ctx); ctx.setDefaultTimeout(LIMIT.act); ctx.setDefaultNavigationTimeout(LIMIT.nav);
   const page = await ctx.newPage();
   const state = { deny, fail, hang, over, errors: [], reqs: [] };
   page.on('pageerror', (e) => state.errors.push(e.message));
@@ -112,8 +138,8 @@ async function open(route, { width = 1440, height = 900, theme = 'light', deny =
   return { ctx, page, state };
 }
 const count = (page, sel) => page.locator(sel).count();
-const text = (page, sel) => page.locator(sel).first().innerText().then((s) => s.replace(/\s+/g, ' ').trim()).catch(() => '');
-const attr = (page, sel, a) => page.locator(sel).first().getAttribute(a).catch(() => null);
+const text = (page, sel) => page.locator(sel).first().innerText({ timeout: LIMIT.read }).then((s) => s.replace(/\s+/g, ' ').trim()).catch(() => '');
+const attr = (page, sel, a) => page.locator(sel).first().getAttribute(a, { timeout: LIMIT.read }).catch(() => null);
 const shot = async (page, name) => { if (out) await page.screenshot({ path: path.join(out, name) }); };
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 const since = (state, n) => state.reqs.slice(n);
@@ -154,7 +180,7 @@ const tabStops = async (page, rootSel, max = 60) => {
 };
 
 // ───────────────────────────── A. Artifact browser ─────────────────────────────
-if (want('A')) {
+await group('A', async () => {
   const { ctx, page, state } = await open(ART, { over: tree, downloads: true });
   ok('A1 the workbench shows the artifact browser, not the old inline dialog', (await count(page, '[data-art-browser][data-state="ok"]')) === 1 && (await count(page, '[data-art-inline], [data-unified-modal]')) === 0);
   ok('A1 the scope line counts the files the walk found', (await text(page, '[data-art-scope]')) === `${WALKED} 个文件`, await text(page, '[data-art-scope]'));
@@ -304,10 +330,10 @@ if (want('A')) {
     ok(`A14 @${w} ${th} no horizontal overflow; bundle, upload, more and the download control are in reach`, (await overflow(s.page)) <= 1 && vis.every(Boolean), JSON.stringify(vis));
     await shot(s.page, `artifacts-selected-${w}-${th}.png`); await s.ctx.close();
   }
-}
+});
 
 // ───────────────────────────── P. Preview ─────────────────────────────
-if (want('P')) {
+await group('P', async () => {
   const { ctx, page, state } = await open(ART, { over: tree });
   const pick = async (rel) => { const n = state.reqs.length; await page.click(`[data-art-file="${rel}"]`); await page.waitForTimeout(700); return since(state, n); };
   ok('P1 nothing selected: the preview says what can be shown', (await count(page, '[data-art-preview="none"]')) === 1 && /512 kB/.test(await text(page, '[data-art-preview]')));
@@ -379,10 +405,10 @@ if (want('P')) {
     if (th === 'dark') await clean(s.page, '[data-art-browser]', `P12 @${w} dark`);
     await shot(s.page, `preview-markdown-${w}-${th}.png`); await s.ctx.close();
   }
-}
+});
 
 // ───────────────────────────── K. 加固信息 ─────────────────────────────
-if (want('K')) {
+await group('K', async () => {
   const PACKER = /\/api\/pentest\/sessions\/41\/packer$/;
   const { ctx, page, state } = await open(PACK);
   ok('K1 the panel reads /packer once and shows the family, confidence and evidence', state.reqs.filter((x) => /\/packer$/.test(x)).length === 1 && /加固方案：example-shell/.test(await text(page, '[data-packer-head]')) && /置信度 82%/.test(await text(page, '[data-packer-head]')) && /libshell\.so/.test(await text(page, '[data-packer-evidence]')));
@@ -435,10 +461,10 @@ if (want('K')) {
     if (th === 'dark') await clean(s.page, '[data-packer-panel]', `K6 @${w} dark`);
     await shot(s.page, `packer-${w}-${th}.png`); await s.ctx.close();
   }
-}
+});
 
 // ───────────────────────────── D. 版本对比 ─────────────────────────────
-if (want('D')) {
+await group('D', async () => {
   const VULNS = /\/api\/pentest\/sessions\/\d+\/vulns$/;
   const LIST = /\/api\/pentest\/sessions$/;
   // Session 40 is the baseline; 41 lost one finding, gained two and changed the state of one.
@@ -519,12 +545,12 @@ if (want('D')) {
     if (th === 'dark') await clean(s.page, '[data-diff-panel]', `D7 @${w} dark`);
     await shot(s.page, `diff-${w}-${th}.png`); await s.ctx.close();
   }
-}
+});
 
 // ───────────────────────────── R. Report reader ─────────────────────────────
 const GROUPED = /\/api\/pentest\/sessions\/41\/vulns\/grouped$/;
 const sixty = (m, u) => (m === 'GET' && GROUPED.test(u.pathname) ? { status: 'ok', cards: manyCards(60) } : undefined);
-if (want('R')) {
+await group('R', async () => {
   const { ctx, page, state } = await open(REPORT);
   ok('R1 the draft is in the shared reader; the old report view is gone', (await count(page, '[data-report-draft] [data-reader="own"]')) === 1 && (await count(page, '.wb-report, .wb-report-toc')) === 0);
   ok('R1 it issues no request of its own', state.reqs.every((x) => !/report\/summary|report-file|\/report$/.test(x)));
@@ -638,10 +664,10 @@ if (want('R')) {
     await shot(s.page, `reports-reader-${w}-${th}.png`);
     await s.ctx.close();
   }
-}
+});
 
 // ───────────────────────────── X. Export and print ─────────────────────────────
-if (want('X')) {
+await group('X', async () => {
   const { ctx, page, state } = await open(REPORT, { over: sixty, downloads: true });
   const triggers = await page.evaluate(() => [...document.querySelectorAll('[data-report-draft] button:not([data-report-finding-open])')].filter((b) => /导出|打印|JSON|PDF/.test(b.innerText)).map((b) => b.innerText.trim()));
   ok('X1 one export control on the draft (the two pairs of buttons are gone)', triggers.join('|') === '导出', triggers.join('|'));
@@ -736,69 +762,211 @@ if (want('X')) {
     const j = JSON.parse(fs.readFileSync(await dl3.path(), 'utf8'));
     ok('X9 stale: export still works on what was read, and the screen says it may be old', j.findings.length === 7 && (await count(s.page, '[data-report-stale]')) === 1);
     await s.ctx.close(); }
-}
+});
 
 // ───────────────────────────── T. Task dialog ─────────────────────────────
-if (want('T')) {
-  const openDialog = async (opts = {}) => {
-    const s = await open('/tasks', { wait: 2000, ...opts });
-    const btn = s.page.locator('[data-artifacts-btn]').first();
-    await btn.scrollIntoViewIfNeeded().catch(() => {});
-    if (!(await btn.isVisible().catch(() => false))) { const more = s.page.locator('[data-task-row] button[aria-haspopup="menu"]').first(); if (await more.count()) { await more.click(); await s.page.waitForTimeout(200); } }
-    s.trigger = await s.page.locator('[data-artifacts-btn]').first().evaluate((e) => { e.setAttribute('data-test-trigger', '1'); return true; }).catch(() => false);
-    await s.page.locator('[data-artifacts-btn]').first().click(); await s.page.waitForTimeout(1200);
+await group('T', async () => {
+  // Fixture tasks: 100, 104, 105, 107 are finished audits / unpacks; 101, 102, 103 are not finished but have a
+  // session; 106 is queued without a session. The entry is decided from these facts alone.
+  const DONE = [100, 104, 105, 107], ELIGIBLE = [100, 101, 102, 103, 104, 105, 107], NONE = 106;
+  const SESSIONS = /\/api\/pentest\/sessions$/;
+  const ENTRY = '[data-task-row] [data-artifacts-btn]';
+  const entryOf = (id) => `[data-task-row="${id}"] [data-artifacts-btn="${id}"]`;
+  const BROWSER = '[data-art-dialog] [data-art-browser]';
+  const listReads = (s) => s.state.reqs.filter((r) => /\/api\/tasks\/\d+\/artifacts/.test(r));
+  const first = (e) => String(e?.message || e).split('\n')[0].slice(0, 160);
+  const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+
+  // Opens /tasks and records which rows carry an artifacts entry. Every wait has a limit; what is missing is
+  // written to s.problem and the caller fails its check with that text.
+  const openTasks = async (opts = {}) => {
+    const s = await open('/tasks', { wait: 0, ...opts });
+    s.problem = ''; s.entries = [];
+    const listed = await s.page.waitForSelector('[data-task-row]', { timeout: LIMIT.list }).then(() => true, () => false);
+    if (!listed) { s.problem = `task list: no task row within ${LIMIT.list} ms`; return s; }
+    // The session map arrives with its own read: wait (bounded) until the set of entries stops changing.
+    let prev = '';
+    for (let i = 0; i < 12; i++) {
+      await s.page.waitForTimeout(300);
+      s.entries = await s.page.locator(ENTRY).evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-artifacts-btn'))).sort((a, b) => a - b));
+      const now = s.entries.join(','); if (now === prev && i >= 2) break; prev = now;
+    }
     return s;
   };
-  const { ctx, page, state } = await openDialog({ over: tree, downloads: true });
-  ok('T1 the task centre opens a dialog whose content is the shared browser', (await count(page, '[data-art-dialog] [role="dialog"] [data-art-browser][data-state="ok"]')) === 1 && (await count(page, '[data-art-inline]')) === 0);
-  ok('T1 same tree, same counts', (await text(page, '[data-art-scope]')) === `${WALKED} 个文件` && (await count(page, '[data-art-dir]')) >= 5);
-  ok('T1 same header actions: bundle (primary), upload, more, refresh', (await count(page, '[data-art-dialog] [data-art-zip]')) === 1 && (await count(page, '[data-art-dialog] [data-art-upload-btn]')) === 1 && (await count(page, '[data-art-dialog] [data-art-more]')) === 1 && (await count(page, '[data-art-dialog] [data-art-refresh]')) === 1);
-  await page.click('[data-art-file="report/executive_summary.md"]'); await page.waitForTimeout(700);
-  ok('T2 preview and the one download control work inside the dialog', (await count(page, '[data-art-markdown]')) === 1 && (await count(page, '[data-art-dialog] [data-art-download]')) === 1);
-  const zipState = await attr(page, '[data-art-zip]', 'data-art-zip');
-  ok('T2 the bundle control states whether the task has a session', zipState === 'ready' || /没有关联的评估会话/.test((await attr(page, '[data-art-zip]', 'title')) || ''), zipState);
-  const focusIn = await page.evaluate(() => !!document.activeElement?.closest('[data-art-dialog]'));
-  await page.click('[data-art-more]'); await page.waitForTimeout(150); await page.keyboard.press('Escape'); await page.waitForTimeout(200);
-  ok('T3 Escape closes the open menu first and keeps the dialog', (await count(page, '[data-art-more-menu]')) === 0 && (await count(page, '[data-art-dialog]')) === 1 && focusIn);
-  await clean(page, '[data-art-dialog] [data-art-browser]', 'T4 light');
-  await shot(page, 'task-dialog-1440-light.png');
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-  ok('T3 the next Escape closes the dialog and focus returns to what opened it', (await count(page, '[data-art-dialog]')) === 0 && (await page.evaluate(() => { const a = document.activeElement; return !!a && a !== document.body; })), await page.evaluate(() => document.activeElement?.tagName + ' ' + (document.activeElement?.getAttribute('data-test-trigger') || document.activeElement?.getAttribute('aria-haspopup') || '')));
-  ok('T4 no page error', state.errors.length === 0, state.errors.join('; '));
-  await ctx.close();
+  // Opens the dialog from the entry of one row. A missing entry is reported at once, without pressing anything.
+  const openDialog = async (opts = {}, id = 100) => {
+    const s = await openTasks(opts);
+    if (s.problem) return s;
+    const entry = s.page.locator(entryOf(id)); const n = await entry.count();
+    if (n !== 1) { s.problem = `entry missing: row ${id} has ${n} artifacts entries (rows that have one: ${s.entries.join(', ') || 'none'})`; return s; }
+    s.readsBefore = listReads(s).length;
+    const err = await entry.click({ timeout: LIMIT.act }).then(() => '', first);
+    if (err) { s.problem = `entry not usable: ${err}`; return s; }
+    const opened = await s.page.waitForSelector(BROWSER, { timeout: LIMIT.act }).then(() => true, () => false);
+    if (!opened) s.problem = `dialog: not open ${LIMIT.act} ms after the entry of row ${id} was pressed`;
+    return s;
+  };
+  // Waits (bounded) for the browser inside the dialog to reach a state; '' when it did, otherwise what it shows.
+  const stateIs = async (s, want) => {
+    if (s.problem) return s.problem;
+    await s.page.waitForSelector(`${BROWSER}[data-state="${want}"]`, { timeout: LIMIT.state }).catch(() => {});
+    const got = await attr(s.page, BROWSER, 'data-state');
+    if (got === want) await s.page.waitForTimeout(400); // the sheet has finished moving in
+    return got === want ? '' : `state rendering: expected "${want}", the dialog shows ${got ? `"${got}"` : 'no browser'}`;
+  };
+  // A check that needs the dialog: fails with the reason when the entry or the state was not there.
+  const tk = (name, problem, pass, detail = '') => ok(name, !problem && !!pass, problem || detail);
+  const entriesKept = (s) => same(s.entries, ELIGIBLE);
+
+  // T1 normal: the entry, then the dialog
+  { const s0 = await openTasks({ over: tree });
+    tk('T1 entry: every task with a finished audit / unpack or a linked session has one artifacts entry in its row', s0.problem, entriesKept(s0), `rows with an entry: ${s0.entries.join(', ')}`);
+    const noneRow = s0.problem ? 0 : await count(s0.page, `[data-task-row="${NONE}"]`);
+    const noneEntry = s0.problem ? 0 : await count(s0.page, `[data-task-row="${NONE}"] [data-artifacts-btn]`);
+    if (noneRow === 1) { await s0.page.locator(`[data-task-row="${NONE}"]`).click({ timeout: LIMIT.act, position: { x: 200, y: 12 } }).catch(() => {}); await s0.page.waitForTimeout(400); }
+    tk('T1 entry: the queued task without a session has none, and pressing its row opens no dialog', s0.problem, noneRow === 1 && noneEntry === 0 && (await count(s0.page, '[data-art-dialog]')) === 0, `row ${noneRow}, entries ${noneEntry}`);
+    tk('T1 entry: it is in the row itself, visible, with its name; not behind the overflow menu', s0.problem, (await s0.page.locator(entryOf(100)).isVisible()) && /产物/.test(await text(s0.page, entryOf(100))) && (await count(s0.page, '[data-more-menu]')) === 0);
+    tk('T1 entry: shown without asking the artifacts endpoint', s0.problem, listReads(s0).length === 0, `${listReads(s0).length} list reads before a dialog was opened`);
+    await s0.ctx.close(); }
+  const s1 = await openDialog({ over: tree, downloads: true });
+  const { page, state } = s1;
+  const p1 = await stateIs(s1, 'ok');
+  tk('T1 the task centre opens a dialog whose content is the shared browser', p1, (await count(page, '[data-art-dialog] [role="dialog"] [data-art-browser][data-state="ok"]')) === 1 && (await count(page, '[data-art-inline]')) === 0);
+  tk('T1 opening it reads the list of that task, and only then', p1, s1.readsBefore === 0 && listReads(s1).some((r) => /\/api\/tasks\/100\/artifacts\?prefix=$/.test(r)), listReads(s1).slice(0, 2).join(' | '));
+  tk('T1 same tree, same counts', p1, (await text(page, '[data-art-scope]')) === `${WALKED} 个文件` && (await count(page, '[data-art-dir]')) >= 5);
+  tk('T1 same header actions: bundle (primary), upload, more, refresh', p1, (await count(page, '[data-art-dialog] [data-art-zip]')) === 1 && (await count(page, '[data-art-dialog] [data-art-upload-btn]')) === 1 && (await count(page, '[data-art-dialog] [data-art-more]')) === 1 && (await count(page, '[data-art-dialog] [data-art-refresh]')) === 1);
+  if (!p1) {
+    await page.click('[data-art-file="report/executive_summary.md"]', { timeout: LIMIT.act }); await page.waitForSelector('[data-art-markdown]', { timeout: LIMIT.state }).catch(() => {});
+    ok('T2 preview and the one download control work inside the dialog', (await count(page, '[data-art-markdown]')) === 1 && (await count(page, '[data-art-dialog] [data-art-download]')) === 1);
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: LIMIT.act }).catch(() => null), page.click('[data-art-dialog] [data-art-download]', { timeout: LIMIT.act })]);
+    ok('T2 下载 saves the selected file', !!dl && dl.suggestedFilename() === 'executive_summary.md', dl ? dl.suggestedFilename() : 'no download');
+    const zipState = await attr(page, '[data-art-zip]', 'data-art-zip');
+    ok('T2 the bundle control states whether the task has a session', zipState === 'ready' || /没有关联的评估会话/.test((await attr(page, '[data-art-zip]', 'title')) || ''), zipState);
+    const [zip] = await Promise.all([page.waitForEvent('download', { timeout: LIMIT.act }).catch(() => null), page.click('[data-art-zip]', { timeout: LIMIT.act })]);
+    ok('T2 打包下载 fetches the report package of the linked session', !!zip && /report_40\.zip/.test(zip.suggestedFilename()), zip ? zip.suggestedFilename() : 'no download');
+    await page.click('[data-art-more]', { timeout: LIMIT.act }); await page.waitForTimeout(150);
+    const [man] = await Promise.all([page.waitForEvent('download', { timeout: LIMIT.act }).catch(() => null), page.click('[data-art-export-list]', { timeout: LIMIT.act })]);
+    ok('T2 导出文件清单 JSON still exports from the dialog', !!man && /task100_artifacts_manifest/.test(man.suggestedFilename()), man ? man.suggestedFilename() : 'no download');
+    const [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: LIMIT.act }).catch(() => null), page.click('[data-art-upload-btn]', { timeout: LIMIT.act })]);
+    ok('T2 上传到样本库 still opens the file picker', !!fc);
+    const focusIn = await page.evaluate(() => !!document.activeElement?.closest('[data-art-dialog]'));
+    await page.click('[data-art-more]', { timeout: LIMIT.act }); await page.waitForTimeout(150); await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+    ok('T3 Escape closes the open menu first and keeps the dialog', (await count(page, '[data-art-more-menu]')) === 0 && (await count(page, '[data-art-dialog]')) === 1 && focusIn);
+    await clean(page, BROWSER, 'T4 light');
+    await shot(page, 'task-dialog-1440-light.png');
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    ok('T3 the next Escape closes the dialog and focus returns to the entry that opened it', (await count(page, '[data-art-dialog]')) === 0 && (await page.evaluate(() => document.activeElement?.getAttribute('data-artifacts-btn'))) === '100',
+      await page.evaluate(() => { const a = document.activeElement; return a ? `${a.tagName} ${[...a.attributes].filter((x) => x.name.startsWith('data-')).map((x) => `${x.name}=${x.value}`).join(' ')}` : 'nothing'; }));
+    await page.keyboard.press('Enter'); await page.waitForSelector(BROWSER, { timeout: LIMIT.act }).catch(() => {});
+    ok('T3 Enter on the focused entry opens the dialog again', (await count(page, BROWSER)) === 1);
+    await page.click('[data-art-dialog] [data-modal-close]', { timeout: LIMIT.act }); await page.waitForTimeout(300);
+    ok('T3 the close button closes it and focus returns to the entry', (await count(page, '[data-art-dialog]')) === 0 && (await page.evaluate(() => document.activeElement?.getAttribute('data-artifacts-btn'))) === '100');
+    await page.click('[data-task-row="100"] [data-more-btn]', { timeout: LIMIT.act }); await page.waitForTimeout(200);
+    const menuOk = (await count(page, '[data-more-menu]')) === 1 && (await count(page, '[data-more-menu] [data-artifacts-btn]')) === 0;
+    await page.keyboard.press('Escape'); await page.waitForTimeout(150);
+    ok('T3 the task list still works afterwards: the row menu opens, and it holds no second artifacts item', menuOk);
+    const stops = await tabStops(page, '[data-task-row="100"]', 8);
+    ok('T3 the entry is a tab stop with a focus indicator', stops.seen.some((h) => h.includes('data-artifacts-btn=100')) && stops.bare === 0, `${stops.seen.join(' | ')}; without indicator ${stops.bare}`);
+  } else {
+    // The dialog is not there: every check that needs it fails with the reason, none is skipped.
+    for (const n of ['T2 preview and the one download control work inside the dialog', 'T2 下载 saves the selected file', 'T2 the bundle control states whether the task has a session', 'T2 打包下载 fetches the report package of the linked session', 'T2 导出文件清单 JSON still exports from the dialog', 'T2 上传到样本库 still opens the file picker', 'T3 Escape closes the open menu first and keeps the dialog', 'T3 the next Escape closes the dialog and focus returns to the entry that opened it', 'T3 Enter on the focused entry opens the dialog again', 'T3 the close button closes it and focus returns to the entry', 'T3 the task list still works afterwards: the row menu opens, and it holds no second artifacts item', 'T3 the entry is a tab stop with a focus indicator', 'T4 light: nothing dimmed, nothing red, no emoji']) ok(n, false, p1);
+  }
+  tk('T4 no page error', s1.problem, state.errors.length === 0, state.errors.join('; '));
+  await s1.ctx.close();
+
+  // T5 the five states. In each one the entry is the same as in the normal case.
   { const s = await openDialog({ over: (m, u) => (m === 'GET' && TASK_LIST.test(u.pathname) ? { entries: [] } : undefined) });
-    ok('T5 empty: the dialog says the task has no files', (await count(s.page, '[data-art-dialog] [data-art-browser][data-state="empty"]')) === 1);
+    const p = await stateIs(s, 'empty'); const t = await text(s.page, BROWSER);
+    tk('T5 empty: the entry is there', s.problem, entriesKept(s), s.entries.join(', '));
+    tk('T5 empty: the dialog says the task has no files', p, /这个任务没有产物文件/.test(t) && (await count(s.page, '[data-art-file]')) === 0, t.slice(0, 80));
     await shot(s.page, 'task-dialog-empty-1440-light.png'); await s.ctx.close(); }
   { const s = await openDialog({ fail: TASK_LIST });
-    ok('T5 error: an error state with retry', (await count(s.page, '[data-art-dialog] [data-art-browser][data-state="error"]')) === 1 && (await count(s.page, '[data-art-dialog] button:has-text("重试")')) === 1);
-    await shot(s.page, 'task-dialog-error-1440-light.png'); await s.ctx.close(); }
+    const p = await stateIs(s, 'error'); const t = await text(s.page, BROWSER);
+    tk('T5 error (500): the entry is there', s.problem, entriesKept(s), s.entries.join(', '));
+    tk('T5 error (500): the dialog says the list was not read, offers 重试, and does not read as an empty task', p, /产物列表没有读到/.test(t) && (await count(s.page, `${BROWSER} button:has-text("重试")`)) === 1 && !/这个任务没有产物文件/.test(t) && (await text(s.page, '[data-art-scope]')) === '', t.slice(0, 100));
+    await shot(s.page, 'task-dialog-error-1440-light.png');
+    if (!p) { s.state.fail = null; await s.page.click(`${BROWSER} button:has-text("重试")`, { timeout: LIMIT.act }); }
+    const p2 = p || await stateIs(s, 'ok');
+    tk('T5 error (500): 重试 reads the list again and shows it', p2, (await count(s.page, '[data-art-file]')) > 0);
+    await s.ctx.close(); }
   { const s = await openDialog({ deny: TASK_LIST });
-    const t = await text(s.page, '[data-art-dialog] [data-art-browser]');
-    ok('T5 forbidden: a permission state without retry wording', (await count(s.page, '[data-art-dialog] [data-art-browser][data-state="forbidden"]')) === 1 && !RETRY.test(t), t.slice(0, 80));
-    await shot(s.page, 'task-dialog-forbidden-1440-light.png'); await s.ctx.close(); }
+    const p = await stateIs(s, 'forbidden'); const t = await text(s.page, BROWSER);
+    tk('T5 forbidden (403): the entry is there, the same rows as in the normal case', s.problem, entriesKept(s), `rows with an entry: ${s.entries.join(', ')}`);
+    tk('T5 forbidden (403): the dialog opens on a permission state', p, (await count(s.page, `${BROWSER} [data-state="permission"]`)) === 1 && /没有权限读取产物文件/.test(t), t.slice(0, 100));
+    tk('T5 forbidden (403): no retry wording and no retry control', p, !RETRY.test(t) && (await count(s.page, `${BROWSER} button:has-text("重试")`)) === 0, t.slice(0, 100));
+    tk('T5 forbidden (403): not shown as “no data yet”, no empty list, no file count', p, !/没有产物文件|还没有|目录是空的/.test(t) && (await count(s.page, '[data-art-empty], [data-art-tree], [data-art-file]')) === 0 && (await text(s.page, '[data-art-scope]')) === '', t.slice(0, 100));
+    await shot(s.page, 'task-dialog-forbidden-1440-light.png');
+    if (!p) { await s.page.keyboard.press('Escape'); await s.page.waitForTimeout(300); }
+    tk('T5 forbidden (403): Escape closes it and focus returns to the entry', p, (await count(s.page, '[data-art-dialog]')) === 0 && (await s.page.evaluate(() => document.activeElement?.getAttribute('data-artifacts-btn'))) === '100');
+    tk('T5 forbidden (403): no page error', p, s.state.errors.length === 0, s.state.errors.join('; '));
+    await s.ctx.close(); }
   { const s = await openDialog({ hang: TASK_LIST });
-    ok('T5 slow: a loading state in the dialog; it can still be closed', (await count(s.page, '[data-art-dialog] [data-art-browser][data-state="loading"]')) === 1);
+    const p = await stateIs(s, 'loading'); const t = await text(s.page, BROWSER);
+    tk('T5 slow: the entry is there', s.problem, entriesKept(s), s.entries.join(', '));
+    tk('T5 slow: a loading state in the dialog, with no error and no empty statement', p, !/没有读到|没有权限|没有产物文件/.test(t) && (await count(s.page, `${BROWSER} [data-state="error"], ${BROWSER} [data-state="permission"], ${BROWSER} [data-state="empty"]`)) === 0, t.slice(0, 80));
     await shot(s.page, 'task-dialog-slow-1440-light.png');
-    await s.page.keyboard.press('Escape'); await s.page.waitForTimeout(250);
-    ok('T5 slow: Escape closes it', (await count(s.page, '[data-art-dialog]')) === 0);
+    if (!p) { await s.page.keyboard.press('Escape'); await s.page.waitForTimeout(300); }
+    tk('T5 slow: Escape closes it while it loads, and focus returns to the entry', p, (await count(s.page, '[data-art-dialog]')) === 0 && (await s.page.evaluate(() => document.activeElement?.getAttribute('data-artifacts-btn'))) === '100');
     await s.ctx.close(); }
   { const s = await openDialog({ over: tree });
-    s.state.fail = TASK_LIST; await s.page.click('[data-art-refresh]'); await s.page.waitForTimeout(700);
-    ok('T5 stale: a failed refresh keeps the list and says it may be old', (await count(s.page, '[data-art-dialog] [data-art-stale]')) === 1 && (await count(s.page, '[data-art-file]')) === WALKED);
+    const p = await stateIs(s, 'ok');
+    if (!p) { s.state.fail = TASK_LIST; await s.page.click('[data-art-refresh]', { timeout: LIMIT.act }); }
+    const p2 = p || await stateIs(s, 'stale');
+    tk('T5 stale: a failed refresh keeps the list and says it may be old', p2, (await count(s.page, '[data-art-dialog] [data-art-stale]')) === 1 && (await count(s.page, '[data-art-file]')) === WALKED, await text(s.page, '[data-art-stale]'));
     await shot(s.page, 'task-dialog-stale-1440-light.png'); await s.ctx.close(); }
+
+  // T6 widths and themes: the entry in the row, then the dialog
   for (const [w, th] of REST) {
     const s = await openDialog({ over: tree, width: w, theme: th });
-    const fits = await s.page.evaluate(() => { const d = document.querySelector('[data-art-dialog] [role="dialog"]')?.getBoundingClientRect(); return !!d && d.left >= -1 && d.right <= innerWidth + 1 && d.bottom <= innerHeight + 1; });
-    ok(`T6 @${w} ${th} the dialog fits the viewport, no horizontal overflow`, fits && (await overflow(s.page)) <= 1 && (await count(s.page, '[data-art-dialog] [data-art-browser]')) === 1);
-    if (th === 'dark') await clean(s.page, '[data-art-dialog] [data-art-browser]', `T6 @${w} dark`);
-    await shot(s.page, `task-dialog-${w}-${th}.png`); await s.ctx.close();
+    const p = await stateIs(s, 'ok');
+    const fits = p ? false : await s.page.evaluate(() => { const d = document.querySelector('[data-art-dialog] [role="dialog"]')?.getBoundingClientRect(); return !!d && d.left >= -1 && d.right <= innerWidth + 1 && d.bottom <= innerHeight + 1; });
+    tk(`T6 @${w} ${th} the dialog fits the viewport, no horizontal overflow`, p, fits && (await overflow(s.page)) <= 1 && (await count(s.page, BROWSER)) === 1);
+    if (th === 'dark') { if (p) ok(`T6 @${w} dark: nothing dimmed, nothing red, no emoji`, false, p); else await clean(s.page, BROWSER, `T6 @${w} dark`); }
+    await shot(s.page, `task-dialog-${w}-${th}.png`);
+    if (!p) { await s.page.keyboard.press('Escape'); await s.page.waitForTimeout(300); }
+    // Back on the list: every entry is inside the page, not covered, and the page does not scroll sideways.
+    const seen = p ? null : await s.page.evaluate(() => [...document.querySelectorAll('[data-task-row] [data-artifacts-btn]')].map((b) => {
+      b.scrollIntoView({ block: 'center' }); const r = b.getBoundingClientRect();
+      const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return { id: b.getAttribute('data-artifacts-btn'), inside: r.left >= 0 && r.right <= innerWidth + 1 && r.width > 0, free: !!top && (b === top || b.contains(top)), h: Math.round(r.height) };
+    }));
+    tk(`T6 @${w} ${th} the entries are in the rows: all seven inside the page, none covered, no horizontal overflow, focus back on the entry`, p,
+      seen && seen.length === ELIGIBLE.length && seen.every((x) => x.inside && x.free) && (await overflow(s.page)) <= 1 && (await s.page.evaluate(() => document.activeElement?.getAttribute('data-artifacts-btn'))) === '100' && s.state.errors.length === 0,
+      seen ? JSON.stringify(seen.filter((x) => !x.inside || !x.free)) + ` ${seen.length} entries; errors ${s.state.errors.length}` : '');
+    await shot(s.page, `tasks-entry-${w}-${th}.png`); await s.ctx.close();
   }
-}
+
+  // T7 the other ways in, and what the entry does not depend on
+  { const s = await openTasks({ deny: SESSIONS });
+    tk('T7 session list refused: finished tasks keep their entry (it needs only the task itself); the others have none', s.problem, same(s.entries, DONE), `rows with an entry: ${s.entries.join(', ')}`);
+    await s.ctx.close(); }
+  { const s = await openDialog({ deny: SESSIONS, over: tree }, 107);
+    const p = await stateIs(s, 'ok');
+    tk('T7 a finished task without a session opens the same browser; the bundle says why it is disabled', p, (await attr(s.page, '[data-art-zip]', 'data-art-zip')) === 'disabled' && /没有关联的评估会话/.test((await attr(s.page, '[data-art-zip]', 'title')) || ''));
+    await s.ctx.close(); }
+  { const s = await openDialog({ over: tree }, 101);
+    const p = await stateIs(s, 'ok');
+    tk('T7 a running task with a session opens the browser on its own files', p, /#101/.test(await text(s.page, '[data-art-header]')) && listReads(s).every((r) => /\/api\/tasks\/101\//.test(r)), await text(s.page, '[data-art-header]'));
+    await s.ctx.close(); }
+  { const s = await openTasks({ deny: TASK_LIST });
+    let p = s.problem;
+    if (!p) { await s.page.click('[data-task-row="100"] [data-more-btn]', { timeout: LIMIT.act }).catch((e) => { p = `row menu: ${first(e)}`; }); }
+    if (!p) { await s.page.click('[data-more-menu] [data-act-detail]', { timeout: LIMIT.act }).catch((e) => { p = `详情 item: ${first(e)}`; }); }
+    if (!p && !(await s.page.waitForSelector('[data-detail-artifacts]', { timeout: LIMIT.act }).then(() => true, () => false))) p = 'entry missing: the task detail has no 浏览产物 button';
+    if (!p) { await s.page.click('[data-detail-artifacts]', { timeout: LIMIT.act }); if (!(await s.page.waitForSelector(BROWSER, { timeout: LIMIT.act }).then(() => true, () => false))) p = 'dialog: not open after 浏览产物 in the task detail'; }
+    s.problem = p;
+    const p2 = await stateIs(s, 'forbidden');
+    tk('T7 the task detail keeps its 浏览产物 button under a refused list read and opens the same permission state', p2, !RETRY.test(await text(s.page, BROWSER)));
+    if (!p2) { await s.page.keyboard.press('Escape'); await s.page.waitForTimeout(300); }
+    tk('T7 Escape closes it and focus is back on a control of the row, not lost', p2, (await count(s.page, '[data-art-dialog]')) === 0 && (await s.page.evaluate(() => !!document.activeElement?.closest('[data-task-row="100"]'))),
+      await s.page.evaluate(() => document.activeElement?.tagName + ' ' + (document.activeElement?.getAttribute('aria-label') || '')));
+    await s.ctx.close(); }
+  { const s = await open('/tasks', { deny: /\/api\/tasks$/, wait: 0 });
+    await s.page.waitForSelector('[data-state="permission"], [data-state="error"], [data-task-row]', { timeout: LIMIT.list }).catch(() => {});
+    ok('T7 task list refused: no row, so no entry and no dialog; the list shows its own state', (await count(s.page, '[data-task-row]')) === 0 && (await count(s.page, '[data-artifacts-btn]')) === 0 && (await count(s.page, '[data-art-dialog]')) === 0 && (await count(s.page, '[data-state="permission"], [data-state="error"]')) >= 1,
+      `rows ${await count(s.page, '[data-task-row]')}, entries ${await count(s.page, '[data-artifacts-btn]')}`);
+    await s.ctx.close(); }
+});
 
 await browser.close();
-const failed = results.filter((r) => !r.pass);
-const groups = {}; for (const r of results) { const g = r.name[0]; groups[g] = groups[g] || [0, 0]; groups[g][1]++; if (r.pass) groups[g][0]++; }
-if (out) fs.writeFileSync(path.join(out, 'report.artifacts-reports.json'), JSON.stringify({ base: 'fixtures', total: results.length, failed: failed.length, groups, results }, null, 1));
-console.log('\n' + Object.entries(groups).map(([g, [p, t]]) => `${g} ${p}/${t}`).join('   '));
-console.log(`${results.length - failed.length}/${results.length} artifacts and reports checks passed (fixtures)`);
-process.exit(failed.length ? 1 : 0);
+process.exit(summary() ? 1 : 0);

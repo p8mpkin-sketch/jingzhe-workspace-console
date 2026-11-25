@@ -7,6 +7,69 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 6 acceptance fix — The artifacts entry of a task, and checks that cannot hang
+
+Acceptance of `144bd6a` found that the task-dialog states could not be confirmed: an independent run of
+`check-artifacts-reports.mjs` stopped at the 403 case of group T and never returned, and `/tasks` had no
+`[data-artifacts-btn]` in its rows. Both are fixed here; nothing else of Phase 6 is touched.
+
+What was wrong:
+
+- The entry was the first action of a row only when the row had no other; otherwise it was an item of the row's
+  overflow menu, so it was not in the page until a menu was opened. On the fixtures that is every row: `/tasks` at
+  `144bd6a` has 8 rows and 0 `[data-artifacts-btn]`, with or without a 403 on the artifacts endpoint.
+- The check opened the overflow menu of the first row without knowing which task it was, then pressed a locator
+  that might not exist, with no stated limit on any wait. The 247 of 247 of the Phase 6 entry below was measured
+  in one container and did not hold elsewhere; it is withdrawn.
+
+What changed (option A of the acceptance message):
+
+- **Entry.** A task with a finished audit or unpack, or with a linked session, has a 产物 button in its row at every
+  width (`data-artifacts-btn="{id}"`), and it is no longer repeated in the overflow menu. It is decided from the
+  task's own `kind` and `status` and from the session list the page already reads; the artifacts endpoint is not
+  asked before the dialog opens. A task with a linked session did not have the entry before unless it was finished.
+- **Dialog.** Unchanged code, now reachable in every state: tree; “no files” with the endpoint's reason; 403 as a
+  permission state with no retry, no “no data yet”, no empty list and no file count; 500 as a failed read with 重试;
+  loading that can be closed; a stale notice after a failed refresh. Escape and the close button return focus to
+  the entry.
+- **Check helper.** Every page of `check-artifacts-reports.mjs` has an 8 s action limit and a 20 s navigation limit;
+  text and attribute reads have 3 s; a group has 12 min and the run 45 min. A group that throws is one failed check
+  with the reason and the next group still runs. The task-dialog helper looks for the entry of a given task and
+  fails at once with “entry missing: row N has 0 artifacts entries …”; a dialog in the wrong state fails with
+  “state rendering: expected …, the dialog shows …”. A check that needs a dialog that is not there fails with that
+  reason instead of being skipped, so the total cannot drop.
+- No endpoint, field, route, permission, storage key or backend change; the request set of every route is identical
+  to the Phase 6 log.
+
+The check has 282 checks (was 247): group T has 61 (was 26); the 221 checks of A, P, K, D, R and X are the same by
+name. In group T, 21 of the 26 keep their names and 5 are replaced by stricter ones (focus returns to the entry
+that opened the dialog, not merely “is not lost”; the 500, 403 and slow cases each became several assertions); 35
+are new: the entry rule and its independence from the artifacts endpoint, download, bundle, manifest export and
+upload from inside the dialog, Enter and the close button, the list still usable afterwards, the entry present in
+every state, the entries inside the page at each width and theme, and the other ways in. None was removed.
+
+Run against the build of `144bd6a`, the new group T ends in 65 s with exit code 1: 3 of 61, the others failing with
+“entry missing: row 100 has 0 artifacts entries (rows that have one: none)”.
+
+| Check (fixtures, build of this commit) | Result |
+| --- | --- |
+| `tsc --noEmit`; `npm run build`; main chunk 71.97 kB, 23.90 kB gzip; `TaskCenterPage` 38.60 kB, 14.17 kB gzip | pass |
+| Token lint | 0 |
+| Artifacts and reports (`check-artifacts-reports.mjs`): A 56, P 25, K 30, D 30, R 53, X 27, T 61 | 282 of 282 |
+| Tab count (`check-findings-tab-count.mjs`) | 46 of 46 |
+| Findings and evidence (`check-findings-evidence.mjs`) | 340 of 340 |
+| Workbench shell (`check-workbench-shell.mjs`) | 99 of 99 |
+| Projects (`check-projects.mjs`) | 43 of 43 |
+| Redirects (`check-redirects.mjs`) | 28 of 28 |
+| Trace (`check-trace.mjs`) | 218 of 218 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| `/tasks` at 1440 / 1024 / 760 / 390, light and dark; empty, error, forbidden, slow, stale | overflow 0, page errors 0 |
+| Request set of all 37 routes vs `docs/screenshots/v3/phase-6/requests.json` | identical |
+
+Screenshots and the check report: `docs/screenshots/v3/phase-6/acceptance-fix/`.
+
+Rollback: `git revert` of this commit; `144bd6a` and `554621d` stand on their own.
+
 ### V3 Phase 6 — Artifacts and reports
 
 Artifacts are browsed in one place and reports are read in one frame. No route, endpoint, API contract, permission,
@@ -52,7 +115,7 @@ Rollback: `git revert` of this commit. The pre-fix commit `554621d` stands on it
 | `tsc --noEmit`; `npm run build`; main chunk 71.97 kB, 23.90 kB gzip (budget 350 kB); workbench chunk `SessionShell` 309.82 kB, 102.03 kB gzip; `MarkdownView` 2.01 kB (lazy) | pass |
 | Token lint | 0 |
 | Contrast (`check-contrast.mjs`) | 0 failing pairs |
-| Artifacts and reports (`check-artifacts-reports.mjs`): A 56, P 25, K 30, D 30, R 53, X 27, T 26 | 247 of 247 |
+| Artifacts and reports (`check-artifacts-reports.mjs`): A 56, P 25, K 30, D 30, R 53, X 27, T 26 | 247 of 247 in the container of this commit; not reproducible elsewhere (group T), see the acceptance fix above |
 | Findings and evidence (`check-findings-evidence.mjs`), of which rule cards and structure canvas 117 of 117 | 340 of 340 |
 | Tab count (`check-findings-tab-count.mjs`) | 46 of 46 |
 | Trace (`check-trace.mjs`) | 218 of 218 |

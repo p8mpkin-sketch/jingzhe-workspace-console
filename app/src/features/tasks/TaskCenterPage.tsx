@@ -317,7 +317,10 @@ export const TaskCenterPage: React.FC = () => {
   })() : null;
 
   const durOf = (t: any) => (t.status === 'done' || t.status === 'failed') ? (t.updated_at || t.created_at) - t.created_at : now - t.created_at;
-  const artifactsReadyOf = (t: any) => (t.kind === 'unpack' || t.kind === 'audit') && t.status === 'done';
+  // Which tasks get the artifacts entry. Decided from what the page already holds: the task's own kind and status
+  // (a finished audit or unpack has a run directory) and the session list (a linked session has a report package).
+  // The artifacts endpoint is not asked: whether it answers, is empty, refuses or fails is shown inside the dialog.
+  const artifactsReadyOf = (t: any) => ((t.kind === 'unpack' || t.kind === 'audit') && t.status === 'done') || !!sessMap[t.id];
   const canAskOf = (t: any) => t.kind === 'audit' && t.status === 'done' && !!t.result_id;
   const gotoSession = (hit: { pid: number; sid: number }) => { window.location.hash = `/projects/${hit.pid}/sessions/${hit.sid}`; };
   // Row click: linked session first, then artifacts. Rows with neither do nothing.
@@ -435,9 +438,11 @@ export const TaskCenterPage: React.FC = () => {
     if (t.status === 'done' && canAsk) inline.push({
       node: <Button size="sm" variant="ghost" onClick={() => nav(`/reports?taskId=${t.id}`)} data-act-report title="打开这个任务的报告">报告</Button>,
       item: { key: 'report', label: '打开报告', icon: <FileText size={14} aria-hidden />, onSelect: () => nav(`/reports?taskId=${t.id}`), attrs: { 'data-act-report': '' } } });
-    if (arts) inline.push({
-      node: <Button size="sm" variant="ghost" onClick={() => setArtTask(t.id)} data-artifacts-btn title="浏览任务产物">产物</Button>,
-      item: { key: 'artifacts', label: '浏览产物', icon: <FolderOpen size={14} aria-hidden />, onSelect: () => setArtTask(t.id), attrs: { 'data-artifacts-btn': '' } } });
+    // The artifacts entry is always in the row, never only in the overflow menu, so it is there whatever the
+    // artifacts endpoint will answer.
+    const artsBtn = arts
+      ? <Button size="sm" variant="ghost" icon={<FolderOpen size={14} aria-hidden />} onClick={() => setArtTask(t.id)} data-artifacts-btn={t.id} title={`浏览任务 #${t.id} 的产物`}>产物</Button>
+      : null;
     const more: MenuAction[] = [
       ...inline.slice(1).map((a) => a.item),
       { key: 'detail', label: '详情', icon: <Info size={14} aria-hidden />, onSelect: () => setDetailTask(t), attrs: { 'data-act-detail': '' } },
@@ -446,7 +451,7 @@ export const TaskCenterPage: React.FC = () => {
       { key: 'del', label: '删除', danger: true, icon: <Trash2 size={14} aria-hidden />, onSelect: () => setDelAsk(t), attrs: { 'data-act-del': '' } },
     ];
     return (
-      <RowActions label={`任务 #${t.id} 的更多操作`} primary={inline[0]?.node} more={more}
+      <RowActions label={`任务 #${t.id} 的更多操作`} primary={<>{inline[0]?.node}{artsBtn}</>} more={more}
         triggerAttrs={{ 'data-more-btn': '' }} menuAttrs={{ 'data-more-menu': '' }} />
     );
   };
@@ -796,7 +801,7 @@ export const TaskCenterPage: React.FC = () => {
       <Drawer open={!!detailTask} title={`任务 #${detailTask?.id ?? ''}`} onClose={() => setDetailTask(null)} width={520}
         footer={detailTask && (
           <>
-            {artifactsReadyOf(detailTask) && <Button variant="secondary" onClick={() => { const id = detailTask.id; setDetailTask(null); setArtTask(id); }}>浏览产物</Button>}
+            {artifactsReadyOf(detailTask) && <Button variant="secondary" onClick={() => { const id = detailTask.id; setDetailTask(null); setArtTask(id); }} data-detail-artifacts>浏览产物</Button>}
             {detailTask.status === 'failed' && (
               <Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} onClick={() => { const t = detailTask; setDetailTask(null); setRerunTask(t); }} data-detail-retry>重试</Button>
             )}
