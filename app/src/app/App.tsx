@@ -121,6 +121,7 @@ function Shell() {
             <Route path="/projects/:pid" element={<PAGES.project />} />
             <Route path="/projects/:pid/sessions/:sid" element={<PentestFlow />} />
             <Route path="/tasks" element={<TasksRoute />} />
+            <Route path="/tasks/:id" element={<PAGES.taskDetail />} />
             <Route path="/evidence" element={<PAGES.evidence />} />
             <Route path="/reports" element={<PAGES.reports />} />
             <Route path="/knowledge" element={<PAGES.knowledge />} />

@@ -21,14 +21,15 @@ const themeArg = arg('theme', 'both');
 const themes = themeArg === 'both' ? ['light', 'dark'] : [themeArg];
 const variant = arg('variant', 'ok');
 const reqOut = arg('requests', '');
-// V3 canonical routes: 13 pages plus the sign-in gate (captured separately below). Task detail joins in Phase 7.
+// V3 canonical routes: 14 pages plus the sign-in gate (captured separately below).
 export const ROUTES = [
   ['dashboard', '/dashboard'], ['projects', '/projects'], ['project', '/projects/1'], ['session', '/projects/1/sessions/40'],
-  ['tasks', '/tasks'], ['evidence', '/evidence'], ['reports', '/reports'], ['report-reader', '/reports?taskId=100'], ['knowledge', '/knowledge'],
+  ['tasks', '/tasks'], ['task', '/tasks/101'], ['evidence', '/evidence'], ['reports', '/reports'], ['report-reader', '/reports?taskId=100'], ['knowledge', '/knowledge'],
   ['agent', '/agent'], ['new-assessment', '/new-assessment'], ['system', '/system'], ['assistant', '/ai-assistant'],
 ];
 // Sub-views of a route (scopes, tabs). Captured with --views, or when named in --routes.
 export const VIEWS = [
+  ['task-artifacts', '/tasks/100?tab=artifacts'], ['task-timeline', '/tasks/101?tab=timeline'], ['task-failed', '/tasks/102'], ['task-queued', '/tasks/103'], ['task-done', '/tasks/100'],
   ['projects-company', '/projects?scope=company'], ['projects-single', '/projects?scope=single'],
   ['project-reports', '/projects/1?tab=reports'], ['project-apps', '/projects/1?tab=apps'],
   ['project-candidates', '/projects/1?tab=candidates'], ['project-runs', '/projects/1?tab=runs'],

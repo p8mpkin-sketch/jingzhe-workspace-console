@@ -1,0 +1,342 @@
+ok   F1 the findings tab mounts the findings surface, once
+ok   F1 the scope statement counts findings, instances and de-noised
+ok   F1 7 rows, the de-noised finding is not listed
+ok   F1 rows are ordered by priority
+ok   F1 table and detail side by side at 1440: the table stays, the detail is a pane beside it
+ok   F1 columns: priority, title, status, confidence, evidence, instances
+ok   F1 the first finding is open in the pane
+ok   F1 no horizontal overflow
+ok   F2 light: every row carries the orange finding line
+ok   F2 light: severity by line width: 3 px for P0 and P1, 2 px for P2 and P3
+ok   F2 light: severity by cap marker: P0 and P1 only
+ok   F2 light: severity by marker shape and P-label: four shapes, each row says its P level
+ok   F2 light: status is a glyph and a word
+ok   F2 light: nothing in a row is dimmed by opacity, the excluded finding included
+ok   F2 light: no red anywhere on the surface: a finding is never red
+ok   F2 dark: every row carries the orange finding line
+ok   F2 dark: severity by line width: 3 px for P0 and P1, 2 px for P2 and P3
+ok   F2 dark: severity by cap marker: P0 and P1 only
+ok   F2 dark: severity by marker shape and P-label: four shapes, each row says its P level
+ok   F2 dark: status is a glyph and a word
+ok   F2 dark: nothing in a row is dimmed by opacity, the excluded finding included
+ok   F2 dark: no red anywhere on the surface: a finding is never red
+ok   F3 light: the current row is on surface-2 and is the only one
+ok   F3 light: clicking another row moves the current row and the pane
+ok   F3 dark: the current row is on surface-2 and is the only one
+ok   F3 dark: clicking another row moves the current row and the pane
+ok   F4 one primary triage control on the surface: 确认, in the detail
+ok   F4 no second triage pattern: no “批量确认（预览）”, no per-row buttons
+ok   F4 the other outcomes are in the menu of the same button: 排除, 恢复待复核
+ok   F4 the outcome the finding already has is not offered
+ok   F4 Escape closes the menu and leaves the detail open
+ok   F4 ticking rows adds a secondary control for those rows; still one primary
+ok   F5 one tab stop in the table: the focused row
+ok   F5 ↓ ↓ moves focus to the third row
+ok   F5 moving focus does not change the finding in the pane
+ok   F5 ↑ moves back
+ok   F5 End and Home go to the last and first row
+ok   F5 Enter opens the detail of that row and moves focus into it
+ok   F5 Escape closes the detail and returns focus to the row
+ok   F5 Space ticks the row
+ok   F5 Space again unticks it
+ok   F5 the focused row shows a focus indicator
+ok   F6 确认 on one finding writes each of its instances through POST /vulns/state
+ok   F6 and issues nothing else
+ok   F6 no confirmation dialog for one finding
+ok   F6 排除 from the menu writes the same instances as excluded
+ok   F7 triage of several rows asks first, in a dialog that lists the rows
+ok   F7 the dialog states the instance count and that it can be undone
+ok   F7 nothing is written before the answer
+ok   F7 取消 writes nothing and keeps the ticks
+ok   F7 排除 for several rows asks in the same dialog
+ok   F7 confirming writes every instance of the listed rows
+ok   F7 afterwards the dialog is closed and the ticks are cleared
+ok   F8 a refused write (403) is stated as a permission matter
+ok   F8 and offers no retry
+ok   F8 the first refusal stops the remaining writes
+ok   F8 a failed write (500) says what was not written and offers retry
+ok   F8 retry writes the same instances and clears the notice
+ok   F8 a refused read (403) is a permission state
+ok   F8 with no retry wording and no triage control
+ok   F8 and no count or filter for a list that was not read
+ok   F8 a failed read (500) is an error state with retry
+ok   F8 retry reads again and lists the findings
+ok   F9 Shadow 对照 reads vulns/grouped?source=shadow
+ok   F9 and lists its 3 findings in the same table
+ok   F9 Shadow is read-only: no tick boxes, no triage control, and it says so
+ok   F9 its detail opens and still has no triage control
+ok   F9 the four segments are kept: 主发现, Shadow 对照, 规则卡, 聚类
+ok   F9 segment 规则卡 keeps its ?view= and renders
+ok   F9 segment 聚类 keeps its ?view= and renders
+ok   F9 segment 主发现 keeps its ?view= and renders
+ok   F9 back on 主发现 the main set is read without ?source
+ok   F10 @1024 no pane beside the table and no finding opened on arrival
+ok   F10 @1024 columns fit the width
+ok   F10 @1024 no horizontal overflow
+ok   F10 @1024 Enter opens the detail as a drawer, focus inside
+ok   F10 @1024 the drawer holds the one primary triage control
+ok   F10 @1024 no horizontal overflow with the drawer open
+ok   F10 @1024 next in the drawer steps to the following finding
+ok   F10 @1024 Escape closes the drawer and focus returns to the table
+ok   F10 @760 no pane beside the table and no finding opened on arrival
+ok   F10 @760 columns fit the width
+ok   F10 @760 a row is two lines: title, then status and instance count
+ok   F10 @760 the tick box has a 44 px target
+ok   F10 @760 no horizontal overflow
+ok   F10 @760 Enter opens the detail as a drawer, focus inside
+ok   F10 @760 the drawer holds the one primary triage control
+ok   F10 @760 no horizontal overflow with the drawer open
+ok   F10 @760 next in the drawer steps to the following finding
+ok   F10 @760 Escape closes the drawer and focus returns to the table
+ok   F10 @390 no pane beside the table and no finding opened on arrival
+ok   F10 @390 columns fit the width
+ok   F10 @390 a row is two lines: title, then status and instance count
+ok   F10 @390 the tick box has a 44 px target
+ok   F10 @390 no horizontal overflow
+ok   F10 @390 Enter opens the detail as a drawer, focus inside
+ok   F10 @390 the drawer holds the one primary triage control
+ok   F10 @390 no horizontal overflow with the drawer open
+ok   F10 @390 next in the drawer steps to the following finding
+ok   F10 @390 Escape closes the drawer and focus returns to the table
+ok   F11 400 findings: the table is virtualised
+ok   F11 End reaches the last row and it holds focus
+ok   F11 the focused row stays rendered while moving through the list
+ok   F12 loading: a skeleton, not an empty statement and not a count of 0
+ok   F12 empty: says there are none yet and offers the trace
+ok   F12 everything de-noised: the empty state says so
+ok   F12 stale after a 500: the earlier rows stay and a strip says they may be old
+ok   F12 stale after a 403: the earlier rows stay and a strip says they may be old
+ok   F12 stale after a 403 is worded as a permission matter, without retry, and triage is blocked
+ok   F12 a filter changes the scope statement
+ok   F12 filtered to nothing: says so and offers to clear the filters
+ok   F12 clearing brings the 7 rows back
+ok   F12 search matches the rule id
+ok   F12 sorting by instances, descending, puts the 3-instance finding first
+ok   F13 ?finding= opens that finding in the pane
+ok   F13 detail tabs: 概览, 证据, 代码, 轨迹, 修复
+ok   F13 the overview shows one instance at a time, with a switch for the 3
+ok   F13 choosing the third instance shows its evidence and status
+ok   F13 the evidence tab lists every instance with its own evidence
+ok   F13 selecting another finding updates ?finding=
+ok   F13 ?finding= below 1280 opens the drawer
+ok   F13 credential detail is kept: summary, value, context, group
+ok   F13 the triage menu opens inside the drawer
+ok   F13 Escape with the menu open closes the menu and leaves the drawer open
+ok   F13 a second Escape closes the drawer
+ok   E1 a graph of more than 40 nodes opens as a grouped overview
+ok   E1 no node and no edge is drawn until a group is opened
+ok   E1 the groups account for every node, and each says what it holds
+ok   E1 the relation data is read once
+ok   E1 no horizontal overflow
+ok   E2 opening a group lists its nodes, still without edges
+ok   E2 picking a node shows it with its direct neighbours only
+ok   E2 the neighbours are the 4 nodes linked to it
+ok   E2 its edges are drawn
+ok   E2 the side panel inspects the picked node
+ok   E2 the crumb names the inspect target and offers the way back
+ok   E2 返回总览 returns to the groups, the opened group still open
+ok   E3 clicking a neighbour inspects it without changing the picture
+ok   E3 the edges of the selected node are 2 px in the active line colour
+ok   E3 展开邻居 adds one more hop, of that neighbour only
+ok   E3 a node lists the findings linked to it
+ok   E3 设为检查对象 rebuilds the picture around that node
+ok   E5 light: finding nodes carry the orange line, 3 px or 2 px by severity
+ok   E5 light: nothing in the graph is dimmed by opacity
+ok   E5 light: nothing in the graph is red
+ok   E5 dark: finding nodes carry the orange line, 3 px or 2 px by severity
+ok   E5 dark: nothing in the graph is dimmed by opacity
+ok   E5 dark: nothing in the graph is red
+ok   E6 the full layout is not drawn on arrival
+ok   E6 完整布局 draws it on request, with a note that it is dense
+ok   E6 the page still does not overflow: the canvas scrolls inside its pane
+ok   E6 a node of the full layout is inspected in the same side panel
+ok   E6 the list is one click away and keeps the selection
+ok   E6 search narrows the list and the scope statement says so
+ok   E6 the type filter hides a type
+ok   E8 @1024 the list is the default view
+ok   E8 @1024 the overview and the full layout stay one click away
+ok   E8 @1024 no side panel until something is selected
+ok   E8 @1024 no horizontal overflow
+ok   E8 @1024 the selection opens beside the list
+ok   E8 @1024 the panel lists its linked finding and relations
+ok   E8 @1024 no horizontal overflow with the panel open
+ok   E8 @760 the list is the default view
+ok   E8 @760 the overview and the full layout stay one click away
+ok   E8 @760 no side panel until something is selected
+ok   E8 @760 no horizontal overflow
+ok   E8 @760 stacked: the selection opens under the list, full width
+ok   E8 @760 the panel lists its linked finding and relations
+ok   E8 @760 no horizontal overflow with the panel open
+ok   E8 @760 the graph and the panel are stacked too
+ok   E8 @390 the list is the default view
+ok   E8 @390 only the list is offered, and the page says so
+ok   E8 @390 no side panel until something is selected
+ok   E8 @390 no horizontal overflow
+ok   E8 @390 stacked: the selection opens under the list, full width
+ok   E8 @390 the panel lists its linked finding and relations
+ok   E8 @390 no horizontal overflow with the panel open
+ok   E9 a finding node keeps its P level and status in the panel
+ok   E9 打开风险发现 goes to the findings surface with that finding open
+ok   E9 findings and evidence stay separate surfaces: no graph in the findings tab
+ok   E10 the coverage matrix is a table of evidence types by priority
+ok   E10 a row opens the findings behind its number, and the ones that lack this evidence
+ok   E10 picking one makes it the inspect target, shown above the matrix with its evidence
+ok   E10 the selection is shared: 证据关系 opens on that finding and its neighbours
+ok   E10 its neighbours are the two interfaces it was observed on
+ok   E10 and back: the node inspected in the graph is the target above the matrix
+ok   E10 事实图谱 shows the same target
+ok   E10 应用结构 shows the same target
+ok   E10 清除 removes the target
+ok   E11 running: dynamic evidence says the dynamic stages are still running, with the step count
+ok   E11 running: static evidence says the static check is done and what the text lacks
+ok   E11 every reason starts from a count of findings
+ok   E11 the scope statement says what is counted
+ok   E11 device offline: dynamic evidence names the device and says it is offline
+ok   E11 waiting for login: says the run waits for a manual login
+ok   E11 static-only run: dynamic evidence is out of scope
+ok   E11 dynamic stages not started: says there has been no dynamic run
+ok   E11 run status refused (403): the reason says it cannot be judged, as a permission matter, without retry
+ok   E11 a run that reports no stages: the reason says it cannot be judged, not that nothing ran
+ok   E11 session not started: the matrix says no assessment has run
+ok   E11 @1024 every row still shows its reason, and nothing overflows
+ok   E11 @760 every row still shows its reason, and nothing overflows
+ok   E11 @390 every row still shows its reason, and nothing overflows
+ok   E12 事实图谱 keeps ?view=facts and shows its content
+ok   E12 事实图谱: a 403 is a permission state without retry
+ok   E12 事实图谱: a 500 is an error with retry
+ok   E12 凭据 keeps ?view=credentials and shows its content
+ok   E12 凭据: a 403 is a permission state without retry
+ok   E12 凭据: a 500 is an error with retry
+ok   E12 聚类 keeps ?view=clusters and shows its content
+ok   E12 聚类: a 403 is a permission state without retry
+ok   E12 聚类: a 500 is an error with retry
+ok   E12 应用结构 keeps ?view=structure and renders its canvas
+ok   E12 规则卡 keeps ?view=rulecards
+ok   E12 evidence keeps its three secondary tabs and the three segments of 证据关系
+ok   E12 segments of 证据关系: 关系图, 事实图谱, 应用结构
+ok   E13 loading: a skeleton
+ok   E13 403: a permission state, no retry wording, no node count
+ok   E13 500: an error state with retry
+ok   E13 retry reads the graph
+ok   E13 a failed re-read keeps the graph and says it may be old
+ok   E13 empty: says the graph is empty and why
+ok   E14 a graph of 40 nodes or fewer opens with its groups unfolded
+ok   R1 ?view=rulecards mounts the rule-card surface, once
+ok   R1 the scope statement counts rule cards, instances and de-noised
+ok   R1 7 rule cards are listed, the de-noised one is not
+ok   R1 the first rule card is open, the others are closed
+ok   R1 the old panel is gone: no status select, no English severity pill
+ok   R1 no emoji and no pictograph characters in the copy
+ok   R1 it reads what the earlier panel read: grouped findings and the hook events
+ok   R1 no horizontal overflow
+ok   R2 light: every rule card carries the orange finding line
+ok   R2 light: 3 px with a cap for P0 / P1, 2 px without for P2 / P3
+ok   R2 light: severity is a shape with its P label and word
+ok   R2 light: the status of a card is a glyph and a word
+ok   R2 light: a de-noised card says so in words and nothing is dimmed
+ok   R2 light: nothing on the surface is red
+ok   R2 light: the open card's row sits on surface-2
+ok   R2 dark: every rule card carries the orange finding line
+ok   R2 dark: 3 px with a cap for P0 / P1, 2 px without for P2 / P3
+ok   R2 dark: severity is a shape with its P label and word
+ok   R2 dark: the status of a card is a glyph and a word
+ok   R2 dark: a de-noised card says so in words and nothing is dimmed
+ok   R2 dark: nothing on the surface is red
+ok   R2 dark: the open card's row sits on surface-2
+ok   R3 opening another card closes the first: one card is open at a time
+ok   R3 an open card lists its instances with their evidence slices
+ok   R3 the five-part chain and the review steps of an instance are shown
+ok   R3 an instance without a chain says the chain was not collected
+ok   R3 the model verdict of an instance is words
+ok   R3 evidence dimensions are stated with an icon and 有 / 无
+ok   R3 Enter on the row closes it again
+ok   R3 复制 states its result on the button
+ok   R3 the hook events of the session are listed, newest first
+ok   R4 each instance of the open card has the split button, as a secondary control; there is no status select
+ok   R4 确认 writes that instance through POST vulns/state
+ok   R4 the list is read again after the write, and nothing is kept as a local value
+ok   R4 the menu offers 排除 and 恢复待复核; the state an instance has is not offered
+ok   R4 排除 from the menu writes that instance
+ok   R4 an instance that is already confirmed has 确认 disabled
+ok   R5 a refused write (403) is stated as a permission matter, without retry wording
+ok   R5 a refused write is not kept as a local value: the instance stays as the server has it
+ok   R5 another failure says the state was not written and offers a retry
+ok   R5 the choice is kept in this browser and the instance is marked 仅本地
+ok   R5 the retry writes it; the mark and the notice go away
+ok   R5 when the re-read after a write fails, the earlier cards stay under a strip that says so
+ok   R6 read 403: a permission state without retry wording
+ok   R6 read 403: no toolbar and no count for a list that was not read
+ok   R6 read 500: an error state with retry, no toolbar
+ok   R6 重试 reads again and lists the cards
+ok   R6 loading: a skeleton, no toolbar
+ok   R6 empty: says why and offers 手动补录
+ok   R7 search matches title, CWE, MASVS and rule id; the scope says a / b
+ok   R7 nothing matches: says so and offers 清除筛选
+ok   R7 the level filter lists its counts and filters
+ok   R7 硬编码凭据 is a pressed toggle that keeps the credential cards
+ok   R7 WEB 运行时 with no card says why it is empty
+ok   R7 显示已降噪 lists the de-noised card too, marked 已降噪 and 提示级
+ok   R7 ?severity= from a link filters and is shown as a removable filter
+ok   R7 removing it drops the parameter and keeps the view
+ok   R7 ?masvs= from a link filters by rule family
+ok   R8 手动补录 opens a form that says where the entry is kept; 补录 needs a title
+ok   R8 the entry is listed with a 本地 mark and nothing is sent
+ok   R8 it is kept in this browser for the session
+ok   R8 the state of a local entry changes in this browser only, and the notice says so
+ok   R8 导出 offers CSV, JSON, Markdown and SARIF
+ok   R8 an export downloads a file named after the session
+ok   R8 导入 opens the import dialog
+ok   R9 @1024 no horizontal overflow, the cards and the open instance are there
+ok   R9 @760 no horizontal overflow, the cards and the open instance are there
+ok   R9 @760 the triage control and the row are at least 44 px high
+ok   R9 @390 no horizontal overflow, the cards and the open instance are there
+ok   R9 @390 the triage control and the row are at least 44 px high
+ok   S1 应用结构 mounts the canvas with a toolbar above it (no floating tool card)
+ok   S1 no emoji in the copy
+ok   S1 neutral wording: none of the earlier terms
+ok   S1 the legend explains every stroke in words
+ok   S1 the toolbar states how much of the graph is drawn
+ok   S1 it reads what the earlier canvas read: graph and api_tree
+ok   S1 no dotted grid behind the canvas
+ok   S1 no horizontal overflow
+ok   S2 light: a finding node carries the orange finding line, 3 px with a cap for P0 / P1
+ok   S2 light: a finding node says its priority and its status in words
+ok   S2 light: other node types have no coloured rule: the type is an icon and a word
+ok   S2 light: selecting a node dims nothing: every node and relation stays at full opacity
+ok   S2 light: the selected node sits on surface-2 and its direct neighbours are marked
+ok   S2 light: its relations are 2 px in the active line colour; the others keep their own stroke
+ok   S2 light: nothing on the canvas is red
+ok   S2 light: the toolbar names the selected node and offers to open it
+ok   S2 dark: a finding node carries the orange finding line, 3 px with a cap for P0 / P1
+ok   S2 dark: a finding node says its priority and its status in words
+ok   S2 dark: other node types have no coloured rule: the type is an icon and a word
+ok   S2 dark: selecting a node dims nothing: every node and relation stays at full opacity
+ok   S2 dark: the selected node sits on surface-2 and its direct neighbours are marked
+ok   S2 dark: its relations are 2 px in the active line colour; the others keep their own stroke
+ok   S2 dark: nothing on the canvas is red
+ok   S2 dark: the toolbar names the selected node and offers to open it
+ok   S3 Enter on a focused node picks it as the inspect target
+ok   S3 a focused node shows the focus ring
+ok   S3 打开所选节点 shows the fields of the node in a dialog (the same as a double click)
+ok   S3 Escape closes the dialog
+ok   S3 a double click on a finding node shows priority and status in words
+ok   S3 a click on the empty canvas clears the selection
+ok   S3 relations are not tab stops
+ok   S4 it opens on the confirmed findings and what leads to them
+ok   S4 全部 draws the whole structure
+ok   S4 紧凑 narrows the nodes
+ok   S4 with no path in the graph the path control is disabled
+ok   S4 关联路径 marks the nodes of the path and dims nothing
+ok   S4 after the last path the control returns to no path
+ok   S4 with no confirmed finding it draws everything and says so
+ok   S5 read 403: a permission state without retry wording, not an empty canvas
+ok   S5 read 500: an error state with retry, not an empty canvas
+ok   S5 重试 reads again and draws the canvas
+ok   S5 empty: says there is no structure yet and why
+ok   S6 @1024 no horizontal overflow and every tool is reachable
+ok   S6 @760 no horizontal overflow and every tool is reachable
+ok   S6 @760 the tool buttons are at least 44 px high
+ok   S6 @390 no horizontal overflow and every tool is reachable
+ok   S6 @390 the tool buttons are at least 44 px high
+
+340/340 findings and evidence checks passed (fixtures)

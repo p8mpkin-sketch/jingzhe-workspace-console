@@ -7,6 +7,118 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 7 — Task list and task detail
+
+`/tasks` is rebuilt as the V3 task list and a task has its own page, `/tasks/:id`, the only route this phase adds.
+The former task page (`TaskCenterPage.tsx`) and its detail drawer are retired; `docs/capability-matrix.md`
+(“Tasks (V3 Phase 7)”) gives the owner of each of its 37 capabilities, plus one new filter. No endpoint, field,
+payload, permission, storage key or backend change; no existing route changed. The Phase 6 artifact browser, report
+reader and task dialog, the rule cards, the structure canvas and the 运行记录 tab of a project are untouched.
+
+**`/tasks` (`TaskListPage`, `TaskTable`, `TaskRow`, `BatchUnpackSummary`).**
+
+- Header: title, a readout (concurrency, running, queued, online devices), 刷新, 导出, 清理失败任务, 新建评估. Status
+  tabs 全部 / 运行中 / 排队 / 失败 / 已完成. Toolbar: search, type (new, from `kind`), packer, owner, 仅部分完成,
+  隐藏即时失败. Table with paging, selection across pages (the bulk bar states “跨 N 页”), select the page, and the
+  four bulk actions. `?status=`, `?focus=`, `done&partial=1` and the old `degraded` open as before; a press on a
+  status tab now also writes `?status=`.
+- A task is two lines. The second holds the failure reason in full (selectable, with 复制, never only in a
+  `title`), the live progress of a running task, or the reason of a partial result.
+- Pressing a row (or Enter / Space on it) opens `/tasks/:id`. 会话 and 产物 are buttons in the row; 报告 is a button
+  from 1440 and a menu item below; the row menu holds 详情, 重新运行, 向智能体提问, 删除. A failed task has 重新运行 in
+  the row. The artifacts entry follows the rule of `766a717` (a finished audit or unpack, or a linked session) and
+  does not ask the artifacts endpoint.
+- Counts that were refused or failed say “未读取”; nothing unread is shown as 0. States: loading, slow, error with
+  重试, forbidden without retry wording, empty, no match, stale.
+- A table from 1024 (1280 before), cards below; between 1024 and 1279 the row buttons show their icon and keep
+  their names.
+- Removed panels, with their data still on the page: the fact row (now the header readout), the “running now” lanes
+  (the 运行中 tab, each row with its progress) and the session rail (会话 in the row).
+
+**`/tasks/:id` (`TaskDetailPage`, `TaskHeader`, `TaskOutput`, `TaskTimeline`).**
+
+- Header: back, title, status, stage, duration, counts, owner; 打开会话, 重新运行, 更多 (向智能体提问, 删除任务).
+- The workbench `RunStrip`, fed with the stages the task's progress text names; the failure reason on its own line
+  under it, complete, with 复制.
+- Tabs (a `tablist`): 输出, 产物, 时间线; the report is a link to `/reports?taskId=`.
+- 输出 is the workbench `StageStack`: monospace, grouped by stage, with search and a hit count, copy, download,
+  follow, pause on scrolling up, pin and wrap. A stage exists only if the progress text names it; text that names
+  none is one stage called 输出 and the page says so. A `.log` file at the top of the task's artifact list (at most
+  512 kB) and the unpack result of the task row are two more groups, each labelled with its source; they are not
+  stages.
+- 时间线: the task's own times; its stages with “未记录” for start, end and duration (the backend records none and
+  nothing is worked out); and, for a task with a linked session, the steps of that session in a separate block that
+  says they are the session's.
+- 产物 embeds the Phase 6 `ArtifactBrowser`.
+- States: loading, slow, forbidden (no retry), error (重试), not found (“在已读取的 2000 条任务里没有 #id，可能已删除。”),
+  stale, no output. A refused counts read shows “未读取”.
+- Polling: the full list (`GET /api/tasks?limit=2000`) every 10 s, only while the task is running or queued and the
+  page is visible; one read when the page becomes visible again; it stops when the full list says the task ended.
+  No status-filtered or `limit=50` list is requested.
+- Escape returns to `/tasks?focus=<id>` and the focus lands on that row; with a menu or dialog open it closes that
+  first.
+
+**Shared code.** `RunStrip` is used as it is. `StageStack` has two new optional props, `renderRow` and
+`stageSummary` (`StageHead` takes the matching optional `summary`); without them it renders exactly as before, which
+the trace check and the workbench matrix below confirm.
+
+**Checks.** New: `scripts/check-tasks.mjs`, 363 checks in seven groups (L list 87, R row entries 42, D detail 65,
+S states 53, K keyboard 26, W widths and themes 64, Q requests and polling 26). Every wait has a limit; a missing
+control fails at once with “entry missing”, a wrong result with “state rendering”; nothing is skipped; the total is
+fixed by a plan table, so a group that stops early has its remaining checks recorded as failures. Filters are
+checked by row count and row ids against a second implementation of the rules inside the script.
+
+Writing it, and reading its state screenshots, found five defects, fixed in this commit: the log file of a task was
+read as JSON and shown as `{}`; Escape with the 更多 menu open left the detail page; at 1024 the row buttons wrapped
+onto three lines; one upward scroll of more than about 200 px did not pause following in a long output; and while
+the list was loading, failed or refused, the two toolbar switches and 清理失败任务 printed “(0)” for a list that had
+not been read (they now carry a number only once it has).
+
+`check-artifacts-reports.mjs` keeps 282 checks; three of group T are reworded because what they pressed changed:
+
+- “T1 a queued task without a session …” — it checked that pressing such a row opened nothing. A row now opens the
+  task detail: the check asserts `/tasks/106` opens, with no dialog and no list read.
+- “T7 the task detail keeps its 浏览产物 button …” — the drawer and that button are retired. The check now opens
+  `/tasks/100` through 详情 and asserts the 产物 tab shows the permission state without retry wording.
+- “T7 Escape closes it and focus is back on a control of the row” — now Escape returns from the detail to the list
+  and the focus is on row 100.
+
+No other check changed, and no total dropped.
+
+| Check (fixtures, build of this commit) | Result |
+| --- | --- |
+| `tsc --noEmit`; `npm run build`; main chunk 72.40 kB, 24.05 kB gzip (71.97 kB before; budget 350 kB); `TaskListPage` 25.46 kB, 9.72 kB gzip; `TaskDetailPage` 27.91 kB, 10.51 kB gzip (`TaskCenterPage` was 38.60 kB) | pass |
+| Token lint | 0 |
+| Tasks (`check-tasks.mjs`): L 87, R 42, D 65, S 53, K 26, W 64, Q 26 | 363 of 363 |
+| Artifacts and reports (`check-artifacts-reports.mjs`) | 282 of 282 |
+| Tab count (`check-findings-tab-count.mjs`) | 46 of 46 |
+| Findings and evidence (`check-findings-evidence.mjs`) | 340 of 340 |
+| Workbench shell (`check-workbench-shell.mjs`) | 99 of 99 |
+| Projects (`check-projects.mjs`) | 43 of 43 |
+| Redirects (`check-redirects.mjs`) | 28 of 28 |
+| Trace (`check-trace.mjs`) | 218 of 218 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| Workbench, 20 surfaces × 4 widths × 2 themes, sessions 40 and 41 (`check-workbench.mjs`) | overflow 0, page errors 0; focus: 1132 and 1726 stops checked, 0 without an indicator, 0 covered |
+| All routes and views at 1440 / 1024 / 760 / 390, light and dark (`capture.mjs --views`) | overflow 0, page errors 0 |
+| Request set per route vs `docs/screenshots/v3/phase-6/requests.json` | identical for all 37 routes; 6 new entries, all of `/tasks/:id` (`/tasks/100`, `/tasks/101`, `/tasks/102`, `/tasks/103`, `/tasks/100?tab=artifacts`, `/tasks/101?tab=timeline`) |
+
+Two more chunks are shared: `useTasks` 20.84 kB (the task model and reads, used by both pages) and `useFollow`
+24.45 kB (the stage stack, now shared by the workbench and the task detail; the workbench chunk `SessionShell` is
+285.97 kB, 95.23 kB gzip for that reason, 309.82 kB before).
+
+Known gaps: rows are not virtualised at 100 or 200 per page; tabs and toolbar are not sticky; `RerunTaskModal` keeps
+its Phase 6 look; a task outside the newest 2000 is reported as not found, because the list is the only read there
+is; there is still no task log, stage time or single-task endpoint, so output is the progress text plus a log file
+when the artifacts hold one. The stage stack re-pins itself to the end when its rows are re-measured while it follows, so
+an upward jump of a page at once could be undone before it was noticed; the task output pauses following itself on
+an upward wheel or key (inside `TaskOutput`, the stack is not changed). Dragging the scrollbar far up in one move
+can still be undone once; a wheel, a trackpad and the keyboard are not.
+
+Screenshots and reports: `docs/screenshots/v3/phase-7/`.
+
+Rollback: `git revert` of this one commit restores `TaskCenterPage` and removes `/tasks/:id`; `766a717` stands on
+its own.
+
 ### V3 Phase 6 acceptance fix — The artifacts entry of a task, and checks that cannot hang
 
 Acceptance of `144bd6a` found that the task-dialog states could not be confirmed: an independent run of

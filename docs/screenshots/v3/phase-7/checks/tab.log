@@ -1,0 +1,49 @@
+ok   A @1440 light 403 on every read: the tab text is exactly 风险发现 — "风险发现"
+ok   A @1440 light 403 on every read: no digit and no count element on the tab — digits "", count elements 0
+ok   A 403 on every read: the banner states the permission (the tab does not contradict it) — 当前账号无权读取该会话，请切换账号或联系管理员。
+ok   A 403 on every read: no tab carries a number — 概览 | 运行 | 风险发现 | 证据 | 产物 | 报告
+ok   A 403 on every read: still no number with the tab selected — "风险发现"
+ok   A 403 on every read: the findings surface states the permission and no count — 没有权限读取风险发现 当前账号不能读取这个会话的风险发现，所以这里没有内容。请切换账号或联系管理员。
+ok   A 403 on every read: nothing was posted, no page error
+ok   A @1440 dark 403 on every read: the tab text is exactly 风险发现 — "风险发现"
+ok   A @1440 dark 403 on every read: no digit and no count element on the tab — digits "", count elements 0
+ok   A @390 light 403 on every read: the tab text is exactly 风险发现 — "风险发现"
+ok   A @390 light 403 on every read: no digit and no count element on the tab — digits "", count elements 0
+ok   A @390 no horizontal overflow
+ok   B 403 on the findings read only: the tab text is exactly 风险发现, no 0 — "风险发现"
+ok   B the banner names 发现 as a permission matter, without retry wording — 当前账号无权读取：发现。
+ok   B the header still states the run and the run action is available — 状态
+运行中
+ok   B the overview is drawn
+ok   B the runtime surface shows the trace — 9 trace rows
+ok   B the composer is usable
+ok   B the evidence surface opens
+ok   B the findings surface is a permission state: no retry, no “0 条” — 没有权限读取风险发现 当前账号不能读取这个会话的风险发现，所以这里没有内容。请切换账号或联系管理员。
+ok   B still no number with the tab selected — "风险发现"
+ok   B no page error
+ok   C readable session: the tab shows a count — "风险发现 7"
+ok   C the count is the number of findings the surface lists — tab 7, scope "7 条 · 12 个实例 · 1 条已降噪", rows 7
+ok   C no page error
+ok   D readable session without findings: the tab shows 0 — "风险发现 0"
+ok   D the surface is the empty state, not a permission state — empty
+ok   D no banner about permission
+ok   D no page error
+ok   E while the first read is pending: no number — "风险发现"
+ok   E after the read answers: the count — "风险发现 7"
+ok   F before the permission is withdrawn: the count — "风险发现 7"
+ok   F after the findings read answers 403: no number, although findings were read earlier — "风险发现"
+ok   G first findings read fails (500): the tab text is exactly 风险发现, no 0 — "风险发现"
+ok   G the banner says 发现 was not loaded and offers retry (a failure, not a permission matter) — 部分数据源未加载：发现。已展示可用数据，稍后自动重试。 立即重试
+ok   G the other surfaces keep working: the run is stated and the action is available
+ok   G when the read recovers: the count appears — "风险发现 7"
+ok   G no page error
+ok   H before the failure: the count — "风险发现 7"
+ok   H after the findings read fails: no number — "风险发现"
+ok   H when the read recovers: the same count returns — "风险发现 7" → "风险发现 7"
+ok   I while the findings read is refused: no number — "风险发现"
+ok   I after the permission is granted: the count appears without a reload — "风险发现 7"
+ok   I the permission banner is gone
+ok   I every read refused later: no number — "风险发现"
+ok   I allowed again: the count returns — "风险发现 7"
+
+46/46 findings tab count checks passed (fixtures)

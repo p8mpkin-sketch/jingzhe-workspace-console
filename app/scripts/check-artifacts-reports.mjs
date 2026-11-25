@@ -823,10 +823,12 @@ await group('T', async () => {
     tk('T1 entry: every task with a finished audit / unpack or a linked session has one artifacts entry in its row', s0.problem, entriesKept(s0), `rows with an entry: ${s0.entries.join(', ')}`);
     const noneRow = s0.problem ? 0 : await count(s0.page, `[data-task-row="${NONE}"]`);
     const noneEntry = s0.problem ? 0 : await count(s0.page, `[data-task-row="${NONE}"] [data-artifacts-btn]`);
-    if (noneRow === 1) { await s0.page.locator(`[data-task-row="${NONE}"]`).click({ timeout: LIMIT.act, position: { x: 200, y: 12 } }).catch(() => {}); await s0.page.waitForTimeout(400); }
-    tk('T1 entry: the queued task without a session has none, and pressing its row opens no dialog', s0.problem, noneRow === 1 && noneEntry === 0 && (await count(s0.page, '[data-art-dialog]')) === 0, `row ${noneRow}, entries ${noneEntry}`);
     tk('T1 entry: it is in the row itself, visible, with its name; not behind the overflow menu', s0.problem, (await s0.page.locator(entryOf(100)).isVisible()) && /产物/.test(await text(s0.page, entryOf(100))) && (await count(s0.page, '[data-more-menu]')) === 0);
     tk('T1 entry: shown without asking the artifacts endpoint', s0.problem, listReads(s0).length === 0, `${listReads(s0).length} list reads before a dialog was opened`);
+    // Phase 7: a row opens the task detail. For a task without artifacts that is still not a dialog and not a list read.
+    if (noneRow === 1) { await s0.page.locator(`[data-task-row="${NONE}"]`).click({ timeout: LIMIT.act, position: { x: 200, y: 12 } }).catch(() => {}); await s0.page.waitForSelector('[data-task-detail]', { timeout: LIMIT.act }).catch(() => {}); }
+    tk('T1 entry: the queued task without a session has none, and pressing its row opens its detail page, no dialog and no list read', s0.problem,
+      noneRow === 1 && noneEntry === 0 && (await count(s0.page, '[data-art-dialog]')) === 0 && (await count(s0.page, `[data-task-detail="${NONE}"]`)) === 1 && listReads(s0).length === 0, `row ${noneRow}, entries ${noneEntry}, detail ${await count(s0.page, '[data-task-detail]')}`);
     await s0.ctx.close(); }
   const s1 = await openDialog({ over: tree, downloads: true });
   const { page, state } = s1;
@@ -952,13 +954,15 @@ await group('T', async () => {
     let p = s.problem;
     if (!p) { await s.page.click('[data-task-row="100"] [data-more-btn]', { timeout: LIMIT.act }).catch((e) => { p = `row menu: ${first(e)}`; }); }
     if (!p) { await s.page.click('[data-more-menu] [data-act-detail]', { timeout: LIMIT.act }).catch((e) => { p = `详情 item: ${first(e)}`; }); }
-    if (!p && !(await s.page.waitForSelector('[data-detail-artifacts]', { timeout: LIMIT.act }).then(() => true, () => false))) p = 'entry missing: the task detail has no 浏览产物 button';
-    if (!p) { await s.page.click('[data-detail-artifacts]', { timeout: LIMIT.act }); if (!(await s.page.waitForSelector(BROWSER, { timeout: LIMIT.act }).then(() => true, () => false))) p = 'dialog: not open after 浏览产物 in the task detail'; }
-    s.problem = p;
-    const p2 = await stateIs(s, 'forbidden');
-    tk('T7 the task detail keeps its 浏览产物 button under a refused list read and opens the same permission state', p2, !RETRY.test(await text(s.page, BROWSER)));
-    if (!p2) { await s.page.keyboard.press('Escape'); await s.page.waitForTimeout(300); }
-    tk('T7 Escape closes it and focus is back on a control of the row, not lost', p2, (await count(s.page, '[data-art-dialog]')) === 0 && (await s.page.evaluate(() => !!document.activeElement?.closest('[data-task-row="100"]'))),
+    // Phase 7: 详情 opens /tasks/:id (the detail drawer is retired); its 产物 tab embeds the same browser.
+    const PANE = '[data-task-artifacts] [data-art-browser]';
+    if (!p && !(await s.page.waitForSelector('[data-task-detail="100"] [data-task-tab="artifacts"]', { timeout: LIMIT.act }).then(() => true, () => false))) p = 'entry missing: the task detail has no 产物 tab';
+    if (!p) { await s.page.click('[data-task-tab="artifacts"]', { timeout: LIMIT.act }); if (!(await s.page.waitForSelector(PANE, { timeout: LIMIT.act }).then(() => true, () => false))) p = 'state rendering: no artifact browser in the 产物 tab of the task detail'; }
+    if (!p) { await s.page.waitForSelector(`${PANE}[data-state="forbidden"]`, { timeout: LIMIT.state }).catch(() => {}); const got = await attr(s.page, PANE, 'data-state'); if (got !== 'forbidden') p = `state rendering: expected "forbidden", the 产物 tab shows "${got}"`; }
+    const p2 = p;
+    tk('T7 the task detail keeps its 产物 tab under a refused list read and shows the same permission state', p2, !RETRY.test(await text(s.page, PANE)));
+    if (!p2) { await s.page.keyboard.press('Escape'); await s.page.waitForSelector('[data-task-row="100"]', { timeout: LIMIT.list }).catch(() => {}); await s.page.waitForTimeout(400); }
+    tk('T7 Escape returns from the detail to the list and focus is back on the row of that task, not lost', p2, (await count(s.page, '[data-task-detail]')) === 0 && (await s.page.evaluate(() => !!document.activeElement?.closest('[data-task-row="100"]'))),
       await s.page.evaluate(() => document.activeElement?.tagName + ' ' + (document.activeElement?.getAttribute('aria-label') || '')));
     await s.ctx.close(); }
   { const s = await open('/tasks', { deny: /\/api\/tasks$/, wait: 0 });

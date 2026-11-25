@@ -569,6 +569,22 @@ Agent     /agent
 - 键盘：Escape 返回列表并把焦点还给来时的那一行（列表保留 `?focus=<id>`）；标签是 `tablist`；页头的每个操作都能按顺序到达。
 - 未找到、无权限、加载出错和数据过期各有一个状态；已删除的任务会说明并提供返回链接。
 
+**Phase 7 实施说明（2026-11-25，按 cz 确认的范围）。** 与上面线框不同的地方，以实现为准：
+
+- 阶段只来自任务的进度文本：文本里出现 `Unpack`、`Decompile`、`Security Analysis`、`Symbol Analysis`、`Struct Analysis`、
+  `Report Generation` 才有对应阶段，没有出现的不补；解析不出阶段时只有“输出”一个阶段，并在运行条和输出里写明来源。
+- 后端不记录阶段的起止时间，时间线里阶段的开始、结束、耗时三格都写“未记录”，不从别的值推算。
+- 时间线是第三个标签（输出 · 产物 · 时间线），所有宽度一致，不做 1280 以上的固定右栏；
+  有关联会话时，会话的步骤另列一块“关联会话的步骤”，与任务阶段分开标注。
+- 报告不是标签，是标签行右侧指向 `/reports?taskId=` 的链接。
+- 产物日志和脱壳结果在输出里是“日志”“结果”两个分组，各自写明来源，不算阶段，不进运行条和时间线。
+- 轮询：每 10 秒读取完整任务列表（`limit=2000`），只在任务运行或排队、且页面可见时进行；
+  不使用 `limit=50` 的运行中列表判断任务是否结束。
+- 列表每页 100 条以上时没有做虚拟滚动；标签和工具条没有吸顶；“清理失败任务”仍是页头按钮。这三项留给 Phase 10。
+- `projects/tabs/Runs.tsx` 没有改用 `TaskTable`（确认范围里写明不动项目的运行记录标签）；`RerunTaskModal`、`taskParts` 未改。
+- 实际新增文件：`features/tasks/{TaskListPage,TaskTable,TaskRow,BatchUnpackSummary,TaskDetailPage,TaskHeader,TaskOutput,TaskTimeline}.tsx`、
+  `features/tasks/{taskModel,useTasks}.ts`、`scripts/check-tasks.mjs`。能力矩阵 38 行见 `docs/capability-matrix.md` 的 “Tasks (V3 Phase 7)”。
+
 ### 5.3 全局体系里的任务排版
 
 | 角色 | 令牌 | 用途 |
@@ -881,7 +897,7 @@ A+ 的验收测试（`scripts/check-trace.mjs`，新增；跑在夹具上，事�
 | 条目 | 能力去向 |
 | --- | --- |
 | `PentestProjectsPage`、`ProjectCard`、`CompanyProjectsPage`、`CompanyProjectDetailPage`、`ProjectSessionsPage` | `features/projects/*` |
-| `TaskCenterPage` 的详情抽屉、运行泳道、会话栏 | `TaskListPage`、`TaskDetailPage`、项目“执行”标签 |
+| `TaskCenterPage` 的详情抽屉、运行泳道、会话栏 | `TaskListPage`、`TaskDetailPage`、项目“执行”标签（Phase 7 已退役，逐项归属见能力矩阵） |
 | `SessionOverview` 的三卡片布局 | `OverviewSurface` |
 | 作为横条的 `ReviewRoundsBar` | 检查器 › 进度 |
 | 工作台左侧导航栏 | `WorkbenchTabs` |

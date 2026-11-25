@@ -1,0 +1,21 @@
+
+> apksec-frontend-v2@0.1.0 lint:tokens
+> node scripts/check-tokens.mjs --strict
+
+     0  hex-literal
+     0  rgb-literal
+     0  old-css-var
+     0  old-color-class
+     0  raw-palette-class
+     0  arbitrary-font-size
+     0  legacy-size-class
+     0  arbitrary-radius
+     0  legacy-radius-class
+     0  arbitrary-shadow
+     0  legacy-shadow-class
+     0  decorative-effect
+     0  old-vocabulary
+     0  css-literal
+     0  letter-spacing
+     0  text-alpha
+     0  total (comments excluded; design/tokens.css is the only allowed home for literals)

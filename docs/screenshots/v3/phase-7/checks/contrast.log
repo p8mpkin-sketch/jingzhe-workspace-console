@@ -1,0 +1,36 @@
+
+light             canvas       rail    surface     raised      inset    overlay  surface-2 brand-soft
+ink               15.69      14.59      16.70      17.29      15.13      17.29      15.00      14.54 
+ink-2              9.00       8.37       9.58       9.92       8.68       9.92       8.60       8.34 
+muted              5.97       5.56       6.36       6.58       5.76       6.58       5.71       5.54 
+brand              6.18       5.75       6.58       6.81       5.96       6.81       5.91       5.73 
+amber-ink          6.10       5.68       6.50       6.73       5.89       6.73       5.83       5.66 
+teal-ink           5.96       5.54       6.34       6.57       5.75       6.57       5.70       5.52 
+orange             6.43       5.98       6.85       7.09       6.20       7.09       6.15       5.96 
+red                6.02       5.60       6.41       6.64       5.81       6.64       5.75       5.58 
+state hover   worst 5.04 (teal-ink on rail)
+state pressed worst 4.64 (teal-ink on rail)
+on-brand/brand 6.58
+on-red/red    6.41
+border-strong (>= 3:1) canvas 3.63 · rail 3.37 · surface 3.86 · raised 4.00 · inset 3.50 · overlay 4.00 · surface-2 3.47
+trace rules (>= 3:1) worst 5.75
+border/surface (hairline, informational) 1.30
+
+dark              canvas       rail    surface     raised      inset    overlay  surface-2 brand-soft
+ink               16.00      16.49      15.03      13.79      16.60      13.12      13.28      12.86 
+ink-2             10.58      10.91       9.95       9.12      10.98       8.68       8.79       8.51 
+muted              7.48       7.70       7.03       6.44       7.76       6.13       6.21       6.01 
+brand              7.51       7.73       7.05       6.47       7.79       6.15       6.23       6.03 
+amber-ink         10.12      10.43       9.51       8.72      10.50       8.29       8.40       8.13 
+teal-ink           9.17       9.45       8.61       7.90       9.51       7.52       7.61       7.37 
+orange             8.95       9.22       8.41       7.72       9.29       7.34       7.43       7.19 
+red                7.82       8.06       7.35       6.74       8.11       6.41       6.49       6.28 
+state hover   worst 5.20 (muted on overlay)
+state pressed worst 4.76 (muted on overlay)
+on-brand/brand 7.57
+on-red/red    7.88
+border-strong (>= 3:1) canvas 4.11 · rail 4.23 · surface 3.86 · raised 3.54 · inset 4.26 · overlay 3.37 · surface-2 3.41
+trace rules (>= 3:1) worst 6.23
+border/surface (hairline, informational) 1.21
+
+failing pairs: 0

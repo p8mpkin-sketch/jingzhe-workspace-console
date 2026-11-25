@@ -1,0 +1,44 @@
+ok   index renders the unified page
+ok   temporary "会话索引" entry is gone
+ok   rail has one project entry
+ok   all scope lists every project — rows: company,single,single
+ok   scope company — rows 1, ?scope=company
+ok   scope single — rows 2, ?scope=single
+ok   scope all — rows 3, ?scope=null
+ok   index hooks present
+ok   row menu hooks present
+ok   export menu hooks present
+ok   card view uses the same row component
+ok   risk filter narrows the list
+ok   filtered-empty state with reset
+ok   one create dialog with both types
+ok   company payload unchanged — {"name":"Fixture company project","company_name":"","brands":["Alpha","Beta"],"source":"device","note":"","kind":"company","status":"draft"}
+ok   company create lands on the project — /projects/1
+ok   dialog preselects the scope on screen
+ok   single type hides the company fields
+ok   single payload is name + note — {"name":"Fixture single project","note":""}
+ok   single create opens the session wizard on the runs tab — /projects/1?tab=runs
+ok   detail renders
+ok   default tab does not load the task list
+ok   tab reports — ?tab=reports
+ok   tab apps — ?tab=apps
+ok   tab candidates — ?tab=candidates
+ok   tab runs — ?tab=runs
+ok   tab overview — ?tab=null
+ok   detail hooks present
+ok   report hooks present
+ok   runs lists only this project's sessions — 40,41,44
+ok   runs joins each session to its task — 100,101,104
+ok   runs reads the task list the task page reads
+ok   runs scope filters by task status
+ok   session hooks present
+ok   closing a session asks for confirmation
+ok   a failing tab shows its own error
+ok   the shell and the other tabs stay up
+ok   another tab still shows its data
+ok   identity falls back to the project list when the overview endpoint fails
+ok   focus not occluded on /projects @1440 — 59 stops, 0 covered
+ok   focus not occluded on /projects/1?tab=apps @1440 — 59 stops, 0 covered
+ok   focus not occluded on /projects/1?tab=runs @1024 — 59 stops, 0 covered
+ok   focus not occluded on /projects @390 — 59 stops, 0 covered
+43/43 project-domain checks passed (fixtures)

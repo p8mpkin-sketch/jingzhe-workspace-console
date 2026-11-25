@@ -322,6 +322,35 @@ Shell requests only.
 | GET | `/api/tasks/counts` | `ids=100,101,102,103,104,105,106,107` | 1 | none (on load only) |
 | GET | `/api/tasks` | `limit=2000` | 1 | none (on load only) |
 
+Unchanged by V3 Phase 7 (`TaskListPage`): the same five reads once on load, `counts` again for the ids of each page
+shown, the task list again after 刷新, a new `?focus=`, a delete or a rerun. The list is not polled. Writes are the
+former ones: `DELETE /api/tasks/{id}`, `POST /api/tasks` (bulk rerun, body `kind`, `app_name`, `apk_path`,
+`authorized`), `POST /api/tasks/{id}/rerun` (`device_serial`, `mode`, `depth`). The artifacts dialog reads
+`/api/tasks/{id}/artifacts` and `/artifact` only once it is opened.
+
+### `/tasks/:id`
+
+Added in V3 Phase 7 (`TaskDetailPage`). There is no single-task endpoint; the page finds its task in the list.
+
+| Method | Route | Query | When | Count | Polling |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/api/tasks` | `limit=2000` | on load | 1 | every 10 s while the task is running or queued and the page is visible; see below |
+| GET | `/api/pentest/sessions` | — | on load | 1 | none |
+| GET | `/api/tasks/counts` | `ids={id}` | on load, once the task is found | 1 | none |
+| GET | `/api/tasks/{id}/artifacts` | `prefix=` | 输出 tab, only for a task that has artifacts (finished audit or unpack, or a linked session): looks for a `.log` file at the top level | 1 | none |
+| GET | `/api/tasks/{id}/artifact` | `path={file}.log` | only when that list holds a `.log` file of at most 512 kB | 0 or 1 | none |
+| GET | `/api/tasks/{id}/artifacts` | `prefix=…` | 产物 tab: the walk of `ArtifactBrowser`, as in the Phase 6 dialog | per directory | none |
+| GET | `/api/pentest/sessions/{sid}/timeline` | — | 时间线 tab, only for a task with a linked session | 1 | none |
+| POST | `/api/tasks/{id}/rerun` | — | 重新运行, after the dialog | — | — |
+| DELETE | `/api/tasks/{id}` | — | 删除任务, after confirmation | — | — |
+
+Polling rule (`usePollWhileLive`): the only polled read is the full list, `GET /api/tasks?limit=2000`, every 10 s.
+It runs while the task's status in that list is `running` or `queued` and `document.visibilityState` is not
+`hidden`. A hidden page makes no read; when it becomes visible again it reads once and resumes. Reading stops when
+the full list says the task is `done` or `failed`, and when the page is left. A status-filtered or `limit=50` list
+is never requested, so a task missing from such a list cannot be taken for finished. A read that fails keeps the
+last state on screen with a stale notice. A task that is not among the 2000 the list returns is shown as not found.
+
 ### `/reports`
 
 | Method | Route | Query | Expected unique count on load | Polling interval |

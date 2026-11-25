@@ -1,0 +1,109 @@
+ok   @1440 header, tabs, surface bar, surface in this order
+ok   @1440 no second navigation rail: the surface starts at the left edge of the workbench — rails 0, nav landmarks in workbench 0, on the page: 主导航
+ok   @1440 six primary tabs in one row — overview,runtime,findings,evidence,artifacts,report
+ok   @1440 no horizontal overflow — doc 0
+ok   @1024 header, tabs, surface bar, surface in this order
+ok   @1024 no second navigation rail: the surface starts at the left edge of the workbench — rails 0, nav landmarks in workbench 0, on the page: 主导航
+ok   @1024 six primary tabs in one row — overview,runtime,findings,evidence,artifacts,report
+ok   @1024 no horizontal overflow — doc 0
+ok   @760 header, tabs, surface bar, surface in this order
+ok   @760 no second navigation rail: the surface starts at the left edge of the workbench — rails 0, nav landmarks in workbench 0, on the page: none in view
+ok   @760 six primary tabs in one row — overview,runtime,findings,evidence,artifacts,report
+ok   @760 no horizontal overflow — doc 0
+ok   @390 header, tabs, surface bar, surface in this order
+ok   @390 no second navigation rail: the surface starts at the left edge of the workbench — rails 0, nav landmarks in workbench 0, on the page: none in view
+ok   @390 six primary tabs in one row — overview,runtime,findings,evidence,artifacts,report
+ok   @390 no horizontal overflow — doc 0
+ok   header shows title, package and device — com.example.wallet · emulator-5554
+ok   readouts: status, stage, elapsed, pending — {"status":"状态 运行中","stage":"阶段 3/5 权限矩阵 3/6 步","elapsed":"已用时 00:41:08","pending":"待处理 2"}
+ok   elapsed time runs while the session is live — 已用时 00:41:08 → 已用时 00:41:10
+ok   one primary run action
+ok   overflow menu keeps the secondary actions and their hooks
+ok   stop asks for confirmation; cancel sends nothing — no POST
+ok   confirming sends one stop request — POST /api/pentest/sessions/41/autopilot/stop
+ok   top bar repeats neither package, device nor run status — 项目 #1 会话 #41 搜索或跳转 Ctrl K 2 D
+ok   a session that has not started shows no invented stage or time — {"status":"状态 未开始","stage":"阶段 未就绪","elapsed":"已用时 —","pending":"待处理 0"}
+ok   six primary labels — 概览 运行 风险发现 证据 产物 报告
+ok   no tab label appears twice in the workbench — 概览 运行 风险发现 证据 产物 报告 Agent 轨迹 终端 接口与请求 证据关系 凭据 覆盖矩阵 分析输出 加固信息 报告草稿 版本对比 复核队列 简报 进度 日志
+ok   the surface bar has no heading that repeats the tab
+ok   secondary tabs and segments of the trace
+ok   one live-status position — 跟随
+实时
+19:09:51
+ok   no summary chips in the bar
+ok   the trace renders its follow switch into that position
+ok   secondary tabs move with the arrow keys
+ok   inspector is closed by default and the review rounds are not on the page
+ok   1440: docked column that pushes the surface, no scrim — main 1220 → 899, panel 320
+ok   toggle states the open column
+ok   four tabs: review queue, brief, progress, log
+ok   separator: arrow keys resize, limits 280 and 480 — 336 / 480 / 280
+ok   separator: drag resizes — 401
+ok   state is stored under the signed-in user — {"open":true,"width":401,"tab":"progress"}
+ok   open state, width and tab survive a reload
+ok   double click resets the width to 320
+ok   docked: Escape returns focus to the toggle
+ok   Ctrl + . and ⌘ + . toggle the inspector
+ok   inspector tabs move with the arrow keys
+ok   docked column stays open when the surface changes
+ok   review rounds are in inspector › progress, the strip is gone
+ok   a round state is a glyph and a word, not opacity — R4
+LLM 对抗
+对抗 2
+降级
+ok   stages with their steps, the current one open
+ok   any stage opens to its steps
+ok   a stage jumps to its entry in the trace
+ok   the rounds request is the one the strip made, issued once on load
+ok   review queue lists the approvals waiting
+ok   brief: session, task, authorisation, model route, exploration run
+ok   log lists recent events
+ok   queue and brief repeat neither package, device nor run status
+ok   the pending count is stated once, in the header — 复核队列 简报 进度 日志
+ok   no findings, reports or metrics in the inspector
+ok   inspector says it is reading while the first response is pending — 正在读取…
+ok   before the first response the header states no status or count, and the run action waits — {"status":"状态 正在读取…","stage":"阶段 未就绪","elapsed":"已用时 —","pending":"待处理 —"}
+ok   once it arrives the header states it and the action is available
+ok   a failed source is named in its inspector tab, with retry; the queue is not reported as empty — 审批上次读取失败，下面的内容可能不是最新的。 重试 审批列表未知 读取成功后，需要人工确认的动作会排在这里。
+ok   the live position says part of the data is not updated; the header does not claim zero approvals
+ok   a failed status read shows "unknown", not "not started"; the run action stays available — 状态
+未知
+ok   tabs whose sources arrived show no notice
+ok   403 on every read: the header status says 无权限 — 状态
+无权限
+ok   403 on every read: the run action (start / pause / resume) is disabled and says why
+ok   403 on every read: the banner says 当前账号无权读取该会话，请切换账号或联系管理员 — 当前账号无权读取该会话，请切换账号或联系管理员。
+ok   403 on every read: no retry wording anywhere in the workbench (text and tooltips)
+ok   403 on every read: the live position says 无权限, not 部分未更新 — 跟随
+无权限
+ok   403 on every read: the inspector names the permission and offers no retry — 当前账号无权读取审批。
+ok   403 on every read: device exploration, replay inventory and stop are disabled in the menu — [true,true,true]
+ok   403 on every read: nothing was posted
+ok   403 on every read at 390: same statement, no overflow
+ok   403 on one source: the banner names it as a permission matter, without retry wording or a retry button — 当前账号无权读取：审批。
+ok   403 on one source: the header still states the run and the action is available
+ok   403 on one source and a failed read of another: each is said for what it is; retry is offered for the failed one only — 当前账号无权读取：审批。部分数据源未加载：阶段时间线。已展示可用数据，稍后自动重试。
+立即重试
+ok   @1024 an overlay never opens by itself on load
+ok   @1024 drawer: placed on the right at the stored width — {"x":624,"y":0,"w":400,"h":900,"r":1024,"b":900}
+ok   @1024 focus moves into the drawer
+ok   @1024 focus stays inside the drawer
+ok   @1024 Escape closes the drawer and returns focus to the toggle
+ok   @1024 shortcut opens it; going to the trace closes it
+ok   @760 an overlay never opens by itself on load
+ok   @760 sheet: placed at the bottom, full width — {"x":0,"y":198,"w":760,"h":702,"r":760,"b":900}
+ok   @760 focus moves into the sheet
+ok   @760 focus stays inside the sheet
+ok   @760 Escape closes the sheet and returns focus to the toggle
+ok   @760 shortcut opens it; going to the trace closes it
+ok   @390 an overlay never opens by itself on load
+ok   @390 sheet: placed at the bottom, full width — {"x":0,"y":198,"w":390,"h":702,"r":390,"b":900}
+ok   @390 focus moves into the sheet
+ok   @390 focus stays inside the sheet
+ok   @390 Escape closes the sheet and returns focus to the toggle
+ok   @390 shortcut opens it; going to the trace closes it
+ok   ?view= selects its primary and secondary tab
+ok   segments keep ?view= and ?tab=
+ok   a primary tab reopens on the surface it was left on
+ok   back goes to the project runs tab — #/projects/1?tab=runs
+99/99 workbench-shell checks passed (fixtures)

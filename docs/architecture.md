@@ -44,7 +44,8 @@ The shell is persistent. Pages own their own header, toolbar, content, and local
 /company              company / group index
 /company/projects/:id company project workspace
 /new-assessment       create flow
-/tasks                task center
+/tasks                task list
+/tasks/:id            task detail (V3 Phase 7)
 /reports              report center
 /discovery            discovery pipeline
 /knowledge            reusable knowledge

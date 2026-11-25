@@ -1,0 +1,366 @@
+ok   L1 the list page is up and says it read the list — ok
+ok   L1 first page: 20 rows, in the order the server sent — 1000,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013… (20)
+ok   L1 the pager states the total (65) — 共 65 条 每页 20 50 100 200 跳至 1 / 4
+ok   L1 five status tabs with the count of each status — {"":"全部 65","running":"运行中 13","queued":"排队 13","failed":"失败 13","done":"已完成 26"}
+ok   L1 header readout: concurrency, running, queued, online devices — 并发 2/4空闲 2 个 · 负载 50% 运行中 13 排队中 13 在线设备 2
+ok   L1 header actions in order: refresh, export, clean failed, new assessment
+ok   L1 toolbar: search, type, packer, owner, partial only, hide instant failures
+ok   L2 page size 100 puts all 65 rows on one page — 1000,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013… (65)
+ok   L2 status tab running: rows and ids — rows 13, expected 13; ids 1001,1006,1011,1016,1021,1026,1031,1036,1041,1046,1051,1056,1061; pager “共 13 条 每页 20”
+ok   L2 status tab running: the address carries ?status=running — /tasks?status=running
+ok   L2 status tab queued: rows and ids — rows 13, expected 13; ids 1002,1007,1012,1017,1022,1027,1032,1037,1042,1047,1052,1057,1062; pager “共 13 条 每页 20”
+ok   L2 status tab queued: the address carries ?status=queued — /tasks?status=queued
+ok   L2 status tab failed: rows and ids — rows 13, expected 13; ids 1003,1008,1013,1018,1023,1028,1033,1038,1043,1048,1053,1058,1063; pager “共 13 条 每页 20”
+ok   L2 status tab failed: the address carries ?status=failed — /tasks?status=failed
+ok   L2 status tab done: rows and ids — rows 26, expected 26; ids 1000,1004,1005,1009,1010,1014,1015,1019,1020,1024,1025,1029,1030,1034… (26); pager “共 26 条 每页 20”
+ok   L2 status tab done: the address carries ?status=done — /tasks?status=done
+ok   L2 status tab 全部: every row again — rows 65, expected 65; ids 1000,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013… (65); pager “共 65 条 每页 20”
+ok   L2 全部 removes ?status= from the address — /tasks
+ok   L3 type 脱壳: rows and ids — rows 16, expected 16; ids 1003,1007,1011,1015,1019,1023,1027,1031,1035,1039,1043,1047,1051,1055… (16); pager “共 16 条 每页 20”
+ok   L3 type 评估: rows and ids — rows 49, expected 49; ids 1000,1001,1002,1004,1005,1006,1008,1009,1010,1012,1013,1014,1016,1017… (49); pager “共 49 条 每页 20”
+ok   L3 type 全部类型: every row again — rows 65, expected 65; ids 1000,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013… (65); pager “共 65 条 每页 20”
+ok   L3 packer 有加固: rows and ids — rows 43, expected 43; ids 1001,1002,1004,1005,1007,1008,1010,1011,1013,1014,1016,1017,1019,1020… (43); pager “共 43 条 每页 20”
+ok   L3 packer 无加固: rows and ids — rows 22, expected 22; ids 1000,1003,1006,1009,1012,1015,1018,1021,1024,1027,1030,1033,1036,1039… (22); pager “共 22 条 每页 20”
+ok   L3 packer vendor-a: rows and ids — rows 22, expected 22; ids 1001,1004,1007,1010,1013,1016,1019,1022,1025,1028,1031,1034,1037,1040… (22); pager “共 22 条 每页 20”
+ok   L3 packer 全部: every row again — rows 65, expected 65; ids 1000,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013… (65); pager “共 65 条 每页 20”
+ok   L3 owner #1: rows and ids — rows 22, expected 22; ids 1000,1003,1006,1009,1012,1015,1018,1021,1024,1027,1030,1033,1036,1039… (22); pager “共 22 条 每页 20”
+ok   L3 owner #2: rows and ids — rows 22, expected 22; ids 1001,1004,1007,1010,1013,1016,1019,1022,1025,1028,1031,1034,1037,1040… (22); pager “共 22 条 每页 20”
+ok   L3 owner #3 (no name on record): rows and ids — rows 21, expected 21; ids 1002,1005,1008,1011,1014,1017,1020,1023,1026,1029,1032,1035,1038,1041… (21); pager “共 21 条 每页 20”
+ok   L3 owner 全部: every row again — rows 65, expected 65; ids 1000,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013… (65); pager “共 65 条 每页 20”
+ok   L4 partial only: rows and ids — rows 9, expected 9; ids 1004,1014,1019,1029,1034,1044,1049,1059,1064; pager “共 9 条 每页 20 ”
+ok   L4 partial only writes status=done&partial=1 to the address — /tasks?status=done&partial=1
+ok   L4 partial only off: the done tab stays — rows 26, expected 26; ids 1000,1004,1005,1009,1010,1014,1015,1019,1020,1024,1025,1029,1030,1034… (26); pager “共 26 条 每页 20”
+ok   L4 hide instant failures: rows and ids — rows 58, expected 58; ids 1000,1001,1002,1004,1005,1006,1007,1008,1009,1010,1011,1012,1014,1015… (58); pager “共 58 条 每页 20”
+ok   L4 the toggle states how many it hides — 隐藏即时失败 (7)
+ok   L4 hide instant failures off: every row again — rows 65, expected 65; ids 1000,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013… (65); pager “共 65 条 每页 20”
+ok   L5 search by app name “App 4”: rows and ids — rows 10, expected 10; ids 1040,1041,1042,1043,1044,1045,1046,1047,1048,1049; pager “共 10 条 每页 20”
+ok   L5 search by package “a07”: rows and ids — rows 1, expected 1; ids 1007; pager “共 1 条 每页 20 ”
+ok   L5 search by task id “1042”: rows and ids — rows 1, expected 1; ids 1042; pager “共 1 条 每页 20 ”
+ok   L5 search by owner name “reviewer”: rows and ids — rows 22, expected 22; ids 1001,1004,1007,1010,1013,1016,1019,1022,1025,1028,1031,1034,1037,1040… (22); pager “共 22 条 每页 20”
+ok   L5 search by failure reason “E13”: rows and ids — rows 1, expected 1; ids 1013; pager “共 1 条 每页 20 ”
+ok   L5 search is not case sensitive (“app 0”) — rows 10, expected 10; ids 1000,1001,1002,1003,1004,1005,1006,1007,1008,1009; pager “共 10 条 每页 20”
+ok   L5 search + packer + status together — rows 4, expected 4; ids 1013,1028,1043,1058; pager “共 4 条 每页 20 ”
+ok   L5 a search with no match says so and offers to clear — 任务 状态 耗时 结果 操作 没有符合条件的任务 当前的搜索或筛选条件下没有任务。 清除筛选
+ok   L5 清除筛选 brings every row back and empties the controls — rows 65, expected 65; ids 1000,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013… (65); pager “共 65 条 每页 20”
+ok   L5 after clearing: search empty, selects at their defaults, no ?status= — /tasks
+ok   L6 page size 20: four pages — 共 65 条 每页 20 50 100 200 跳至 1 / 4
+ok   L6 page sizes offered: 20, 50, 100, 200
+ok   L6 下一页: rows 21–40 — 1020,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033… (20)
+ok   L6 a page asks for the counts of its own 20 tasks only — GET /api/tasks/counts?ids=1020,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1034,1035,1036,1037,1038,1039
+ok   L6 跳至页码 4: the last 5 rows — 1060,1061,1062,1063,1064
+ok   L6 on the last page 下一页 is disabled
+ok   L6 上一页: rows 41–60 — 1040,1041,1042,1043,1044,1045,1046,1047,1048,1049,1050,1051,1052,1053… (20)
+ok   L7 selecting two rows shows the bulk bar with the count — 已选 2 项 在 1 页内 重新运行 导出 对比报告 删除 取消选择
+ok   L7 two tasks that both have a session: 对比报告 is offered — 在报告页对比会话 #900 和 #901
+ok   L7 a row on page 2 joins the selection: 3 items across 2 pages — 已选 3 项 跨 2 页 重新运行 导出 删除 取消选择
+ok   L7 with three selected 对比报告 is gone (it needs exactly two)
+ok   L7 page 2: the header box is indeterminate (some of this page)
+ok   L7 选择本页全部 on page 2: 22 items — 已选 22 项 跨 2 页 重新运行 导出 删除 取消选择
+ok   L7 back on page 1 the two rows are still ticked, and only they — 1000,1005
+ok   L7 selected rows are marked for assistive technology
+ok   L7 选择本页全部 again on page 2 removes that page only — 已选 2 项 在 1 页内 重新运行 导出 对比报告 删除 取消选择
+ok   L8 bulk 对比报告 goes to the report page with the two sessions (sid, cmp) — /reports?sid=900&cmp=901 → /reports?taskId=1000
+ok   L8 coming back, the list is there again — 20
+ok   L8 bulk export CSV: the selected tasks, one line each — tasks_export_2026-11-25192712.csv: 3 rows, ids 1000,1001,1003
+ok   L8 bulk export JSON: the same tasks with the same fields as before — tasks_export_2026-11-25192712.json: 3 rows; keys ID/类型/目标应用/包名/壳/状态语义/业务码类数/漏洞C/漏洞H/漏洞M/漏洞L/操作员/耗时秒/创建时间/更新时间/失败原因
+ok   L8 the page says what it exported — 已导出选中的 3 行(JSON) 知道了
+ok   L8 bulk 重新运行 asks first and lists the tasks — 重新运行 3 个任务 会为每个任务新建一个任务,原任务和它的报告保持不变。 #1000 App 00 [完成] #1001 App 01 [运行中] #1003 App 03 [失败] 取消 重新运行
+ok   L8 confirming sends one POST /api/tasks per task, with the old payload — POST /api/tasks {"kind":"audit","app_name":"App 00","authorized":"任务中心重跑"} | POST /api/tasks {"kind":"audit","app_name":"App 01","authorized":"任务中心重跑"} | POST /api/tasks {"kind":"unpack","app_name":"App 03","authorized":"任务中心重跑"}
+ok   L8 the result line counts them and the selection is cleared — 已重新运行 3 个任务 知道了
+ok   L8 bulk 删除 asks first (alert dialog) and says it cannot be undone — 删除 3 个任务 删除后无法恢复。运行中和排队中的任务不会被删除,结果里会说明跳过了几个。 #1000 App 00 [完成] #1001 App 01 [运行中] #1003 App 03 [失败] 取消 删除
+ok   L8 confirming deletes what the server allows and says what was skipped — DELETE /api/tasks/1000 | DELETE /api/tasks/1001 | DELETE /api/tasks/1003 — 已删除 2 个任务,跳过 1 个(运行中或排队中的任务不能删除) 知道了
+ok   L8 the deleted rows are gone, the refused one is still there — 共 63 条 每页 20 50 100 200 跳至 1 / 4
+ok   L8 取消选择 empties the selection
+ok   L9 header export CSV: every row of the current filter, not only the page — tasks_export_2026-11-25192716.csv: 13 rows
+ok   L9 header export JSON: all 63 tasks — tasks_export_2026-11-25192717.json: 63 rows
+ok   L9 清理失败任务 counts the failed tasks of the current filter — 清理失败任务 (4) — expected 4
+ok   L9 清理失败任务 asks first and names its scope — 删除 4 个失败任务 范围是当前搜索和筛选结果里的失败任务。删除后无法恢复,运行中和排队中的任务不受影响。 #1008 App 08 E08: connection reset by device a
+ok   L9 confirming deletes exactly those tasks — DELETE /api/tasks/1008 | DELETE /api/tasks/1023 | DELETE /api/tasks/1038 | DELETE /api/tasks/1053
+ok   L9 afterwards the button is disabled at (0) for this filter — 清理失败任务 (0)
+ok   L9 刷新 reads the list once more — 1 read(s)
+ok   L9 the batch-unpack block is collapsed to one line and opens — 批量脱壳 完成 2/4 · 失败 1 · 待执行 1 · 完成率 50%
+ok   L9 新建评估 goes to the assessment page — /new-assessment
+ok   L10 a link with status=failed opens on that filter — 1003,1008,1013,1018,1023,1028,1033,1038,1043,1048,1053,1058,1063 — /tasks?status=failed
+ok   L10 a link with status=done&partial=1 opens on that filter — 1004,1014,1019,1029,1034,1044,1049,1059,1064 — /tasks?status=done&partial=1
+ok   L10 a link with the old status=degraded opens on that filter — 1004,1014,1019,1029,1034,1044,1049,1059,1064 — /tasks?status=done&partial=1
+ok   L10 a link with focus= puts that task first, marks it and gives it the focus — first row 1040; focus on “data-task-row=1040 data-focused=1 aria-label=任务 #1040 App 40，按回车打开详情”
+ok   L10 no page error during the list checks
+ok   R1 a finished assessment with a session: 会话, 报告 and 产物 are buttons in the row — 会话 报告 产物
+ok   R1 the row menu holds 详情, 重新运行, 向智能体提问, 删除 — 详情 重新运行 向智能体提问 删除
+ok   R1 详情 opens /tasks/100 — /tasks/100
+ok   R1 pressing the row opens the detail of that task — /tasks/101
+ok   R1 会话 opens the linked session, not the detail — /projects/1/sessions/40
+ok   R1 报告 opens the report of that task — /reports?taskId=100
+ok   R1 产物 opens the artifact browser in a dialog and stays on the list — GET /api/tasks/100/artifacts?prefix= | GET /api/tasks/100/artifacts?prefix=report | GET /api/tasks/100/artifacts?prefix=unpacked
+ok   R1 向智能体提问 goes to the agent with the task — /agent?task=100
+ok   R2 a failed task has 重新运行 as a button in the row
+ok   R2 it opens the rerun dialog for that task (device, mode, depth) — 重新运行任务 #102 会新建一个任务重新执行,原任务和它的报告保持不变。 目标 Launcher /data/in/com.example.launcher.
+ok   R2 confirming sends POST /api/tasks/102/rerun and focuses the new task — POST /api/tasks/102/rerun {"device_serial":"","mode":"auto","depth":"deep"} → /tasks?focus=5000
+ok   R2 a task that did not fail has 重新运行 in its menu — 重新运行任务 #104 会新建一个任务重新执行,原任务和它的报告保持不变。 目标 Notes /data/in/com.
+ok   R3 删除 asks first, says it cannot be undone, and sends nothing yet — 删除任务 #107 Reader with a deliberately long display name to test truncation 的任务记录将被删除。 删除后无法
+ok   R3 取消 keeps the task
+ok   R3 confirming sends DELETE /api/tasks/107 and the row goes — DELETE /api/tasks/107
+ok   R3 a delete the server refuses says so and keeps the row — 任务 #101 没有删除：任务正在运行,不能删除
+ok   R4 the failure reason is text in the row, complete — 515 of 515 characters
+ok   R4 it is under the row, in the same task (second line)
+ok   R4 it is not carried by a title attribute
+ok   R4 it wraps: not cut, no ellipsis, can be selected
+ok   R4 the long reason does not widen the page — 0
+ok   R4 复制 puts exactly the full reason on the clipboard — 515 of 515 characters
+ok   R4 pressing the reason text does not leave the list (it can be selected) — /tasks?focus=5000
+ok   R4 a failed task with no reason from the server says exactly that, with nothing to copy — 失败原因 服务端没有返回失败原因
+ok   R4 the status cell says 失败 as a word with a glyph — 失败
+ok   R4 a partly finished task shows its reason in the second line — 通道 frida · 未满足:Zygisk 关闭 · dex dump returned stub classes only
+ok   R4 a running task shows its live progress in the second line — 脱壳 100% 3 dex 反编译 42% jadx 4200/10000 classes
+ok   R5 artifacts entry: finished assessment (104) and finished unpack (105)
+ok   R5 artifacts entry: running (101), failed (102), queued (103) tasks with a session
+ok   R5 no artifacts entry: queued without a session (106), failed without a session (108)
+ok   R5 the list did not ask the artifacts endpoint to decide — 9 requests on load
+ok   R5 with the artifacts endpoint refused, the entries are the same — 7
+ok   R5 the dialog then shows the permission state, without retry wording — 任务产物 任务 #100 Compass 上传到样本库 更多 打包下载 没有权限读取产物文件 当前账号不能读取这个任务的产物目录，所以这里没有文件列表。请切换账号或联系管理员。
+ok   R5 with the session list refused: finished tasks keep the entry, the others have none, no session button — 100,104,105,107
+ok   R6 counts refused (403): every row says 未读取, none shows 0 — [["forbidden","未读取"],["forbidden","未读取"]]
+ok   R6 counts failed (500): every row says 未读取, none shows 0 — [["failed","未读取"],["failed","未读取"]]
+ok   R6 counts read: a task with no finding says 没有发现, the others four figures — 没有发现 / C0 H1 M1 L1
+ok   R7 at 1024 the row buttons show icons and keep their names
+ok   R7 at 1024 the report is in the row menu — 详情 打开报告 重新运行 向智能体提问 删除
+ok   R7 at 390 a task is a card with the same entries and the reason under it — overflow 0
+ok   R7 at 1680 the owner has its own column — demo
+ok   R7 no page error during the row checks
+ok   D1 /tasks/101 shows the detail of task 101 — ok
+ok   D1 header: back link, title, id, type, package — 任务 Wallet #101 评估 com.example.wallet 加固 vendor-a 打开会话 重新运行 更多 状态 运行中 阶段 反编译 42% 耗时 4h 01m慢 结果 C0 H1 M1 L1 负责人 reviewer 任务还没有结束，每 10 秒读取一次任务列表
+ok   D1 header facts: status 运行中, stage 反编译 42%, duration — 状态 运行中 阶段 反编译 42% 耗时 4h 01m慢 结果 C0 H1 M1 L1 负责人 reviewer 任务还没有结束，每 10 秒读取一次任务列表
+ok   D1 header actions: 打开会话, 重新运行, 更多 — 打开会话,重新运行,更多
+ok   D1 run strip: the two stages the progress text names, the second one active — 1 脱壳 已完成 — 2 反编译 运行中 —
+ok   D1 it is the workbench run strip (same component, same hooks)
+ok   D1 tabs 输出 · 产物 · 时间线 in a tablist, 输出 selected
+ok   D1 a running task has no report: the place says 没有报告, no link
+ok   D2 output: grouped by the stages of the progress text, then the log file — 1,2,日志
+ok   D2 output lines are the text of the progress, in monospace
+ok   D2 the source line says where the output comes from — 输出来自任务的进度文本，按文本里出现的阶段分组。另有产物里的日志文件 run.log。
+ok   D2 each group states its lines and its source — 3 行 · 来自产物里的日志文件
+ok   D2 the list is labelled 任务输出
+ok   D2 the line count is stated — 共 5 行
+ok   D3 search “stage”: the hit count and the lines that hold it — 命中 3 处，3 行
+ok   D3 search “s”: occurrences are counted, not lines — 命中 2 处，2 行
+ok   D3 a search with no match says so and offers to clear — 没有匹配的行 输出有 5 行，没有一行包含“zzz-nothing”。 清除搜索
+ok   D3 清除搜索 shows every line again
+ok   D3 复制 puts the whole output on the clipboard, group by group — "## 1 脱壳\nUnpack: 100% · 3 dex\n\n## 2 反编译\nDecompile: 42% · jadx 4200/10000 classes\n"
+ok   D3 下载 saves the same text as task-101-output.txt — task-101-output.txt
+ok   D3 the wrap switch states its state and changes the lines — 打开自动换行
+ok   D3 a running task follows new output
+ok   D3 a group can be folded and opened — folded true
+ok   D4 时间线 tab: the address carries ?tab=timeline — /tasks/101?tab=timeline
+ok   D4 three blocks, each with its source: 任务, 任务阶段, 关联会话的步骤 — 来自任务行的时间字段。 | 阶段来自任务的进度文本，只列出文本里出现过的阶段 | 会话 #41 的步骤时间线。这是会话的步骤，不是
+ok   D4 task block: created, started, last update, duration from the task row — 任务 来自任务行的时间字段。 状态 运行中 创建时间 2026/11/25 15:26:49 开始时间 2026/11/25 15:33:29 最后更新 2026/11/25 17:46:49 耗时 4h 01m
+ok   D4 stages: exactly the two the progress text names
+ok   D4 stage start, end and duration all say 未记录 (six cells), nothing worked out — 未记录,未记录,未记录,未记录,未记录,未记录
+ok   D4 the source says the backend does not record stage times — 阶段来自任务的进度文本，只列出文本里出现过的阶段。后端不记录每个阶段的起止时间。
+ok   D4 session steps: a separate block, labelled as the session’s, from the session timeline — 18 of 18 steps
+ok   D4 session steps are not inside the task stages table
+ok   D4 a step without a time or duration says 未记录 — 36 cells
+ok   D4 the session block links to the session — #/projects/1/sessions/41
+ok   D5 产物 tab embeds the artifact browser of Phase 6 — ok
+ok   D5 the browser lists the files of the task — 6
+ok   D6 failed task: the reason has its own line under the run strip, complete — 515 of 515 characters
+ok   D6 the long reason wraps and does not widen the page — overflow 0
+ok   D6 复制 gives the full reason — 515 characters
+ok   D6 no stage in the text: one stage called 输出, in the strip and in the output — 1 输出 失败 — 进度文本里没有阶段信息，这里如实显示为“输出”一个阶段。 失败原因 unpack failed at stage 2: device emulator-5554 did not answer within 600s step dump_dex: com.example.launcher.internal.loader.StubApplication$com.example.launcher.internal.loader.StubApplication$com.example.launcher.internal.loader.StubApplication$com.example.launcher.internal.loader.StubApplication$com.example.launcher.internal.loader.StubApplication$com.example.launcher.internal.loader.StubApplication$Proxy last adb line: error: closed hint: the app may be waiting for a login the run could not complete 已复制
+ok   D6 and the page says where that comes from — 输出来自任务的进度文本。文本里没有阶段信息，所以只有“输出”一个阶段。另有产物里的日志文件 run.log。
+ok   D6 the failing line is marked with a word, not colour alone
+ok   D6 timeline: the single 输出 stage, times 未记录, the failure reason in full — 进度文本里没有阶段信息，全部内容归在“输出”一个阶段下。后端不记录阶段的起止时间。
+ok   D6 a finished task shows 结束时间 from the task row
+ok   D7 queued task: no stage is made up (strip and stage fact say so) — 任务还在排队，没有开始，所以没有阶段。
+ok   D7 no session: 打开会话 is disabled and says why — 这个任务没有关联的会话
+ok   D7 产物 tab of a task with no artifacts: says so and asks the server nothing
+ok   D7 时间线 of a task with no session: the block says so, no session request
+ok   D8 finished assessment: the report is a link to /reports?taskId=100, not a tab — #/reports?taskId=100
+ok   D8 a finished task does not follow and says it is no longer read — 任务已结束，不再自动读取
+ok   D8 the unpack result of the task row is its own group, labelled — 4 行 · 来自任务行的脱壳结果
+ok   D8 the report link opens the report reader — /reports?taskId=100
+ok   D8 打开会话 opens the linked session — /projects/1/sessions/40
+ok   D8 更多: 向智能体提问 and 删除任务 — 向智能体提问 删除任务
+ok   D8 向智能体提问 goes to the agent with the task — /agent?task=100
+ok   D8 重新运行 opens the same rerun dialog; confirming goes to the list on the new task — POST /api/tasks/100/rerun → /tasks?focus=5000
+ok   D8 删除任务 asks first; confirming deletes and returns to the list — 删除任务 #104 Notes 的任务记录将被删除。运行中和排队中的任务不能删除，服务端会拒绝。 删 → /tasks
+ok   D9 a long running output scrolls inside its pane and starts at the end — {"top":8795,"end":8795}
+ok   D9 following: new lines keep the view at the end — {"top":8930,"end":8930} lines 267
+ok   D9 scrolling up pauses following, and the switch shows it (one jump of 900 px) — off
+ok   D9 paused: new lines do not move the view, and a button counts them — {"top":7920,"end":8690} → {"top":7920,"end":8949}; “7 行新输出 ↓”
+ok   D9 the button goes to the end and follows again — {"top":8879,"end":8879}
+ok   D9 固定 holds the current stage: new lines do not move the view — pinned 2; {"top":8279,"end":8879} → {"top":8279,"end":9101}
+ok   D9 Page Up in the list pauses following too — {"top":8696,"end":9041}
+ok   D9 the pin can be set and released again — set true
+ok   D9 no page error during the detail checks
+ok   S1 list empty: says there are no tasks yet and offers 新建评估 — 还没有任务 创建评估后,任务会出现在这里。 新建评估
+ok   S1 list empty: tabs say 0 (the list was read), no rows — 全部 0 运行中 0 排队 0 失败 0 已完成 0
+ok   S1 list empty: export stays usable, clean-up is disabled at (0)
+ok   S list-empty at 390: the same state, no overflow, no page error — 还没有任务 创建评估后,任务会出现在这里。 新建评估 overflow 0 
+ok   S2 list loading: a skeleton, marked busy — loading
+ok   S2 list loading: counts are “…”, and nothing unread carries a number — 运行中 … / 失败
+ok   S2 list loading: no pager, export disabled until the list is read
+ok   S list-loading at 390: the same state, no overflow, no page error — loading overflow 0 
+ok   S3 list slow: after 4 s the page says the read is slow and that nothing needs to be done — 任务列表还在读取，比平时慢。读到之后会直接显示在这里，不需要刷新。
+ok   S3 list slow: still no row and no empty message
+ok   S list-slow at 390: the same state, no overflow, no page error — 任务列表还在读取，比平时慢。读到之后会直接显示在这里，不需要 overflow 0 
+ok   S4 list error (500): says the list was not read, with the server’s message — 任务列表没有读到 fixture failure 重试
+ok   S4 list error: 重试 reads the list again — 1 read(s)
+ok   S4 list error: no row, no empty message, counts 未读取, no (0) on the toolbar or on clean-up — 运行中 未读取
+ok   S list-error at 390: the same state, no overflow, no page error — 任务列表没有读到 fixture failure 重试 overflow 0 
+ok   S5 list forbidden (403): a permission state — 全部 运行中 排队 失败 已完成 全部类型 全部加固类型 全部负责人 仅部分完成 隐藏即时失败 任务 状态 耗时 结果 操作 没有权限读取任务列表 当前账号不能
+ok   S5 list forbidden: no retry wording and no retry button — 没有权限读取任务列表 当前账号不能读取任务，所以这里没有任务可显示。需要查看时，请管理员开通任务的读取权限。
+ok   S5 list forbidden: not shown as an empty list (no “还没有任务”, no rows, no pager)
+ok   S5 list forbidden: counts say 未读取; tabs, toolbar switches and clean-up carry no number; export is disabled — 并发 2/4空闲 2 个 · 负载 50% 运行中 未读取 排队中 未读取 在线设备 2
+ok   S list-forbidden at 390: the same state, no overflow, no page error — 全部 运行中 排队 失败 已完成 全部类型 全部加固类型 全部负责人 仅部分完成 overflow 0 
+ok   S6 list stale: a failed refresh keeps the rows and says they may be old — 显示的可能不是最新数据 最近一次刷新没有成功，下面是上一次读到的任务。 上次更新: 2026/11/25 19:29:10 刷新
+ok   S6 list stale: 刷新 in the notice reads again and the notice goes — ok
+ok   S list-stale at 390: the same state, no overflow, no page error — overflow 0
+ok   S7 concurrency refused (403): the readout says 未读取, not 0/0 — 并发 未读取 运行中 2 排队中 2 在线设备 2
+ok   S8 detail not found: “在已读取的 2000 条任务里没有 #id，可能已删除。” — 任务 任务 #999999 没有找到任务 #999999 在已读取的 2000 条任务里没有 #999999，可能已删除。 返回任务列表
+ok   S8 detail not found: a way back to the list, no retry wording
+ok   S8 detail not found: no header facts, no tabs, nothing made up
+ok   S detail-not-found at 390: the same state, no overflow, no page error — 任务 任务 #999999 没有找到任务 #999999 在已读取的 2000 条任务里没有 #99 overflow 0 
+ok   S8 an address that is not a task number says so — 任务 任务 #abc 没有找到任务 #abc “abc”不是任务编号。 返回任务列表
+ok   S9 detail forbidden (403): a permission state — 任务 任务 #101 没有权限读取这个任务 当前账号不能读取任务，所以这里没有内容。需要查看时，请管理员开通任务的读取权限。
+ok   S9 detail forbidden: no retry wording, no retry button, not “not found” — 任务 任务 #101 没有权限读取这个任务 当前账号不能读取任务，所以这里没有内容。需要查看时，请管理员开通任务的读取权限。
+ok   S detail-forbidden at 390: the same state, no overflow, no page error — 任务 任务 #101 没有权限读取这个任务 当前账号不能读取任务，所以这里没有内 overflow 0 
+ok   S10 detail error (500): says the task was not read, with the server’s message — 任务 任务 #101 任务没有读到 fixture failure 重试
+ok   S10 detail error: 重试 reads again — 1 read(s)
+ok   S detail-error at 390: the same state, no overflow, no page error — 任务 任务 #101 任务没有读到 fixture failure 重试 overflow 0 
+ok   S11 detail loading: a skeleton, marked busy, with the way back — loading
+ok   S detail-loading at 390: the same state, no overflow, no page error — loading overflow 0 
+ok   S11 detail slow: after 4 s the page says the read is slow — 任务 任务 #101 任务还在读取，比平时慢。读到之后会直接显示在这里，不需要刷新。
+ok   S detail-slow at 390: the same state, no overflow, no page error — 任务 任务 #101 任务还在读取，比平时慢。读到之后会直接显示在这里，不需要刷 overflow 0 
+ok   S12 detail stale: a failed read keeps the last task state on screen and says so — 显示的可能不是最新数据 最近一次读取没有成功，下面是上一次读到的任务状态。 上次更新: 2026/11/25 19:29:53 刷新
+ok   S detail-stale at 390: the same state, no overflow, no page error — overflow 0
+ok   S13 detail with no output: says so and why (queued, not started) — 还没有输出 任务还在排队，没有开始运行，所以没有进度文本。开始之后这里会出现它上报的内容。
+ok   S13 no output: no search, copy or download for nothing
+ok   S detail-no-output at 390: the same state, no overflow, no page error — 还没有输出 任务还在排队，没有开始运行，所以没有进度文本。开始之后这里会出现它上 overflow 0 
+ok   S13 a failed task with no progress text: no output, and the reason line says the server gave none — 失败原因 服务端没有返回失败原因
+ok   S14 detail, counts refused (403): the result says 未读取, never 0 — 未读取
+ok   S14 产物 tab refused (403): the browser’s permission state, no retry wording — 任务 #101 Wallet 上传到样本库 更多 打包下载 没有权限读取产物文件 当前账号不能读取这个任务的产物目录，所以这里没有文件列表。请切换账号或联系管理员。
+ok   S14 输出 then says it could not look for a log file (no permission), and still shows the progress text — 输出来自任务的进度文本，按文本里出现的阶段分组。产物列表没有权限读取，无法判断有没有日志文件。
+ok   S15 session timeline refused (403): a permission state in that block only, no retry wording — 关联会话的步骤 会话 #41 的步骤时间线。这是会话的步骤，不是这个任务的阶段。 没有权限读取这个会话的时间线 当前账号不能读取这个会话，所以这里没有步骤。任务自己的阶段在上面，不受影响。 在会话里查
+ok   S15 session timeline failed (500): an error with 重试 in that block, the task stages unaffected — 关联会话的步骤 会话 #41 的步骤时间线。这是会话的步骤，不是这个任务的阶段。 会话时间线没有读到 fixture failure 重试 在会话里查看完整轨迹
+ok   S15 重试 reads the session timeline again — ok
+ok   S15 session timeline with no steps: says so, in words — 关联会话的步骤 会话 #41 的步骤时间线。这是会话的步骤，不是这个任务的阶段。 会话 #41 的时间线里没有步骤：这个会话还没有运行过，或者它的步骤没有被记录。 在会话里查看完整轨迹
+ok   S16 session list refused (403): the detail still shows the task; 打开会话 is disabled, the artifacts tab makes no request — ok
+ok   K1 `/` puts the focus in the search field — aria-label=搜索任务 data-task-search data-toolbar-search=true
+ok   K1 typed in a field, `/` is a character — a/b
+ok   K1 status tabs: ArrowRight, End, Home move and select — true/true/true; focus after End “role=tab data-toolbar-filter=done data-active=1”
+ok   K2 a row takes the focus with a visible ring; Enter opens its detail — ring true; focus “data-task-row=101 aria-label=任务 #101 Wallet，按回车打开详情”; /tasks/101
+ok   K2 Escape on the detail returns to /tasks?focus=101 — /tasks?focus=101
+ok   K2 and the focus is back on that row, which is marked — data-task-row=101 data-focused=1 aria-label=任务 #101 Wallet，按回车打开详情
+ok   K2 Space on a row opens its detail too — /tasks/103
+ok   K3 the row menu opens from the keyboard; Escape closes it and the focus is back on its button — menu opened true; focus “aria-label=任务 #100 的更多操作 data-more-btn”; /tasks?focus=103
+ok   K3 the artifacts dialog closes with Escape and the focus is back on 产物 — opened true; focus “data-artifacts-btn=100”
+ok   K3 the delete confirmation: 取消 puts the focus back on the row’s menu button — focus in dialog “data-autofocus=true data-confirm-cancel=true”; after “aria-label=任务 #100 的更多操作 data-more-btn”
+ok   K3 the rerun dialog: Escape closes it and the focus is back on 重新运行 — opened true; focus “data-act-retry=true”
+ok   K3 清理失败任务: 取消 puts the focus back on the button — opened true; focus “data-clean-failed=true”
+ok   K3 the export menu: Escape closes it and the focus is back on 导出 — opened true; focus “data-toolbar-export-toggle=true”
+ok   K4 list: Tab goes refresh → export → clean-up → new → status tabs → search → type → packer → owner — 0,1,2,3,4,5,6,7,8
+ok   K4 list: every one of those stops shows a focus ring — 0 without a ring of 13
+ok   K5 detail header: Tab goes back → 打开会话 → 重新运行 → 更多, in that order — data-task-back=true → data-task-open-session=true → data-task-rerun=true → data-task-more=true → data-strip-stage=2 data-strip-mode=active data-focus-inset=true
+ok   K5 detail header: every stop shows a focus ring — 0 without a ring
+ok   K5 detail tabs: ArrowRight, End, Home, ArrowLeft move and select — artifacts,timeline,output,timeline; focus “role=tab data-task-tab=timeline”
+ok   K5 the selected tab is the only tab stop; the panel is a tabpanel named after it — 时间线
+ok   K5 output controls are all reachable with Tab and show a ring: search, follow, pin, wrap, copy, download — 0 without a ring; data-output-search →  → data-output-pin → data-output-wrap → data-output-copy → data-output-download → aria-label=任务输出 data → data-focus-inset=tru
+ok   K6 更多 opens from the keyboard; Escape closes the menu, stays on the detail, focus back on 更多 — opened true; /tasks/101; focus “data-task-more=true”
+ok   K6 Escape in the output search with text in it does not leave the page — /tasks/101
+ok   K6 the rerun dialog on the detail: Escape closes the dialog only, focus back on 重新运行 — opened true; /tasks/101; focus “data-task-rerun=true”
+ok   K6 Escape from the 时间线 tab also returns to the row — /tasks?focus=101; focus “data-task-row=101 data-focused=1 aria-label=任务 #101 Wallet，按回车打开详情”
+ok   K6 Escape works from the not-found state as well — /tasks?focus=999999
+ok   K6 no page error during the keyboard checks
+ok   W list 1440 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W list 1440 light: 19 controls present, inside the page and not covered
+ok   W list 1440 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W list 1440 dark: 19 controls present, inside the page and not covered
+ok   W list 1024 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W list 1024 light: 19 controls present, inside the page and not covered
+ok   W list 1024 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W list 1024 dark: 19 controls present, inside the page and not covered
+ok   W list 760 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W list 760 light: 19 controls present, inside the page and not covered
+ok   W list 760 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W list 760 dark: 19 controls present, inside the page and not covered
+ok   W list 390 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W list 390 light: 19 controls present, inside the page and not covered
+ok   W list 390 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W list 390 dark: 19 controls present, inside the page and not covered
+ok   W detail-output 1440 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-output 1440 light: 14 controls present, inside the page and not covered
+ok   W detail-output 1440 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-output 1440 dark: 14 controls present, inside the page and not covered
+ok   W detail-output 1024 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-output 1024 light: 14 controls present, inside the page and not covered
+ok   W detail-output 1024 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-output 1024 dark: 14 controls present, inside the page and not covered
+ok   W detail-output 760 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-output 760 light: 14 controls present, inside the page and not covered
+ok   W detail-output 760 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-output 760 dark: 14 controls present, inside the page and not covered
+ok   W detail-output 390 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-output 390 light: 14 controls present, inside the page and not covered
+ok   W detail-output 390 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-output 390 dark: 14 controls present, inside the page and not covered
+ok   W detail-artifacts 1440 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-artifacts 1440 light: 6 controls present, inside the page and not covered
+ok   W detail-artifacts 1440 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-artifacts 1440 dark: 6 controls present, inside the page and not covered
+ok   W detail-artifacts 1024 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-artifacts 1024 light: 6 controls present, inside the page and not covered
+ok   W detail-artifacts 1024 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-artifacts 1024 dark: 6 controls present, inside the page and not covered
+ok   W detail-artifacts 760 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-artifacts 760 light: 6 controls present, inside the page and not covered
+ok   W detail-artifacts 760 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-artifacts 760 dark: 6 controls present, inside the page and not covered
+ok   W detail-artifacts 390 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-artifacts 390 light: 6 controls present, inside the page and not covered
+ok   W detail-artifacts 390 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-artifacts 390 dark: 6 controls present, inside the page and not covered
+ok   W detail-timeline 1440 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-timeline 1440 light: 7 controls present, inside the page and not covered
+ok   W detail-timeline 1440 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-timeline 1440 dark: 7 controls present, inside the page and not covered
+ok   W detail-timeline 1024 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-timeline 1024 light: 7 controls present, inside the page and not covered
+ok   W detail-timeline 1024 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-timeline 1024 dark: 7 controls present, inside the page and not covered
+ok   W detail-timeline 760 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-timeline 760 light: 7 controls present, inside the page and not covered
+ok   W detail-timeline 760 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-timeline 760 dark: 7 controls present, inside the page and not covered
+ok   W detail-timeline 390 light: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-timeline 390 light: 7 controls present, inside the page and not covered
+ok   W detail-timeline 390 dark: rendered, no horizontal overflow, no page error — up true; overflow 0; blocks past the edge 0; 
+ok   W detail-timeline 390 dark: 7 controls present, inside the page and not covered
+ok   Q1 /tasks on load: the request set is the one recorded for Phase 6 — extra: none; missing: none
+ok   Q1 /tasks on load: each of the five task reads is made once — GET /api/tasks-summary | GET /api/tasks/batch-unpack-summary | GET /api/tasks?limit=2000 | GET /api/pentest/sessions | GET /api/org | GET /api/tasks/counts?ids=100,101,102,103,104,105,106,107
+ok   Q1 /tasks does not poll: nothing about tasks is read in the next 11 s — GET /api/pentest/devices
+ok   Q1 filtering and searching read nothing but the counts of the rows shown — GET /api/tasks/counts?ids=102
+ok   Q2 /tasks/101 on load: exactly five reads of its own (list, sessions, counts, artifact list, log file) — GET /api/pentest/sessions | GET /api/tasks/101/artifact?path=run.log | GET /api/tasks/101/artifacts?prefix= | GET /api/tasks/counts?ids=101 | GET /api/tasks?limit=2000
+ok   Q2 /tasks/101: the rest is the application shell, as on /tasks — GET /api/me | GET /api/notifications/stream?token=… | GET /api/notifications?limit=50 | GET /api/pentest/devices | GET /api/tasks-summary
+ok   Q2 no single-task, log or stage endpoint is asked (none exists)
+ok   Q2 nothing is written on load
+ok   Q2 时间线: one read, the session timeline, and only when the tab is opened — GET /api/pentest/sessions/41/timeline
+ok   Q2 产物: only artifact list reads of this task (the browser’s walk) — GET /api/tasks/101/artifacts?prefix= | GET /api/tasks/101/artifacts?prefix=report | GET /api/tasks/101/artifacts?prefix=unpacked
+ok   Q3 every request of the two pages is an endpoint that already existed
+ok   Q4 running task: the page says it reads the list every 10 seconds — 任务还没有结束，每 10 秒读取一次任务列表
+ok   Q4 running task: one read of the full list (limit=2000) in the next 11 s — 1 read(s): GET /api/pentest/devices | GET /api/tasks?limit=2000
+ok   Q4 polling never asks a status-filtered or limit=50 list
+ok   Q4 page hidden: the readout says it is not reading — 页面不可见时不读取；回到页面后继续
+ok   Q4 page hidden: no read of the task list in 11 s — 0 read(s)
+ok   Q4 page visible again: one read at once, then the 10 s rhythm — 1 read(s)
+ok   Q5 a read brings the new progress: a third stage appears, taken from the text — 阶段 安全分析 12%; 1 read(s)
+ok   Q5 the full list says the task ended: status changes and reading stops — 状态 完成; 任务已结束，不再自动读取
+ok   Q5 after the end: no further read in 11 s — 0 read(s)
+ok   Q6 queued task: read every 10 s as well — 1 read(s)
+ok   Q6 finished task: never read again — 0 read(s)
+ok   Q6 failed task: never read again — 0 read(s)
+ok   Q7 a short running list that omits the task would be empty here: it is never asked, and the task is still shown as running and still read — short-list reads 0; full-list reads 1
+ok   Q7 leaving the detail stops its reading — /tasks?focus=109; 0 read(s)
+ok   Q7 no page error during the request checks
+
+L 87/87   R 42/42   D 65/65   S 53/53   K 26/26   W 64/64   Q 26/26
+363/363 task checks passed (fixtures)

@@ -383,7 +383,7 @@ opens, so the entry is the same whether that endpoint answers, is empty, refuses
 | --- | --- | --- |
 | Which tasks have the entry | A finished audit or unpack (`kind`, `status` of the task itself), or any task with a linked session (the session list the page reads anyway). Other tasks have none, and their row opens nothing | `data-artifacts-btn="{task id}"` inside `data-task-row="{task id}"` |
 | Where it is | A button 产物 in the row itself at every width, beside the row's first action. Before the fix it was the first action only when nothing else was, otherwise an item of the row's overflow menu, where it is no longer repeated | `data-artifacts-btn`, `data-more-btn`, `data-more-menu` |
-| Other ways in | 浏览产物 in the task detail (same rule); a click on a row without a session (unchanged) | `data-detail-artifacts` |
+| Other ways in | The 产物 tab of `/tasks/:id` (same rule, Phase 7; the detail drawer and its 浏览产物 button are retired, and a press on a row now opens the detail) | `data-task-artifacts` |
 | Session list not read | Finished tasks keep the entry; the tasks that qualify only through a session have none until that read answers | — |
 | Artifacts list answers | The dialog shows the tree | `data-state="ok"` on `[data-art-browser]` |
 | Artifacts list is empty | The dialog says the task has no files, with the reason the endpoint gave | `data-state="empty"` |
@@ -457,6 +457,88 @@ Changes of behaviour in Phase 6, all intended:
 - Acceptance fix: the artifacts entry of a task is a button in the row, no longer an item of the overflow menu,
   and a task with a linked session has it as well as a finished one.
 
+## Tasks (V3 Phase 7)
+
+`/tasks` is `features/tasks/TaskListPage`; `/tasks/:id` is `features/tasks/TaskDetailPage` (the only route Phase 7
+adds). `TaskCenterPage.tsx`, with its 520 px detail drawer, is retired: every capability it had is in the table.
+38 rows: 37 capabilities of the former page and one new (row 6). Of the 37, 34 are kept and three panels are
+removed with their data still on the page (rows 36 to 38). Requests, payloads, query parameters and `data-*` hooks
+of the kept rows are the former ones. Covered by `scripts/check-tasks.mjs` (groups in the last column).
+
+### List, filters, paging, selection
+
+| # | Capability of the former task page | Owner in Phase 7 | Change | Hooks · check |
+| --- | --- | --- | --- | --- |
+| 1 | `?focus=<id>`: the task first, highlighted | `TaskListPage`; the row also takes the keyboard focus, so Escape on a detail lands on its row | Extended | `data-task-row`, `data-focused` · L10, K2 |
+| 2 | `?status=`, `done&partial=1`, the old `degraded` | `TaskListPage` and the existing redirect in `layout/redirects.tsx`. A press on a status tab now writes `?status=` (before, only 全部 cleared it) | Same links; tabs now keep the address in step | `data-toolbar-filter` · L2, L10 |
+| 3 | `/` focuses the search | Toolbar | Same | `data-task-search` · K1 |
+| 4 | Search: app name, package, id, owner, failure reason | Toolbar | Same | `data-toolbar-search` · L5 |
+| 5 | Status tabs with counts: all, done, running, failed, queued, partial | Five tabs (全部 / 运行中 / 排队 / 失败 / 已完成); “partial” is the toolbar switch 仅部分完成, which is `partial=1` | Moved | `data-partial-toggle` · L1, L2, L4 |
+| 6 | Type filter (评估 / 脱壳) | Toolbar | New, from the `kind` of the task row | `data-kind-filter` · L3 |
+| 7 | Packer filter | Toolbar | Same | `data-packer-filter` · L3 |
+| 8 | Owner filter | Toolbar | Same | `data-operator-filter` · L3 |
+| 9 | Hide instant failures (failed within 2 s) | Toolbar | Same | `data-smoke-toggle` · L4 |
+| 10 | Paging: 20 / 50 / 100 / 200, jump to page | `TaskTable` with the kit's `Pagination` | Same. Rows are not virtualised at 100 or 200 per page (the plan named it; left for Phase 10) | `data-v3-pagination` · L6 |
+| 11 | Selection across pages, select the page | `TaskTable`; the bulk bar states “跨 N 页” | Extended | `data-sel-row`, `data-sel-all`, `data-sel-pages` · L7 |
+| 12 | Width tiers: owner column from 1600, table from 1280 | Table from 1024, cards below; owner column from 1600; the report button inline from 1440; icon-only row buttons from 1024 to 1279 | Table reaches down to 1024 | `data-table-layout` · R7, W |
+
+### Row and row actions
+
+| # | Capability | Owner in Phase 7 | Change | Hooks · check |
+| --- | --- | --- | --- | --- |
+| 13 | Id, type, app name, package, packer mark | `TaskRow` (`TaskIdentity`), first line | Type and packer are plain text | `data-task-id`, `data-task-kind`, `data-task-packer` |
+| 14 | Honest status: failed / partial / done, the unpack verdict and its reason | `TaskRow` (`TaskStatus`), a glyph and a word; the reason of a partial result on the second line | Same | `data-honest-status`, `data-unpack-outcome`, `data-unpack-reason` · R4 |
+| 15 | Live progress of a running task | Second line of the row; the run strip on the detail | Same | `data-task-sub` · R4, D1 |
+| 16 | Failure reason: two lines, cut, the rest in a tooltip | Second line of the row: complete, selectable, with 复制; not in any `title` | Fixed as asked | `data-task-reason`, `data-task-reason-text`, `data-task-reason-copy` · R4 |
+| 17 | Duration, the “slow” mark over 15 min, created time | `TaskRow` (`TaskDuration`) | “慢” is plain text | `data-dur`, `data-task-slow` |
+| 18 | Finding counts C / H / M / L (one request per page) | `TaskRow` (`TaskCounts`), four monospace cells; “未读取” when the read was refused or failed, never 0 | The ratio bar is gone | `data-vuln-counts`, `data-counts-state` · R6, S14 |
+| 19 | Owner | `TaskRow`; its own column from 1600 | Same | `data-operator` · R7 |
+| 20 | Open session | Button in the row; 打开会话 in the detail header | Same | `data-goto-session`, `data-task-open-session` · R1, D8 |
+| 21 | Retry (failed) and rerun | 重新运行 in the row for a failed task, in the row menu otherwise; the detail header. One `RerunTaskModal`, `POST /api/tasks/{id}/rerun` | Two entries became one; same request | `data-act-retry`, `data-act-rerun`, `data-task-rerun` · R2, D8 |
+| 22 | Report (finished assessment) | Button in the row from 1440, in the row menu below; a link on the detail to `/reports?taskId=` | Same | `data-act-report`, `data-task-report-link` · R1, D8 |
+| 23 | Artifacts | Button in the row opens the Phase 6 dialog; the 产物 tab of the detail embeds the same `ArtifactBrowser` | Same; the rule of `766a717` | `data-artifacts-btn`, `data-task-artifacts` · R1, R5, D5 |
+| 24 | Detail drawer: fields, progress log, failure reason, unpack result JSON | `/tasks/:id`: header, 输出, 时间线; the unpack result is the group 结果 of the output | Drawer retired | `data-task-detail` · D |
+| 25 | Ask the agent | Row menu; 更多 on the detail | Same | `data-ask-btn` · R1, D8 |
+| 26 | Delete with confirmation (running and queued are refused by the server) | Row menu; 更多 on the detail, which returns to the list | Same | `data-act-del` · R3, D8 |
+| 27 | Press on a row: the session if there is one, else the artifacts dialog | Press, Enter or Space on a row opens `/tasks/:id`; session and artifacts are the buttons of rows 20 and 23 | Changed, as the V3 plan says | `data-task-row` · R1, K2 |
+
+### Page actions, bulk actions, panels
+
+| # | Capability | Owner in Phase 7 | Change | Hooks · check |
+| --- | --- | --- | --- | --- |
+| 28 | Refresh | Page header | Same | `data-tasks-refresh` · L9 |
+| 29 | Export the current filter as CSV / JSON | Page header, same fields | Same | `data-toolbar-export*` · L9 |
+| 30 | Clean up failed tasks, with confirmation | Page header, as a button (the plan put it under a 更多 menu; the confirmed scope lists it in the header) | Same place | `data-clean-failed*` · L9 |
+| 31 | New assessment | Page header, primary button | Same | `data-toolbar-create` · L9 |
+| 32 | Bulk: rerun, export, compare reports (exactly two tasks with a session), delete | Bulk bar; the dialogs, requests and result line are the former ones | Same | `data-batch-*` · L7, L8 |
+| 33 | Stale notice after a failed refresh | `TaskListPage`, and now also empty, error, forbidden and slow | Extended | `data-task-state`, `data-task-list-state` · S1 to S6 |
+| 34 | Batch-unpack summary panel | `BatchUnpackSummary`, a collapsed block under the table | Collapsed by default | `data-batch-summary`, `data-batch-dashboard` · L9 |
+| 35 | 10 s clock for the duration of running tasks | `useNowSeconds` | Same | — |
+| 36 | Fact row: concurrency, running, queued, online devices | A readout in the page header (all four); running and queued are also the tab counts | Panel removed (D4), every figure still on the page | `data-situation-pods`, `data-slot-pod`, `data-fact-*` · L1, S7 |
+| 37 | “Running now” lanes | The rows of the 运行中 tab, each with its live progress; the run strip of the detail | Panel removed (D4) | — · L2, R4 |
+| 38 | Session rail (cards, paging, collapse) | 会话 in the row; the 运行记录 tab of a project (untouched) | Panel removed (D11) | `data-goto-session` · R1 |
+
+### `/tasks/:id`
+
+| Part | What it shows | Source | Hooks |
+| --- | --- | --- | --- |
+| Header | Back, title, id, type, package, packer; 打开会话, 重新运行, 更多 (ask the agent, delete); status, stage, duration, counts, owner, whether the page is still reading | The task row in `GET /api/tasks?limit=2000`; `GET /api/tasks/counts?ids=` | `data-task-header`, `data-task-actions`, `data-task-facts`, `data-task-polling` |
+| Run strip | The workbench `RunStrip`, fed with the stages the progress text names | `progress` of the task row | `data-task-strip`, `data-strip-stages`, `data-strip-parsed` |
+| Failure reason | Its own line under the run strip, complete, with 复制 | `error_msg`, else `error`, else `progress`; “服务端没有返回失败原因” when none | `data-task-failure*` |
+| 输出 | The workbench `StageStack` with two optional slots (row renderer, stage summary); grouped by stage; search with a hit count, copy, download, follow, pin, wrap | `progress`; a `.log` file at the top of the artifact list when the task has artifacts (≤ 512 kB); `unpack_outcome`. Each group states its source | `data-task-output`, `data-output-*` |
+| 产物 | `ArtifactBrowser` of Phase 6, embedded | The artifact endpoints, as in the dialog | `data-task-artifacts` |
+| 时间线 | Three blocks: the task's own times; the stages of the progress text with “未记录” for start, end and duration; the steps of the linked session, labelled as the session's | Task row; `GET /api/pentest/sessions/{sid}/timeline` when the tab is open | `data-task-timeline`, `data-timeline-*`, `data-unrecorded` |
+| Report | A link to `/reports?taskId=`, for a finished assessment with a result | Task row | `data-task-report-link`, `data-task-report-none` |
+
+Rules the page keeps: a stage exists only if the progress text names it (`Unpack`, `Decompile`, `Security Analysis`,
+`Symbol Analysis`, `Struct Analysis`, `Report Generation`, separated by “→”); text that names none is one stage
+called 输出, and the page says so; no stage time is worked out. The groups 日志 and 结果 of the output are files and
+fields, labelled as such, and are not stages: they are in neither the run strip nor the timeline.
+
+States of `/tasks/:id`: loading, slow (after 4 s), forbidden (no retry), error (with 重试), not found (“在已读取的
+2000 条任务里没有 #id，可能已删除。”), stale (the last state stays on screen), no output. A refused counts read
+shows “未读取”.
+
 ## Shared owners (kept on purpose)
 
 | Job | Renderings | Why both stay |
@@ -483,7 +565,9 @@ permission to read the findings, 0 only for a readable session without findings)
 triage requests, permission states, the progressive graph, coverage reasons, and since the Phase 5 follow-up the
 rule cards and the structure canvas) are covered by `scripts/check-findings-evidence.mjs`. The artifact browser and
 preview, 加固信息, 版本对比, the report reader, export and print (with a 60-finding fixture and a printed PDF) and
-the task dialog are covered by `scripts/check-artifacts-reports.mjs`.
+the task dialog are covered by `scripts/check-artifacts-reports.mjs`. The task list and the task detail (filters by row ids,
+row entries, output, timeline, states, keyboard, widths and themes, requests and polling) are covered by
+`scripts/check-tasks.mjs`.
 
 Real backend (Phase 17, `docs/screenshots/phase-17/`): VulnsPanel state change, import and export, AttackCanvas
 source slice, mission start and status all verified. The clusters view was part of the 65 s read audit
