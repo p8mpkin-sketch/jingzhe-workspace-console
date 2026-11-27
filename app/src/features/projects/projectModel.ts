@@ -141,6 +141,7 @@ export const candText = (s?: string) => s === 'imported' ? '已导入' : s === '
   : s === 'manual_required' ? '需人工' : s === 'rejected' ? '已排除' : s === 'download_failed' ? '下载失败' : s === 'pending' ? '待处理' : s || '候选';
 export const reportStatus = (s?: string) => s === 'ready' ? '就绪' : s === 'generating' ? '生成中' : s === 'failed' ? '失败' : s || '未知';
 export const templateText = (s?: string) => s === 'technical' ? '技术证据版' : s === 'executive' ? '管理层摘要' : s === 'forensic' ? '取证版' : s || '技术证据版';
-export const reportName = (r: ReportRow) => `#${r.id} · ${r.kind === 'portfolio' ? '项目总报告' : '单应用报告'}`;
+/** kind portfolio (written by the backend) or project (older rows) is a project report; anything else a single-app report. */
+export const reportName = (r: ReportRow) => `#${r.id} · ${r.kind === 'portfolio' || r.kind === 'project' ? '项目总报告' : '单应用报告'}`;
 export const pagesOf = (n: number, size: number) => Math.max(1, Math.ceil(n / size));
 export const slice = <T,>(rows: T[], page: number, size: number) => rows.slice((page - 1) * size, page * size);

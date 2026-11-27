@@ -29,7 +29,23 @@ const tasks = pkgs.map((p, i) => ({
 }));
 const apps = pkgs.map((p, i) => ({ id: i + 1, package: p, app_name: names[i], version: `1.${i}.0`, brand: ['Alpha', 'Beta', 'Gamma'][i % 3], ownership_tier: ['owned', 'affiliate', 'unknown'][i % 3], status: st[i], report_status: st[i] === 'done' ? 'ready' : '' }));
 const candidates = pkgs.map((p, i) => ({ id: i + 1, package: p + '.lite', app_name: names[i] + ' Lite', developer: 'Example Ltd', source: ['play', 'aptoide', 'official'][i % 3], source_url: 'https://example.com/' + p, confidence: 0.4 + (i % 5) * 0.12, status: ['needs_verification', 'verified', 'downloaded', 'imported', 'manual_required', 'rejected'][i % 6], ownership_tier: ['owned', 'affiliate', 'unknown'][i % 3] }));
-const reports = Array.from({ length: 11 }, (_, i) => ({ id: 32 - i, kind: i % 4 ? 'project' : 'app', template: ['technical', 'executive', 'forensic'][i % 3], status: i === 2 ? 'generating' : i === 6 ? 'failed' : 'ready', pages: 20 + i }));
+// Project reports. The backend writes kind=portfolio for a project report; older rows say project. Both are project reports.
+const reports = Array.from({ length: 11 }, (_, i) => ({ id: 32 - i, kind: i % 4 ? (i % 2 ? 'portfolio' : 'project') : 'app', template: ['technical', 'executive', 'forensic'][i % 3], status: i === 2 ? 'generating' : i === 6 ? 'failed' : 'ready', pages: 20 + i, created_at: now - 5400 * (i + 1) }));
+// Project 2 has two reports of its own; project 3 has none.
+const reportsOf = (pid) => (pid === 1 ? reports : pid === 2 ? [{ id: 12, kind: 'portfolio', template: 'executive', status: 'ready', pages: 9, created_at: now - 86400 * 2 }, { id: 11, kind: 'app', template: 'technical', status: 'ready', pages: 14, created_at: now - 86400 * 4 }] : []);
+// Execution nodes as /api/nodes returns them (fields the dashboard reads: node_id, online, devices, last_seen).
+const nodes = [{ node_id: 'node-a', online: true, devices: ['emulator-5554', 'emulator-5556'], last_seen: now - 8 }, { node_id: 'node-b', online: false, devices: ['pixel-7'], last_seen: now - 1800 }];
+// Recent progress events of the open sessions (/api/pentest/events/recent): newest first.
+const recentEvents = [
+  { sid: 41, seq: 31, ts: '2026-11-27 10:42:18', type: 'step_done', payload: { tool: 'auth_matrix', status: 'ok', findings: 2 } },
+  { sid: 41, seq: 30, ts: '2026-11-27 10:41:02', type: 'step_start', payload: { name: 'auth_matrix', phase: 'dynamic' } },
+  { sid: 44, seq: 12, ts: '2026-11-27 10:39:40', type: 'auth_matrix_skip', payload: { reason: '等待登录' } },
+  { sid: 40, seq: 88, ts: '2026-11-27 10:35:11', type: 'step_done', payload: { tool: 'frida_hook', status: 'error', error: 'device disconnected' } },
+  { sid: 40, seq: 87, ts: '2026-11-27 10:33:57', type: 'triage_done', payload: { business: 7, library: 12 } },
+  { sid: 43, seq: 5, ts: '2026-11-27 10:30:00', type: 'autopilot_start', payload: { steps: 12 } },
+];
+// Findings per session by MASVS id (/api/pentest/vulns/domain-summary); the dashboard groups them into domains.
+const domainSummary = { by_session: { 40: { 'MASVS-NETWORK-1': 4, 'MASVS-STORAGE-2': 2, 'MASVS-CRYPTO-1': 1 }, 41: { 'MASVS-NETWORK-1': 1, 'MASVS-PLATFORM-1': 3, '': 2 }, 43: { 'MASVS-AUTH-2': 1 } }, sessions_scanned: 5 };
 const runs = [{ id: 7, status: 'done', total: 63, succeeded: 60, failed: 2, skipped: 1 }, { id: 6, status: 'running', total: 63, succeeded: 20, failed: 0, skipped: 0 }, { id: 5, status: 'failed', total: 10, succeeded: 3, failed: 7, skipped: 0 }];
 const sev = { critical: { active: 1, total: 2 }, high: { active: 3, total: 5 }, medium: { active: 6, total: 9 }, low: { active: 4, total: 4 }, info: { active: 2, total: 2 } };
 const providers = { active_id: 'p1', providers: [{ id: 'p1', name: 'Primary', kind: 'openai', base_url: 'https://llm.example.com/v1', model: 'model-large', enabled: true, healthy: true, latency_ms: 420 }, { id: 'p2', name: 'Fallback', kind: 'openai', base_url: 'https://llm2.example.com/v1', model: 'model-small', enabled: true, healthy: false, latency_ms: null }] };
@@ -124,7 +140,7 @@ export const routes = [
   ['GET', /^\/api\/pentest\/projects\/\d+\/overview$/, { project: projects[0] }],
   ['GET', /^\/api\/pentest\/projects\/\d+\/apps$/, { apps }],
   ['GET', /^\/api\/pentest\/projects\/\d+\/candidates$/, { candidates }],
-  ['GET', /^\/api\/pentest\/projects\/\d+\/reports$/, { reports }],
+  ['GET', /^\/api\/pentest\/projects\/\d+\/reports$/, (u) => ({ reports: reportsOf(Number(u.pathname.split('/')[4])) })],
   ['GET', /^\/api\/pentest\/projects\/\d+\/runs$/, { runs }],
   ['GET', /^\/api\/pentest\/sessions$/, sessions],
   ['GET', /^\/api\/pentest\/sessions\/\d+$/, (u) => sessions.find((s) => String(s.id) === u.pathname.split('/')[4]) || sessions[0]],
@@ -151,9 +167,9 @@ export const routes = [
   ['GET', /^\/api\/pentest\/sessions\/\d+\/mission\/status$/, { state: 'idle' }],
   ['GET', /^\/api\/pentest\/sessions\/\d+\/approvals$/, (u) => ({ status: 'ok', approvals: sidOf(u) === LIVE_SID ? liveApprovals() : [] })],
   ['GET', /^\/api\/pentest\/devices$/, [{ serial: 'emulator-5554', model: 'Pixel 6', android: '13', abi: 'arm64-v8a', root: true, frida: true }, { serial: 'R58M123ABC', model: 'SM-A515F', android: '12', root: false, frida: false }]],
-  ['GET', /^\/api\/pentest\/vulns\/severity-summary$/, { total_active: 16, by_session: { 40: sev, 41: sev, 43: { high: { active: 1, total: 1 } } }, ...sev }],
-  ['GET', /^\/api\/pentest\/vulns\/domain-summary$/, { domains: [], items: [] }],
-  ['GET', /^\/api\/pentest\/events\/recent$/, { events: [] }],
+  ['GET', /^\/api\/pentest\/vulns\/severity-summary$/, { total_active: 16, by_session: { 40: sev, 41: sev, 43: { high: { active: 1, total: 1 } } }, ...sev, by_severity: { critical: 1, high: 3, medium: 6, low: 4, info: 2 }, sessions_scanned: 3, sessions_total: 5 }],
+  ['GET', /^\/api\/pentest\/vulns\/domain-summary$/, domainSummary],
+  ['GET', /^\/api\/pentest\/events\/recent$/, { events: recentEvents, total: recentEvents.length, sessions_scanned: 5 }],
   ['GET', /^\/api\/tasks$/, (u) => { const s = u.searchParams.get('status'); return s ? tasks.filter((t) => t.status === s) : tasks; }],
   ['GET', /^\/api\/tasks\/counts$/, (u) => ({ items: Object.fromEntries((u.searchParams.get('ids') || '').split(',').filter(Boolean).map((id, i) => [id, i % 3 === 2 ? { total: 0, critical: 0, high: 0, medium: 0, low: 0, sources: [] } : { total: 3 + i * 4, critical: i % 2, high: 1 + i, medium: 1 + i * 2, low: 1 + i - (i % 2), sources: ['audit', 'pentest'] }])), users: { 1: 'demo', 2: 'reviewer' } })],
   ['GET', /^\/api\/tasks-summary$/, { total: 128, running: 2, failed: 3, done: 110, queued: 13 }],
@@ -163,7 +179,7 @@ export const routes = [
   ['GET', /^\/api\/tasks\/\d+\/artifact$/, (u) => { const p = u.searchParams.get('path') || ''; return /\.json$/.test(p) ? JSON.stringify({ file: p, findings: [{ id: 'f11', title: '示例发现: 明文传输', severity: 'high' }], generated_by: 'fixture' }) : /\.xml$/.test(p) ? '<?xml version="1.0" encoding="utf-8"?>\n<manifest package="com.example.app">\n  <application android:debuggable="true" />\n</manifest>\n' : /\.(log|txt)$/.test(p) ? '10:00:01 stage S1 start\n10:00:09 stage S1 done\n10:00:10 stage S2 start\n' : `# ${p}\n\n示例文件内容。\n`; }],
   ['POST', /^\/api\/upload\/preview$/, { apk_path: '/data/in/com.example.compass.apk', filename: 'com.example.compass.apk', platform: 'android', size_mb: 48.2, sha256: '9f2c1a7b3d5e8f60a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718', abis: ['arm64-v8a', 'armeabi-v7a'], strong_shell: true, packer: 'vendor-a', meta: { app_name: 'Compass', package: 'com.example.compass', version_name: '3.2.1', version_code: 321, min_sdk: 24, target_sdk: 34, permissions_count: 18, components: { activity: { total: 42, exported: 3 }, service: { total: 9, exported: 1 }, receiver: { total: 6, exported: 2 }, provider: { total: 3, exported: 0 } } } }],
   ['GET', /^\/api\/org$/, { usage: { running: 2, quota_concurrent: 4 } }],
-  ['GET', /^\/api\/nodes$/, { items: [{ id: 'n1', name: 'worker-1', status: 'online', running: 2, capacity: 4 }] }],
+  ['GET', /^\/api\/nodes$/, { items: nodes }],
   ['GET', /^\/api\/notifications$/, { unread: 2, items: [{ id: 1, kind: 'task', level: 'success', title: '任务已完成', body: 'Compass 评估完成', created_at: now - 300, read_at: null, link: '/tasks' }, { id: 2, kind: 'system', level: 'info', title: '报告已就绪', body: '#32 项目总报告', created_at: now - 900, read_at: null, link: '/reports' }, { id: 3, kind: 'task', level: 'danger', title: '任务失败', body: 'Wallet 评估在静态分析阶段停止', created_at: now - 4000, read_at: now - 3000, link: '/tasks?focus=103' }] }],
   ['GET', /^\/api\/models\/providers$/, providers],
   ['GET', /^\/api\/models\/routing$/, { routing: { default: 'p1', chat: 'p1', audit: 'p1' } }],
@@ -198,3 +214,13 @@ export function resolve(method, url) {
   }
   return {};
 }
+
+// Empty variant: arrays become [], numbers 0, maps keyed by row ids (by_session) {}, and number maps (by_severity) zeros.
+export const emptied = (body) => {
+  if (Array.isArray(body)) return [];
+  const obj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+  const one = (v) => (Array.isArray(v) ? [] : typeof v === 'number' ? 0
+    : obj(v) && Object.keys(v).length && Object.keys(v).every((k) => /^\d+$/.test(k)) ? {}
+    : obj(v) && Object.keys(v).length && Object.values(v).every((x) => typeof x === 'number') ? Object.fromEntries(Object.keys(v).map((k) => [k, 0])) : v);
+  return Object.fromEntries(Object.entries(body).map(([k, v]) => [k, one(v)]));
+};

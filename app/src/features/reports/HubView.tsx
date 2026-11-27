@@ -1,4 +1,4 @@
-// HubView.tsx — report hub: metric row, toolbar (search / risk filter / sort / view), task cards or table,
+// HubView.tsx — session report hub (/reports?scope=session): toolbar (search / risk filter / sort / view), task cards or table,
 // selection with a batch summary export, pagination. Presentation only; every number comes from the parent.
 import React from 'react';
 import { LayoutGrid, Table2, FileDown, ArrowUpDown, Check, FileSearch, SearchX, Plus, PanelRight, ArrowRight, Download, Eye } from 'lucide-react';
@@ -10,7 +10,7 @@ import {
 import type { Column, TabItem } from '@/components/ui';
 import { ScoreRing, MX_LABEL, scoreCls } from './shared';
 import type { HubEntry } from './types';
-import { complianceScoreOf } from './types';
+import { aggPart, complianceScoreOf } from './types';
 
 const RISK_LABEL: Record<HubState['risk'], string> = { all: '全部', highrisk: '有高危发现', lowscore: '合规分低于 60' };
 const SORT_LABEL: Record<HubState['sort'], string> = { new: '最近更新', risk: '风险分从高到低', score: '合规分从低到高' };
@@ -26,6 +26,11 @@ export type HubState = {
   checked: Set<number>;
 };
 
+/** "—" for a part that has no value; 无权限 / 未读取 when the read was denied or failed (never a silent dash). */
+const aggWord = (agg: HubEntry['agg'], part: 'summary' | 'mx' | 'domains'): string => {
+  const st = aggPart(agg, part);
+  return st === 'permission' ? '无权限' : st === 'unread' ? '未读取' : '—';
+};
 const riskTone = (level: string) => (level === '严重' || level === '高' ? 'critical' : level === '中' ? 'medium' : 'low');
 const domainsOf = (agg: HubEntry['agg']) => (agg?.domains?.rows || []).filter((d) => d.count > 0).sort((a, b) => b.count - a.count);
 /** MM-DD HH:mm of the task's last update. The API value is sliced as before; a numeric epoch is formatted the same way. */
@@ -40,7 +45,12 @@ const when = (t: any) => {
 };
 
 /** The four matrix verdict counts as "label n" pairs; says so when there is no matrix or it is still loading. */
-const MatrixCounts: React.FC<{ mx: NonNullable<HubEntry['agg']>['mx'] | undefined; compact?: boolean }> = ({ mx, compact }) => {
+const MatrixCounts: React.FC<{ agg: HubEntry['agg']; compact?: boolean }> = ({ agg, compact }) => {
+  const st = aggPart(agg, 'mx');
+  if (st === 'permission') return <span className="text-jz-ink-2" data-agg-state="permission">无权限</span>;
+  if (st === 'unread') return <span className="text-jz-ink-2" data-agg-state="unread">未读取</span>;
+  if (st === 'none') return <span className="text-jz-muted">无会话</span>;
+  const mx = agg?.mx;
   if (mx == null) return <span className="text-jz-muted">统计中</span>;
   if (mx === 'error') return <span className="text-jz-muted" title="该会话尚未生成鉴权矩阵">无矩阵</span>;
   const cell = (k: 'red' | 'yellow' | 'green' | 'gray', cls: string) => (
@@ -83,7 +93,7 @@ const ReportPreview: React.FC<{
       </div>
       <header className="flex flex-wrap items-start gap-4 border-b border-jz-border px-6 py-5">
         <ScoreRing rate={score ?? 0} size={64} stroke={4.5}>
-          <span className={cx('font-display text-section font-semibold tnum', score == null ? 'text-jz-muted' : 'text-jz-ink')} title="合规分">{score ?? '—'}</span>
+          <span className={cx('font-display text-section font-semibold tnum', score == null ? 'text-jz-muted' : 'text-jz-ink')} title="合规分">{score ?? aggWord(agg, 'summary')}</span>
         </ScoreRing>
         <div className="min-w-0 flex-1 basis-56">
           <div className="text-meta text-jz-muted"><span className="font-mono tnum">#{t.id}</span> · 更新于 <span className="font-mono tnum">{when(t) || '—'}</span></div>
@@ -96,14 +106,14 @@ const ReportPreview: React.FC<{
       </header>
       <div className="flex flex-col gap-6 px-6 py-5">
         <FactRow facts={[
-          { label: '合规分', value: score ?? '—', hint: '100 − 风险分' },
-          { label: '确认高危', value: s && typeof s.confirmed_high === 'number' ? s.confirmed_high : '—', tone: s?.confirmed_high ? 'danger' : 'default' },
-          { label: '确认 / 复核 / 排除', value: s?.counts ? `${s.counts.confirmed ?? 0} / ${s.counts.pending ?? 0} / ${s.counts.excluded ?? 0}` : '—' },
+          { label: '合规分', value: score ?? aggWord(agg, 'summary'), hint: '100 − 风险分' },
+          { label: '确认高危', value: s && typeof s.confirmed_high === 'number' ? s.confirmed_high : aggWord(agg, 'summary'), tone: s?.confirmed_high ? 'danger' : 'default' },
+          { label: '确认 / 复核 / 排除', value: s?.counts ? `${s.counts.confirmed ?? 0} / ${s.counts.pending ?? 0} / ${s.counts.excluded ?? 0}` : aggWord(agg, 'summary') },
           { label: '加固', value: <span className="text-body font-medium">{t.packer && t.packer !== 'none' ? t.packer : '未识别'}</span> },
         ]} />
         <section>
           <h3 className="mb-2 text-label font-semibold text-jz-ink">鉴权矩阵</h3>
-          <div className="text-label"><MatrixCounts mx={agg?.mx} /></div>
+          <div className="text-label"><MatrixCounts agg={agg} /></div>
         </section>
         <section>
           <h3 className="mb-2 text-label font-semibold text-jz-ink">发现集中在哪些域</h3>
@@ -137,19 +147,14 @@ export const HubView: React.FC<{
   entries: HubEntry[];
   filtered: HubEntry[];
   paged: HubEntry[];
-  kpi: { total: number; highRisk: number | null; avgScore: number | null; exportable: number; aggDone: number; aggTotal: number };
   hub: HubState;
   patch: (p: Partial<HubState>) => void;
   onOpen: (tid: number) => void;
   onExportOne: (tid: number) => void;
   onExportBatch: () => void;
   batchBusy: boolean;
-}> = ({ loading, error, onRetry, onCreate, entries, filtered, paged, kpi, hub, patch, onOpen, onExportOne, onExportBatch, batchBusy }) => {
+}> = ({ loading, error, onRetry, onCreate, entries, filtered, paged, hub, patch, onOpen, onExportOne, onExportBatch, batchBusy }) => {
   const allChecked = paged.length > 0 && paged.every((e) => hub.checked.has(e.task.id));
-  const aggRunning = kpi.aggDone < kpi.aggTotal;
-  const failed = !!error && entries.length === 0;
-  const dash = (v: number | null) => (failed || v == null ? '—' : v);
-  const aggHint = aggRunning ? `正在汇总 ${kpi.aggDone}/${kpi.aggTotal}` : undefined;
 
   const toggleAll = () => {
     const next = new Set(hub.checked);
@@ -214,20 +219,20 @@ export const HubView: React.FC<{
       </span>
     ) },
     { key: 'packer', header: '加固', cell: ({ task: t }) => (t.packer && t.packer !== 'none' ? t.packer : '未识别') },
-    { key: 'score', header: '合规分', align: 'right', mono: true, cell: ({ agg }) => { const s = complianceScoreOf(agg?.summary); return <span className={scoreCls(s)}>{s ?? '—'}</span>; } },
+    { key: 'score', header: '合规分', align: 'right', mono: true, cell: ({ agg }) => { const s = complianceScoreOf(agg?.summary); return <span className={scoreCls(s)}>{s ?? aggWord(agg, 'summary')}</span>; } },
     { key: 'high', header: '高危', align: 'right', mono: true, cell: ({ agg }) => {
       const s = agg?.summary;
-      return <span className={s?.confirmed_high ? 'font-semibold text-jz-sev-critical' : 'text-jz-muted'}>{s && typeof s.confirmed_high === 'number' ? s.confirmed_high : '—'}</span>;
+      return <span className={s?.confirmed_high ? 'font-semibold text-jz-sev-critical' : 'text-jz-muted'}>{s && typeof s.confirmed_high === 'number' ? s.confirmed_high : aggWord(agg, 'summary')}</span>;
     } },
     { key: 'counts', header: <span title="已确认 / 待复核 / 已排除">确认 / 复核 / 排除</span>, label: '确认 / 复核 / 排除', align: 'right', mono: true, cell: ({ agg }) => {
       const s = agg?.summary;
-      return s?.counts ? `${s.counts.confirmed ?? 0} / ${s.counts.pending ?? 0} / ${s.counts.excluded ?? 0}` : '—';
+      return s?.counts ? `${s.counts.confirmed ?? 0} / ${s.counts.pending ?? 0} / ${s.counts.excluded ?? 0}` : aggWord(agg, 'summary');
     } },
-    { key: 'mx', header: '鉴权矩阵', cell: ({ agg }) => <MatrixCounts mx={agg?.mx} compact /> },
+    { key: 'mx', header: '鉴权矩阵', cell: ({ agg }) => <MatrixCounts agg={agg} compact /> },
     { key: 'domains', header: '主要域', card: 'hidden', cell: ({ agg }) => {
       const top = domainsOf(agg);
       const txt = top.map((d) => `${d.name} ${d.count}`).join(' · ');
-      return <span className="block max-w-56 truncate text-jz-ink-2" title={txt}>{top.length ? top.slice(0, 2).map((d) => `${d.name} ${d.count}`).join(' · ') : agg?.sid ? '无发现' : '—'}</span>;
+      return <span className="block max-w-56 truncate text-jz-ink-2" title={txt}>{top.length ? top.slice(0, 2).map((d) => `${d.name} ${d.count}`).join(' · ') : agg?.sid ? (aggPart(agg, 'domains') === 'value' ? '无发现' : aggWord(agg, 'domains')) : '—'}</span>;
     } },
     { key: 'updated', header: '更新', mono: true, cell: ({ task: t }) => when(t) || '—' },
     { key: 'actions', header: <span className="sr-only">操作</span>, label: '操作', align: 'right', card: 'action', cell: ({ task: t }) => (
@@ -237,15 +242,6 @@ export const HubView: React.FC<{
 
   return (
     <div className="flex flex-col gap-6" data-reports-hub>
-      <section aria-label="报告概况" className="rounded-panel border border-jz-border bg-jz-surface px-6 py-4 shadow-card" data-hub-kpis>
-        <FactRow facts={[
-          { label: '已完成评估任务', value: <span data-hub-kpi="已审计任务">{loading ? '…' : failed ? '—' : kpi.total}</span>, hint: '类型为评估且状态为已完成' },
-          { label: '确认高危发现', value: <span data-hub-kpi="累计高危">{loading ? '…' : dash(kpi.highRisk)}</span>, tone: kpi.highRisk ? 'danger' : 'default', hint: aggHint ?? '各任务最新会话的确认高危之和' },
-          { label: <span title="平台没有 MASVS 绝对合规分;此处为 100 减去会话风险分,限定在 0 到 100">平均合规分</span>, value: <span data-hub-kpi="平均 MASVS 分">{loading ? '…' : dash(kpi.avgScore)}</span>, hint: aggHint ?? '合规分 = 100 − 风险分' },
-          { label: '可导出完整报告', value: <span data-hub-kpi="可导出完整报告">{loading ? '…' : failed ? '—' : kpi.exportable}</span>, hint: '有关联活跃会话的任务' },
-        ]} />
-      </section>
-
       <Panel flush>
         <div className="flex flex-wrap items-center gap-3 px-4 py-3" data-hub-toolbar>
           <SearchField className="min-w-56 flex-1" value={hub.q} onValueChange={(v) => patch({ q: v, page: 1 })}
@@ -307,7 +303,7 @@ export const HubView: React.FC<{
                               role="button" tabIndex={t.id === rovingId ? 0 : -1} onKeyDown={(ev) => onPickKey(ev, idx, t.id)}
                               aria-keyshortcuts={wide ? 'ArrowUp ArrowDown Home End Enter ArrowRight' : 'ArrowUp ArrowDown Home End Enter'}
                               aria-label={`预览 ${t.app_name || t.package || '任务 #' + t.id}`} data-hub-pick={t.id}>
-                              <span className={cx('w-9 flex-none text-right font-mono text-body font-semibold tnum', scoreCls(score))} title="合规分">{score ?? '—'}</span>
+                              <span className={cx('w-9 flex-none text-right font-mono text-body font-semibold tnum', scoreCls(score))} title="合规分">{score ?? aggWord(e.agg, 'summary')}</span>
                               <span className="min-w-0 flex-1">
                                 <span className="block truncate text-label font-medium text-jz-ink">{t.app_name || t.package || `任务 #${t.id}`}</span>
                                 <span className="block truncate font-mono text-meta text-jz-muted">#{t.id} · {when(t) || '—'}</span>
@@ -338,7 +334,7 @@ export const HubView: React.FC<{
                       subtitle={<span className="font-mono tnum">#{t.id} · 更新于 {when(t) || '—'}</span>}
                       media={(
                         <ScoreRing rate={score ?? 0} size={48} stroke={4.5}>
-                          <span className={`font-mono text-label font-semibold tnum ${score == null ? 'text-jz-muted' : 'text-jz-ink'}`} title="合规分">{score ?? '—'}</span>
+                          <span className={`font-mono text-label font-semibold tnum ${score == null ? 'text-jz-muted' : 'text-jz-ink'}`} title="合规分">{score ?? aggWord(agg, 'summary')}</span>
                         </ScoreRing>
                       )}
                       badge={s?.risk_level
@@ -354,11 +350,11 @@ export const HubView: React.FC<{
                       <CodePill value={t.package || `任务#${t.id}未返回包名`} maxW="max-w-full" />
                       <dl className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-label">
                         <dt className="text-jz-muted">确认高危</dt>
-                        <dd className={`font-mono tnum ${s?.confirmed_high ? 'font-semibold text-jz-sev-critical' : 'text-jz-ink-2'}`}>{s && typeof s.confirmed_high === 'number' ? s.confirmed_high : '—'}</dd>
+                        <dd className={`font-mono tnum ${s?.confirmed_high ? 'font-semibold text-jz-sev-critical' : 'text-jz-ink-2'}`}>{s && typeof s.confirmed_high === 'number' ? s.confirmed_high : aggWord(agg, 'summary')}</dd>
                         <dt className="text-jz-muted">加固</dt>
                         <dd className="text-jz-ink-2">{t.packer && t.packer !== 'none' ? t.packer : '未识别'}</dd>
                         <dt className="text-jz-muted">鉴权矩阵</dt>
-                        <dd className="text-meta"><MatrixCounts mx={agg?.mx} compact /></dd>
+                        <dd className="text-meta"><MatrixCounts agg={agg} compact /></dd>
                         <dt className="text-jz-muted">主要域</dt>
                         <dd className="truncate text-jz-ink-2" title={domTxt} data-hub-domains={t.id}>{domTxt}</dd>
                       </dl>

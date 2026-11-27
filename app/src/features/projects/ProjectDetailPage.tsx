@@ -16,6 +16,7 @@ import { NewProjectWizard } from '@/features/pentest/NewProjectWizard';
 import { TABS, TAB_LABEL, isLive, kindLabel, parseBrands, reportStatus, templateText } from './projectModel';
 import type { AppRow, BatchRun, CandidateRow, ProjectEntity, ReportRow, SessionItem, TabKey } from './projectModel';
 import { errStatus, errText, useResource } from './useResource';
+import { downloadProjectReport } from '@/features/reports/reportScopes';
 import type { Resource } from './useResource';
 import { OverviewTab } from './tabs/OverviewTab';
 import { ReportsTab } from './tabs/ReportsTab';
@@ -103,11 +104,10 @@ export const ProjectDetailPage: React.FC = () => {
     return () => { ro.disconnect(); scroller.style.scrollPaddingTop = ''; };
   }, [stickyEl]);
 
+  // The same request as before, now shared with /reports (reportScopes.downloadProjectReport).
   const download = async (rid: number, format: 'docx' | 'pdf') => {
-    const res = await fetch(`/api/pentest/projects/${id}/reports/${rid}/download?format=${format}`, { headers: { Authorization: 'Bearer ' + (getToken() || '') } });
-    if (!res.ok) { say('下载失败：' + res.status, true); return; }
-    const blob = await res.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `project-${id}-report-${rid}.${format}`;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    const res = await downloadProjectReport(id, rid, format);
+    if (!res.ok) say('下载失败：' + res.status, true);
   };
   const upload = async (files: FileList | null) => {
     if (!files?.length) return;

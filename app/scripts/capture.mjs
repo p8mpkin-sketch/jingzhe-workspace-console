@@ -10,7 +10,7 @@ import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 import fs from 'node:fs';
 import path from 'node:path';
-import { resolve as fixture } from './fixtures/api.mjs';
+import { resolve as fixture, emptied } from './fixtures/api.mjs';
 
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const base = arg('base', 'http://localhost:4173/v2/');
@@ -31,6 +31,8 @@ export const ROUTES = [
 export const VIEWS = [
   ['task-artifacts', '/tasks/100?tab=artifacts'], ['task-timeline', '/tasks/101?tab=timeline'], ['task-failed', '/tasks/102'], ['task-queued', '/tasks/103'], ['task-done', '/tasks/100'],
   ['projects-company', '/projects?scope=company'], ['projects-single', '/projects?scope=single'],
+  // Report scopes (V3 Phase 8): /reports itself is 全部.
+  ['reports-session', '/reports?scope=session'], ['reports-project', '/reports?scope=project'], ['reports-app', '/reports?scope=app'],
   ['project-reports', '/projects/1?tab=reports'], ['project-apps', '/projects/1?tab=apps'],
   ['project-candidates', '/projects/1?tab=candidates'], ['project-runs', '/projects/1?tab=runs'],
   // Workbench (V3 Phase 3): session 41 is the fixtures' running session; one surface per primary tab.
@@ -75,7 +77,7 @@ async function open(theme, width, height = 900, login = true) {
     if (variant === 'slow' && !isMe) return; // never answered: page stays in its loading state
     let body = fixture(req.method(), url);
     if (typeof body === 'string') return route.fulfill({ status: 200, contentType: 'text/plain; charset=utf-8', body: variant === 'empty' ? '' : body });
-    if (variant === 'empty' && !isMe && req.method() === 'GET') body = Array.isArray(body) ? [] : Object.fromEntries(Object.entries(body).map(([k, v]) => [k, Array.isArray(v) ? [] : typeof v === 'number' ? 0 : v]));
+    if (variant === 'empty' && !isMe && req.method() === 'GET') body = emptied(body);
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   });
   page.on('pageerror', (e) => report.errors.push(`${page.url()} :: ${e.message}`));

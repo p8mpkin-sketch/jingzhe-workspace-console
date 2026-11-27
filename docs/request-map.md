@@ -128,17 +128,18 @@ These come from the app shell, so they appear on every route below and are not r
 
 ### `/dashboard`
 
+Since V3 Phase 8 (`useDashboardReads`). The model reads and the batch-unpack summary left the page; the project list
+was added (D3). `/api/nodes` is sent only for an admin.
+
 | Method | Route | Query | Expected unique count on load | Polling interval |
 | --- | --- | --- | --- | --- |
-| GET | `/api/models/providers` | — | 1 | none (on load only) |
-| GET | `/api/models/routing` | — | 1 | none (on load only) |
-| GET | `/api/nodes` | — | 1 | none (on load only) |
+| GET | `/api/nodes` | — | 1 (admin only) | none (on load only) |
 | GET | `/api/pentest/events/recent` | `limit=30` | 1 | every 8 s |
+| GET | `/api/pentest/projects` | — | 1 | none (on load only) |
 | GET | `/api/pentest/sessions` | — | 1 | none (on load only) |
-| GET | `/api/pentest/sessions/{sid}/report/summary` | — | 1 per session (4 in fixtures) | none (on load only) |
+| GET | `/api/pentest/sessions/{sid}/report/summary` | — | 1 per linked recent task, at most 8 (4 in fixtures) | none (on load only) |
 | GET | `/api/pentest/vulns/domain-summary` | — | 1 | none (on load only) |
 | GET | `/api/pentest/vulns/severity-summary` | — | 1 | none (on load only) |
-| GET | `/api/tasks/batch-unpack-summary` | — | 1 | none (on load only) |
 | GET | `/api/tasks` | `limit=500` | 1 | none (on load only) |
 | GET | `/api/tasks` | `status=queued&limit=2000` | 1 | none (on load only) |
 | GET | `/api/tasks` | `status=running&limit=50` | 1 | every 30 s |
@@ -260,6 +261,21 @@ too (`docs/screenshots/v3/phase-6/requests.json`, `check-requests.mjs --against`
 A 403 on any of these is shown as a permission state without retry wording; a refused download or upload is said
 as a permission matter in the result line.
 
+### V3 Phase 8: overview and report scopes
+
+No endpoint was added. The capture of every route and view (`docs/screenshots/v3/phase-8/requests.json`) was compared
+with a build of `470c6bf` on the same fixtures (`check-requests.mjs --against`). Every other route is identical;
+the differences, all intended:
+
+| Route | Removed | Added | Why |
+| --- | --- | --- | --- |
+| `/dashboard` | `GET /api/models/providers`, `GET /api/models/routing` | — | D1: the model readout lives on /system → 模型 only |
+| `/dashboard` | `GET /api/tasks/batch-unpack-summary` | — | The batch-unpack panel left the overview; it stays on `/tasks` |
+| `/dashboard` | — | `GET /api/pentest/projects` | D3: project names in recent work |
+| `/reports` (全部) | — | `GET /api/pentest/projects`, `GET /api/pentest/projects/{1,2,3}/reports` | D5: 全部 includes project and single-app reports |
+| `/reports?scope=project`, `?scope=app` | the three session aggregation reads for sessions 40 and 44 | the same four project reads | These scopes list no session report, so the aggregation is not run |
+| `/reports?taskId=100` | — | — | Identical: the reader sends no project read |
+
 ### `/pentest`
 
 | Method | Route | Query | Expected unique count on load | Polling interval |
@@ -353,13 +369,21 @@ last state on screen with a stale notice. A task that is not among the 2000 the 
 
 ### `/reports`
 
-| Method | Route | Query | Expected unique count on load | Polling interval |
-| --- | --- | --- | --- | --- |
-| GET | `/api/pentest/sessions` | — | 1 | none (on load only) |
-| GET | `/api/pentest/sessions/{sid}/auth_matrix` | — | 1 per session (2 in fixtures) | none (on load only) |
-| GET | `/api/pentest/sessions/{sid}/report/summary` | — | 1 per session (2 in fixtures) | none (on load only) |
-| GET | `/api/pentest/sessions/{sid}/vulns/grouped` | — | 1 per session (2 in fixtures) | none (on load only) |
-| GET | `/api/tasks` | `limit=500` | 1 | none (on load only) |
+Since V3 Phase 8 (`ReportCenterPage`, `useProjectReports`). The scope decides the reads; `?taskId=` and `?sid=` open
+the reader and send no project read.
+
+| Method | Route | Query | Scopes | Expected unique count on load | Polling interval |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/api/pentest/sessions` | — | all | 1 | none (on load only) |
+| GET | `/api/tasks` | `limit=500` | all | 1 | none (on load only) |
+| GET | `/api/pentest/sessions/{sid}/auth_matrix` | — | 全部, 会话报告, reader | 1 per session (2 in fixtures) | none (on load only) |
+| GET | `/api/pentest/sessions/{sid}/report/summary` | — | 全部, 会话报告, reader | 1 per session (2 in fixtures) | none (on load only) |
+| GET | `/api/pentest/sessions/{sid}/vulns/grouped` | — | 全部, 会话报告, reader | 1 per session (2 in fixtures) | none (on load only) |
+| GET | `/api/pentest/projects` | — | 全部, 项目报告, 单应用报告 | 1 | none (on load only) |
+| GET | `/api/pentest/projects/{pid}/reports` | — | 全部, 项目报告, 单应用报告 | 1 per project, 4 at a time (3 in fixtures) | none (on load only) |
+
+刷新 reads the task list and every project again; 重新读取 in the progress note reads only the projects that did not
+answer. Switching scope sends nothing that was already read. Downloads are `GET /api/pentest/projects/{pid}/reports/{rid}/download?format=pdf|docx`, unchanged.
 
 ### `/discovery`
 

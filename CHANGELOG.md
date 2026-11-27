@@ -7,6 +7,84 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 8 — Overview signal and scoped reports
+
+`/dashboard` is rebuilt as a global signal of the workspace and `/reports` lists every report under one scope bar.
+No endpoint, field, payload, permission, storage key or route changed or was added; `docs/capability-matrix.md`
+(“Dashboard and reports (V3 Phase 8)”) gives the owner of each capability of both pages. The five decisions of the
+plan (D1–D5) were confirmed with their defaults.
+
+**`/dashboard` (`DashboardPage`, `GlobalSignal`, `RecentWork`, `useDashboardReads`, `readout`).**
+
+- A conclusion sentence built only from numbers that were read; 现在需要处理 with one action per item (failed tasks →
+  `/tasks?status=failed`, critical findings → the findings view of the session with most of them, offline nodes →
+  查看节点, which expands the node list in place); a readout row (运行中, 排队, 失败, 已完成, 总数, 风险发现, 节点).
+- Running work with the stage of each task and links to its task and session.
+- Recent assessments: application with its packer, project name (D3: one `GET /api/pentest/projects`, linked to the
+  project, or 未归属项目), risk score as the backend returns it (D4: no letter grades; 未读取 when the summary was not
+  read), findings, session (open or 创建会话) and report. Session events beside it, with filters.
+- Risk domains as a list sorted by count with orange bars (D2): no radar, no 合规均分, no ECharts on this page.
+- The model readout left the page (D1); it stays on /system → 模型, reachable from the navigation and the account menu.
+- Every number has five states: read, loading, 未读取 (failed, with 重试), 无权限 (no retry wording), and stale
+  (最近一次刷新未成功, value kept). Nothing that was not read is shown as 0. Non-admins send no `/api/nodes`.
+
+**`/reports` (`ReportsPage`, `ReportTable`, `reportScopes`).**
+
+- Scopes 全部 / 会话报告 / 项目报告 / 单应用报告 (`?scope=`, omitted for 全部; an unknown value is removed). With no
+  parameters the page opens on 全部, which now includes project and single-app reports (D5).
+- Project reports are read from the existing `GET /api/pentest/projects/{pid}/reports`, four projects at a time, each
+  once per load; the page says “x/y 个项目已读取” and names unread and refused projects; one failing project does not
+  hide the others, and 重新读取 reads only those that did not answer.
+- 会话报告 keeps the hub (preview, cards, table, risk filter, sort, batch export); its KPI band is gone and a summary
+  that was refused or failed says 无权限 / 未读取 instead of “—”.
+- `ReportTable` is the one row and action component for 全部, 项目报告, 单应用报告 and the project 报告 tab. Download is
+  one menu (PDF, DOCX) with the same request and file name as before.
+- Back from the reader restores the scope and the focus on the row that was opened.
+
+**Fixtures.** `nodes` carries node ids, devices and heartbeats; `events/recent` has six events; `domain-summary`
+has `by_session`; `severity-summary` has `by_severity`, `sessions_scanned`, `sessions_total`; project reports mix
+the kinds project, portfolio and app, and project 2 has two reports. The empty variant now empties maps keyed by id
+and zeroes maps of numbers (`emptied()` in `fixtures/api.mjs`). `capture.mjs` also opens the three report scopes.
+
+**Checks.** New: `scripts/check-dashboard-reports.mjs`, 519 checks in ten groups (G overview 24, W recent work 21,
+Z no false zero 30, F scope filters 36, L deep links 13, P project scope 13, X exports against the 470c6bf build 14,
+K keyboard 8, V widths and themes 72, S states 288). Same rules as Phase 7: every wait has a limit, nothing is
+skipped, the total is fixed by a plan table.
+
+Writing it found two defects in this phase's own code, fixed here: paging in 全部 / 项目报告 / 单应用报告 was
+clamped to the page count of 会话报告, and a `?taskId=` or `?sid=` deep link read every project's reports before
+the reader opened (four requests the reader does not use).
+
+No existing check changed and no total dropped.
+
+| Check (fixtures, build of this commit) | Result |
+| --- | --- |
+| `tsc --noEmit`; `npm run build`; main chunk 72.46 kB, 24.08 kB gzip (72.40 kB before; budget 350 kB); `DashboardPage` 28.08 kB, 9.68 kB gzip, and it no longer loads the ECharts chunk (482.79 kB); `ReportCenterPage` 82.08 kB, 28.29 kB gzip | pass |
+| Token lint | 0 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| Dashboard and reports (`check-dashboard-reports.mjs`): G 24, W 21, Z 30, F 36, L 13, P 13, X 14, K 8, V 72, S 288 | 519 of 519 |
+| Artifacts and reports (`check-artifacts-reports.mjs`) | 282 of 282 |
+| Tasks (`check-tasks.mjs`) | 363 of 363 |
+| Tab count (`check-findings-tab-count.mjs`) | 46 of 46 |
+| Findings and evidence (`check-findings-evidence.mjs`) | 340 of 340 |
+| Workbench shell (`check-workbench-shell.mjs`) | 99 of 99 |
+| Projects (`check-projects.mjs`) | 43 of 43 |
+| Redirects (`check-redirects.mjs`) | 28 of 28 |
+| Trace (`check-trace.mjs`) | 218 of 218 |
+| Workbench, 20 surfaces × 4 widths × 2 themes, sessions 40 and 41 (`check-workbench.mjs`) | overflow 0, page errors 0; focus: 1132 and 1726 stops checked, 0 without an indicator, 0 covered |
+| Polling (`check-polling.mjs`, 13 routes × 65 s) | same repeating requests and intervals as `470c6bf` on every route; no duplicate read in the first 3 s except the fixture SSE reconnects |
+| `/dashboard`, `/reports` and its scopes, project 报告 tab at 1440 / 1024 / 760 / 390, light and dark (`capture.mjs`) | overflow 0, page errors 0 |
+| Request set per route vs a `470c6bf` build on the same fixtures | 4 routes differ, as listed in `docs/request-map.md` (“V3 Phase 8”); every other route and view identical |
+
+Known gaps: the Phase 7 virtual scrolling debt is not addressed; project reports are read per project because
+there is no cross-project report endpoint, so 全部 costs one request per project (4 in parallel); the hub table view
+of 会话报告 keeps its own columns rather than `ReportTable`, because its columns exist only for session reports.
+
+Screenshots and reports: `docs/screenshots/v3/phase-8/`.
+
+Rollback: `git revert` of this one commit restores the Phase 7 dashboard and report center; `470c6bf` stands on
+its own.
+
 ### V3 Phase 7 — Task list and task detail
 
 `/tasks` is rebuilt as the V3 task list and a task has its own page, `/tasks/:id`, the only route this phase adds.

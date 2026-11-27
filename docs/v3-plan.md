@@ -769,6 +769,26 @@ surface、surface-2 上作为非文字元素 ≥ 3 : 1。
 性能预算：主包 ≤ 350 kB（原为 873.67 kB），靠阶段 1 的路由级懒加载实现；ECharts 和 React Flow 留在各自的包里，
 只在用到它们的路由加载；每条变更日志里都报告主包大小。
 
+**Phase 8 实施说明（2026-11-27，按 cz 确认的计划，D1–D5 全部按默认）。** 与上表和计划文档不同的地方，以实现为准：
+
+- 概览页实际文件：`features/dashboard/{DashboardPage,GlobalSignal,RecentWork}.tsx`、`features/dashboard/{readout,useDashboardReads}.ts`。
+  读数的五种状态（读到、读取中、未读取、无权限、过期）写在 `readout.ts`，报告列表也用它。
+- 报告实际文件：`features/reports/{ReportsPage,ReportTable}.tsx`、`features/reports/reportScopes.ts`。
+  `ReportCenterPage` 只做分流、深链消费、聚合队列和阅读器状态；聚合读取仍用原来的 `fetch`，只多记下状态码。
+- “会话报告”范围仍是原来的大厅（预览、卡片、表格三种视图、风险筛选、排序、批量导出），钩子全部不变；
+  `ReportTable` 用在“全部”“项目报告”“单应用报告”和项目的“报告”标签。大厅的表格视图没有改成 `ReportTable`：
+  它的列（合规分、高危、矩阵、主要域）只有会话报告才有，合在一起反而要为两类行各写一套列。
+- `DetailView` 没有改：从阅读器返回时，范围和焦点由 `ReportCenterPage` 还原（记下打开时的范围和那一行）。
+- 夹具除了计划里的三处（节点字段、最近事件字段、项目报告的 project / portfolio），还补了 `domain-summary.by_session`
+  和 `severity-summary` 的 `by_severity`、`sessions_scanned`、`sessions_total`：原来的夹具没有这些字段，概览页在夹具上一直显示“—”。
+  夹具的空数据变体同时把按编号索引的对象（`by_session`）清空，把数字对象（`by_severity`）置 0。
+- 执行节点离线时，“现在需要处理”里的操作是“查看节点”，就地展开每个节点的状态、设备数和上次心跳：节点只有概览页一处入口，没有可去的页面。
+- 严重风险发现的操作打开发现最多的那个会话的“风险发现”（`/projects/:pid/sessions/:sid?view=findings`）。
+- 夹具里 `tasks-summary` 记 2 个运行中、13 个排队，而任务列表夹具只有 1 个运行中、2 个排队：读数行和结论句用 `tasks-summary`，
+  “正在运行”列表和排队数用任务列表（与 470c6bf 相同的读取），所以截图里两处数字不一致；真实后端两者一致。夹具没有改，以免改动其他检查的基准。
+- 从 `?taskId=` / `?sid=` 深链进入阅读器时不读项目报告；返回列表后才读。
+- 体积：主包 72.46 kB（gzip 24.08）；`DashboardPage` 28.08 kB（gzip 9.68），不再加载 ECharts；`ReportCenterPage` 82.08 kB（gzip 28.29）。
+
 ---
 
 ## 8. 截图、状态与无障碍测试计划

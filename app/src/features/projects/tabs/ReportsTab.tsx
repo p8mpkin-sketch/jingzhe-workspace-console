@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronDown, Download, FileText, SearchX, Wand2 } from 'lucide-react';
+import { Check, ChevronDown, FileText, SearchX, Wand2 } from 'lucide-react';
 import { api } from '@/services/api';
-import { ActionMenu, AsyncBoundary, Button, Checkbox, DataTable, EmptyState, Field, Pagination, SearchField, Select, StatusBadge } from '@/components/ui';
-import type { Column } from '@/components/ui';
+import { AsyncBoundary, Button, Checkbox, EmptyState, Field, Pagination, SearchField, Select } from '@/components/ui';
+import { ReportTable } from '@/features/reports/ReportTable';
+import { projectItem } from '@/features/reports/reportScopes';
+import type { ProjectReport } from '@/features/reports/reportScopes';
 import type { ProjectCtx } from '../ProjectDetailPage';
-import { pagesOf, reportName, reportStatus, slice, templateText, tone } from '../projectModel';
-import type { ReportRow } from '../projectModel';
+import { pagesOf, slice } from '../projectModel';
 
 const REPORT_CONTENTS = ['封面与目录页码', '应用全量清单', '重点发现总表', '密钥、签名与加固', '逐应用证据图', '误报与待复核', '覆盖与限制', '证据索引'];
 const StepMark: React.FC<{ n: number }> = ({ n }) => (
@@ -35,19 +36,9 @@ export const ReportsTab: React.FC<{ ctx: ProjectCtx }> = ({ ctx }) => {
     } catch (e: any) { say('生成失败：' + (e?.message || e), true); } finally { setBusy(''); }
   };
 
-  const cols: Column<ReportRow>[] = [
-    { key: 'name', header: '报告', card: 'title', cell: (r) => <span className="font-medium text-jz-ink">{reportName(r)}</span> },
-    { key: 'template', header: '模板', cell: (r) => templateText(r.template) },
-    { key: 'pages', header: '页数', align: 'right', width: 'w-20', cell: (r) => r.pages ?? '—' },
-    { key: 'status', header: '状态', cell: (r) => <StatusBadge tone={tone(r.status)}>{reportStatus(r.status)}</StatusBadge> },
-    { key: 'actions', header: <span className="sr-only">下载</span>, label: '下载', align: 'right', card: 'action', cell: (r) => (
-      <ActionMenu label="下载" menuLabel={`下载报告 #${r.id}`} icon={<Download size={14} aria-hidden />} triggerAttrs={{ 'data-report-download': r.id }}
-        items={[
-          { key: 'pdf', label: 'PDF', onSelect: () => download(r.id, 'pdf'), attrs: { 'aria-label': `下载报告 #${r.id} 的 PDF` } },
-          { key: 'docx', label: 'DOCX', onSelect: () => download(r.id, 'docx'), attrs: { 'aria-label': `下载报告 #${r.id} 的 DOCX` } },
-        ]} />
-    ) },
-  ];
+  // The shared report table, fixed to this project (not in the URL); the rows are this page's own read.
+  const items = shown.map((r) => projectItem({ ...r, pid: id, projectName: '' }));
+  const onDownload = (r: ProjectReport, format: 'pdf' | 'docx') => { download(r.id, format); };
 
   return (
     <section className="jz-pane overflow-hidden rounded-card" data-report-workflow>
@@ -87,9 +78,7 @@ export const ReportsTab: React.FC<{ ctx: ProjectCtx }> = ({ ctx }) => {
         <AsyncBoundary loading={reports.loading} error={reports.error} stale={reports.stale} onRetry={reports.reload}
           empty={!shown.length}
           emptyState={all.length ? <EmptyState compact icon={SearchX} title="没有匹配的报告" /> : <EmptyState compact icon={FileText} title="还没有报告" cause="在上方生成第一份项目总报告。" />}>
-          <DataTable stickyHeader={false} label="报告历史" columns={cols} rows={shown} rowKey={(r) => r.id}
-            rowClassName={(r) => (r.status === 'generating' ? 'bg-jz-brand-soft/50' : undefined)}
-            rowDataAttrs={(r) => ({ 'data-report-row': r.id, 'data-report-latest': latest && r.id === latest.id ? '' : undefined })} />
+          <ReportTable rows={items} label="报告历史" context="project" latestId={latest?.id} onDownload={onDownload} />
           <Pagination page={page} pageSize={8} total={filtered.length} onPage={setPage} />
         </AsyncBoundary>
       </div>

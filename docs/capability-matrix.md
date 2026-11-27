@@ -539,6 +539,60 @@ States of `/tasks/:id`: loading, slow (after 4 s), forbidden (no retry), error (
 2000 条任务里没有 #id，可能已删除。”), stale (the last state stays on screen), no output. A refused counts read
 shows “未读取”.
 
+## Dashboard and reports (V3 Phase 8)
+
+`/dashboard` is `features/dashboard/DashboardPage` composed of `GlobalSignal` (conclusion sentence, 现在需要处理,
+readout row, running list, findings by domain) and `RecentWork` (recent assessments, session events); every read
+goes through `useDashboardReads` and has its own state from `readout.ts` (value, loading, 未读取, 无权限, stale).
+`/reports` is `ReportCenterPage`, which now only routes: with `?taskId=` the Phase 6 reader (`DetailView`,
+unchanged), otherwise `ReportsPage` with the scope tabs on the existing `?scope=` (all, session, project, app).
+`ReportTable` is the one report row; the project 报告 tab and `/reports` (全部, 项目报告, 单应用报告) use it, and
+`reportScopes.ts` holds the scope model, the project-report reads and the one download. No route, endpoint,
+permission or storage key is added or changed. Covered by `scripts/check-dashboard-reports.mjs` (groups in the
+last column).
+
+### `/dashboard` (15 capabilities of the former page)
+
+| # | Capability of the former page | Owner in Phase 8 | Change | Check |
+| --- | --- | --- | --- | --- |
+| 1 | Header eyebrow: date and user name | User name in the account menu; the date is dropped | retired | — |
+| 2 | 刷新 | Header 刷新: re-sends every read of the page | kept | S (stale) |
+| 3 | Header 新建评估 | The global primary action (sidebar, palette); the empty recent list keeps 新建评估 | duplicate retired | W20, W21 |
+| 4 | Execution node strip (admin, `/api/nodes`) | Readout “执行节点在线 x/y”; an offline node is an item in 现在需要处理 with 查看节点; non-admins send no request | form changed | G8, G14, G22 |
+| 5 | “Summary may be incomplete” notice | Each readout has its own state; a page notice counts the reads whose refresh failed | form changed | Z, S |
+| 6 | Queue signal: running, queued, failed, done | The conclusion sentence and the readout row; queued reads “至少 2000” on a full page | kept | G1–G6, G24 |
+| 7 | 查看失败任务 | Item in 现在需要处理 → `/tasks?status=failed` | form changed | G12, G19 |
+| 8 | Success-rate ring | Front-end ratio; done and failed are both in the readout row | retired | — |
+| 9 | Running now (4 rows, 30 s poll) | Under the sentence, same read and interval; 运行中的任务 → `/tasks?status=running`; a failed read says 未读取, never “没有” | kept | G15, G21, Z |
+| 10 | Assessment total and unpack completion | Total in the readout row; the unpack summary belongs to `/tasks` (Phase 7 #34), so `/api/tasks/batch-unpack-summary` is no longer read here | unpack rate retired here | G16 |
+| 11 | Critical / high findings, total, sessions scanned | Readout “严重 / 高 风险发现” with “来自 x/y 个会话”; critical > 0 is an item that opens the findings of the session with the most critical findings | kept | G7, G13, G20 |
+| 12 | Model readout (`/api/models/providers`, `/api/models/routing`) | `/system` › 模型服务 (D1; entry in the account menu and the palette) | retired here | G16 |
+| 13 | Radar (all / session), top-5 domains, domain total | “风险发现按域分布”: one list sorted by count, from `domain-summary` only; no compliance score, no ECharts; a session's distribution is the workbench 规则卡 MASVS filter (D2) | form changed | G16, Z |
+| 14 | Session events, filter (全部 / 有发现 / 异常), open-session count | `RecentWork` › 会话事件, same read every 8 s; first failure 未读取 + 重试, later failures keep the rows (stale) | kept | W9–W12, W17–W19 |
+| 15 | Recent assessments: app, packer, grade, findings, session, 创建会话, open | Same rows; adds the project name (one `/api/pentest/projects` read, D3) and 报告 for a finished task; the A–F grade is replaced by the backend risk score (D4); packer under the app name; one 全部任务 link | kept | W1–W8, W13–W16 |
+
+### `/reports` and the project 报告 tab (14 capabilities of the former list)
+
+| # | Capability of the former list | Owner in Phase 8 | Change | Check |
+| --- | --- | --- | --- | --- |
+| 1 | KPI band: finished assessments, confirmed high, average compliance score, exportable | Counts on the scope tabs (shown only once read; 未读取 / 无权限 otherwise); high and score stay in each row; exportable is a row state | retired | F2–F5, F23, F28–F32 |
+| 2 | Search (id, package, app name) | `ReportsPage` toolbar, every scope; kept across scope switches | kept | F10, F12, F15 |
+| 3 | Risk filter (全部 / 有高危 / 低分) | 会话报告 only (only it has these numbers) | kept | F18, F21 |
+| 4 | Sort (最新 / 风险 / 合规分) | 会话报告; the other scopes are newest first | kept | F20 |
+| 5 | Views: preview / cards / table | 会话报告, unchanged | kept | F19, F22 |
+| 6 | Paging 12 / 24 / 48 with jump | Every scope | kept | F9 |
+| 7 | Select, batch CSV, single CSV | 会话报告 unchanged; single CSV also in the 全部 row menu | kept | X1–X6 |
+| 8 | Open the report (`?taskId=`) | Every session row; 返回 brings back the entry scope and focuses the row | kept | L11, L12, K5, K6 |
+| 9 | Preview pane | 会话报告 | kept | X1 |
+| 10 | 新建评估 on an empty list | Empty states of 全部 and 会话报告; 去项目里生成 for 项目 / 单应用 | kept | F36, S |
+| 11 | Deep links `?taskId=`, `?sid=&cmp=` | Unchanged; `?taskId=` wins over `?scope=` | kept | L1–L4 |
+| 12 | Project report generation | Project 报告 tab, unchanged | kept | P11 |
+| 13 | Project report history, search, 8 per page, PDF / DOCX | `ReportTable` in the project tab (fixed to the project, its own read) and in `/reports?scope=project`; one download implementation | form changed | P1–P13 |
+| 14 | Single-app reports (generated in the apps tab) | Listed in `/reports?scope=app` | kept | F17 |
+
+Report aggregation (summary, auth_matrix, vulns/grouped per finished task) keeps its URLs and direct `fetch`, and now
+keeps the HTTP status: a 403 reads 无权限 and a failure 未读取 in the row, instead of “—”.
+
 ## Shared owners (kept on purpose)
 
 | Job | Renderings | Why both stay |

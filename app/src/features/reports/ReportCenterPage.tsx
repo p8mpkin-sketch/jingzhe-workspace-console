@@ -5,8 +5,10 @@ import { api } from '@/services/api';
 import { Button, Page, PageHeader, PermissionState, ErrorState, toast, useOverlay } from '@/components/ui';
 import { moduleLabel } from '@/layout/navigation';
 import { DOMAINS, domainOf } from '@/features/pentest/masvsDomains';
-import { HubView } from './HubView';
 import type { HubState } from './HubView';
+import { ReportsPage } from './ReportsPage';
+import { downloadProjectReport, parseScope, scopeQuery, useProjectReports } from './reportScopes';
+import type { ProjectReport, Scope } from './reportScopes';
 import { DetailView } from './DetailView';
 import type { TextPreview } from './DetailView';
 import { SEV_WEIGHT } from './shared';
@@ -52,6 +54,20 @@ export const ReportCenterPage: React.FC = () => {
   const [tasksLoaded, setTasksLoaded] = useState(false);
   const [taskId, setTaskId] = useState<number | null>(null);
   const viewMode: 'hub' | 'detail' = taskId != null ? 'detail' : 'hub';
+  // V3 Phase 8: the list is scoped by the existing ?scope= (all | session | project | app). ?taskId= wins over it.
+  const { scope, valid: scopeValid } = parseScope(searchParams.get('scope'));
+  useEffect(() => {
+    if (scopeValid || searchParams.get('taskId') || searchParams.get('sid')) return;
+    const next = new URLSearchParams(searchParams); next.delete('scope');
+    setSearchParams(next, { replace: true });
+  }, [scopeValid, searchParams, setSearchParams]);
+  // Project and single-app reports: read once, the first time a scope that lists them is shown.
+  // A ?taskId= or ?sid= deep link opens the reader once the sessions are read: no project reads before that.
+  const deepLink = !!(searchParams.get('taskId') || searchParams.get('sid'));
+  const projectReports = useProjectReports(viewMode === 'hub' && !deepLink && scope !== 'session');
+  // Where the reader was opened from, so 返回 brings back that scope and puts focus on that row.
+  const entryRef = useRef<{ scope: Scope; key: string } | null>(null);
+  const [focusKey, setFocusKey] = useState<string | null>(null);
   // Error of the task list request (same request as before; only its failure is now kept for the error / permission state).
   const [loadErr, setLoadErr] = useState<unknown>(null);
   const loadTasks = useCallback(() => {
@@ -98,14 +114,18 @@ export const ReportCenterPage: React.FC = () => {
  bumpAgg();
  queueRef.current!(async () => {
  const H = AUTH_H();
+ // Same three requests as before; the HTTP status is kept so a 403 reads 无权限 and a failure 未读取.
+ const get = (u: string) => fetch(u, { headers: H }).then(async (r) => ({ st: r.status, d: r.ok ? await r.json() : null }));
  const [sumR, mxR, grpR] = await Promise.allSettled([
- fetch(`/api/pentest/sessions/${sess.id}/report/summary`, { headers: H }).then((r) => (r.ok ? r.json() : null)),
- fetch(`/api/pentest/sessions/${sess.id}/auth_matrix`, { headers: H }).then((r) => (r.ok ? r.json() : null)),
- fetch(`/api/pentest/sessions/${sess.id}/vulns/grouped`, { headers: H }).then((r) => (r.ok ? r.json() : null)),
+ get(`/api/pentest/sessions/${sess.id}/report/summary`),
+ get(`/api/pentest/sessions/${sess.id}/auth_matrix`),
+ get(`/api/pentest/sessions/${sess.id}/vulns/grouped`),
  ]);
- const summary = sumR.status === 'fulfilled' ? sumR.value : null;
- const mxd = mxR.status === 'fulfilled' ? mxR.value : null;
- const grp = grpR.status === 'fulfilled' ? grpR.value : null;
+ const val = (x: PromiseSettledResult<{ st: number; d: any }>) => (x.status === 'fulfilled' ? x.value.d : null);
+ const stOf = (x: PromiseSettledResult<{ st: number; d: any }>) => (x.status === 'fulfilled' ? x.value.st : 0);
+ const summary = val(sumR);
+ const mxd = val(mxR);
+ const grp = val(grpR);
  const mxc: MxCounts | 'error' = mxd && mxd.status !== 'error' && mxd.counts
  ? { red: mxd.counts.red || 0, yellow: mxd.counts.yellow || 0, green: mxd.counts.green || 0, gray: mxd.counts.gray || 0 }
  : 'error';
@@ -124,7 +144,7 @@ export const ReportCenterPage: React.FC = () => {
  }
  domains = { rows: [...rows, other], otherCount: other.count, total: rows.reduce((a, b) => a + b.count, 0) + other.count };
  }
- aggRef.current[tid] = { sid: sess.id, summary, mx: mxc, domains, loading: false, done: true };
+ aggRef.current[tid] = { sid: sess.id, summary, mx: mxc, domains, loading: false, done: true, http: { summary: stOf(sumR), mx: stOf(mxR), domains: stOf(grpR) } };
  bumpAgg();
  const ws = waiters.current.get(tid) || [];
  waiters.current.delete(tid);
@@ -175,28 +195,21 @@ export const ReportCenterPage: React.FC = () => {
 
  // 大厅聚合: 任务清单就绪即全量后台聚合(队列限流;无会话任务零请求即刻 done)
  const hubTaskIds = hubTasks.map((t) => t.id).join(',');
+ // Not sent for 项目报告 / 单应用报告: those scopes list no session report.
+ const aggOn = viewMode === 'detail' || scope === 'all' || scope === 'session';
  useEffect(() => {
- if (!sessLoaded || !hubTaskIds) return;
+ if (!sessLoaded || !hubTaskIds || !aggOn) return;
  for (const tid of hubTaskIds.split(',').map(Number)) ensureAgg(tid);
- }, [sessLoaded, hubTaskIds, ensureAgg]);
+ }, [sessLoaded, hubTaskIds, ensureAgg, aggOn]);
 
  const entries: HubEntry[] = useMemo(() => hubTasks.map((t) => ({ task: t, agg: agg[t.id] })), [hubTasks, agg]);
 
- // ---- KPI(口径见各卡 title;合规分=100−risk_score 挂账口径) ----
+ // ---- 汇总进度(页头;V3 Phase 8 起 KPI 带退役,数量在范围标签上,其余在行里) ----
  const kpi = useMemo(() => {
- let highRisk: number | null = null;
- const scores: number[] = [];
  let aggDone = 0;
- for (const t of hubTasks) {
- const a = agg[t.id];
- if (a?.done) aggDone++;
- if (a?.summary && typeof a.summary.confirmed_high === 'number') highRisk = (highRisk ?? 0) + a.summary.confirmed_high;
- const sc = complianceScoreOf(a?.summary);
- if (sc != null) scores.push(sc);
- }
- const exportable = new Set(sessions.map((s) => s.task_id).filter((tid) => tid && taskById.has(tid))).size;
- return { total: hubTasks.length, highRisk, avgScore: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null, exportable, aggDone, aggTotal: hubTasks.length };
- }, [hubTasks, agg, sessions, taskById]);
+ for (const t of hubTasks) if (agg[t.id]?.done) aggDone++;
+ return { aggDone, aggTotal: hubTasks.length };
+ }, [hubTasks, agg]);
 
  // ---- 检索/排序/分页(useMemo 实时过滤) ----
  const filtered = useMemo(() => {
@@ -504,15 +517,39 @@ export const ReportCenterPage: React.FC = () => {
  };
 
  // ---- 导航 ----
- const openTask = (tid: number) => {
+ const switchTask = (tid: number) => {
  setTaskId(tid);
  setSearchParams({ taskId: String(tid) }, { replace: true });
  const sess = repSessionOf(tid);
  if (sess) setSelected(sess.id);
  };
+ const openTask = (tid: number, key: string) => { entryRef.current = { scope, key }; switchTask(tid); };
  const backToHub = () => {
+    const from = entryRef.current;
     setTaskId(null);
-    setSearchParams({}, { replace: true });
+    setSearchParams(scopeQuery(from?.scope ?? 'all'), { replace: true });
+    setFocusKey(from?.key ?? null);
+  };
+  const setScope = (s: Scope) => {
+    setSearchParams(scopeQuery(s), { replace: true });
+    patchHub({ page: 1 });
+  };
+  // Back from the reader: focus the row it was opened from (hub list, hub table / cards, or the shared table).
+  useEffect(() => {
+    if (viewMode !== 'hub' || !focusKey) return;
+    const id = requestAnimationFrame(() => {
+      const tid = focusKey.replace(/^(hub|s)-/, '');
+      const el = document.querySelector<HTMLElement>(`[data-report-item="${focusKey}"][tabindex]`)
+        ?? document.querySelector<HTMLElement>(`[data-hub-pick="${tid}"]`)
+        ?? document.querySelector<HTMLElement>(`[data-hub-open="${tid}"]`);
+      el?.focus();
+      setFocusKey(null);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [viewMode, focusKey, hub.view]);
+  const onDownload = async (r: ProjectReport, format: 'pdf' | 'docx') => {
+    const res = await downloadProjectReport(r.pid, r.id, format);
+    if (!res.ok) toast.err('下载失败：' + res.status);
   };
 
   const printRef = useOverlay(printMode, () => setPrintMode(false));
@@ -523,29 +560,26 @@ export const ReportCenterPage: React.FC = () => {
     <>
       <Page className={printMode ? 'hidden' : undefined} data-reports-page>
         {viewMode === 'hub' || !detailTask ? (
-          <>
-            <PageHeader title={moduleLabel('/reports')}
-              description="已完成评估任务的报告。打开任务可以查看鉴权矩阵、合规域分布、发现明细,并导出报告。"
-              meta={kpi.aggDone < kpi.aggTotal && kpi.aggTotal > 0 ? (
-                <span role="status" data-agg-progress className="tnum">正在汇总各任务的会话指标 {kpi.aggDone}/{kpi.aggTotal}</span>
-              ) : undefined} />
-            {detailBlocked ? (
-              errStatus === 401 || errStatus === 403 ? <PermissionState /> : <ErrorState title="报告加载失败" message="任务列表请求没有成功,无法打开这份报告。" onRetry={loadTasks} />
-            ) : (
-              <HubView
-                loading={!tasksLoaded} error={loadErr} onRetry={loadTasks} onCreate={() => nav('/new-assessment')}
-                entries={entries} filtered={filtered} paged={paged} kpi={kpi}
-                hub={{ ...hub, page }} patch={patchHub}
-                onOpen={openTask} onExportOne={onExportOne} onExportBatch={onExportBatch} batchBusy={batchBusy}
-              />
-            )}
-          </>
+          detailBlocked ? (
+            <>
+              <PageHeader title={moduleLabel('/reports')} description="已完成评估任务的报告。" />
+              {errStatus === 401 || errStatus === 403 ? <PermissionState /> : <ErrorState title="报告加载失败" message="任务列表请求没有成功,无法打开这份报告。" onRetry={loadTasks} />}
+            </>
+          ) : (
+            <ReportsPage scope={scope} onScope={setScope}
+              tasksLoading={!tasksLoaded} tasksError={loadErr} onRetryTasks={loadTasks}
+              onRefresh={() => { loadTasks(); projectReports.reload(true); }}
+              entries={entries} filtered={filtered} paged={paged} hub={{ ...hub, page: scope === 'session' ? page : hub.page }} patch={patchHub}
+              agg={{ done: kpi.aggDone, total: kpi.aggTotal }}
+              onOpen={openTask} onExportOne={onExportOne} onExportBatch={onExportBatch} batchBusy={batchBusy}
+              projects={projectReports} onDownload={onDownload} />
+          )
         ) : (
           <DetailView
             task={detailTask} entries={entries} taskSessions={taskSessions}
             selected={selected ?? repSid} aggLoading={!tasksLoaded || !sessLoaded}
             onPickSession={(sid) => setSelected(sid)}
-            onBack={backToHub} onPickTask={openTask}
+            onBack={backToHub} onPickTask={switchTask}
             mx={effMx} mxState={effMx ? 'ok' : mxState} reloadMatrix={loadMatrix}
             cm={cm} cmState={cmState} cmFilter={cmFilter} setCmFilter={setCmFilter} goDrill={goDrill}
             vm={effVm} vmState={vmState} localVulns={localVulns}

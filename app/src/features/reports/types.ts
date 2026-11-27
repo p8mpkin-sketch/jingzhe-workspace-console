@@ -18,9 +18,22 @@ export type TaskAgg = {
   domains: DomainAgg | null;          // GET /vulns/grouped 按域聚合(同源 masvsDomains.ts)
   loading: boolean;
   done: boolean;
+  /** HTTP status each of the three reads answered with (0 = no answer), so 403 reads 无权限 and not "—". */
+  http?: { summary: number; mx: number; domains: number };
 };
 
 export const emptyAgg: TaskAgg = { sid: null, summary: null, mx: null, domains: null, loading: false, done: false };
+
+/** State of one part of a task's aggregate: still loading, no session at all, denied, failed, or read. */
+export const aggPart = (agg: TaskAgg | undefined, part: 'summary' | 'mx' | 'domains'): 'loading' | 'none' | 'permission' | 'unread' | 'value' => {
+  if (!agg || agg.loading || !agg.done) return 'loading';
+  if (!agg.sid) return 'none';
+  const st = agg.http?.[part];
+  if (st === 401 || st === 403) return 'permission';
+  // No answer or a server error: not read. Other 4xx keep their earlier meaning (no data of that kind).
+  if (st != null && (st === 0 || st >= 500)) return 'unread';
+  return 'value';
+};
 
 /** 合规分(0-100): 100 − risk_score 截断;无 summary → null(未知,展示 '—') */
 export const complianceScoreOf = (summary: any): number | null =>

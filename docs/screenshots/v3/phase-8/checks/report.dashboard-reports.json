@@ -1,0 +1,2656 @@
+{
+ "base": "fixtures",
+ "total": 519,
+ "failed": 0,
+ "plan": {
+  "G": 24,
+  "W": 21,
+  "Z": 30,
+  "F": 36,
+  "L": 13,
+  "P": 13,
+  "X": 14,
+  "K": 8,
+  "V": 72,
+  "S": 288
+ },
+ "groups": {
+  "G": [
+   24,
+   24
+  ],
+  "W": [
+   21,
+   21
+  ],
+  "Z": [
+   30,
+   30
+  ],
+  "F": [
+   36,
+   36
+  ],
+  "L": [
+   13,
+   13
+  ],
+  "P": [
+   13,
+   13
+  ],
+  "X": [
+   14,
+   14
+  ],
+  "K": [
+   8,
+   8
+  ],
+  "V": [
+   72,
+   72
+  ],
+  "S": [
+   288,
+   288
+  ]
+ },
+ "results": [
+  {
+   "name": "G1 the conclusion sentence is built from the read numbers",
+   "pass": true,
+   "detail": "现在有 2 个评估在运行，2 个在排队。3 个失败的任务需要查看原因。有 1 个严重风险发现还没有关闭。"
+  },
+  {
+   "name": "G2 运行 equals tasks-summary.running",
+   "pass": true,
+   "detail": "2"
+  },
+  {
+   "name": "G3 排队 equals the queued rows read",
+   "pass": true,
+   "detail": "2"
+  },
+  {
+   "name": "G4 失败 equals tasks-summary.failed",
+   "pass": true,
+   "detail": "3"
+  },
+  {
+   "name": "G5 已完成 equals tasks-summary.done",
+   "pass": true,
+   "detail": "110"
+  },
+  {
+   "name": "G6 评估总数 equals tasks-summary.total",
+   "pass": true,
+   "detail": "128"
+  },
+  {
+   "name": "G7 严重 / 高 equal by_severity and the sessions it came from",
+   "pass": true,
+   "detail": "严重 / 高 风险发现 1 / 3 来自 3/5 个会话"
+  },
+  {
+   "name": "G8 执行节点 x/y 在线 equals the nodes read",
+   "pass": true,
+   "detail": "1/2"
+  },
+  {
+   "name": "G9 the readout row has 7 cells for an admin",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "G10 现在需要处理 lists failed tasks, critical findings and offline nodes, in that order",
+   "pass": true,
+   "detail": "failed,critical,nodes"
+  },
+  {
+   "name": "G11 each item has exactly one action",
+   "pass": true,
+   "detail": "1,1,1"
+  },
+  {
+   "name": "G12 the failed item states the count read",
+   "pass": true,
+   "detail": "3 个任务失败 查看失败任务"
+  },
+  {
+   "name": "G13 the critical item states its sessions x/y",
+   "pass": true,
+   "detail": "1 个严重风险发现，来自 3/5 个会话 查看会话 #40"
+  },
+  {
+   "name": "G14 查看节点 lists every node with its state",
+   "pass": true,
+   "detail": "node-a:on,node-b:off"
+  },
+  {
+   "name": "G15 the running list is the running tasks read, with their progress text",
+   "pass": true,
+   "detail": "101"
+  },
+  {
+   "name": "G16 no chart library is loaded and no retired read is sent",
+   "pass": true,
+   "detail": " "
+  },
+  {
+   "name": "G17 the projects list is read once",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "G18 no page error",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "G19 查看失败任务 goes to /tasks?status=failed",
+   "pass": true,
+   "detail": "/tasks?status=failed"
+  },
+  {
+   "name": "G20 the critical item opens the findings of that session",
+   "pass": true,
+   "detail": "/projects/1/sessions/40?view=findings"
+  },
+  {
+   "name": "G21 运行中的任务 goes to /tasks?status=running",
+   "pass": true,
+   "detail": "/tasks?status=running"
+  },
+  {
+   "name": "G22 a non-admin sends no /api/nodes request and sees no node readout",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "G23 empty: the sentence says nothing is running or queued and 现在需要处理 has one line",
+   "pass": true,
+   "detail": "现在没有运行或排队的评估。没有失败的任务。"
+  },
+  {
+   "name": "G24 2000 queued rows read as 至少 2000",
+   "pass": true,
+   "detail": "至少 2000"
+  },
+  {
+   "name": "W1 the rows are the 10 most recent assessment tasks read",
+   "pass": true,
+   "detail": "100,101,103,104,106,107"
+  },
+  {
+   "name": "W2 a row names its project and links to it",
+   "pass": true,
+   "detail": "Example Holdings 2026 应用评估"
+  },
+  {
+   "name": "W3 another project is named from the same single read",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "W4 a task without a session says 未归属项目 and 未评估",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "W5 风险分 is the backend risk_score of the linked session",
+   "pass": true,
+   "detail": "72"
+  },
+  {
+   "name": "W6 no A–F letter is derived from a threshold",
+   "pass": true,
+   "detail": "0"
+  },
+  {
+   "name": "W7 发现 严重/高/中 come from severity-summary.by_session",
+   "pass": true,
+   "detail": "1 3 6"
+  },
+  {
+   "name": "W8 every finished assessment has a 报告 link to /reports?taskId=",
+   "pass": true,
+   "detail": "100>#/reports?taskId=100,104>#/reports?taskId=104,107>#/reports?taskId=107"
+  },
+  {
+   "name": "W9 the session events are the events read",
+   "pass": true,
+   "detail": "41-31,41-30,44-12,40-88,40-87,43-5"
+  },
+  {
+   "name": "W10 有发现 keeps only events with findings",
+   "pass": true,
+   "detail": "41-31"
+  },
+  {
+   "name": "W11 异常 keeps only failed steps",
+   "pass": true,
+   "detail": "40-88"
+  },
+  {
+   "name": "W12 the event poll is the same URL as before",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "W13 the open control goes to the task",
+   "pass": true,
+   "detail": "/tasks/100"
+  },
+  {
+   "name": "W14 创建会话 sends exactly one POST /api/pentest/sessions with the task id",
+   "pass": true,
+   "detail": "[{\"key\":\"POST /api/pentest/sessions\",\"body\":\"{\\\"task_id\\\":107}\"}]"
+  },
+  {
+   "name": "W15 and opens the workbench of the new session",
+   "pass": true,
+   "detail": "/projects/2/sessions/77"
+  },
+  {
+   "name": "W16 a 409 explains itself on the row and stays on the overview",
+   "pass": true,
+   "detail": "任务 #107 还没有完成，不能创建会话。"
+  },
+  {
+   "name": "W17 a failed first read of the events says so and does not stay on the skeleton",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "W18 重试 reads the events again",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "W19 a failed poll keeps the rows and says the latest refresh failed",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "W20 empty: no assessment yet, with 新建评估",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "W21 新建评估 opens /new-assessment",
+   "pass": true,
+   "detail": "/new-assessment"
+  },
+  {
+   "name": "Z tasks-summary 403: 无权限 without retry, no number",
+   "pass": true,
+   "detail": "permission · 运行 无权限"
+  },
+  {
+   "name": "Z tasks-summary 500: 未读取 with retry, no number",
+   "pass": true,
+   "detail": "unread · 运行 未读取 重试"
+  },
+  {
+   "name": "Z severity-summary 403: 无权限 without retry, no number",
+   "pass": true,
+   "detail": "permission · 严重 / 高 风险发现 无权限"
+  },
+  {
+   "name": "Z severity-summary 500: 未读取 with retry, no number",
+   "pass": true,
+   "detail": "unread · 严重 / 高 风险发现 未读取 重试"
+  },
+  {
+   "name": "Z queued 403: 无权限 without retry, no number",
+   "pass": true,
+   "detail": "permission · 排队 无权限"
+  },
+  {
+   "name": "Z queued 500: 未读取 with retry, no number",
+   "pass": true,
+   "detail": "unread · 排队 未读取 重试"
+  },
+  {
+   "name": "Z nodes 403: 无权限 without retry, no number",
+   "pass": true,
+   "detail": "permission · 执行节点在线 无权限"
+  },
+  {
+   "name": "Z nodes 500: 未读取 with retry, no number",
+   "pass": true,
+   "detail": "unread · 执行节点在线 未读取 重试"
+  },
+  {
+   "name": "Z running 403: 无权限 without retry, no number",
+   "pass": true,
+   "detail": "permission · 无权限"
+  },
+  {
+   "name": "Z running 500: 未读取 with retry, no number",
+   "pass": true,
+   "detail": "unread · 运行中的任务暂时无法读取。 未读取 重试"
+  },
+  {
+   "name": "Z events 403: 无权限 without retry, no number",
+   "pass": true,
+   "detail": "permission · 会话事件 未关闭会话的进度事件，每 8 秒刷新 无权限。当前账号不能读取会话事件。"
+  },
+  {
+   "name": "Z events 500: 未读取 with retry, no number",
+   "pass": true,
+   "detail": "unread · 会话事件 未关闭会话的进度事件，每 8 秒刷新 会话事件没有读到。 未读取 重试"
+  },
+  {
+   "name": "Z domain-summary 403: 无权限 without retry, no number",
+   "pass": true,
+   "detail": "permission · 风险发现按域分布 无权限。当前账号不能读取各域的风险发现数。"
+  },
+  {
+   "name": "Z domain-summary 500: 未读取 with retry, no number",
+   "pass": true,
+   "detail": "unread · 风险发现按域分布 各域的风险发现数没有读到。 未读取 重试"
+  },
+  {
+   "name": "Z tasks 403: 无权限 without retry, no number",
+   "pass": true,
+   "detail": "permission · 无权限。当前账号不能读取任务列表。"
+  },
+  {
+   "name": "Z tasks 500: 未读取 with retry, no number",
+   "pass": true,
+   "detail": "unread · 任务列表没有读到。 未读取 重试"
+  },
+  {
+   "name": "Z projects 403: the project is linked by id and its name says 无权限",
+   "pass": true,
+   "detail": "项目 #1（名称无权限）"
+  },
+  {
+   "name": "Z sessions 500: project, score, findings and session cells say 未读取, never 未评估 or 0",
+   "pass": true,
+   "detail": "Compass #100 com.example.compass 无加固 未读取 重试 未读取 未读取 未读取 报告"
+  },
+  {
+   "name": "Z page forbidden: the readout row has no number",
+   "pass": true,
+   "detail": "运行 无权限 排队 无权限 失败 无权限 已完成 无权限 评估总数 无权限 严重 / 高 风险发现 无权限 执行节点在线 无权限"
+  },
+  {
+   "name": "Z page forbidden: no \"现在没有运行中的任务\", no \"共 0 项\", no \"没有需要处理的事项\"",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Z page forbidden: no skeleton left after the reads answered",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Z page forbidden: no retry wording anywhere",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Z page error: the readout row has no number",
+   "pass": true,
+   "detail": "运行 未读取 重试 排队 未读取 重试 失败 未读取 重试 已完成 未读取 重试 评估总数 未读取 重试 严重 / 高 风险发现 未读取 重试 执行节点在线 未读取 重试"
+  },
+  {
+   "name": "Z page error: no \"现在没有运行中的任务\", no \"共 0 项\", no \"没有需要处理的事项\"",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Z page error: no skeleton left after the reads answered",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Z page error: a retry on every failed block",
+   "pass": true,
+   "detail": "11"
+  },
+  {
+   "name": "Z report aggregation 403 (全部): the row says 无权限, not \"—\"",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Z report aggregation 403 (会话报告 table): score, high and counts say 无权限",
+   "pass": true,
+   "detail": "Compass #100 · com.example.compass 未识别 无权限 无权限 无权限 匿名可访问 2 登录后可见 1 已拒绝 7 未判定 2 查看报告"
+  },
+  {
+   "name": "Z report aggregation 500 on the matrix: the cell says 未读取, not 无矩阵",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Z report aggregation 403 on the matrix: the cell says 无权限",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F1 /reports without a scope is 全部",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F2 会话报告 count equals the finished assessments read",
+   "pass": true,
+   "detail": "3"
+  },
+  {
+   "name": "F3 项目报告 count equals project + portfolio reports of every project",
+   "pass": true,
+   "detail": "9"
+  },
+  {
+   "name": "F4 单应用报告 count equals app reports",
+   "pass": true,
+   "detail": "4"
+  },
+  {
+   "name": "F5 全部 is the sum",
+   "pass": true,
+   "detail": "16"
+  },
+  {
+   "name": "F6 全部 shows 12 rows on its first page, newest first",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F7 全部 says how many projects were read",
+   "pass": true,
+   "detail": "3/3 个项目已读取"
+  },
+  {
+   "name": "F8 each project was read once, four at most at a time",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F9 paging: page 2 has the remaining rows",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F10 search filters 全部 (one session report)",
+   "pass": true,
+   "detail": "s-100"
+  },
+  {
+   "name": "F11 switching scope changes only ?scope=",
+   "pass": true,
+   "detail": "/reports?scope=project"
+  },
+  {
+   "name": "F12 the search term is kept",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F13 switching scope sends no request (each project read once)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F14 项目报告 lists project reports only",
+   "pass": true,
+   "detail": "project,project,project,project,project,project,project,project,project"
+  },
+  {
+   "name": "F15 search by report number",
+   "pass": true,
+   "detail": "p-1-31"
+  },
+  {
+   "name": "F16 no match: says so with 清除搜索",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F17 单应用报告 lists app reports only",
+   "pass": true,
+   "detail": "app,app,app,app"
+  },
+  {
+   "name": "F18 the risk filter and the view switch are not offered outside 会话报告",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F19 会话报告 is the hub with its risk filter, sort and three views",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F20 sort 风险分从高到低 orders by the backend risk score",
+   "pass": true,
+   "detail": "100,104,107"
+  },
+  {
+   "name": "F21 risk filter 有高危发现 keeps rows with confirmed high findings",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F22 the hub view switch still offers split, cards and table",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F23 the hub KPI band is retired (counts live on the scope tabs)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F24 an invalid scope falls back to 全部 and the URL drops it",
+   "pass": true,
+   "detail": "/reports"
+  },
+  {
+   "name": "F25 ?scope=project sends no session aggregation",
+   "pass": true,
+   "detail": "GET /api/tasks-summary"
+  },
+  {
+   "name": "F26 ?scope=project reads the project list once and each project once",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F27 ?scope=session sends no project read",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F28 while project reports load, their tabs show no number",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F29 and the session reports are already listed (first screen not blocked)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F30 project list failure: 未读取 on the tabs, never 0",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F31 and the session reports stay listed",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "F32 one project failing and one denied affect only those projects",
+   "pass": true,
+   "detail": "项目报告 8，2 个项目未读取"
+  },
+  {
+   "name": "F33 the progress line says x/y read, which failed and which are denied",
+   "pass": true,
+   "detail": "1/3 个项目已读取，1 个未读取，1 个无权限 重试未读取的项目"
+  },
+  {
+   "name": "F34 重试未读取的项目 re-reads only the projects that did not answer",
+   "pass": true,
+   "detail": "GET /api/pentest/projects/2/reports GET /api/pentest/projects/3/reports"
+  },
+  {
+   "name": "F35 project reads go four at a time",
+   "pass": true,
+   "detail": "4"
+  },
+  {
+   "name": "F36 empty 项目报告: says so, with 去项目里生成",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "L1 ?taskId= is the Phase 6 reader",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "L2 ?taskId= wins over ?scope=",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "L3 ?sid=&cmp= still collapses to ?taskId=",
+   "pass": true,
+   "detail": "/reports?taskId=100"
+  },
+  {
+   "name": "L4 an invalid task falls back to the list",
+   "pass": true,
+   "detail": "/reports"
+  },
+  {
+   "name": "L palette 报告 · 项目报告 opens /reports?scope=project on that tab",
+   "pass": true,
+   "detail": "/reports?scope=project"
+  },
+  {
+   "name": "L palette 报告 · 会话报告 opens /reports?scope=session on that tab",
+   "pass": true,
+   "detail": "/reports?scope=session"
+  },
+  {
+   "name": "L palette 报告 · 单应用报告 opens /reports?scope=app on that tab",
+   "pass": true,
+   "detail": "/reports?scope=app"
+  },
+  {
+   "name": "L8 the task page 报告 link opens the reader",
+   "pass": true,
+   "detail": "/reports?taskId=100"
+  },
+  {
+   "name": "L9 the workbench 在报告工作区打开 opens the reader for its task",
+   "pass": true,
+   "detail": "/reports?taskId=100"
+  },
+  {
+   "name": "L10 the overview 报告 link opens the reader",
+   "pass": true,
+   "detail": "/reports?taskId=100"
+  },
+  {
+   "name": "L11 opening from 会话报告 goes to the reader",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "L12 返回 brings back ?scope=session",
+   "pass": true,
+   "detail": "/reports?scope=session"
+  },
+  {
+   "name": "L13 /reports?scope=app is the list, not the reader",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P1 the project tab uses the shared report table",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P2 8 rows per page",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P3 the newest report is marked",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P4 portfolio and project rows read 项目总报告, app rows 单应用报告",
+   "pass": true,
+   "detail": "#32 · 单应用报告 | #31 · 项目总报告 | #30 · 项目总报告 | #29 · 项目总报告 | #28 · 单应用报告 | #27 · 项目总报告 | #26 · 项目总报告 | #25 · 项目总报告"
+  },
+  {
+   "name": "P5 the columns are what the tab had: 报告, 模板, 页数, 状态, 下载",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P6 the tab read its reports once and nothing else was added",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P7 search keeps working",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P8 page 2 has the rest",
+   "pass": true,
+   "detail": "3"
+  },
+  {
+   "name": "P9 PDF download: same request and file name as before",
+   "pass": true,
+   "detail": "project-1-report-32.pdf"
+  },
+  {
+   "name": "P10 DOCX download",
+   "pass": true,
+   "detail": "project-1-report-32.docx"
+  },
+  {
+   "name": "P11 生成报告 posts kind=portfolio, re-reads the list and downloads the PDF",
+   "pass": true,
+   "detail": "{\"kind\":\"portfolio\",\"template\":\"technical\",\"use_llm\":false} project-1-report-33.pdf"
+  },
+  {
+   "name": "P12 /reports?scope=project renders the same row component",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "P13 and downloads through the same request and file name",
+   "pass": true,
+   "detail": "project-1-report-31.pdf"
+  },
+  {
+   "name": "X1 hub single CSV: same file name as 470c6bf",
+   "pass": true,
+   "detail": "task_100_summary.csv / task_100_summary.csv"
+  },
+  {
+   "name": "X2 hub single CSV: same header and fields",
+   "pass": true,
+   "detail": "﻿任务ID,应用名,包名,壳,合规分,风险级,确认高危,确认,待复核,已排除,矩阵红,矩阵黄,矩阵绿,矩阵灰,Top域违规,更新时间\r"
+  },
+  {
+   "name": "X3 hub single CSV: same content",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X4 hub batch CSV: same file name",
+   "pass": true,
+   "detail": "audit_tasks_summary_3.csv / audit_tasks_summary_3.csv"
+  },
+  {
+   "name": "X5 hub batch CSV: same content",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X6 the same single CSV from a 全部 row",
+   "pass": true,
+   "detail": "task_100_summary.csv"
+  },
+  {
+   "name": "X7 the reader still offers its ten exports (nine downloads and print)",
+   "pass": true,
+   "detail": "vulns_40.csv,auth_matrix_40.csv,auth_matrix_40.json,full_audit_report_task100.json,full_audit_report_task100.md,vulns_evidence_40.json,report_40.html,exec_summary_40.pdf,report_40.zip"
+  },
+  {
+   "name": "X8 reader export file names equal 470c6bf",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X9 CSV exports have the same fields and rows",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X10 JSON exports have the same fields and values (times aside)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X11 the Markdown report is the same",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X12 the PDF, summary and package downloads keep their names and requests",
+   "pass": true,
+   "detail": "report_40.html,exec_summary_40.pdf,report_40.zip"
+  },
+  {
+   "name": "X13 the print view shows the same report",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "X14 the reader frame is unchanged (no reader print sheet on this page)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K1 ArrowRight on the scope tabs moves to 会话报告 and only ?scope= changes",
+   "pass": true,
+   "detail": "/reports?scope=session"
+  },
+  {
+   "name": "K2 End goes to 单应用报告",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K3 ↓ moves to the next report row",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K4 ↑ moves back",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K5 Enter on a session report opens the reader",
+   "pass": true,
+   "detail": "/reports?taskId=100"
+  },
+  {
+   "name": "K6 返回 puts focus back on that row of 全部",
+   "pass": true,
+   "detail": "/reports s-100"
+  },
+  {
+   "name": "K7 Escape closes the download menu and returns focus to its trigger",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K8 every control on the overview shows its focus ring",
+   "pass": true,
+   "detail": "26 stops; no ring: "
+  },
+  {
+   "name": "V overview @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (36 texts)"
+  },
+  {
+   "name": "V all @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (39 texts)"
+  },
+  {
+   "name": "V session @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V project @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (39 texts)"
+  },
+  {
+   "name": "V app @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (39 texts)"
+  },
+  {
+   "name": "V ptab @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (47 texts)"
+  },
+  {
+   "name": "V overview @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (48 texts)"
+  },
+  {
+   "name": "V all @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (45 texts)"
+  },
+  {
+   "name": "V session @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V project @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (45 texts)"
+  },
+  {
+   "name": "V app @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (45 texts)"
+  },
+  {
+   "name": "V ptab @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (58 texts)"
+  },
+  {
+   "name": "V overview @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (87 texts)"
+  },
+  {
+   "name": "V all @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (71 texts)"
+  },
+  {
+   "name": "V session @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V project @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (104 texts)"
+  },
+  {
+   "name": "V app @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (59 texts)"
+  },
+  {
+   "name": "V ptab @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (80 texts)"
+  },
+  {
+   "name": "V overview @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (98 texts)"
+  },
+  {
+   "name": "V all @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (124 texts)"
+  },
+  {
+   "name": "V session @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (68 texts)"
+  },
+  {
+   "name": "V project @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (104 texts)"
+  },
+  {
+   "name": "V app @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (59 texts)"
+  },
+  {
+   "name": "V ptab @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (95 texts)"
+  },
+  {
+   "name": "V overview @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (125 texts)"
+  },
+  {
+   "name": "V all @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (124 texts)"
+  },
+  {
+   "name": "V session @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (68 texts)"
+  },
+  {
+   "name": "V project @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (104 texts)"
+  },
+  {
+   "name": "V app @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (59 texts)"
+  },
+  {
+   "name": "V ptab @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (95 texts)"
+  },
+  {
+   "name": "V overview @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (128 texts)"
+  },
+  {
+   "name": "V all @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (124 texts)"
+  },
+  {
+   "name": "V session @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (68 texts)"
+  },
+  {
+   "name": "V project @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (104 texts)"
+  },
+  {
+   "name": "V app @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (59 texts)"
+  },
+  {
+   "name": "V ptab @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (95 texts)"
+  },
+  {
+   "name": "V overview @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (36 texts)"
+  },
+  {
+   "name": "V all @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (39 texts)"
+  },
+  {
+   "name": "V session @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V project @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (39 texts)"
+  },
+  {
+   "name": "V app @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (39 texts)"
+  },
+  {
+   "name": "V ptab @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (47 texts)"
+  },
+  {
+   "name": "V overview @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (48 texts)"
+  },
+  {
+   "name": "V all @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (45 texts)"
+  },
+  {
+   "name": "V session @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V project @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (45 texts)"
+  },
+  {
+   "name": "V app @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (45 texts)"
+  },
+  {
+   "name": "V ptab @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (58 texts)"
+  },
+  {
+   "name": "V overview @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (87 texts)"
+  },
+  {
+   "name": "V all @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (71 texts)"
+  },
+  {
+   "name": "V session @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V project @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (104 texts)"
+  },
+  {
+   "name": "V app @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (59 texts)"
+  },
+  {
+   "name": "V ptab @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (80 texts)"
+  },
+  {
+   "name": "V overview @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (98 texts)"
+  },
+  {
+   "name": "V all @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (124 texts)"
+  },
+  {
+   "name": "V session @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (68 texts)"
+  },
+  {
+   "name": "V project @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (104 texts)"
+  },
+  {
+   "name": "V app @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (59 texts)"
+  },
+  {
+   "name": "V ptab @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (95 texts)"
+  },
+  {
+   "name": "V overview @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (125 texts)"
+  },
+  {
+   "name": "V all @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (124 texts)"
+  },
+  {
+   "name": "V session @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (68 texts)"
+  },
+  {
+   "name": "V project @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (104 texts)"
+  },
+  {
+   "name": "V app @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (59 texts)"
+  },
+  {
+   "name": "V ptab @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (95 texts)"
+  },
+  {
+   "name": "V overview @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (128 texts)"
+  },
+  {
+   "name": "V all @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (124 texts)"
+  },
+  {
+   "name": "V session @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (68 texts)"
+  },
+  {
+   "name": "V project @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (104 texts)"
+  },
+  {
+   "name": "V app @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (59 texts)"
+  },
+  {
+   "name": "V ptab @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (95 texts)"
+  },
+  {
+   "name": "S overview empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S overview stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S all stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S session stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S project stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S app stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S ptab stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  }
+ ]
+}
