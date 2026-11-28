@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { api } from '@/services/api';
 
-export interface ContextChip { key: string; kind: 'session' | 'finding' | 'request'; label: string; /** The quoted line. */ text: string; fixed?: boolean }
+export interface ContextChip { key: string; kind: 'session' | 'finding' | 'request' | 'task'; label: string; /** The quoted line. */ text: string; fixed?: boolean }
 export interface ComposerCommand { id: string; label: string; hint: string; /** Why the command cannot run now. */ disabled?: string; run: () => void }
 export interface ContextOption { key: string; label: string; hint?: string; chip: ContextChip }
 export type SendResult = { ok: true } | { ok: false; status?: number; message: string };
@@ -57,17 +57,19 @@ export function useComposer(opts: {
   contextOptions: ContextOption[];
   canSend: boolean;
   onSend: (message: string) => Promise<SendResult>;
+  /** Without context quoting (the Agent): no built-in "/引用" command. */
+  noCite?: boolean;
 }) {
-  const { scope, fixed, contextOptions, canSend, onSend } = opts;
+  const { scope, fixed, contextOptions, canSend, onSend, noCite } = opts;
   const [text, setText] = useState('');
   const added = useDraftChips(scope);
   const chips = useMemo(() => [...fixed, ...added], [fixed, added]);
   const [forced, setForced] = useState<'context' | null>(null);
   // "/引用" belongs to the composer itself: it opens the context menu, like the "+" beside the chips.
-  const commands = useMemo<ComposerCommand[]>(() => [...opts.commands, {
+  const commands = useMemo<ComposerCommand[]>(() => (noCite ? opts.commands : [...opts.commands, {
     id: 'cite', label: '/引用', hint: '引用一条风险发现作为上下文',
     disabled: contextOptions.length ? undefined : '这个会话还没有可引用的风险发现', run: () => setForced('context'),
-  }], [opts.commands, contextOptions.length]);
+  }]), [opts.commands, contextOptions.length, noCite]);
   const [dismissed, setDismissed] = useState('');
   const [index, setIndex] = useState(0);
   const [sending, setSending] = useState(false);
@@ -79,10 +81,11 @@ export function useComposer(opts: {
     if (forced) return { type: 'context', query: '' };
     if (dismissed === text) return null;
     if (/^\/\S*$/.test(text)) return { type: 'command', query: text.slice(1) };
+    if (noCite) return null;
     const at = /(?:^|\s)@(\S*)$/.exec(text);
     if (at) return { type: 'context', query: at[1] };
     return null;
-  }, [text, forced, dismissed]);
+  }, [text, forced, dismissed, noCite]);
 
   const commandHits = useMemo(() => (menu?.type === 'command' ? commands.filter((c) => c.label.slice(1).includes(menu.query) || c.id.includes(menu.query.toLowerCase())) : []), [menu, commands]);
   const contextHits = useMemo(() => (menu?.type === 'context'

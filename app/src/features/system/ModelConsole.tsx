@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Eye, EyeOff, Plug } from 'lucide-react';
 import {
-  Button, Panel, StatusBadge, Tag, SkeletonLoader, EmptyState, Field, Input, Select, Checkbox, Drawer, ConfirmDialog, InlineAlert, FactRow,
+  Button, Panel, StatusBadge, Tag, SkeletonLoader, EmptyState, Field, Input, Select, Checkbox, Drawer, ConfirmDialog, InlineAlert, FactRow, PermissionState,
 } from '@/components/ui';
+import { useSlow } from '@/features/dashboard/readout';
 import { api } from '@/services/api';
 
 /** R52 P0-1: G2 模型路由控制台 —— 供应商卡片矩阵 + 配置抽屉(脱敏 key) + 三段式连通性探针 + 分流规则。
@@ -56,22 +57,28 @@ const VENDORS = [
   { key: 'ollama', label: 'Ollama 本地', hint: '127.0.0.1:11434' },
 ];
 
-export const ModelConsole: React.FC = () => {
+export const ModelConsole: React.FC<{ refresh?: number }> = ({ refresh = 0 }) => {
   const [data, setData] = useState<{ providers: any[]; active_id: string | null; active_model?: string } | null>(null);
   const [routing, setRouting] = useState<{ inference?: string | null; cleaning?: string | null; report?: string | null; fallback?: string | null } | null>(null);
   const [drawer, setDrawer] = useState<null | { mode: 'add'; vendor: string } | { mode: 'edit'; provider: any }>(null);
   const [probes, setProbes] = useState<Record<string, Probe>>({});
   const [probing, setProbing] = useState<string | null>(null);
   const [toast, setToast] = useState('');
-  const [loadFailed, setLoadFailed] = useState(false);
+  // A failed read: its status, and whether a list read earlier is still on screen (stale) or nothing was read.
+  const [loadFailed, setLoadFailed] = useState<false | { status?: number; stale: boolean }>(false);
+  const had = useRef(false);
+  const [routingFailed, setRoutingFailed] = useState<false | number>(false);
   const [confirmDel, setConfirmDel] = useState<any | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const reload = useCallback(() => {
-    api<any>('/api/models/providers').then((r) => { setData(r); setLoadFailed(false); }).catch(() => { setData({ providers: [], active_id: null }); setLoadFailed(true); });
-    api<any>('/api/models/routing').then((r) => setRouting(r.routing)).catch(() => setRouting(null));
+    api<any>('/api/models/providers').then((r) => { setData(r); had.current = true; setLoadFailed(false); })
+      .catch((e: any) => { setLoadFailed({ status: e?.status, stale: had.current }); setData((d) => d ?? { providers: [], active_id: null }); });
+    api<any>('/api/models/routing').then((r) => { setRouting(r.routing); setRoutingFailed(false); }).catch((e: any) => { setRouting(null); setRoutingFailed(Number(e?.status) || 500); });
   }, []);
   useEffect(() => { reload(); }, [reload]);
+  useEffect(() => { if (refresh) reload(); }, [refresh]); // eslint-disable-line react-hooks/exhaustive-deps
+  const slow = useSlow(!data);
 
   const runProbe = async (pid: string) => {
     setProbing(pid);
@@ -103,7 +110,7 @@ export const ModelConsole: React.FC = () => {
     reload();
   };
 
-  if (!data) return <Panel title="模型服务"><SkeletonLoader variant="card" rows={2} /></Panel>;
+  if (!data) return <Panel title="模型服务"><div data-state="loading"><SkeletonLoader variant="card" rows={2} />{slow && <p role="status" className="pt-2 text-label text-jz-muted" data-slow>仍在读取模型服务,接口响应较慢。</p>}</div></Panel>;
   const ps = data.providers || [];
 
   return (
@@ -122,12 +129,20 @@ export const ModelConsole: React.FC = () => {
           const keyed = ps.filter((p) => p.key_masked).length;
           const probed = ps.filter((p) => probes[p.id]);
           const okN = probed.filter((p) => probes[p.id]?.error_class === 'OK').length;
+          const unread = !!loadFailed && !loadFailed.stale;
           return (
-            <FactRow className="px-5 py-4" facts={[
+            // A list that was not read says 未读取 here; none of these counts is 0 for it.
+            unread ? <FactRow className="px-5 py-4" facts={[
+              { label: '供应商', value: '未读取', hint: '供应商列表没有读到' },
+              { label: '主力模型', value: '未读取' },
+              { label: '已配置 Key', value: '未读取' },
+              { label: '分流规则', value: routingFailed ? '未读取' : `${routed}/${slots.length}`, tone: routingFailed ? 'default' : routed < slots.length ? 'attention' : 'success' },
+              { label: '探针', value: '—', hint: '尚未探测' },
+            ]} /> : <FactRow className="px-5 py-4" facts={[
               { label: '供应商', value: ps.length, hint: `已启用 ${ps.filter((p) => p.enabled !== false).length}` },
               { label: '主力模型', value: <span className="text-body font-medium">{(() => { const a = ps.find((p) => p.id === data.active_id); return a ? `${a.label || a.vendor || a.name || a.id} · ${a.model || '—'}` : data.active_model || '未设置'; })()}</span> },
               { label: '已配置 Key', value: `${keyed}/${ps.length}`, tone: ps.length && keyed < ps.length ? 'attention' : 'default' },
-              { label: '分流规则', value: `${routed}/${slots.length}`, tone: routed < slots.length ? 'attention' : 'success', hint: routed < slots.length ? '有任务类型未配置模型' : '全部已配置' },
+              { label: '分流规则', value: routingFailed ? '未读取' : `${routed}/${slots.length}`, tone: routingFailed ? 'default' : routed < slots.length ? 'attention' : 'success', hint: routingFailed ? '分流规则没有读到' : routed < slots.length ? '有任务类型未配置模型' : '全部已配置' },
               { label: '探针', value: probed.length ? `${okN}/${probed.length}` : '—', tone: probed.length && okN < probed.length ? 'danger' : probed.length ? 'success' : 'default', hint: probed.length ? '通过 / 已探测' : '尚未探测' },
             ]} />
           );
@@ -155,6 +170,9 @@ export const ModelConsole: React.FC = () => {
 
       <h2 className="jz-section -mb-2 text-jz-ink" data-model-settings>设置</h2>
       <Panel title="分流规则" description="主模型返回 429 或超出限额时自动改用兜底模型,并在时间线上标记。">
+        {routingFailed && (routingFailed === 403 || routingFailed === 401
+          ? <InlineAlert tone="info" className="mb-3" data-routing-error>无权限读取分流规则(接口返回 403),下面的“未配置”不代表没有配置。</InlineAlert>
+          : <InlineAlert tone="danger" className="mb-3" data-routing-error action={<Button size="sm" variant="secondary" onClick={reload}>重试</Button>}>分流规则未读取,下面的“未配置”不代表没有配置。</InlineAlert>)}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 desktop:grid-cols-4">
           {[['inference', '推理任务(逆向、因果分析)'], ['cleaning', '清洗任务(流量、日志)'], ['report', '报告生成'], ['fallback', '兜底模型']].map(([k, label]) => (
             <Field key={k} label={label}>
@@ -169,10 +187,14 @@ export const ModelConsole: React.FC = () => {
         </div>
       </Panel>
 
-      <Panel title={`供应商(${ps.length})`} description="模型服务的连接配置。连通性探针依次检查 DNS 与 TLS、鉴权和一次生成请求。">
-        {loadFailed && <InlineAlert tone="danger" className="mb-3" action={<Button size="sm" variant="secondary" onClick={reload}>重试</Button>}>供应商列表没有加载成功,下面的内容可能不完整。</InlineAlert>}
-        {ps.length === 0 ? (
-          <EmptyState compact icon={Plug} title="还没有配置供应商" cause="从下方“添加供应商”选择一种开始。" />
+      <Panel title={loadFailed && !loadFailed.stale ? '供应商(未读取)' : `供应商(${ps.length})`} description="模型服务的连接配置。连通性探针依次检查 DNS 与 TLS、鉴权和一次生成请求。">
+        {loadFailed && (loadFailed.stale
+          ? <InlineAlert tone="attention" className="mb-3" data-state="stale" action={<Button size="sm" variant="secondary" onClick={reload}>刷新</Button>}>最近一次刷新未成功,下面是上次读到的供应商列表。</InlineAlert>
+          : loadFailed.status === 403 || loadFailed.status === 401
+            ? <div data-models-denied><PermissionState compact title="无权限" message="当前账号不能读取供应商列表(接口返回 403)。" /></div>
+            : <InlineAlert tone="danger" className="mb-3" data-models-error action={<Button size="sm" variant="secondary" onClick={reload}>重试</Button>}>供应商列表未读取,下面没有显示的供应商不代表没有配置。</InlineAlert>)}
+        {loadFailed && !loadFailed.stale ? null : ps.length === 0 ? (
+          <div data-models-empty><EmptyState compact icon={Plug} title="还没有配置供应商" cause="从下方“添加供应商”选择一种开始。" /></div>
         ) : (
           <div className="grid grid-cols-1 gap-3 desktop:grid-cols-2">
             {ps.map((p) => {

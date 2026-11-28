@@ -22,6 +22,10 @@ export function useAgentSession() {
   const [lastEvent, setLastEvent] = useState('');
   const [metrics, setMetrics] = useState<any>(null);
   const [events, setEvents] = useState<AgentEvent[]>([]);
+  // Read states (Phase 9, presentation only): whether the session list and the web setting were read, and the
+  // status of a failed list read, so the page can say 未读取 / 无权限 instead of an empty list or "off".
+  const [listRead, setListRead] = useState<{ state: 'loading' | 'ok' | 'failed'; status?: number }>({ state: 'loading' });
+  const [webKnown, setWebKnown] = useState<'loading' | 'ok' | 'failed'>('loading');
 
   const currentRef = useRef('');
   const modeRef = useRef<'agent' | 'quick'>('agent');
@@ -43,9 +47,10 @@ export function useAgentSession() {
       const rows = await api<AgentSession[]>('/api/agent/sessions');
       if (!mountedRef.current) return;
       setSessions(rows || []);
+      setListRead({ state: 'ok' });
       if (!currentRef.current && rows?.length) setCurrent(rows[0].id);
     } catch (e: any) {
-      if (mountedRef.current) setError(e?.message || '会话列表加载失败');
+      if (mountedRef.current) { setError(e?.message || '会话列表加载失败'); setListRead({ state: 'failed', status: e?.status }); }
     }
   }, []);
 
@@ -55,7 +60,8 @@ export function useAgentSession() {
     try {
       const s = await api<{ web_enabled: boolean }>('/api/agent/settings');
       setWebEnabled(!!s.web_enabled);
-    } catch { /* keep default off */ }
+      setWebKnown('ok');
+    } catch { setWebKnown('failed'); /* the switch value is unknown, not off */ }
   }, []);
   useEffect(() => { loadSettings(); }, [loadSettings]);
 
@@ -432,7 +438,7 @@ export function useAgentSession() {
     sessions, current, setCurrent, nodes, running, connected, loading, error,
     liveText, liveReasoning, lastSeq, lastEvent, metrics, events,
     loadSessions, createSession, send, stop, remove, decideApproval, submitFeedback, exportTrajectory, forkSession,
-    mode, setMode, webEnabled, toggleWeb,
+    mode, setMode, webEnabled, toggleWeb, listRead, webKnown,
     reconnect: () => { backoffRef.current.reset(); connect(currentRef.current, lastSeqRef.current); },
   };
 }

@@ -789,6 +789,27 @@ surface、surface-2 上作为非文字元素 ≥ 3 : 1。
 - 从 `?taskId=` / `?sid=` 深链进入阅读器时不读项目报告；返回列表后才读。
 - 体积：主包 72.46 kB（gzip 24.08）；`DashboardPage` 28.08 kB（gzip 9.68），不再加载 ECharts；`ReportCenterPage` 82.08 kB（gzip 28.29）。
 
+**Phase 9 实施说明（2026-11-28，按 cz 确认的计划，D1–D6 全部按默认）。** 与计划文档不同的地方，以实现为准：
+
+- 知识页实际文件：`features/knowledge/{KnowledgePage,LibraryTab,SkillDetail,ReviewTab,CandidateRow,KnowledgeGraph}.tsx`、
+  `features/knowledge/{knowledgeModel,useKnowledgeReads}.ts`；证据页：`features/evidence/{EvidencePage.tsx,evidenceModel.ts}`；
+  系统新标签：`features/system/tabs/{RuntimeTab,DevicesTab,DiagnosticsTab,sysShared}.tsx`（按需加载）；AI 助手：`ArchiveDialogs.tsx`（按需加载）。
+- `useAgentSession` 不是“一行不改”：加了两个只读状态（`listRead`、`webKnown`），请求不变。没有它们，Agent 无法区分 403、读取失败和空列表，
+  联网设置读取失败时也会显示成“关闭”。
+- 计划里“Agent 检查器里的联网设置链接”没有加：非管理员点进系统页只会看到权限页。联网开关仍在 Composer 的 /联网 和“更多”菜单里。
+- Agent 检查器（`AgentInspector`）和 AI 助手的检视器（`InspectorPanel`）改为按需加载的独立包，使两个页面的包不超过 777f03e。
+  检视器关闭时本来就不渲染，首屏数据请求不变。
+- Agent 输入框外层去掉了 `overflow-hidden`：它把向上展开的斜杠命令菜单裁掉了（空会话主视觉里菜单点不到）。
+- 会话栏的删除按钮原来只在鼠标悬停时出现，键盘到不了；现在聚焦到会话时也会出现，打开确认框的那一行在确认框关闭后保持显示，焦点能回到按钮上（Agent 和 AI 助手同样处理）。
+- 看状态截图后补的“未读到不显示 0”：技能库读取失败时不显示分页“共 0 项”；模型健康区在供应商未读到时写“未读取”，分流规则未读到时说明“未配置”不代表没有配置；
+  Agent 会话栏在列表未读到时不显示“任务 0 / 测试 0”；设备列表来自外壳轮询，没有读取状态，所以为空时不显示“0 台”，空态说明里写明读取失败时同样为空。
+- 夹具只加字段和条目：候选 1–6 的理由、证据引用、来源、会话；技能的场景、路径、实战记录；Agent 会话 a2（运行中，等待一次审批）；
+  资源用量的 `llm` 和 `slots`（`disk` 仍是数字，诊断页据此显示“未返回”）。AI 助手的会话没有 `last_msg`，列表会隐藏它；需要它出现的检查自己补字段，不改夹具。
+- 状态格第一次完整运行找出的两处窄屏问题已改：Agent 在 1024 以下无权限和读取中只占顶部一小块，现在居中占满对话区；
+  AI 助手在 1024 以下会话列表在抽屉里，读取失败、无权限和过期的说明看不到，现在归档说明行里也写出（宽屏只在列表里写）。
+  Composer 的“模式”切换在 390 宽被挤成竖排，现在只在传了 `modeControl` 时让控制行换行（工作台不传，不受影响）。
+- 体积见 CHANGELOG。
+
 ---
 
 ## 8. 截图、状态与无障碍测试计划

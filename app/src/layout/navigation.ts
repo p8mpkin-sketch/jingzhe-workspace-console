@@ -62,6 +62,13 @@ export const NAV_SCOPES: Array<{ to: string; label: string; parent: string }> = 
   { parent: '报告', label: '会话报告', to: `${PATHS.reports}?scope=session` },
   { parent: '报告', label: '单应用报告', to: `${PATHS.reports}?scope=app` },
   { parent: '知识', label: '候选审核', to: `${PATHS.knowledge}?tab=review` },
+  { parent: '系统', label: '模型', to: `${PATHS.system}?tab=models` },
+  { parent: '系统', label: '运行', to: `${PATHS.system}?tab=runtime` },
+  { parent: '系统', label: '设备', to: `${PATHS.system}?tab=devices` },
+  { parent: '系统', label: '诊断', to: `${PATHS.system}?tab=diagnostics` },
+  { parent: '系统', label: '审计日志', to: `${PATHS.system}?tab=audit` },
+  { parent: '系统', label: '用户与权限', to: `${PATHS.system}?tab=users` },
+  { parent: '系统', label: 'API Token', to: `${PATHS.system}?tab=tokens` },
 ];
 
 /** First path segment → destination. Old segments are listed so a page that still asks by its old path gets the V3 name. */

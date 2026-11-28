@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Sun, Moon, Settings, ChevronDown, ChevronRight, Menu, LogOut, History, Search, Archive } from 'lucide-react';
+import { Sun, Moon, Settings, ChevronDown, ChevronRight, Menu, LogOut, History, Search, Archive, Cpu } from 'lucide-react';
 import { useAuth } from '@/stores/auth';
 import { cx, IconButton, Popover, MenuItem } from '@/components/ui';
 import { NAV_ACTION, PATHS } from './navigation';
@@ -85,6 +85,7 @@ export const TopBar: React.FC<{ onOpenNav?: () => void }> = ({ onOpenNav }) => {
                   <div className="truncate text-meta text-jz-muted">{me?.role || ''}</div>
                 </div>
                 <MenuItem icon={<Settings size={16} aria-hidden />} onClick={() => { close(); navigate(PATHS.system); }} data-menu-system>系统</MenuItem>
+                <MenuItem icon={<Cpu size={16} aria-hidden />} onClick={() => { close(); navigate(`${PATHS.system}?tab=models`); }} data-menu-models>模型与运行</MenuItem>
                 <MenuItem icon={<Archive size={16} aria-hidden />} onClick={() => { close(); navigate(PATHS.archive); }} data-menu-archive>AI 助手归档</MenuItem>
                 <a href="/" role="menuitem" className="flex h-jz-control w-full items-center gap-2 whitespace-nowrap rounded-control px-2.5 text-label text-jz-ink hover:bg-jz-hover max-[760px]:h-jz-touch">
                   <History size={16} aria-hidden />返回旧版界面

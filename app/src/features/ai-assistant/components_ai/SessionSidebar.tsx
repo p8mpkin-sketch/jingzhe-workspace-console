@@ -2,6 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { pressable } from '@/components/ui';
 import { ChevronDown, ChevronRight, Pin, Search } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { Link } from 'react-router-dom';
+import { useSlow } from '@/features/dashboard/readout';
+
+/** Session-list read: loading, read, or failed (with the HTTP status; stale when a list was shown before). */
+export type ListRead = { state: 'loading' | 'ok' | 'failed'; status?: number; stale?: boolean };
 
 /** P2-②(修正版): 会话列工作台——在 C-UI 会话列(自动标题/时间分组/置顶/重命名/删除)之上增强:
  *  关键词搜索(title/last_msg/包名模糊,前端 useMemo 真值过滤)+ 任务树可折叠 + 批量管理模式
@@ -32,7 +37,13 @@ export const SessionSidebar: React.FC<{
   onRename: (s: ChatSession) => void;
   onDelete: (s: ChatSession) => void;
   onBatchDelete: (ids: string[]) => void;
-}> = ({ sessions, current, taskMap, grp, setGrp, searchRef, onSelect, onNew, onTogglePin, onRename, onDelete, onBatchDelete }) => {
+  read?: ListRead;
+  onReload?: () => void;
+}> = ({ read = { state: 'ok' }, onReload, sessions, current, taskMap, grp, setGrp, searchRef, onSelect, onNew, onTogglePin, onRename, onDelete, onBatchDelete }) => {
+  const slow = useSlow(read.state === 'loading');
+  const denied = read.status === 401 || read.status === 403;
+  // The item whose action opened a dialog keeps its actions shown, so focus can return to the button.
+  const [hold, setHold] = useState('');
   const [q, setQ] = useState('');
   const [batch, setBatch] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -99,14 +110,14 @@ export const SessionSidebar: React.FC<{
       </div>
       {s.pinned ? <Pin size={10} className="flex-none text-jz-brand fill-current group-hover:hidden" /> : null}
       {!batch && (
-        <span className="hidden group-hover:flex group-focus-within:flex gap-0.5 flex-none" data-chat-actions>
+        <span className={`${hold === s.id ? 'flex' : 'hidden group-hover:flex group-focus-within:flex'} gap-0.5 flex-none`} data-chat-actions>
           <button onClick={(e) => { e.stopPropagation(); onTogglePin(s); }} data-pin-btn
             className={`px-0.5 ${s.pinned ? 'text-jz-brand' : 'text-jz-muted hover:text-jz-brand'}`}
             title={s.pinned ? '取消置顶' : '置顶'} aria-label={s.pinned ? '取消置顶' : '置顶'}>
             <Pin size={11} className={s.pinned ? 'fill-current' : ''} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onRename(s); }} className="text-meta text-jz-muted hover:text-jz-brand px-0.5" title="重命名" aria-label="重命名">✎</button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="text-meta text-jz-muted hover:text-jz-sev-critical px-0.5" title="删除" aria-label="删除会话">✕</button>
+          <button onClick={(e) => { e.stopPropagation(); setHold(s.id); onRename(s); }} className="text-meta text-jz-muted hover:text-jz-brand px-0.5" title="重命名" aria-label="重命名">✎</button>
+          <button onClick={(e) => { e.stopPropagation(); setHold(s.id); onDelete(s); }} className="text-meta text-jz-muted hover:text-jz-sev-critical px-0.5" title="删除" aria-label="删除会话">✕</button>
         </span>
       )}
     </div>
@@ -135,6 +146,24 @@ export const SessionSidebar: React.FC<{
           data-session-search-input
           className="w-full pl-7 pr-2 py-1.5 rounded-control bg-jz-surface/70 text-meta text-jz-ink placeholder:text-jz-muted outline-none focus:ring-1 focus:ring-jz-brand/50" />
       </div>
+      {read.state === 'loading' && (
+        <div className="px-1.5 py-2 text-meta text-jz-muted" data-state="loading" data-ai-list-loading>
+          <div className="mb-1 h-3 w-3/4 animate-pulse rounded-control bg-jz-hover" />正在读取会话…{slow && <span data-slow>读取较慢,请稍候。</span>}
+        </div>
+      )}
+      {read.state === 'failed' && (
+        <div className="mb-2 rounded-control border border-jz-border px-2 py-1.5 text-meta" data-state={denied ? 'forbidden' : read.stale ? 'stale' : 'error'} data-ai-list-error>
+          <span className={denied ? 'text-jz-ink-2' : 'text-jz-amber-ink'}>
+            {denied ? '当前账号不能读取会话列表。' : read.status === 429 ? '请求过于频繁,已被频率限制,稍后再试。' : read.stale ? '刷新失败,下面是上次读到的列表。' : '会话列表未读取,数量未知。'}
+          </span>
+          {!denied && onReload && <button type="button" onClick={onReload} className="ml-1 rounded-control underline" data-ai-list-retry>重试</button>}
+        </div>
+      )}
+      {read.state === 'ok' && !matches && vis.length === 0 && (
+        <div className="px-1.5 py-2 text-meta text-jz-muted" data-state="empty" data-ai-list-empty>
+          还没有归档对话。新的审计对话请用 <Link to="/agent" className="text-jz-ink underline">Agent</Link>。
+        </div>
+      )}
       {matches ? (
         <div className="mb-2" data-grp-search>
           {grpHeader(`搜索结果(${matches.length})`)}

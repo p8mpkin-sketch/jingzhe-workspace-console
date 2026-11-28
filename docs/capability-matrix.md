@@ -593,6 +593,139 @@ last column).
 Report aggregation (summary, auth_matrix, vulns/grouped per finished task) keeps its URLs and direct `fetch`, and now
 keeps the HTTP status: a 403 reads 无权限 and a failure 未读取 in the row, instead of “—”.
 
+## Knowledge, agent, evidence, system (V3 Phase 9)
+
+`/knowledge` is `features/knowledge/KnowledgePage` with two tabs on `?tab=` (技能库, 候选审核 for admins; D1): the
+library is `LibraryTab` + `SkillDetail` (drawer), the review is `ReviewTab` + `CandidateRow` / `CandidateDetail`,
+and the relation query is `KnowledgeGraph`, loaded only when its disclosure is opened. `/evidence` is
+`features/evidence/EvidencePage`; its rows and detail are `EvidenceRow` / `EvidenceDetail`, the same components the
+workbench 关系图 uses. `/agent` keeps `useAgentSession`, `AgentWorkspace`, the sidebar, transcript and inspector;
+its input is the shared `Composer` (Phase 4) with three optional props (`modelPicker`, `modeControl`,
+`sendWhileRunning`). `/system` has seven tabs on `?tab=` (D4). The AI assistant archive's browser confirm and prompt
+are kit dialogs (`ArchiveDialogs`, D6). Retired: `features/skills/*`, `features/discovery/DiscoveryPage.tsx`,
+`features/agent/components_agent/AgentComposer.tsx`. No route, endpoint, permission or storage key is added or
+changed (`apksec-skills-local`, `agent-inspector` unchanged). Covered by `scripts/check-knowledge-agent-evidence.mjs`
+(groups in the last column). The former pages had 82 capabilities; every one has an owner below.
+
+### `/knowledge` (29 capabilities of the former SkillsPage, SkillCard, CandidateCard)
+
+| # | Capability of the former page | Owner in Phase 9 | Hook | Check |
+| --- | --- | --- | --- | --- |
+| 1 | List read (`/api/skills`) | `LibraryTab` table; 403 and failure are separate states | `data-skill-row`, `data-skills-error` | K3, Q17, S |
+| 2 | Empty list with rescan and import | `LibraryTab` empty state | `data-skills-empty`, `data-skills-empty-rescan`, `data-skills-empty-import` | S |
+| 3 | Failed read | `ErrorState` with 重试; the readout says 未读取, the pager is hidden | `data-skills-error` | Q10, S |
+| 4 | Reset category / search | 清除筛选 in the filtered-empty state | `data-skills-reset-tab` | K5 |
+| 5 | Total count | Readout 条目 (list + local entries) | `data-knowledge-total` | K1, Q10 |
+| 6 | Distilled drafts count | Readout 蒸馏草案 | `data-readout-row` | S |
+| 7 | Local entries count | Readout 本地条目 (read from this browser) | `data-readout-row` | K23 |
+| 8 | Source category tabs with counts | Category buttons above the table | `data-scene-tab` | K6 |
+| 9 | Search | Toolbar search | `data-skill-search` | K4, K5 |
+| 10 | Four sorts | Toolbar sort | `data-skill-sort` | K7 |
+| 11 | Paging | Toolbar pager (only once the list is read) | `data-skill-grid` | K8 |
+| 12 | Skill card: kind, shortened path, uses, win bar | Table row (cards below 900 px); full facts in the drawer | `data-skill-card`, `data-skill-winbar`, `data-skill-path-pill` | K9, V |
+| 13 | Enable / disable | `SkillDetail` actions; PATCH `/api/skills/{id}/status` unchanged | `data-skill-enable`, `data-skill-disable` | K12, K13 |
+| 14 | Promote a draft | `SkillDetail` actions | `data-skill-promote` | K14 |
+| 15 | Delete with confirm | `ConfirmDialog` with the outcome (built-in, normal, local) | `data-skill-delete` | K15–K17 |
+| 16 | Delete a local entry | Same confirm; removes only the browser record | `data-skill-delete` | K15 |
+| 17 | Source text (`/api/skills/{id}/source`) | `SkillDetail` 来源, read when the drawer opens; 403 own state | `data-skill-source`, `data-source-pre`, `data-source-error` | K10 |
+| 18 | Copy source / path | Copy buttons in 来源 and 注册路径 | `data-source-copy`, `data-skill-path-pill` | K11 |
+| 19 | Rescan (`POST /api/skills/scan`) | Header 更多 › 重新扫描; result line | `data-skills-rescan`, `data-scan-msg` | K26, K27 |
+| 20 | Import (pack, path, URL) | 更多 › 导入技能包(本地) / 从路径或 URL 导入 dialogs | `data-skills-pack-import`, `data-skills-import-btn`, `data-import-panel` | K24, K25 |
+| 21 | Local custom entry (`apksec-skills-local`) | 更多 › 新建本地条目 dialog | `data-skill-new`, `data-skill-new-form` | K21, K22 |
+| 22 | Distill from a task (`POST /api/skills/distill`) | 更多 › 从任务提炼 dialog | `data-distill-open`, `data-distill-panel`, `data-distill-btn` | K28, K29 |
+| 23 | Mount / unmount, mounted list | `SkillDetail` 挂载到任务 | `data-skill-mount`, `data-mount-btn`, `data-unmount-btn`, `data-mounted-panel` | K18–K20 |
+| 24 | Usage notes panel | Header 说明 disclosure | `data-knowledge-help-toggle`, `data-knowledge-help` | V |
+| 25 | Workspace switch (library / review, admin) and pending hint | Tabs on `?tab=` with the pending count (未读取 until read) | `data-knowledge-tab`, `data-skills-primary-tab` | T5, KB1, KB2, Q8, Q12 |
+| 26 | Candidate card: category, content, vectors, raw text, refs, source | `CandidateRow` (reason and source always on the row) + `CandidateDetail` drawer | `data-kb-cand-card`, `data-kb-reason`, `data-kb-refs`, `data-kb-source`, `data-kb-cand-inspector` | R1–R11, R27, T6 |
+| 27 | Pre-review verdict, filter, run pre-review | `ReviewTab` count, filter, 预审 (POST `{limit: 20}`); 429 / 403 explained | `data-kb-pre-count`, `data-kb-pre-filter-btn`, `data-kb-prereview-btn`, `data-kb-pre-msg` | R12–R18, R28 |
+| 28 | Approve / reject, batch approve / reject | Single POST `{id, action}`; reject and batch through confirms that repeat reason and source; 已决定 record | `data-kb-approve`, `data-kb-reject`, `data-kb-bulk-bar`, `data-kb-decided-list` | R19–R26 |
+| 29 | Knowledge graph query (admin) | `KnowledgeGraph` in the 知识关联查询 disclosure; ECharts loads on the first result | `data-kb-graph-disclosure`, `data-kb-graph-query` | T7 |
+
+### `/agent` (25 capabilities)
+
+| # | Capability | Owner in Phase 9 | Hook | Check |
+| --- | --- | --- | --- | --- |
+| 1 | Session search | `AgentSidebar`, unchanged | `data-agent-search` | V |
+| 2 | Group by time / task | unchanged | `data-agent-group-time`, `data-agent-group-task` | V |
+| 3 | Only open sessions | unchanged | `data-agent-only-open` | V |
+| 4 | Only risky sessions | unchanged | `data-agent-only-risk` | V |
+| 5 | Sort by risk | unchanged | `data-agent-sort-risk` | V |
+| 6 | Batch delete | Kit `ConfirmDialog` (was the browser confirm); request unchanged | `data-agent-manage`, `data-agent-batch-delete` | C14, C15 |
+| 7 | Session preview line | unchanged | `data-agent-session-preview` | V |
+| 8 | User message | `TurnView`, unchanged | `data-agent-user` | A |
+| 9 | Answer card | `AnswerCard`, unchanged | `data-agent-assistant-card` | A |
+| 10 | Narration | unchanged | `data-agent-narration` | A |
+| 11 | Reasoning panel | unchanged | `data-agent-reasoning-panel` | A |
+| 12 | Tool card and citations | `ToolCard`, unchanged | `data-agent-tool-card`, `data-tool-citations` | A |
+| 13 | Jump to bottom | unchanged | `data-agent-jump-bottom` | A |
+| 14 | Copy answer | unchanged | `data-agent-copy` | A |
+| 15 | Approve / deny a write | `ApprovalCard`, unchanged; focus then moves to the composer input | `data-approval-approve`, `data-approval-deny` | A17, A20–A22 |
+| 16 | Inspector goal and todos | `AgentInspector`, now its own chunk | `data-agent-goal`, `data-agent-todo` | A1, A2 |
+| 17 | Tool and event ledgers | unchanged | `data-agent-tools`, `data-agent-event-ledger` | A1 |
+| 18 | Evidence filter and preview | unchanged | `data-evidence-filter`, `data-evidence-preview` | A |
+| 19 | Evaluation | unchanged | `data-agent-eval` | A1 |
+| 20 | Pin / collapse the inspector (`agent-inspector` key) | unchanged | `data-agent-inspector-toggle`, `data-agent-inspector-pinned` | A1, A2 |
+| 21 | Fork | Composer `/分支` and the 更多 menu; disabled with a reason without a session | `data-menu-row="fork"` | A12, A29 |
+| 22 | Export trajectory | Composer `/导出轨迹` and the 更多 menu | `data-menu-row="export"` | A12, A29 |
+| 23 | Feedback | unchanged | `data-agent-assistant-card` | A |
+| 24 | Web switch | Composer `/联网` and the 更多 menu; an unread setting is 未读取, never 关闭 | `data-menu-row="web"`, `data-agent-more` | A13, A14, A31 |
+| 25 | `?task=` deep link | Task chip in the composer | `data-composer-chip="task"` | A26 |
+
+The input of the former `AgentComposer` maps to the shared composer: input `data-agent-input` → `data-composer-input`,
+send `data-agent-send` → `data-composer-primary="send"`, stop `data-agent-stop` → `data-composer-primary="stop"`,
+mode `data-agent-mode-*` → `data-composer-mode` (locked with `data-composer-mode-locked` once a session exists), model
+`data-agent-model` → `data-composer-model`, hint text → `data-composer-reason`. `data-agent-composer` stays on the wrapper. While a
+reply runs only 停止 is offered (D5). Single delete moved to `ConfirmDialog` too (C11–C13).
+
+### `/evidence` (8 capabilities of the former DiscoveryPage)
+
+| # | Capability | Owner in Phase 9 | Hook | Check |
+| --- | --- | --- | --- | --- |
+| 1 | Four counts (已接入应用, 待证假设 (was 候选路径), 已确认, 未决) | Readout row; a missing field says 未返回 | `data-discovery-kpi`, `data-discovery-value` | E2, E3, E19, Q13 |
+| 2 | Processing stages | Pipeline line | `data-discovery-pipeline` | V |
+| 3 | Source filter (全部 / 真实设备 / 合成数据) | Segmented control with counts; adds a search (D3) | `data-discovery-filter`, `data-evidence-search` | E4–E9 |
+| 4 | Confirmed list | `EvidenceRow` (shared with the workbench) | `data-discovery-row`, `data-evidence-synthetic` | E1, E15 |
+| 5 | Detail | `EvidenceDetail` beside the list from 1280 px, a drawer below; copy identifier | `data-discovery-detail`, `data-evidence-side`, `data-ev-copy` | E10–E13, E17, E18 |
+| 6 | Coverage note | Coverage disclosure | `data-discovery-provenance` | E14 |
+| 7 | Unresolved candidates by app | Panel | `data-discovery-unresolved` | E16 |
+| 8 | “N / M apps have confirmed results” | Apps line | `data-evidence-apps` | V |
+
+### `/system` (16 capabilities)
+
+| # | Capability | Owner in Phase 9 | Hook | Check |
+| --- | --- | --- | --- | --- |
+| 1 | Provider list | 模型 tab (`ModelConsole`); failed / 403 / stale states, header 刷新 | `data-provider-card`, `data-models-error`, `data-models-denied` | Y2, Y3, Q16, S |
+| 2 | Add / edit a provider | unchanged drawer | `data-config-drawer` | V |
+| 3 | Handshake probe | unchanged | `data-probe-result` | V |
+| 4 | Set as primary | unchanged | `data-provider-card` | V |
+| 5 | Delete a provider (confirm) | unchanged `ConfirmDialog` | `data-provider-card` | V |
+| 6 | Routing matrix | unchanged; an unread routing says so instead of 未配置 | `data-routing-error` | S |
+| 7 | Fetch the model list | unchanged | `data-config-drawer` | V |
+| 8 | Feedback stats | 诊断 tab | `data-feedback-stats` | Y25 |
+| 9 | Resource use | 诊断 tab; missing fields say 未返回 | `data-resource-stats`, `data-resource` | Y23, Y24, Q15 |
+| 10 | Users: list and create | 用户与权限 tab, unchanged | `data-user-table`, `data-create-user-btn` | Y |
+| 11 | Users: role, disable, delete, reset password | unchanged | `data-user-toggle`, `data-user-del`, `data-reset-btn` | Y |
+| 12 | Audit log: filters, presets, paging | 审计日志 tab, unchanged | `data-audit-q`, `data-audit-presets`, `data-audit-next` | Y |
+| 13 | Audit log detail | unchanged drawer | `data-audit-drawer` | Y |
+| 14 | API tokens: create, revoke | API Token tab, unchanged | `data-tokens-panel` | Y |
+| 15 | Webhooks: create, test, delete | API Token tab; a failed first read is now an error / 403 state, a failed refresh stale | `data-webhook-panel`, `data-webhook-error`, `data-webhook-stale` | Y |
+| 16 | Non-admin permission state | Whole page, no system read | `data-system-noauth` | Y26 |
+
+New entries without a former capability: 运行 (web switch PATCH, web service, concurrency) and 设备 (devices from the
+shell poll, nodes from `/api/nodes`), plus 模型与运行 in the account menu and seven palette entries (Y13–Y22).
+
+### AI assistant archive (4 capabilities)
+
+| # | Capability | Owner in Phase 9 | Hook | Check |
+| --- | --- | --- | --- | --- |
+| 1 | Run a prompt once | `ConfirmDialog` (was the browser confirm); same `prompt-run` request | `data-confirm-ok` | C8, C9 |
+| 2 | Delete a session | `ConfirmDialog` | `data-confirm-ok` | C4, C5 |
+| 3 | Batch delete | `ConfirmDialog`, still says 不可恢复 | `data-batch-delete` | C6, C7 |
+| 4 | Rename | Kit `Dialog` with a field (was the browser prompt); PATCH `{title}` (first 40 chars) | `data-ai-rename-dialog`, `data-ai-rename-input` | C1–C3 |
+
+The session list now has its own read states (loading, 未读取 with 重试, 403 without retry, stale, empty pointing to
+the Agent) and a 刷新 (`data-ai-refresh`); the archive note links to the Agent (`data-ai-archive-agent`).
+
 ## Shared owners (kept on purpose)
 
 | Job | Renderings | Why both stay |

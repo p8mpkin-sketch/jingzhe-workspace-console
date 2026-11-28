@@ -49,6 +49,9 @@ export const VIEWS = [
   ['session-coverage', '/projects/1/sessions/41?view=coverage'],
   // Artifacts and reports (V3 Phase 6): the two second-level views beside 分析输出 and 报告草稿.
   ['session-packer', '/projects/1/sessions/41?view=packer'], ['session-diff', '/projects/1/sessions/41?view=diff'],
+  // Knowledge and system tabs (V3 Phase 9): 候选审核 and the three system tabs that read their own endpoints.
+  ['knowledge-review', '/knowledge?tab=review'], ['system-runtime', '/system?tab=runtime'], ['system-devices', '/system?tab=devices'],
+  ['system-diagnostics', '/system?tab=diagnostics'],
 ];
 const only = arg('routes', '');
 const pool = [...ROUTES, ...VIEWS];

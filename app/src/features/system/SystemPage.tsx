@@ -1,6 +1,7 @@
 // SystemPage.tsx — system administration: models, users, audit log, resource usage, API tokens and webhooks.
 // Requests, payloads and data-* hooks are unchanged; only the presentation is new.
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '@/services/api';
 import { useAuth } from '@/stores/auth';
 import {
@@ -8,102 +9,109 @@ import {
   StatusBadge, Tag, Dialog, ConfirmDialog, Drawer, EmptyState, ErrorState, PermissionState, InlineAlert, SkeletonLoader, cx,
 } from '@/components/ui';
 import type { Column, TabItem } from '@/components/ui';
-import { Copy, KeyRound, Plus, ScrollText, Trash2, Users, Webhook } from 'lucide-react';
+import { Copy, KeyRound, Plus, RefreshCw, ScrollText, Trash2, Users, Webhook } from 'lucide-react';
 import { moduleLabel } from '@/layout/navigation';
 import { ModelConsole } from './ModelConsole';
+import { useRead } from '@/features/dashboard/readout';
+// The three tabs added in Phase 9 load as their own chunk when one opens; /system's first screen does not fetch them.
+const RuntimeTab = React.lazy(() => import('./tabs/RuntimeTab').then((m) => ({ default: m.RuntimeTab })));
+const DevicesTab = React.lazy(() => import('./tabs/DevicesTab').then((m) => ({ default: m.DevicesTab })));
+const DiagnosticsTab = React.lazy(() => import('./tabs/DiagnosticsTab').then((m) => ({ default: m.DiagnosticsTab })));
 
-type Tab = 'models' | 'users' | 'audit' | 'resources' | 'tokens';
+type Tab = 'models' | 'runtime' | 'devices' | 'diagnostics' | 'audit' | 'users' | 'tokens';
 const TABS: Array<{ key: Tab; label: string }> = [
-  { key: 'models', label: '模型服务' },
-  { key: 'users', label: '用户与权限' },
+  { key: 'models', label: '模型' },
+  { key: 'runtime', label: '运行' },
+  { key: 'devices', label: '设备' },
+  { key: 'diagnostics', label: '诊断' },
   { key: 'audit', label: '审计日志' },
-  { key: 'resources', label: '资源用量' },
+  { key: 'users', label: '用户与权限' },
   { key: 'tokens', label: 'API Token' },
 ];
+const isTab = (v: string | null): v is Tab => !!v && TABS.some((t) => t.key === v);
+const FB_WORD = { loading: '读取中', error: '未读取', forbidden: '无权限' } as const;
 
 export const SystemPage: React.FC = () => {
-  const [tab, setTab] = useState<Tab>('models');
   const role = useAuth((s) => s.me?.role) || '';
   const isAdmin = role === 'admin' || role === 'super_admin' || role === 'org_admin';
-  // Non-admins get no admin tabs at all (direct links included).
+  // Non-admins get no admin tabs at all (direct links included) and no system read is sent.
   if (!isAdmin) {
     return (
       <Page data-system-page>
         <PageHeader title={moduleLabel('/system')} />
         <Panel data-system-noauth>
           <PermissionState title="需要管理员权限"
-            message={<>系统管理(模型服务、用户与权限、审计日志)只对管理员开放。当前角色:<span className="font-mono">{role || '未知'}</span>。</>} />
+            message={<>系统管理(模型、运行、设备、诊断、审计日志、用户与权限、API Token)只对管理员开放。当前角色:<span className="font-mono">{role || '未知'}</span>。</>} />
         </Panel>
       </Page>
     );
   }
+  return <AdminSystem />;
+};
+
+// The tab lives in ?tab= (default 模型; an unknown value returns to 模型 and the parameter is removed). Each tab
+// reads its own endpoints the first time it opens; feedback is read with the first load, as in 777f03e.
+function AdminSystem() {
+  const [params, setParams] = useSearchParams();
+  const raw = params.get('tab');
+  const tab: Tab = isTab(raw) ? raw : 'models';
+  useEffect(() => {
+    if (raw != null && !isTab(raw)) { const next = new URLSearchParams(params); next.delete('tab'); setParams(next, { replace: true }); }
+  }, [raw]); // eslint-disable-line react-hooks/exhaustive-deps
+  const setTab = (t: Tab) => { const next = new URLSearchParams(params); if (t === 'models') next.delete('tab'); else next.set('tab', t); setParams(next, { replace: true }); };
+  const [opened, setOpened] = useState<Set<Tab>>(() => new Set([tab]));
+  useEffect(() => { setOpened((o) => (o.has(tab) ? o : new Set([...o, tab]))); }, [tab]);
+  const feedback = useFeedback();
+  const settings = useRead(opened.has('runtime') || tab === 'runtime' ? '/api/agent/settings' : null, pickSettings);
+  const web = useRead(opened.has('runtime') || tab === 'runtime' ? '/api/agent/web/status' : null, pickAny);
+  const stats = useRead(opened.has('runtime') || opened.has('diagnostics') || tab === 'runtime' || tab === 'diagnostics' ? '/api/system/resource-stats' : null, pickAny);
+  const nodes = useRead(opened.has('devices') || tab === 'devices' ? '/api/nodes' : null, pickNodes);
+  const [modelsRefresh, setModelsRefresh] = useState(0);
+  const reload = () => {
+    if (tab === 'models') setModelsRefresh((n) => n + 1);
+    else if (tab === 'runtime') { settings.reload(); web.reload(); stats.reload(); }
+    else if (tab === 'diagnostics') { stats.reload(); feedback.load(); }
+    else if (tab === 'devices') nodes.reload();
+  };
   const items: TabItem<Tab>[] = TABS.map((t) => ({ key: t.key, label: t.label, dataAttrs: { 'data-system-tab': t.key } }));
   return (
     <Page data-system-page>
-      <PageHeader title={moduleLabel('/system')} description="模型服务、账号、审计记录、资源用量和开放接口。每个标签页先给出当前状态，再列出可以修改的设置。" />
+      <PageHeader title={moduleLabel('/system')} description="模型、运行、设备、诊断、审计记录、账号和开放接口。每个标签页先给出当前状态,再列出可以修改的设置。"
+        actions={tab === 'models' || tab === 'runtime' || tab === 'devices' || tab === 'diagnostics' ? <Button variant="secondary" icon={<RefreshCw size={16} aria-hidden />} onClick={reload} data-system-refresh>刷新</Button> : undefined} />
       <Tabs items={items} value={tab} onChange={setTab} label="系统设置" />
       <div className="space-y-6" role="tabpanel" aria-label={TABS.find((t) => t.key === tab)?.label}>
-        {tab === 'models' && <ModelsTab />}
+        <React.Suspense fallback={<div data-state="loading"><SkeletonLoader variant="table" rows={3} /></div>}>
+        {tab === 'models' && <ModelsTab refresh={modelsRefresh} />}
+        {tab === 'runtime' && <RuntimeTab settings={settings} web={web} stats={stats} />}
+        {tab === 'devices' && <DevicesTab nodes={nodes} />}
+        {tab === 'diagnostics' && <DiagnosticsTab stats={stats} feedback={<FeedbackStats fb={feedback} />} />}
         {tab === 'users' && <UsersTab />}
         {tab === 'audit' && <AuditTab />}
-        {tab === 'resources' && <ResourceStatsTab />}
         {tab === 'tokens' && <TokensTab />}
         {tab === 'tokens' && <WebhookPanel />}
+        </React.Suspense>
       </div>
     </Page>
   );
-};
-
-// ─── Resource usage: tokens in the last 30 days, disk, concurrency (GET /api/system/resource-stats) ───
-function ResourceStatsTab() {
-  const [stats, setStats] = useState<any>(null);
-  const [err, setErr] = useState('');
-  const load = () => { setErr(''); api<any>('/api/system/resource-stats').then(setStats).catch((e) => setErr(e.message || String(e))); };
-  useEffect(() => { load(); }, []);
-  if (err && !stats) return <Panel><ErrorState title="资源用量加载失败" message={err} onRetry={load} /></Panel>;
-  if (!stats) return <MetricGrid><Metric label="已用 Token(近 30 天)" value="" loading /><Metric label="磁盘占用" value="" loading /><Metric label="并发" value="" loading /></MetricGrid>;
-  const fmtTok = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n));
-  const diskTotalMb = stats.disk.runs_mb + stats.disk.apk_pool_mb + stats.disk.db_mb;
-  const quotaMb = stats.disk.quota_storage_mb;
-  const full = stats.slots.running >= stats.slots.quota_concurrent;
-  return (
-    <div className="space-y-4" data-resource-stats>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 desktop:gap-4">
-        <Metric label="已用 Token(近 30 天)"
-          title="近 30 天所有模型调用回传的输入和输出 Token 合计。没有回传用量的调用不计入。"
-          value={fmtTok(stats.llm.prompt_tokens_30d + stats.llm.completion_tokens_30d)}
-          hint={<>输入 {fmtTok(stats.llm.prompt_tokens_30d)} · 输出 {fmtTok(stats.llm.completion_tokens_30d)} · <span className="tnum">{stats.llm.calls_30d}</span> 次调用</>} />
-        <Metric label="磁盘占用"
-          title={`任务产物、安装包池和数据库三处的占用。后台每 10 分钟重新计算一次${stats.disk.computed_at ? `,当前数据计算于 ${stats.disk.computed_at}` : ''}。${quotaMb >= 0 ? `组织配额 ${quotaMb}MB。` : '组织没有设置配额。'}`}
-          value={stats.disk.computing ? <span className="text-section text-jz-muted" data-disk-computing>正在计算</span> : `${diskTotalMb} MB`}
-          hint={stats.disk.computing ? '后台计算中,约 1–2 分钟后刷新查看'
-            : <>产物 {stats.disk.runs_mb} · 安装包 {stats.disk.apk_pool_mb} · 数据库 {stats.disk.db_mb}{quotaMb >= 0 ? ` · 配额 ${quotaMb}MB` : ''}</>} />
-        <Metric label="并发" tone={full ? 'attention' : 'default'}
-          title="正在运行和排队的任务数,对比组织允许的最大并发数。达到上限后新任务会被拒绝。"
-          value={`${stats.slots.running}/${stats.slots.quota_concurrent}`}
-          hint={full ? '已达上限,新任务会被拒绝' : '运行中和排队的任务 / 最大并发'} />
-      </div>
-      <p className="text-meta text-jz-muted">
-        Token 和并发是请求时的实时数值;磁盘是后台每 10 分钟计算一次的结果{stats.disk.computed_at ? `(计算于 ${stats.disk.computed_at})` : ''}。
-      </p>
-    </div>
-  );
 }
+const pickAny = (r: any) => r ?? {};
+const pickSettings = (r: any) => ({ web_enabled: !!r?.web_enabled });
+const pickNodes = (r: any) => (Array.isArray(r?.items) ? r.items : Array.isArray(r) ? r : []);
 
-function ModelsTab() {
+function ModelsTab({ refresh }: { refresh: number }) {
   return (
     <>
-      <ModelConsole />
-      <h2 className="jz-section -mb-2 text-jz-ink">反馈</h2>
-      <FeedbackStats />
+      <ModelConsole refresh={refresh} />
+      <p className="text-meta text-jz-muted" data-models-feedback-moved>建议反馈和资源用量在“诊断”标签里。</p>
     </>
   );
 }
 
 // Feedback on assistant suggestions (GET /api/feedback).
-function FeedbackStats() {
+type Feedback = { items: any[]; state: 'loading' | 'ok' | 'error' | 'forbidden'; load: () => void };
+function useFeedback(): Feedback {
   const [items, setItems] = useState<Array<any>>([]);
-  const [state, setState] = useState<'loading' | 'ok' | 'error' | 'forbidden'>('loading');
+  const [state, setState] = useState<Feedback['state']>('loading');
   // One owner, through the shared client: auth header, in-flight dedupe and error mapping come from there.
   const load = React.useCallback(() => {
     setState('loading');
@@ -112,13 +120,17 @@ function FeedbackStats() {
       .catch((e: any) => setState(e?.status === 403 ? 'forbidden' : 'error'));
   }, []);
   useEffect(() => { load(); }, [load]);
+  return { items, state, load };
+}
+function FeedbackStats({ fb }: { fb: Feedback }) {
+  const { items, state, load } = fb;
   const up = items.filter((i) => i.verdict === 'up').length;
   const down = items.filter((i) => i.verdict === 'down').length;
   return (
     <Panel title="建议反馈" description="用户对智能体建议的评价" data-feedback-stats>
       <div className="flex flex-wrap items-center gap-2 text-label">
-        <StatusBadge tone="success">有用 <span className="tnum">{up}</span></StatusBadge>
-        <StatusBadge tone="neutral">没用 <span className="tnum">{down}</span></StatusBadge>
+        <StatusBadge tone="success">有用 <span className="tnum">{state === 'ok' ? up : FB_WORD[state]}</span></StatusBadge>
+        <StatusBadge tone="neutral">没用 <span className="tnum">{state === 'ok' ? down : FB_WORD[state]}</span></StatusBadge>
       </div>
       {items.length ? (
         <ul className="mt-3 space-y-1 text-label">
@@ -559,7 +571,8 @@ function WebhookPanel() {
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const [delTarget, setDelTarget] = useState<any | null>(null);
-  const load = () => api<any>('/api/webhooks').then((d) => setHooks(d?.items || [])).catch(() => setHooks([]));
+  const [hookErr, setHookErr] = useState<any>(null);
+  const load = () => api<any>('/api/webhooks').then((d) => { setHooks(d?.items || []); setHookErr(null); }).catch((e) => setHookErr(e ?? new Error('读取失败')));
   useEffect(() => { load(); }, []);
   const add = async () => {
     setMsg(''); setBusy(true);
@@ -606,10 +619,14 @@ function WebhookPanel() {
         <Button variant="primary" icon={<Plus size={16} aria-hidden />} onClick={add} disabled={!url.trim()} loading={busy} data-probe="wh-add" className="mb-6">{busy ? '添加中…' : '添加'}</Button>
       </div>
       {msg && <InlineAlert tone="info" className="mt-3" data-probe="wh-msg">{msg}</InlineAlert>}
+      {hookErr && hooks !== null && <InlineAlert tone="attention" className="mt-3" data-webhook-stale>最近一次刷新未成功,下面是上次读到的列表。</InlineAlert>}
       <div className="-mx-4 mt-4 border-t border-jz-border">
         <DataTable<any> label="Webhook" columns={cols} rows={hooks || []} rowKey={(h) => h.idx} stickyHeader={false}
           rowDataAttrs={(h) => ({ 'data-probe': `wh-row-${h.idx}` })}
-          state={hooks === null ? <div className="p-4"><SkeletonLoader variant="table" rows={2} /></div>
+          state={hookErr && hooks === null ? <div data-webhook-error>{hookErr?.status === 403 || hookErr?.status === 401
+              ? <PermissionState compact title="无权限" message="当前账号不能读取 Webhook 列表(接口返回 403)。" />
+              : <ErrorState compact title="Webhook 列表未读取" message={`${hookErr?.message || '接口没有返回列表'}。现有的 Webhook 没有显示,不代表没有。`} onRetry={load} />}</div>
+            : hooks === null ? <div className="p-4"><SkeletonLoader variant="table" rows={2} /></div>
             : hooks.length === 0 ? <EmptyState compact icon={Webhook} title="还没有 Webhook" cause="添加后会显示在这里。" /> : undefined} />
       </div>
       <Dialog open={!!delTarget} role="alertdialog" dismissible={false} title={`删除 Webhook #${delTarget?.idx ?? ''}`} onClose={() => setDelTarget(null)}

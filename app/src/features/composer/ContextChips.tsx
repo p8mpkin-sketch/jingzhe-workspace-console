@@ -5,11 +5,13 @@ import { Plus, X } from 'lucide-react';
 import { cx } from '@/components/ui';
 import type { ContextChip } from './useComposer';
 
-const KIND: Record<ContextChip['kind'], string> = { session: '会话', finding: '风险发现', request: '请求' };
+const KIND: Record<ContextChip['kind'], string> = { session: '会话', finding: '风险发现', request: '请求', task: '任务' };
 
 export const ContextChips: React.FC<{
   chips: ContextChip[]; onRemove: (key: string) => void; onAdd: () => void; canAdd: boolean; addHint: string; disabled?: boolean;
-}> = ({ chips, onRemove, onAdd, canAdd, addHint, disabled }) => {
+  /** No "+ 上下文" button (the Agent quotes nothing). */
+  noAdd?: boolean;
+}> = ({ chips, onRemove, onAdd, canAdd, addHint, disabled, noAdd }) => {
   const quoting = chips.some((c) => !c.fixed);
   return (
     <div className="flex min-w-0 items-center gap-2 px-3 pt-2" data-composer-chips>
@@ -26,12 +28,12 @@ export const ContextChips: React.FC<{
             )}
           </li>
         ))}
-        <li className="flex-none">
+        {!noAdd && <li className="flex-none">
           <button type="button" onClick={onAdd} disabled={!canAdd || disabled} title={addHint} data-composer-add
             className="inline-flex h-6 items-center gap-1 rounded-tag border border-dashed border-jz-border-strong px-2 text-meta text-jz-ink-2 hover:text-jz-ink disabled:cursor-not-allowed disabled:text-jz-muted">
             <Plus size={12} aria-hidden />上下文
           </button>
-        </li>
+        </li>}
       </ul>
       {quoting && <span className="ml-auto flex-none text-meta text-jz-muted max-[760px]:hidden" data-composer-quote-note>引用会作为文本随消息发送</span>}
     </div>

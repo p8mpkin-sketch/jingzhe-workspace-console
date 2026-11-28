@@ -1,0 +1,3426 @@
+{
+ "base": "fixtures",
+ "total": 672,
+ "failed": 0,
+ "plan": {
+  "K": 32,
+  "R": 28,
+  "A": 36,
+  "E": 20,
+  "Y": 26,
+  "C": 16,
+  "T": 12,
+  "Q": 22,
+  "KB": 12,
+  "V": 84,
+  "S": 384
+ },
+ "groups": {
+  "K": [
+   32,
+   32
+  ],
+  "R": [
+   28,
+   28
+  ],
+  "A": [
+   36,
+   36
+  ],
+  "E": [
+   20,
+   20
+  ],
+  "Y": [
+   26,
+   26
+  ],
+  "C": [
+   16,
+   16
+  ],
+  "T": [
+   12,
+   12
+  ],
+  "Q": [
+   22,
+   22
+  ],
+  "KB": [
+   12,
+   12
+  ],
+  "V": [
+   84,
+   84
+  ],
+  "S": [
+   384,
+   384
+  ]
+ },
+ "results": [
+  {
+   "name": "K1 条目 reads the /api/skills count",
+   "pass": true,
+   "detail": "条目 5"
+  },
+  {
+   "name": "K2 待审候选 reads the pending candidates",
+   "pass": true,
+   "detail": "待审候选 4"
+  },
+  {
+   "name": "K3 every skill is a row",
+   "pass": true,
+   "detail": "5"
+  },
+  {
+   "name": "K4 search narrows to the matching row",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "name": "K5 no match says so and 清除筛选 brings the rows back",
+   "pass": true,
+   "detail": "true"
+  },
+  {
+   "name": "K6 a category shows the rows its button counts",
+   "pass": true,
+   "detail": "[\"Claude 技能\",1]"
+  },
+  {
+   "name": "K7 实战次数↓ orders the rows by uses",
+   "pass": true,
+   "detail": "1,3,5,2,4"
+  },
+  {
+   "name": "K8 the pager shows the total that was read",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K9 a row opens its detail",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K10 the detail reads the source text once",
+   "pass": true,
+   "detail": "GET /api/skills/1/source"
+  },
+  {
+   "name": "K11 the source text can be copied",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K12 停用 sends PATCH /api/skills/1/status {status: disabled}",
+   "pass": true,
+   "detail": "{\"status\":\"disabled\"}"
+  },
+  {
+   "name": "K13 启用 sends PATCH /api/skills/3/status {status: active}",
+   "pass": true,
+   "detail": "{\"status\":\"active\"}"
+  },
+  {
+   "name": "K14 草案转正 sends PATCH /api/skills/2/status {status: active}",
+   "pass": true,
+   "detail": "{\"status\":\"active\"}"
+  },
+  {
+   "name": "K15 删除 asks first and says what is lost",
+   "pass": true,
+   "detail": "删除「示例知识条目 2」? 实战记录和挂载关系会一并清除,无法恢复。只想暂停使用请改为“停用”。 取消 删除"
+  },
+  {
+   "name": "K16 cancel sends no DELETE",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K17 confirm sends DELETE /api/skills/2",
+   "pass": true,
+   "detail": "PATCH /api/skills/1/status | PATCH /api/skills/3/status | PATCH /api/skills/2/status | DELETE /api/skills/2"
+  },
+  {
+   "name": "K18 the mount list offers the finished audits",
+   "pass": true,
+   "detail": "3 vs 3"
+  },
+  {
+   "name": "K19 choosing a task reads its mounted list",
+   "pass": true,
+   "detail": "GET /api/tasks/100/skills"
+  },
+  {
+   "name": "K20 挂载 sends POST /api/tasks/{tid}/skills/1/mount",
+   "pass": true,
+   "detail": "PATCH /api/skills/1/status | PATCH /api/skills/3/status | PATCH /api/skills/2/status | DELETE /api/skills/2 | POST /api/tasks/100/skills/1/mount"
+  },
+  {
+   "name": "K21 a new local entry is saved under apksec-skills-local",
+   "pass": true,
+   "detail": "[{\"id\":137528,\"name\":\"本地条目甲\",\"scene\":\"自定义(本地)\",\"source_path\""
+  },
+  {
+   "name": "K22 it is a local row and sends no request",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K23 本地条目 counts it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K24 path import sends {path}",
+   "pass": true,
+   "detail": "{\"path\":\"/srv/skills/pack\"}"
+  },
+  {
+   "name": "K25 URL import sends {url}",
+   "pass": true,
+   "detail": "{\"path\":\"/srv/skills/pack\"} | {\"url\":\"https://example.com/SKILL.md\"}"
+  },
+  {
+   "name": "K26 重新扫描 sends POST /api/skills/scan",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "K27 the scan result is written on the page",
+   "pass": true,
+   "detail": "扫描完成:新收编 undefined · 跳过已存在 undefined · 总计 undefined(重复执行结果不变)"
+  },
+  {
+   "name": "K28 提炼 lists the finished audits",
+   "pass": true,
+   "detail": "3"
+  },
+  {
+   "name": "K29 提炼 sends {task_id}",
+   "pass": true,
+   "detail": "{\"task_id\":100}"
+  },
+  {
+   "name": "K30 导出清单 JSON downloads a file",
+   "pass": true,
+   "detail": "skills_list_2026-11-28100547.json"
+  },
+  {
+   "name": "K31 导出清单 CSV downloads a file",
+   "pass": true,
+   "detail": "skills_list_2026-11-28100548.csv"
+  },
+  {
+   "name": "K32 a non-admin sees no write actions and sends no candidate read",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R1 every pending candidate is a row",
+   "pass": true,
+   "detail": "4"
+  },
+  {
+   "name": "R2 a reviewed candidate shows the verdict and its reason",
+   "pass": true,
+   "detail": "理由 建议通过:两次任务复现,证据引用齐全(预审建议,决定权在管理员)"
+  },
+  {
+   "name": "R3 a verdict without a reason says so",
+   "pass": true,
+   "detail": "理由 建议拒绝:预审未附理由(预审建议,决定权在管理员)"
+  },
+  {
+   "name": "R4 an unreviewed candidate says 未预审",
+   "pass": true,
+   "detail": "理由 未预审"
+  },
+  {
+   "name": "R5 evidence refs are copyable chips",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R6 no refs says 没有证据引用",
+   "pass": true,
+   "detail": "证据 没有证据引用"
+  },
+  {
+   "name": "R7 the source is on the row",
+   "pass": true,
+   "detail": "来源 post_mortem 来自任务 #101 会话 #41"
+  },
+  {
+   "name": "R8 no source says 未提供来源",
+   "pass": true,
+   "detail": "来源 未提供来源 来自任务 #103 未关联会话"
+  },
+  {
+   "name": "R9 the task link opens /tasks/101",
+   "pass": true,
+   "detail": "#/tasks/101"
+  },
+  {
+   "name": "R10 the session is named",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R11 no session says 未关联会话",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R12 the pre-review count is read from the notes",
+   "pass": true,
+   "detail": "已预审 3 / 4"
+  },
+  {
+   "name": "R13 建议通过 keeps #1",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R14 建议拒绝 keeps #2",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R15 待补信息 keeps #6",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R16 未预审 keeps #3",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R17 无证据引用 keeps #3",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R18 预审 sends {limit: 20}",
+   "pass": true,
+   "detail": "{\"limit\":20}"
+  },
+  {
+   "name": "R19 通过 sends {id, action: approve} without a confirm",
+   "pass": true,
+   "detail": "{\"id\":1,\"action\":\"approve\"}"
+  },
+  {
+   "name": "R20 the result line names the candidate",
+   "pass": true,
+   "detail": "候选 #1 已通过:写入正式知识库"
+  },
+  {
+   "name": "R21 拒绝 asks first and repeats the reason and source",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R22 confirm sends {id: 2, action: reject}; cancel sent nothing",
+   "pass": true,
+   "detail": "{\"id\":1,\"action\":\"approve\"} | {\"id\":2,\"action\":\"reject\"}"
+  },
+  {
+   "name": "R23 checking two rows shows the bulk bar with 2",
+   "pass": true,
+   "detail": "已选 2 条 批量通过 批量拒绝 取消选择"
+  },
+  {
+   "name": "R24 the bulk confirm lists each candidate with its pre-review",
+   "pass": true,
+   "detail": "#1 预审建议通过 · post_mortem #3 未预审 · 未提供来源"
+  },
+  {
+   "name": "R25 批量通过 sends {ids, action}",
+   "pass": true,
+   "detail": "{\"ids\":[1,3],\"action\":\"approve\"}"
+  },
+  {
+   "name": "R26 已决定 keeps approved and rejected with the decision time",
+   "pass": true,
+   "detail": "#4 WAF 规则核对 请求头大小写规则核对 提出 2026-11-27 理由 建议通过:规则已在两个应用验证(预审建议,决定权在管理员) 证据 finding"
+  },
+  {
+   "name": "R27 the full candidate shows the raw text",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "R28 a 429 pre-review says it is rate limited and nothing changed",
+   "pass": true,
+   "detail": "预审请求太频繁:模型服务限制了调用频率(429)。候选和已有建议都没有改变,稍后再预审。"
+  },
+  {
+   "name": "A1 three panes at 1440: sessions, transcript, inspector",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A2 the inspector is its own chunk and still opens pinned",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A3 the composer is the shared one",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A4 the session is a fixed context chip",
+   "pass": true,
+   "detail": "会话 会话 · 示例 Agent 会话"
+  },
+  {
+   "name": "A5 the mode is locked to the session",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A6 the model picker lists the catalog",
+   "pass": true,
+   "detail": ",model-large,model-small"
+  },
+  {
+   "name": "A7 Shift+Enter adds a line and sends nothing",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A8 Enter sends POST …/a1/messages {text, model}",
+   "pass": true,
+   "detail": "{\"text\":\"Wallet 有哪些高危发现?\",\"model\":\"model-small\"}"
+  },
+  {
+   "name": "A9 while the reply runs only 停止 is offered (D5)",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A10 the run cell counts from the moment of sending",
+   "pass": true,
+   "detail": "00:00"
+  },
+  {
+   "name": "A11 停止 sends POST …/a1/cancel",
+   "pass": true,
+   "detail": "POST /api/agent/sessions/a1/messages | POST /api/agent/sessions/a1/cancel"
+  },
+  {
+   "name": "A12 / lists 新会话, 分支, 导出轨迹, 联网",
+   "pass": true,
+   "detail": "new,fork,export,web"
+  },
+  {
+   "name": "A13 the web command names the read setting (开启联网)",
+   "pass": true,
+   "detail": "开启联网 与系统 › 运行里的联网开关是同一个设置"
+  },
+  {
+   "name": "A14 /联网 sends PATCH /api/agent/settings {web_enabled: true}",
+   "pass": true,
+   "detail": "{\"web_enabled\":true}"
+  },
+  {
+   "name": "A15 /新会话 sends POST /api/agent/sessions",
+   "pass": true,
+   "detail": "POST /api/agent/sessions/a1/messages | POST /api/agent/sessions/a1/cancel | PATCH /api/agent/settings | POST /api/agent/sessions"
+  },
+  {
+   "name": "A16 刷新 reads the session list again",
+   "pass": true,
+   "detail": "GET /api/agent/sessions | GET /api/agent/sessions/a1/snapshot | GET /api/models/catalog | GET /api/agent/sessions/a1/eval | GET /api/agent/sessions/a1/events?since_seq=0 | GET /api/agent/sessions/a1/events?since_seq=0"
+  },
+  {
+   "name": "A17 a running session waiting on approval shows the card",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A18 its task is a fixed chip",
+   "pass": true,
+   "detail": "会话 会话 · 待审批的 Agent 会话 任务 任务 #101"
+  },
+  {
+   "name": "A19 running: 停止 replaces 发送",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A20 批准执行 sends {decision: approve}",
+   "pass": true,
+   "detail": "{\"decision\":\"approve\"}"
+  },
+  {
+   "name": "A21 after the decision focus is in the composer",
+   "pass": true,
+   "detail": "<textarea rows=\"1\" placeholder=\"Agent 正在执行,可以停止…\" aria-label=\"消息输入\" data-compose"
+  },
+  {
+   "name": "A22 拒绝 sends {decision: deny}",
+   "pass": true,
+   "detail": "{\"decision\":\"deny\"}"
+  },
+  {
+   "name": "A23 a 403 on send keeps the text and offers no retry",
+   "pass": true,
+   "detail": "没有权限：服务器拒绝了这次发送（403）。文本保留在输入框里，没有任何内容被发送。 · kept=保留这段文字 · retry=false"
+  },
+  {
+   "name": "A24 a 429 on send keeps the text and offers retry",
+   "pass": true,
+   "detail": "请求太频繁：服务器限制了发送频率（429）。文本保留在输入框里，稍后再发送。 重试 · kept=保留这段文字 · retry=true"
+  },
+  {
+   "name": "A25 a 500 on send keeps the text and offers retry",
+   "pass": true,
+   "detail": "发送失败：fixture。文本保留在输入框里。 重试 · kept=保留这段文字 · retry=true"
+  },
+  {
+   "name": "A26 ?task= puts the task chip on a session without one",
+   "pass": true,
+   "detail": "会话 会话 · 新 Agent 会话 任务 任务 #101"
+  },
+  {
+   "name": "A27 no sessions: the start view holds the composer",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A28 before a session the mode can be switched",
+   "pass": true,
+   "detail": "2"
+  },
+  {
+   "name": "A29 分支 and 导出 are disabled without a session",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A30 a suggestion creates a session and sends its text",
+   "pass": true,
+   "detail": "POST /api/agent/sessions | POST /api/agent/sessions/undefined/messages"
+  },
+  {
+   "name": "A31 an unread web setting is not shown as off, and cannot be switched",
+   "pass": true,
+   "detail": "联网开关 联网设置未读取,不能切换"
+  },
+  {
+   "name": "A32 a 403 list says 无权限 with no retry, and the composer is blocked",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A33 a failed list says 未读取 and 重试 reads it again",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A34 a failed refresh keeps the sessions and says so",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A35 at 760 the session list is behind a toggle",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "A36 the toggle opens the session list",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E1 every confirmed item is a row",
+   "pass": true,
+   "detail": "5"
+  },
+  {
+   "name": "E2 已确认 reads confirmed_total",
+   "pass": true,
+   "detail": "已确认 12 通过判定并经独立核验"
+  },
+  {
+   "name": "E3 待证假设 reads candidates_total",
+   "pass": true,
+   "detail": "待证假设 83 由数据流分析生成,尚待证明"
+  },
+  {
+   "name": "E4 the source filter counts the rows read",
+   "pass": true,
+   "detail": "全部 5 真实设备 4 合成数据 1"
+  },
+  {
+   "name": "E5 真实设备 keeps the real rows",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E6 合成数据 keeps the synthetic row and marks it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E7 search by app keeps its row",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "name": "E8 search by finding id keeps its row",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E9 no match says so",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E10 at 1440 the detail opens beside the list",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E11 the detail shows the full identifier",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E12 复制标识 copies it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E13 Escape closes it and focus returns to the row",
+   "pass": true,
+   "detail": "hyp-com.example.compass-0-abcdef0123456789"
+  },
+  {
+   "name": "E14 the coverage note is on the page",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E15 the row is the component the workbench uses",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E16 the unresolved panel is on the page",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E17 at 1024 the detail opens in a drawer",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E18 Escape closes the drawer",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "E19 a missing count says 未返回, not 0",
+   "pass": true,
+   "detail": "未决 未返回 缺少动态证据"
+  },
+  {
+   "name": "E20 刷新 reads the overview again",
+   "pass": true,
+   "detail": "GET /api/v2/overview"
+  },
+  {
+   "name": "Y1 seven tabs in order",
+   "pass": true,
+   "detail": "models,runtime,devices,diagnostics,audit,users,tokens"
+  },
+  {
+   "name": "Y2 模型 reads providers, routing and feedback only",
+   "pass": true,
+   "detail": "GET /api/feedback | GET /api/models/providers | GET /api/models/routing"
+  },
+  {
+   "name": "Y3 刷新 on 模型 reads the providers again",
+   "pass": true,
+   "detail": "GET /api/models/providers | GET /api/models/routing"
+  },
+  {
+   "name": "Y4 a click puts ?tab= in the address",
+   "pass": true,
+   "detail": "/system?tab=runtime"
+  },
+  {
+   "name": "Y5 ?tab=models opens models",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Y6 ?tab=runtime opens runtime",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Y7 ?tab=devices opens devices",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Y8 ?tab=diagnostics opens diagnostics",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Y9 ?tab=audit opens audit",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Y10 ?tab=users opens users",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Y11 ?tab=tokens opens tokens",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Y12 an unknown tab falls back and the address loses it",
+   "pass": true,
+   "detail": "/system"
+  },
+  {
+   "name": "Y13 the account menu opens 模型与运行",
+   "pass": true,
+   "detail": "/system?tab=models"
+  },
+  {
+   "name": "Y14 the palette opens 系统 · 运行",
+   "pass": true,
+   "detail": "/system?tab=runtime"
+  },
+  {
+   "name": "Y15 运行 reads settings, web status and resource stats",
+   "pass": true,
+   "detail": "GET /api/agent/settings | GET /api/agent/web/status | GET /api/feedback | GET /api/system/resource-stats"
+  },
+  {
+   "name": "Y16 the switch shows the read value",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Y17 开启联网 sends PATCH {web_enabled: true}",
+   "pass": true,
+   "detail": "{\"web_enabled\":true}"
+  },
+  {
+   "name": "Y18 concurrency is read, not guessed",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Y19 an unread switch is disabled and not shown as off",
+   "pass": true,
+   "detail": "Agent 联网 Agent 回答时能否检索公开网络。与 Agent 输入框里的“/开启联网”是同一个设置。 联网开关 未读取 未读取 开关不可用 联网设置未读"
+  },
+  {
+   "name": "Y20 设备 sends only GET /api/nodes (devices come from the shell poll)",
+   "pass": true,
+   "detail": "GET /api/nodes"
+  },
+  {
+   "name": "Y21 each node is a row with its state word",
+   "pass": true,
+   "detail": "node-a,node-b"
+  },
+  {
+   "name": "Y22 a failed node read says 未读取 with retry, the device list stays",
+   "pass": true,
+   "detail": "执行节点 运行评估任务的节点:是否在线、挂了几台设备、上次心跳。 执行节点未读取 fixture failure 重试"
+  },
+  {
+   "name": "Y23 诊断 shows the 30-day token use that was read",
+   "pass": true,
+   "detail": "已用Token(近30天)1.50M输入1.28M·输出216.5K·412次调用"
+  },
+  {
+   "name": "Y24 a field the server did not return says 未返回",
+   "pass": true,
+   "detail": "磁盘占用 未返回 产物 未返回 · 安装包 未返回 · 数据库 未返回"
+  },
+  {
+   "name": "Y25 建议反馈 moved here",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Y26 a non-admin sees the page permission state and no system read",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "C1 重命名 opens a dialog (it was the browser prompt); cancel sends nothing",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "C2 cancel returns focus to 重命名",
+   "pass": true,
+   "detail": "<button class=\"text-meta text-jz-muted hover:text-jz-brand px-0.5\" title=\"重命名\" a"
+  },
+  {
+   "name": "C3 Enter saves: PATCH /api/chat/sessions/1 {title}",
+   "pass": true,
+   "detail": "{\"title\":\"新的名字\"}"
+  },
+  {
+   "name": "C4 删除 asks in the kit dialog; cancel sends nothing",
+   "pass": true,
+   "detail": "删除会话「示例对话」? 会话和其中的消息会被删除。 取消 删除"
+  },
+  {
+   "name": "C5 confirm sends DELETE /api/chat/sessions/1",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "C6 批量删除 asks with the count and 不可恢复; cancel sends nothing",
+   "pass": true,
+   "detail": "批量删除所选 1 个会话? 不可恢复。 取消 批量删除"
+  },
+  {
+   "name": "C7 confirm sends one DELETE per selected session",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "C8 真跑一条 asks first; cancel sends nothing",
+   "pass": true,
+   "detail": "真跑一次提示词? 将当前组装原样真跑一次 LLM,消耗一次 API 调用(与会话隔离,不落历史)。 取消 真跑一次"
+  },
+  {
+   "name": "C9 confirm sends the same prompt-run request",
+   "pass": true,
+   "detail": "{\"q\":\"总结主要发现\"}"
+  },
+  {
+   "name": "C10 the archive note points to the Agent",
+   "pass": true,
+   "detail": "#/agent"
+  },
+  {
+   "name": "C11 Agent 删除 asks in the kit dialog; cancel sends nothing",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "C12 cancel returns focus to the delete button",
+   "pass": true,
+   "detail": "<button data-agent-delete=\"true\" aria-label=\"删除会话\" class=\"grid place-items-cente"
+  },
+  {
+   "name": "C13 confirm sends DELETE /api/agent/sessions/a2",
+   "pass": true,
+   "detail": "DELETE /api/agent/sessions/a2"
+  },
+  {
+   "name": "C14 Agent 批量删除 asks first; cancel sends nothing",
+   "pass": true,
+   "detail": "删除这个 Agent 会话? 事件日志会软删除,不物理销毁。 取消 删除"
+  },
+  {
+   "name": "C15 confirm sends DELETE for each selected session",
+   "pass": true,
+   "detail": "DELETE /api/agent/sessions/a2"
+  },
+  {
+   "name": "C16 no page called window.confirm or window.prompt",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T1 /skills redirects to /knowledge",
+   "pass": true,
+   "detail": "/knowledge"
+  },
+  {
+   "name": "T2 …and renders the knowledge page",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T3 /discovery redirects to /evidence",
+   "pass": true,
+   "detail": "/evidence"
+  },
+  {
+   "name": "T4 …and renders the evidence page with its counts and list",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T5 the old candidate panel lives in 候选审核 (?tab=review)",
+   "pass": true,
+   "detail": "/knowledge?tab=review"
+  },
+  {
+   "name": "T6 the old candidate card detail is the candidate drawer",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T7 the relation graph is behind its disclosure and loads on demand",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T8 the old skill card is the detail drawer with facts, actions, mount and source",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T9 the old Agent composer is the shared composer",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T10 the retired files are gone",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T11 nothing imports them",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "T12 the route table loads the new pages",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Q1 /knowledge (admin) first load sends the same requests as 777f03e",
+   "pass": true,
+   "detail": "now: GET /api/kb/candidates | GET /api/skills | GET /api/tasks?limit=200 · 777f03e: GET /api/kb/candidates | GET /api/skills | GET /api/tasks?limit=200"
+  },
+  {
+   "name": "Q2 /knowledge (user) first load sends the same requests as 777f03e",
+   "pass": true,
+   "detail": "now: GET /api/skills | GET /api/tasks?limit=200 · 777f03e: GET /api/skills | GET /api/tasks?limit=200"
+  },
+  {
+   "name": "Q3 /evidence (admin) first load sends the same requests as 777f03e",
+   "pass": true,
+   "detail": "now: GET /api/v2/overview · 777f03e: GET /api/v2/overview"
+  },
+  {
+   "name": "Q4 /agent (admin) first load sends the same requests as 777f03e",
+   "pass": true,
+   "detail": "now: GET /api/agent/sessions | GET /api/agent/sessions/a1/eval | GET /api/agent/sessions/a1/events?since_seq=0 | GET /api/agent/sessions/a1/snapshot | GET /api/agent/settings | GET /api/agent/web/status | GET /api/models/catalog · 777f03e: GET /api/agent/sessions | GET /api/agent/sessions/a1/eval | GET /api/agent/sessions/a1/events?since_seq=0 | GET /api/agent/sessions/a1/snapshot | GET /api/agent/settings | GET /api/agent/web/status | GET /api/models/catalog"
+  },
+  {
+   "name": "Q5 /system (admin) first load sends the same requests as 777f03e",
+   "pass": true,
+   "detail": "now: GET /api/feedback | GET /api/models/providers | GET /api/models/routing · 777f03e: GET /api/feedback | GET /api/models/providers | GET /api/models/routing"
+  },
+  {
+   "name": "Q6 /ai-assistant (admin) first load sends the same requests as 777f03e",
+   "pass": true,
+   "detail": "now: GET /api/chat/sessions | GET /api/models/providers | GET /api/models/routing | GET /api/tasks?limit=500 · 777f03e: GET /api/chat/sessions | GET /api/models/providers | GET /api/models/routing | GET /api/tasks?limit=500"
+  },
+  {
+   "name": "Q7 opening 候选审核 directly sends no extra request",
+   "pass": true,
+   "detail": "GET /api/kb/candidates | GET /api/skills | GET /api/tasks?limit=200"
+  },
+  {
+   "name": "Q8 a non-admin on ?tab=review goes back to the library and reads no candidates",
+   "pass": true,
+   "detail": "/knowledge"
+  },
+  {
+   "name": "Q9 switching tabs reads each endpoint once",
+   "pass": true,
+   "detail": "resource-stats ×1"
+  },
+  {
+   "name": "Q10 条目 when /api/skills fails: no 0 from data that was not read",
+   "pass": true,
+   "detail": "条目 未读取"
+  },
+  {
+   "name": "Q11 待审候选 when candidates fail: no 0 from data that was not read",
+   "pass": true,
+   "detail": "待审候选 未读取"
+  },
+  {
+   "name": "Q12 the review tab label: no 0 from data that was not read",
+   "pass": true,
+   "detail": "候选审核 · 未读取"
+  },
+  {
+   "name": "Q13 evidence counts: no 0 from data that was not read",
+   "pass": true,
+   "detail": "已接入应用 未读取 可读取的评估任务 待证假设 未读取 由数据流分析生成,尚待证明 已确认 未读取 通过判定并经独立核验 未决 未读取 缺少动态证据"
+  },
+  {
+   "name": "Q14 concurrency: no 0 from data that was not read",
+   "pass": true,
+   "detail": "并发 正在运行和排队的任务,对比组织允许的最大并发。 并发占用未读取 fixture failure 重试"
+  },
+  {
+   "name": "Q15 resource use: no 0 from data that was not read",
+   "pass": true,
+   "detail": "资源用量 资源用量未读取 fixture failure 重试"
+  },
+  {
+   "name": "Q16 the provider count: no 0 from data that was not read",
+   "pass": true,
+   "detail": "供应商(未读取)"
+  },
+  {
+   "name": "Q17 the knowledge list: 403 says 无权限 with no retry",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Q18 the candidates: 403 says 无权限 with no retry",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Q19 the evidence overview: 403 says 无权限 with no retry",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Q20 the Agent sessions: 403 says 无权限 with no retry",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Q21 the nodes: 403 says 无权限 with no retry",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Q22 the archive list: 403 says 无权限 with no retry",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "KB1 → moves from 技能库 to 候选审核",
+   "pass": true,
+   "detail": "/knowledge?tab=review"
+  },
+  {
+   "name": "KB2 ← moves back and the address loses ?tab=",
+   "pass": true,
+   "detail": "/knowledge"
+  },
+  {
+   "name": "KB3 ↓ moves to the next row",
+   "pass": true,
+   "detail": "2"
+  },
+  {
+   "name": "KB4 the focused row shows a focus ring",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "KB5 Enter opens that row",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "KB6 Escape closes it and focus returns to the row",
+   "pass": true,
+   "detail": "2"
+  },
+  {
+   "name": "KB7 更多 opens with Enter and Escape returns to it",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "KB8 a candidate opens with Enter and Escape returns to its title",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "KB9 → on the system tabs opens 运行 and sets ?tab=",
+   "pass": true,
+   "detail": "/system?tab=runtime"
+  },
+  {
+   "name": "KB10 ↓ moves to the next evidence row",
+   "pass": true,
+   "detail": "hyp-com.example.wallet-1-abcdef0123456789"
+  },
+  {
+   "name": "KB11 Enter opens its detail",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "KB12 Escape returns focus to that row",
+   "pass": true,
+   "detail": "hyp-com.example.wallet-1-abcdef0123456789"
+  },
+  {
+   "name": "V knowledge @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (54 texts)"
+  },
+  {
+   "name": "V review @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (60 texts)"
+  },
+  {
+   "name": "V agent @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (20 texts)"
+  },
+  {
+   "name": "V evidence @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (45 texts)"
+  },
+  {
+   "name": "V system @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (38 texts)"
+  },
+  {
+   "name": "V system-runtime @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (24 texts)"
+  },
+  {
+   "name": "V assistant @390 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (26 texts)"
+  },
+  {
+   "name": "V knowledge @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (65 texts)"
+  },
+  {
+   "name": "V review @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (74 texts)"
+  },
+  {
+   "name": "V agent @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (22 texts)"
+  },
+  {
+   "name": "V evidence @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (55 texts)"
+  },
+  {
+   "name": "V system @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (41 texts)"
+  },
+  {
+   "name": "V system-runtime @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (25 texts)"
+  },
+  {
+   "name": "V assistant @760 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (26 texts)"
+  },
+  {
+   "name": "V knowledge @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (86 texts)"
+  },
+  {
+   "name": "V review @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (94 texts)"
+  },
+  {
+   "name": "V agent @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (50 texts)"
+  },
+  {
+   "name": "V evidence @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (74 texts)"
+  },
+  {
+   "name": "V system @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (52 texts)"
+  },
+  {
+   "name": "V system-runtime @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (25 texts)"
+  },
+  {
+   "name": "V assistant @1024 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (33 texts)"
+  },
+  {
+   "name": "V knowledge @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (86 texts)"
+  },
+  {
+   "name": "V review @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (98 texts)"
+  },
+  {
+   "name": "V agent @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (50 texts)"
+  },
+  {
+   "name": "V evidence @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (101 texts)"
+  },
+  {
+   "name": "V system @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (71 texts)"
+  },
+  {
+   "name": "V system-runtime @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (25 texts)"
+  },
+  {
+   "name": "V assistant @1280 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V knowledge @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (86 texts)"
+  },
+  {
+   "name": "V review @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (98 texts)"
+  },
+  {
+   "name": "V agent @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (82 texts)"
+  },
+  {
+   "name": "V evidence @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (101 texts)"
+  },
+  {
+   "name": "V system @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (71 texts)"
+  },
+  {
+   "name": "V system-runtime @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (25 texts)"
+  },
+  {
+   "name": "V assistant @1440 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V knowledge @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (86 texts)"
+  },
+  {
+   "name": "V review @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (98 texts)"
+  },
+  {
+   "name": "V agent @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (82 texts)"
+  },
+  {
+   "name": "V evidence @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (101 texts)"
+  },
+  {
+   "name": "V system @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (71 texts)"
+  },
+  {
+   "name": "V system-runtime @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (25 texts)"
+  },
+  {
+   "name": "V assistant @1680 light: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V knowledge @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (54 texts)"
+  },
+  {
+   "name": "V review @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (60 texts)"
+  },
+  {
+   "name": "V agent @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (20 texts)"
+  },
+  {
+   "name": "V evidence @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (45 texts)"
+  },
+  {
+   "name": "V system @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (38 texts)"
+  },
+  {
+   "name": "V system-runtime @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (24 texts)"
+  },
+  {
+   "name": "V assistant @390 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (26 texts)"
+  },
+  {
+   "name": "V knowledge @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (65 texts)"
+  },
+  {
+   "name": "V review @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (74 texts)"
+  },
+  {
+   "name": "V agent @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (22 texts)"
+  },
+  {
+   "name": "V evidence @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (55 texts)"
+  },
+  {
+   "name": "V system @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (41 texts)"
+  },
+  {
+   "name": "V system-runtime @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (25 texts)"
+  },
+  {
+   "name": "V assistant @760 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (26 texts)"
+  },
+  {
+   "name": "V knowledge @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (86 texts)"
+  },
+  {
+   "name": "V review @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (94 texts)"
+  },
+  {
+   "name": "V agent @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (50 texts)"
+  },
+  {
+   "name": "V evidence @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (74 texts)"
+  },
+  {
+   "name": "V system @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (52 texts)"
+  },
+  {
+   "name": "V system-runtime @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (25 texts)"
+  },
+  {
+   "name": "V assistant @1024 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (33 texts)"
+  },
+  {
+   "name": "V knowledge @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (86 texts)"
+  },
+  {
+   "name": "V review @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (98 texts)"
+  },
+  {
+   "name": "V agent @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (50 texts)"
+  },
+  {
+   "name": "V evidence @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (101 texts)"
+  },
+  {
+   "name": "V system @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (71 texts)"
+  },
+  {
+   "name": "V system-runtime @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (25 texts)"
+  },
+  {
+   "name": "V assistant @1280 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V knowledge @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (86 texts)"
+  },
+  {
+   "name": "V review @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (98 texts)"
+  },
+  {
+   "name": "V agent @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (82 texts)"
+  },
+  {
+   "name": "V evidence @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (101 texts)"
+  },
+  {
+   "name": "V system @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (71 texts)"
+  },
+  {
+   "name": "V system-runtime @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (25 texts)"
+  },
+  {
+   "name": "V assistant @1440 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "V knowledge @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (86 texts)"
+  },
+  {
+   "name": "V review @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (98 texts)"
+  },
+  {
+   "name": "V agent @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (82 texts)"
+  },
+  {
+   "name": "V evidence @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (101 texts)"
+  },
+  {
+   "name": "V system @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (71 texts)"
+  },
+  {
+   "name": "V system-runtime @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (25 texts)"
+  },
+  {
+   "name": "V assistant @1680 dark: no overflow, no page error, nothing covered, text contrast ≥ 4.5:1",
+   "pass": true,
+   "detail": "0px · 0 errors · covered:  · low:  (34 texts)"
+  },
+  {
+   "name": "S library empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant empty @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant loading @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant error @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant forbidden @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant slow @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant stale @1440 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant empty @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant loading @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant error @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant forbidden @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant slow @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant stale @1024 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant empty @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant loading @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant error @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant forbidden @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant slow @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant stale @760 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant empty @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant loading @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant error @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant forbidden @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant slow @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant stale @390 light: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant empty @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant loading @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant error @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant forbidden @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant slow @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant stale @1440 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant empty @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant loading @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant error @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant forbidden @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant slow @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant stale @1024 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant empty @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant loading @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant error @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant forbidden @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant slow @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant stale @760 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S library stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S review stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S agent stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S evidence stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S system-models stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S runtime stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S devices stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant empty @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant loading @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant error @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant forbidden @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant slow @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "S assistant stale @390 dark: says what happened and what to do next",
+   "pass": true,
+   "detail": ""
+  }
+ ]
+}

@@ -67,3 +67,17 @@ export function useRead<T>(url: string | null, pick: (raw: any) => T, opts: { in
   }, [url, load, opts.interval]);
   return { state: stateOf(settled, value != null, error), value, error, reload: load };
 }
+
+/** True once `loading` has lasted `ms` (default 2 s), so a surface can say the read is still under way. */
+export function useSlow(loading: boolean, ms = 2000): boolean {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!loading) { setSlow(false); return undefined; }
+    const t = setTimeout(() => setSlow(true), ms);
+    return () => clearTimeout(t);
+  }, [loading, ms]);
+  return slow;
+}
+
+/** HTTP 429: the server limited the request rate. */
+export const isRateLimited = (e: unknown): boolean => statusOf(e) === 429;

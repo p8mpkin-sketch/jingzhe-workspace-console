@@ -34,6 +34,25 @@ const reports = Array.from({ length: 11 }, (_, i) => ({ id: 32 - i, kind: i % 4 
 // Project 2 has two reports of its own; project 3 has none.
 const reportsOf = (pid) => (pid === 1 ? reports : pid === 2 ? [{ id: 12, kind: 'portfolio', template: 'executive', status: 'ready', pages: 9, created_at: now - 86400 * 2 }, { id: 11, kind: 'app', template: 'technical', status: 'ready', pages: 14, created_at: now - 86400 * 4 }] : []);
 // Execution nodes as /api/nodes returns them (fields the dashboard reads: node_id, online, devices, last_seen).
+// Knowledge candidates as GET /api/kb/candidates returns them: the reason (note), evidence_refs, source, task and
+// session. Ids 1–3 keep their earlier fields; 1 has a reason, 2 a verdict without one, 3 none and no refs; 4 and 5
+// are decided; 6 carries a long title.
+const kbCandidates = [
+  { id: 1, title: '候选条目 1', summary: '待审核的知识候选。', status: 'pending', kind: 'pattern', score: 0.7, created_at: now - 4000, task_id: 101, session_id: 41, category: 'decrypt_recipe',
+    content: '【标题】请求体解密方法\n【触发条件】登录接口返回体以 base64 包裹\n【来源】/Users/demo/runs/task_101/report/security_report.md', evidence_refs: ['findings.db#a1b2c3', '/data/runs/task_101/report/security_report.md'],
+    source: 'post_mortem', note: '[预审] adopt: 两次任务复现,证据引用齐全' },
+  { id: 2, title: '候选条目 2', summary: '待审核的知识候选。', status: 'pending', kind: 'pattern', score: 0.8, created_at: now - 8000, task_id: 102, session_id: null, category: 'burp_capture',
+    content: '抓包路径:代理端口 18081,证书安装到系统分区。', evidence_refs: ['findings.db#d4e5f6'], source: 'packer_probe', note: '[预审] reject' },
+  { id: 3, title: '候选条目 3', summary: '待审核的知识候选。', status: 'pending', kind: 'pattern', score: 0.9, created_at: now - 12000, task_id: 103, category: 'biz_extract',
+    content: '订单号提取规则:响应字段 order_no。', evidence_refs: [], note: null },
+  { id: 4, status: 'approved', created_at: now - 90000, decided_at: now - 50000, task_id: 100, session_id: 40, category: 'waf_bypass', content: '【标题】请求头大小写规则核对', evidence_refs: ['findings.db#0a0b0c'], source: 'post_mortem', note: '[预审] adopt: 规则已在两个应用验证' },
+  { id: 5, status: 'rejected', created_at: now - 95000, decided_at: now - 52000, task_id: 104, category: 'biz_extract', content: '重复的提取规则', evidence_refs: [], source: 'post_mortem', note: '[预审] needs_info: 缺少产物出处' },
+  { id: 6, status: 'pending', created_at: now - 15000, task_id: 105, session_id: 45, category: '壳档案', content: '【标题】' + '一个很长的候选标题用来检查截断和换行'.repeat(4) + '\n【核心策略】先静态识别再动态核对', evidence_refs: ['findings.db#ffeedd'], source: 'packer_probe', note: '[预审] needs_info: 需要补充 findings 产物' },
+];
+// An Agent session that is running and waits on one approval (Phase 9, A group).
+const agentApprovalSnapshot = { session: { id: 'a2', title: '待审批的 Agent 会话', status: 'waiting_approval', mode: 'agent', task_id: 101 }, running: true, last_seq: 3, events: [],
+  nodes: [{ id: 'u1', seq: 1, kind: 'user', text: '导出 Wallet 的高危发现到报告草稿' }, { id: 't2', seq: 2, kind: 'tool', call_id: 'c2', tool_call_id: 'c2', name: 'list_findings', args: { task_id: 101 }, status: 'success', summary: '读取 4 条发现', data: [], citations: [{ task_id: 101, ref: 'findings' }] },
+    { id: 'ap3', seq: 3, kind: 'approval', approval_id: 'ap-1', call_id: 'c3', tool: 'write_report_draft', args: { task_id: 101 }, reason: '写入报告草稿需要确认', status: 'pending' }] };
 const nodes = [{ node_id: 'node-a', online: true, devices: ['emulator-5554', 'emulator-5556'], last_seen: now - 8 }, { node_id: 'node-b', online: false, devices: ['pixel-7'], last_seen: now - 1800 }];
 // Recent progress events of the open sessions (/api/pentest/events/recent): newest first.
 const recentEvents = [
@@ -187,8 +206,8 @@ export const routes = [
   // (Phase 17 real read audit). FIXTURE_CATALOG=empty reproduces the fallback path.
   ['GET', /^\/api\/models\/catalog$/, () => (process.env.FIXTURE_CATALOG === 'empty' ? { models: [] } : catalog)],
   ['GET', /^\/api\/skills\/\d+\/source$/, { file: 'skills/sample/SKILL.md', bytes: 212, truncated: false, content: '# 示例知识条目\n# 用途: 复用已完成任务中的分析步骤\n\n1. 读取任务产物清单\n2. 核对网络与存储相关发现\n3. 汇总结论并附出处\n' }],
-  ['GET', /^\/api\/skills$/, [1, 2, 3, 4, 5].map((i) => ({ id: i, name: `示例知识条目 ${i}`, slug: `sample-${i}`, summary: '从已完成任务中沉淀的可复用分析步骤。', description: '从已完成任务中沉淀的可复用分析步骤。', status: ['active', 'draft', 'disabled', 'active', 'active'][i - 1], tags: ['network', 'storage'], category: ['network', 'storage', 'crypto'][i % 3], source: 'distill', updated_at: now - i * 5000, created_at: now - i * 9000, owner: 'demo', version: 1 }))],
-  ['GET', /^\/api\/kb\/candidates$/, { items: [1, 2, 3].map((i) => ({ id: i, title: `候选条目 ${i}`, summary: '待审核的知识候选。', status: 'pending', kind: 'pattern', score: 0.6 + i / 10, created_at: now - i * 4000, task_id: 100 + i })) }],
+  ['GET', /^\/api\/skills$/, [1, 2, 3, 4, 5].map((i) => ({ id: i, name: `示例知识条目 ${i}`, slug: `sample-${i}`, summary: '从已完成任务中沉淀的可复用分析步骤。', description: '从已完成任务中沉淀的可复用分析步骤。', status: ['active', 'draft', 'disabled', 'active', 'active'][i - 1], tags: ['network', 'storage'], category: ['network', 'storage', 'crypto'][i % 3], source: 'distill', updated_at: now - i * 5000, created_at: now - i * 9000, owner: 'demo', version: 1, scene: ['claude skill', '蒸馏', 'pentest 平台模块', '项目 rules', '导入'][i - 1], source_path: ['/Users/demo/.claude/skills/sample-1/SKILL.md', 'task:101', '/srv/app/pentest/net_probe.py', '/srv/app/rules/storage.md', 'https://example.com/skills/sample-5/SKILL.md'][i - 1], uses: [6, 0, 3, 0, 2][i - 1], wins: [5, 0, 1, 0, 2][i - 1], last_verified_at: now - i * 86400 }))],
+  ['GET', /^\/api\/kb\/candidates$/, { items: kbCandidates }],
   ['GET', /^\/api\/v2\/overview$/, { tasks_total: 8, candidates_total: 83, confirmed_total: 12, real_confirmed: 9, synthetic_confirmed: 3, silver_total: 20, unresolved_total: 51, apk_with_confirmed: 5, sink_families: 7,
     tasks: pkgs.map((p, i) => ({ task: p, paths: 10 + i, dataflow: 3 + i })),
     confirmed: pkgs.slice(0, 5).map((p, i) => ({ hypothesis_id: `hyp-${p}-${i}-abcdef0123456789`, task: p, provenance: ['webview', 'file', 'intent'][i % 3], device: 'emulator-5554', finding_id: `F-${100 + i}`, proof_level: ['dynamic', 'static'][i % 2], synthetic: i === 4, source: 'verifier' })),
@@ -196,11 +215,17 @@ export const routes = [
   ['GET', /^\/api\/chat\/sessions$/, [{ id: 1, title: '示例对话', updated_at: now - 500, pinned: false, task_ids: [100] }]],
   ['GET', /^\/api\/chat\/sessions\/\d+$/, { id: 1, title: '示例对话', messages: [{ role: 'user', content: '总结这个应用的主要发现。' }, { role: 'assistant', content: '共 **3** 条发现,其中 1 条需要优先处理。\n\n- 明文传输\n- 调试标志开启' }] }],
   ['GET', /^\/api\/chat\/usage-summary$/, { total_tokens: 1234, calls: 2 }],
-  ['GET', /^\/api\/agent\/sessions$/, [{ id: 'a1', title: '示例 Agent 会话', status: 'idle', created_at: now - 4000, updated_at: now - 300 }]],
-  ['GET', /^\/api\/agent\/sessions\/[^/]+\/snapshot$/, { session: { id: 'a1', title: '示例 Agent 会话', status: 'idle' }, events: [], turns: [], messages: [], last_seq: 0 }],
+  // a1 is the session every earlier check opens; a2 (added in Phase 9) is running and waits on an approval.
+  ['GET', /^\/api\/agent\/sessions$/, [{ id: 'a1', title: '示例 Agent 会话', status: 'idle', created_at: now - 4000, updated_at: now - 300 },
+    { id: 'a2', title: '待审批的 Agent 会话', status: 'waiting_approval', task_id: 101, created_at: now - 9000, updated_at: now - 900 }]],
+  ['GET', /^\/api\/agent\/sessions\/[^/]+\/snapshot$/, (u) => (/\/a2\//.test(u.pathname) ? agentApprovalSnapshot
+    : { session: { id: 'a1', title: '示例 Agent 会话', status: 'idle' }, events: [], turns: [], messages: [], last_seq: 0 })],
   ['GET', /^\/api\/agent\/settings$/, { web_enabled: false }],
   ['GET', /^\/api\/agent\/web\/status$/, { enabled: false }],
-  ['GET', /^\/api\/system\/resource-stats$/, { cpu: 23, mem: 61, disk: 48, uptime: 86400, workers: 4 }],
+  // cpu / mem / disk / uptime / workers are the earlier fixture values; llm and slots are the fields the
+  // 诊断 and 运行 tabs read (added in Phase 9). disk stays the number earlier checks saw; the tabs read disk.* and
+  // say 未返回 for it, which is the missing-field case.
+  ['GET', /^\/api\/system\/resource-stats$/, { cpu: 23, mem: 61, disk: 48, uptime: 86400, workers: 4, llm: { prompt_tokens_30d: 1284000, completion_tokens_30d: 216500, calls_30d: 412 }, slots: { running: 2, quota_concurrent: 4 } }],
   ['GET', /^\/api\/users$/, [{ id: 1, username: 'demo', role: 'admin', created_at: now - 9e6 }, { id: 2, username: 'analyst', role: 'user', created_at: now - 4e6 }]],
   ['GET', /^\/api\/audit-log$/, { items: [{ id: 1, ts: now - 100, user: 'demo', action: 'login', target: '', ip: '127.0.0.1' }], total: 1 }],
   ['GET', /^\/api\/tokens$/, { items: [] }],

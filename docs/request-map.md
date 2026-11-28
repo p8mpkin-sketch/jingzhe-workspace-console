@@ -385,13 +385,15 @@ the reader and send no project read.
 刷新 reads the task list and every project again; 重新读取 in the progress note reads only the projects that did not
 answer. Switching scope sends nothing that was already read. Downloads are `GET /api/pentest/projects/{pid}/reports/{rid}/download?format=pdf|docx`, unchanged.
 
-### `/discovery`
+### `/evidence` (was `/discovery`; Phase 9, unchanged)
 
 | Method | Route | Query | Expected unique count on load | Polling interval |
 | --- | --- | --- | --- | --- |
 | GET | `/api/v2/overview` | — | 1 | none (on load only) |
 
-### `/skills`
+### `/knowledge` (was `/skills`; Phase 9, unchanged)
+
+Non-admins send no `/api/kb/candidates` read (unchanged gate); `?tab=review` sends nothing more than the library.
 
 | Method | Route | Query | Expected unique count on load | Polling interval |
 | --- | --- | --- | --- | --- |
@@ -427,6 +429,22 @@ answer. Switching scope sends nothing that was already read. Downloads are `GET 
 | GET | `/api/feedback` | — | 1 | none (on load only) |
 | GET | `/api/models/providers` | — | 1 | none (on load only) |
 | GET | `/api/models/routing` | — | 1 | none (on load only) |
+
+Phase 9: the first load above is unchanged (模型 tab). The other tabs read only when they are opened, once per visit
+(a later 刷新 re-sends them):
+
+| Tab (`?tab=`) | Reads when opened |
+| --- | --- |
+| `runtime` | `GET /api/agent/settings`, `GET /api/agent/web/status`, `GET /api/system/resource-stats`; the switch sends `PATCH /api/agent/settings {web_enabled}` |
+| `devices` | `GET /api/nodes` (devices come from the shell's 8 s `/api/pentest/devices` poll; no request of its own) |
+| `diagnostics` | `GET /api/system/resource-stats` (shared with 运行; feedback was read on load) |
+| `audit`, `users`, `tokens` | the endpoints they read before (unchanged) |
+
+The Agent and AI assistant first loads are unchanged by Phase 9 (the Agent inspector is now a lazy chunk, which
+loads code, not data). Every write keeps its body: knowledge PATCH / DELETE / scan / import / distill / mount,
+`POST /api/kb/candidates {id, action}`, `…/decide-batch {ids, action}`, `…/pre-review {limit: 20}`, Agent
+`…/messages {text, model?}`, `…/cancel`, `…/approvals/{id} {decision}`, chat `PATCH {title}`, `DELETE`,
+`…/prompt-run {q}` (checked by `check-knowledge-agent-evidence.mjs` K, R, A, C, Y).
 
 ## Session workbench, per `?view=`
 

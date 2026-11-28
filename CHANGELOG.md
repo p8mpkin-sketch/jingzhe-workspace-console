@@ -7,6 +7,100 @@ endpoint is added. Every result below was measured on fixtures (`app/scripts/fix
 preview build in a cloud container. Nothing has been deployed: the canary on port 8108 and production on port 8099
 are untouched.
 
+### V3 Phase 9 — Knowledge, Agent, evidence, system
+
+`/knowledge` reviews candidates with their reasons, `/evidence` is its own page, the Agent uses the shared composer,
+`/system` is seven tabs, and the AI assistant archive no longer uses browser dialogs. No route, endpoint, field,
+payload, permission or storage key changed or was added (`apksec-skills-local` and `agent-inspector` unchanged);
+`docs/capability-matrix.md` (“Knowledge, agent, evidence, system (V3 Phase 9)”) gives the owner of each of the 82
+capabilities of the former pages. The six decisions of the plan (D1–D6) were confirmed with their defaults.
+
+**`/knowledge` (`KnowledgePage`, `LibraryTab`, `SkillDetail`, `ReviewTab`, `CandidateRow`, `KnowledgeGraph`).**
+
+- Two tabs on `?tab=` (D1): 技能库 and, for admins, 候选审核; a non-admin with `?tab=review` returns to the library
+  and the parameter is removed. A readout row (条目, 蒸馏草案, 本地条目, 实战记录, 待审候选) counts what was read and
+  says 未读取 / 无权限 otherwise.
+- The library is a table (cards below 900 px) with category buttons, search, four sorts and paging; a row opens a
+  drawer with the facts, the actions (enable, disable, promote, delete with an outcome per kind), mounting and the
+  source text. Rescan, imports, a local entry and distill moved into the header's 更多 menu as dialogs.
+- Every candidate row shows its reason and source: the pre-review verdict and reason from `note`, the evidence refs
+  (copyable), the source, the task link and the session (D2: no admin reason is collected; missing fields say so).
+  Filter by pre-review verdict; 预审 explains 429 and 403; single approve, reject and batch decisions go through
+  confirms that repeat the reason and source; decided candidates stay listed with their decision time.
+- The relation graph sits in a disclosure and loads ECharts only for a result.
+
+**`/evidence` (`EvidencePage`).** The former discovery page: four counts (候选路径 is now 待证假设), the stages, the
+source filter plus a search (D3), confirmed rows from the workbench's `EvidenceRow`, the detail beside the list from
+1280 px (a drawer below) with 复制标识, coverage, and unresolved candidates by app.
+
+**`/agent`.** The input is the Phase 4 `Composer` with three optional props (`modelPicker`, `modeControl`,
+`sendWhileRunning`), all off in the workbench: model picker, mode locked to the session, `/新会话 /分支 /导出轨迹
+/联网`, task and session chips, elapsed time from the moment of sending, and only 停止 while a reply runs (D5). 403
+and 429 keep the text. After an approval, focus returns to the input. Deletes use the kit confirm. The session list
+has loading, 未读取 + 重试, 无权限 and stale states, and an unread web setting is no longer shown as off.
+
+**`/system`.** Seven tabs on `?tab=` (D4): 模型, 运行 (web switch, web service, concurrency), 设备 (devices from the
+shell poll, nodes), 诊断 (resource use, suggestion feedback), 审计日志, 用户与权限, API Token. A tab reads its
+endpoints the first time it is opened; non-admins get the page permission state. 模型与运行 is in the account
+menu and every tab in the palette.
+
+**AI assistant archive.** Run-once, delete, batch delete (still 不可恢复) and rename are kit dialogs (D6); the
+session list has its own read states and a 刷新; the archive note links to the Agent.
+
+**Retired.** `features/skills/*`, `features/discovery/DiscoveryPage.tsx`, `features/agent/components_agent/AgentComposer.tsx`.
+
+**Fixtures (fields and entries only).** Candidates 1–6 with note, evidence refs, source and session (4 approved, 5
+rejected); skills with scene, path, uses, wins, last verified; Agent session `a2` running and waiting on one
+approval; `resource-stats` with `llm` and `slots`. `capture.mjs` also opens 候选审核 and the 运行 / 设备 / 诊断 tabs.
+
+**Checks.** New: `scripts/check-knowledge-agent-evidence.mjs`, 672 checks in eleven groups (K knowledge 32, R review
+28, A Agent 36, E evidence 20, Y system 26, C confirms 16, T retired 12, Q requests 22, KB keyboard 12, V widths and
+themes 84, S states 384). Run against the `777f03e` build, the functional groups pass 17 of 204.
+
+Writing it and reading its state screenshots found defects in this phase's own code, fixed here: the Agent's slash
+menu was clipped by its wrapper (unclickable in the start view); the session delete buttons of the Agent and the
+archive appeared only on hover, so keyboard users could not reach them and focus could not return after the
+confirm; an unread library still showed “共 0 项”, the model health row showed 0 providers and 0/0 keys, and the
+Agent session list showed “任务 0 / 测试 0” for a list that was not read; below 1024 px the Agent's 403 and loading
+states left most of the column blank and the archive's list states were hidden in its drawer.
+
+No existing check changed and no total dropped.
+
+| Check (fixtures, build of this commit) | Result |
+| --- | --- |
+| `tsc --noEmit`; `npm run build` | pass |
+| Main chunk 74.96 kB, 24.12 kB gzip (74.39 kB / 23.94 kB at `777f03e`; budget ±1 kB, cap 350 kB) | pass |
+| `KnowledgePage` 49.84 kB, 16.39 kB gzip (was `SkillsPage` 55.27 kB with the graph); `KnowledgeGraph` 5.20 kB and ECharts load only for a graph result | pass (≤ 55 kB) |
+| `EvidencePage` 13.53 kB, 4.98 kB gzip (was `DiscoveryPage` 8.57 kB) | pass (≤ 14 kB) |
+| `AgentPage` 65.46 kB, 20.48 kB gzip (71.21 kB before); `AgentInspector` 7.45 kB lazy; `Composer` 15.67 kB is one shared chunk for the Agent and the workbench | pass (no increase) |
+| `SystemPage` 48.45 kB, 15.24 kB gzip (45.82 kB before); `RuntimeTab` 4.06, `DevicesTab` 2.97, `DiagnosticsTab` 3.20 kB lazy | pass (≤ 50 kB) |
+| `AiAssistantPage` 45.79 kB, 15.38 kB gzip (49.41 kB before); `ArchiveDialogs` 1.86 kB and `InspectorPanel` 6.58 kB lazy | pass (no increase) |
+| Token lint | 0 |
+| Contrast (`check-contrast.mjs`) | 0 failing pairs |
+| Knowledge, Agent, evidence, system (`check-knowledge-agent-evidence.mjs`): K 32, R 28, A 36, E 20, Y 26, C 16, T 12, Q 22, KB 12, V 84, S 384 | 672 of 672 (functional groups on `777f03e`: 17 of 204) |
+| Dashboard and reports (`check-dashboard-reports.mjs`) | 519 of 519 |
+| Artifacts and reports (`check-artifacts-reports.mjs`) | 282 of 282 |
+| Tasks (`check-tasks.mjs`) | 363 of 363 |
+| Findings and evidence (`check-findings-evidence.mjs`) | 340 of 340 |
+| Tab count (`check-findings-tab-count.mjs`) | 46 of 46 |
+| Workbench shell (`check-workbench-shell.mjs`) | 99 of 99 |
+| Projects (`check-projects.mjs`) | 43 of 43 |
+| Redirects (`check-redirects.mjs`) | 28 of 28 |
+| Trace (`check-trace.mjs`) | 218 of 218 |
+| Catalog fallback, legacy retirement | pass, pass |
+| Workbench, 20 surfaces × 4 widths × 2 themes, sessions 40 and 41 (`check-workbench.mjs`) | overflow 0, page errors 0; focus: 1132 and 1726 stops checked, 0 without an indicator, 0 covered |
+| Polling (`check-polling.mjs`, 13 routes × 65 s) | same repeating requests as `777f03e` on every route; first-3 s duplicates differ only in the fixture SSE reconnect count |
+| Request set per route (`capture.mjs --views`) | the 46 routes and views of the Phase 8 log identical; the four new tab views add only their own reads (`docs/request-map.md`) |
+
+Known gaps: the Agent inspector has no link to the 运行 tab (non-admins would reach a permission page); the device
+list comes from the shell poll, which has no read state, so an empty list cannot tell “no device” from “not read”
+(the empty state says both); `useAgentSession` gained two read-state fields (requests unchanged); the Phase 7
+virtual scrolling debt is still open.
+
+Screenshots and reports: `docs/screenshots/v3/phase-9/`.
+
+Rollback: `git revert` of this one commit restores the Phase 8 pages; `777f03e` stands on its own.
+
 ### V3 Phase 8 — Overview signal and scoped reports
 
 `/dashboard` is rebuilt as a global signal of the workspace and `/reports` lists every report under one scope bar.

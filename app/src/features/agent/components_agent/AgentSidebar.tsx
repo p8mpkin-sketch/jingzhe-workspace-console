@@ -50,7 +50,9 @@ export const AgentSidebar: React.FC<{
   onDelete: (id: string) => void;
   onBatchDelete: (ids: string[]) => void;
   className?: string;
-}> = ({ sessions, current, onNew, onSelect, onDelete, onBatchDelete, className = '' }) => {
+  /** Set while the session list has not been read: counts are hidden and the list says this word. */
+  listWord?: string;
+}> = ({ sessions, current, onNew, onSelect, onDelete, onBatchDelete, className = '', listWord }) => {
   const [q, setQ] = useState('');
   const [tab, setTab] = useState<'tasks' | 'tests'>('tasks');
   const [groupBy, setGroupBy] = useState<'time' | 'task'>('time');
@@ -58,6 +60,8 @@ export const AgentSidebar: React.FC<{
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [onlyRisk, setOnlyRisk] = useState(false);
   const [manage, setManage] = useState(false);
+  // The session whose delete opened the confirm keeps its button shown, so focus can return to it.
+  const [hold, setHold] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'recent' | 'risk'>('recent');
   const real = sessions.filter((s) => sessionMeta(s).kind === 'task');
@@ -116,7 +120,7 @@ export const AgentSidebar: React.FC<{
           className={`ml-auto w-6 h-6 rounded-control grid place-items-center ${manage ? 'bg-jz-brand/15 text-jz-brand' : 'text-jz-muted hover:text-jz-ink hover:bg-jz-surface/60'}`}>
           <CheckSquare size={13} />
         </button>
-        <span className="text-meta font-mono text-jz-muted">{real.length}/{tests.length}</span>
+        <span className="text-meta font-mono text-jz-muted">{listWord ? '' : `${real.length}/${tests.length}`}</span>
       </div>
 
       <button onClick={onNew} data-agent-new
@@ -134,11 +138,11 @@ export const AgentSidebar: React.FC<{
       <div className="flex items-center gap-0.5 mb-2 p-0.5 rounded-card bg-jz-surface/70 border border-jz-border/40" data-agent-session-tabs>
         <button onClick={() => setTab('tasks')} data-agent-tab="tasks"
           className={`flex-1 px-2 py-1 rounded-control text-meta font-semibold transition-colors ${tab === 'tasks' ? 'bg-jz-surface text-jz-ink shadow-card' : 'text-jz-muted hover:text-jz-ink-2'}`}>
-          任务 <span className="font-mono opacity-60">{real.length}</span>
+          任务 {!listWord && <span className="font-mono opacity-60">{real.length}</span>}
         </button>
         <button onClick={() => setTab('tests')} data-agent-tab="tests"
           className={`flex-1 px-2 py-1 rounded-control text-meta font-semibold transition-colors ${tab === 'tests' ? 'bg-jz-surface text-jz-ink shadow-card' : 'text-jz-muted hover:text-jz-ink-2'}`}>
-          测试 <span className="font-mono opacity-60">{tests.length}</span>
+          测试 {!listWord && <span className="font-mono opacity-60">{tests.length}</span>}
         </button>
       </div>
 
@@ -229,8 +233,8 @@ export const AgentSidebar: React.FC<{
                             {s.task_id != null && !isTask && <><span className="text-jz-muted">·</span><span className="font-mono text-jz-muted truncate">#{s.task_id}</span></>}
                           </div>
                         </div>
-                        {!manage && <button onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} data-agent-delete
-                          className="hidden group-hover:grid place-items-center w-5 h-5 mt-0.5 rounded-control text-jz-muted hover:text-jz-sev-critical hover:bg-jz-sev-critical/10 flex-none" title="删除会话">
+                        {!manage && <button onClick={(e) => { e.stopPropagation(); setHold(s.id); onDelete(s.id); }} data-agent-delete aria-label="删除会话"
+                          className={`${hold === s.id ? 'grid' : 'hidden group-hover:grid group-focus-within:grid'} place-items-center w-5 h-5 mt-0.5 rounded-control text-jz-muted hover:text-jz-sev-critical hover:bg-jz-sev-critical/10 flex-none`} title="删除会话">
                           <Trash2 size={12} />
                         </button>}
                       </div>
@@ -245,7 +249,7 @@ export const AgentSidebar: React.FC<{
 
       {!visible.length && (
         <div className="text-meta text-jz-muted px-2 py-5 leading-5">
-          {q ? '没有匹配的会话。' : onlyOpen ? '没有未完成会话。' : onlyRisk ? '没有高风险会话。' : (tab === 'tests' ? '暂无测试/批量会话。' : '还没有 Agent 会话。新建后发送一个审计问题，Agent 会调用平台工具并留下完整事件轨迹。')}
+          {listWord ? `会话列表${listWord}。` : q ? '没有匹配的会话。' : onlyOpen ? '没有未完成会话。' : onlyRisk ? '没有高风险会话。' : (tab === 'tests' ? '暂无测试/批量会话。' : '还没有 Agent 会话。新建后发送一个审计问题，Agent 会调用平台工具并留下完整事件轨迹。')}
         </div>
       )}
 

@@ -3,13 +3,18 @@ import { useSearchParams } from 'react-router-dom';
 import { Bug, DoorOpen, KeyRound, Link2, PanelLeft, ShieldOff, X } from 'lucide-react';
 import { api } from '@/services/api';
 import { Badge, ModelSelectorChip, ExportMenu, SearchableTaskCombobox, UniversalImportModal } from '@/components/ui';
+// The confirm and rename dialogs load when one of them opens (the page chunk does not grow).
+const ArchiveDialogs = React.lazy(() => import('./ArchiveDialogs'));
+import type { ArchiveAsk } from './ArchiveDialogs';
+// The inspector renders nothing while closed, so it loads the first time it is opened.
+const InspectorPanel = React.lazy(() => import('./components_ai/InspectorPanel'));
+import { Link } from 'react-router-dom';
 import type { ModelOption, ComboTaskItem, UniversalImportResult } from '@/components/ui';
 import { MarkdownMessage } from './MarkdownMessage';
 import { SessionSidebar } from './components_ai/SessionSidebar';
-import type { ChatSession } from './components_ai/SessionSidebar';
+import type { ChatSession, ListRead } from './components_ai/SessionSidebar';
 import { ContextualChips } from './components_ai/ContextualChips';
 import { CitationGrid } from './components_ai/CitationGrid';
-import { InspectorPanel } from './components_ai/InspectorPanel';
 import { LiveStreamCard, AnswerMetaLine } from './components_ai/DecisionStreamCard';
 import type { StreamPhase } from './components_ai/DecisionStreamCard';
 
@@ -67,7 +72,10 @@ export const AiAssistantPage: React.FC = () => {
  const currentRef = useRef(''); // C-UI: send 闭包读实时会话 id(建议卡异步发送竞态)
  useEffect(() => { currentRef.current = current; }, [current]);
 
- const loadSessions = () => api<ChatSession[]>('/api/chat/sessions').then(setSessions).catch(() => {});
+ const [listRead, setListRead] = useState<ListRead>({ state: 'loading' });
+ const hadList = useRef(false);
+ const loadSessions = () => api<ChatSession[]>('/api/chat/sessions').then((r) => { hadList.current = true; setSessions(r); setListRead({ state: 'ok' }); })
+   .catch((e) => setListRead({ state: 'failed', status: e?.status, stale: hadList.current }));
  useEffect(() => { loadSessions(); }, []);
   // R103-12①: 会话轨分组模式(按时间/按任务)+ 任务标签映射(真值,来自 /api/tasks 同一批响应)
   const [grp, setGrp] = useState<'time' | 'task'>('time');
@@ -160,6 +168,7 @@ export const AiAssistantPage: React.FC = () => {
   const [usage, setUsage] = useState<any>(null);
   const [runRes, setRunRes] = useState<any>(null);
  const [runBusy, setRunBusy] = useState(false);
+ const [ask, setAsk] = useState<ArchiveAsk | null>(null);
  const loadUsage = async () => {
     if (!current) { setUsage(null); return; }
     try { setUsage(await api<any>(`/api/chat/usage-summary?sid=${current}`)); } catch { setUsage(null); }
@@ -167,7 +176,11 @@ export const AiAssistantPage: React.FC = () => {
  useEffect(() => { loadUsage(); }, [current]); // eslint-disable-line
  const runPrompt = async () => {
     if (!current || !input.trim()) return;
-    if (!window.confirm('将当前组装原样真跑一次 LLM?消耗一次 API 调用(与会话隔离,不落历史)。')) return;
+    setAsk({ kind: 'run' });
+ };
+ // Confirmed in the kit's dialog (it was the browser confirm); the request is unchanged.
+ const doRunPrompt = async () => {
+    if (!current || !input.trim()) return;
     setRunBusy(true); setRunRes(null);
     try {
       setRunRes(await api<any>(`/api/chat/sessions/${current}/prompt-run`, { method: 'POST', body: JSON.stringify({ q: input }) }));
@@ -360,25 +373,10 @@ export const AiAssistantPage: React.FC = () => {
  const s = await api('/api/chat/sessions', { method: 'POST', body: JSON.stringify({ title: '' }) });
  if (s.id) { setCurrent(s.id); setMessages([]); loadSessions(); setTimeout(() => taRef.current?.focus(), 300); }
  };
- const renameChat = async (s: ChatSession) => {
- const t = window.prompt('重命名会话:', s.title || '');
- if (t == null) return;
- await api(`/api/chat/sessions/${s.id}`, { method: 'PATCH', body: JSON.stringify({ title: t.slice(0, 40) }) });
- loadSessions();
- };
- const delChat = async (s: ChatSession) => {
- if (!window.confirm(`删除会话「${s.title || s.id}」?`)) return;
- await api(`/api/chat/sessions/${s.id}`, { method: 'DELETE' });
- if (current === s.id) { setCurrent(''); setMessages([]); }
- loadSessions();
- };
- const batchDelete = async (ids: string[]) => {
- if (!ids.length) return;
- if (!window.confirm(`批量删除所选 ${ids.length} 个会话?不可恢复。`)) return;
- await Promise.allSettled(ids.map((id) => api(`/api/chat/sessions/${id}`, { method: 'DELETE' })));
- if (ids.includes(current)) { setCurrent(''); setMessages([]); }
- loadSessions();
- };
+ // Rename, delete and batch delete ask in the kit's dialogs (they were the browser prompt and confirm); the dialogs
+ // send the same requests as before, cancel sends nothing, and focus returns to the trigger.
+ const batchDelete = async (ids: string[]) => { if (ids.length) setAsk({ kind: 'batch', ids }); };
+ const afterAsk = (removed: string[]) => { setAsk(null); if (removed.includes(current)) { setCurrent(''); setMessages([]); } loadSessions(); };
 
  // C-UI-2 空态四建议卡 → R104-4②: 内容=真实系统能力,禁编造(在案口径不变)
  const SUGGESTS = [
@@ -464,14 +462,24 @@ export const AiAssistantPage: React.FC = () => {
   );
 
   return (
-    <div className="flex h-full min-h-0">
+    <div className="flex h-full min-h-0 flex-col">
+    <p className="flex flex-none items-center gap-2 border-b border-jz-border bg-jz-inset px-4 py-1.5 text-meta text-jz-ink-2" data-ai-archive-note>
+      <span className="flex-1">AI 助手归档。新的审计对话请用 <Link to="/agent" className="font-medium text-jz-ink underline" data-ai-archive-agent>Agent</Link>。</span>
+      {listRead.state === 'failed' && (
+        <span className="lg:hidden" data-state={listRead.status === 403 || listRead.status === 401 ? 'forbidden' : listRead.stale ? 'stale' : 'error'} data-ai-list-note>
+          {listRead.status === 403 || listRead.status === 401 ? '当前账号不能读取会话列表。' : listRead.stale ? '刷新失败,会话列表是上次读到的。' : '会话列表未读取,数量未知。'}
+        </span>
+      )}
+      <button type="button" onClick={loadSessions} className="rounded-control underline" data-ai-refresh>{listRead.state === 'failed' && listRead.status !== 403 && listRead.status !== 401 && !listRead.stale ? '重试' : '刷新'}</button>
+    </p>
+    <div className="flex min-h-0 flex-1">
       {/* Session list: a column from 1024 px, a drawer below. */}
       {sessOpen && <div className="fixed inset-0 top-jz-topbar z-40 bg-jz-scrim/30 lg:hidden" onClick={() => setSessOpen(false)} data-ai-session-overlay />}
       <div className={`${sessOpen ? 'fixed bottom-0 left-0 top-jz-topbar z-50 flex shadow-dialog tablet:left-jz-sidebar-collapsed' : 'hidden'} lg:static lg:flex lg:shadow-none`} data-ai-session-pane>
         <SessionSidebar
  sessions={sessions} current={current} taskMap={taskMap} grp={grp} setGrp={setGrp} searchRef={searchRef}
- onSelect={(id) => { setCurrent(id); setSessOpen(false); }} onNew={newChat} onTogglePin={togglePin} onRename={renameChat} onDelete={delChat}
- onBatchDelete={batchDelete}
+ onSelect={(id) => { setCurrent(id); setSessOpen(false); }} onNew={newChat} onTogglePin={togglePin} onRename={(s) => setAsk({ kind: 'rename', s })} onDelete={(s) => setAsk({ kind: 'del', s })}
+ onBatchDelete={batchDelete} read={listRead} onReload={loadSessions}
  />
       </div>
 
@@ -703,13 +711,19 @@ export const AiAssistantPage: React.FC = () => {
  />
 
       {/* 右列: 检视器面板(P2-②: 遥测+调试收编;修正④: AI 页专用轻量件,不搬渗透工作台抽屉) */}
-      <InspectorPanel
+      {inspOpen && <React.Suspense fallback={null}><InspectorPanel
  open={inspOpen} devMode={devMode} usage={usage} streamTokens={tokens}
  onLoadUsage={loadUsage} onClose={() => setInspOpen(false)}
  auditTasks={auditTasks} auditTids={auditTids} toggleAuditTid={toggleAuditTid}
  onPreview={loadPromptPreview} onRun={runPrompt} runBusy={runBusy} canRun={!!(current && input.trim())}
  pv={pv} runRes={runRes}
- />
+ /></React.Suspense>}
+    </div>
+      {ask && (
+        <React.Suspense fallback={null}>
+          <ArchiveDialogs ask={ask} onClose={() => setAsk(null)} onRun={() => { void doRunPrompt(); }} onDone={afterAsk} />
+        </React.Suspense>
+      )}
     </div>
   );
 };
